@@ -7,7 +7,7 @@ import Nav from '@/components/Nav'
 import SaveChart from '@/components/SaveChart'
 import { getSupabase } from '@/lib/supabase'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
-import type { PaidAnalysis, LuckCycles, LuckTag } from '@/lib/analysis'
+import type { PaidAnalysis, LuckCycles, LuckTag, FortuneTier } from '@/lib/analysis'
 
 // 价格一律取自 SKUS（单一事实源），本文件不得硬编码价格
 const FATEBOOK_PRICE = formatPriceUSD(SKUS.fatebook.priceUSD)
@@ -49,7 +49,24 @@ interface ChartData {
   locked?: { skus: string[]; preview: string } | null
 }
 
-// 吉凶标签配色（已刻意移除「大吉/大凶」，岁运标签中性化）
+// ★ 大运/流年 7 档判词配色（FortuneTier）：文字标签本身即判词，不只靠颜色区分（色盲可达）
+//   大吉/吉/小吉 → emerald 系（深→浅梯度）；平 → amber 中性；小凶/凶/大凶 → red 系（浅→深梯度）
+const FORTUNE_BADGE: Record<FortuneTier, string> = {
+  '大吉': 'bg-emerald-100 text-emerald-800',
+  '吉': 'bg-emerald-50 text-emerald-700',
+  '小吉': 'bg-emerald-50 text-emerald-600',
+  '平': 'bg-amber-50 text-amber-600',
+  '小凶': 'bg-red-50 text-red-600',
+  '凶': 'bg-red-100 text-red-700',
+  '大凶': 'bg-red-200 text-red-800'
+}
+const FORTUNE_BORDER: Record<FortuneTier, string> = {
+  '大吉': 'border-emerald-400', '吉': 'border-emerald-300', '小吉': 'border-emerald-200',
+  '平': 'border-amber-200',
+  '小凶': 'border-red-200', '凶': 'border-red-300', '大凶': 'border-red-400'
+}
+
+// 流月标签配色（LuckTag，三档中性——流月红线：只用 较宜/一般/宜慎，不用 7 档判词）
 const TAG_BADGE: Record<LuckTag, string> = {
   '较宜': 'bg-emerald-50 text-emerald-600',
   '平顺': 'bg-gray-100 text-gray-500',
@@ -89,7 +106,7 @@ function LuckCyclesView({ luck }: { luck: LuckCycles }) {
             >
               <div className="font-bold text-amber-800">{d.ganZhi}</div>
               <div className="text-xs text-gray-500">{d.startAge}-{d.startAge + 9}岁</div>
-              <span className={`inline-block text-[11px] px-1.5 rounded mt-1 ${TAG_BADGE[d.tag]}`}>{d.tag}</span>
+              <span className={`inline-block text-[11px] px-1.5 rounded mt-1 ${FORTUNE_BADGE[d.tag]}`}>{d.tag}</span>
             </div>
           ))}
         </div>
@@ -123,10 +140,10 @@ function LuckCyclesView({ luck }: { luck: LuckCycles }) {
         <h3 className="font-semibold text-amber-800 mb-3">流年 · 今年起三年</h3>
         <div className="grid md:grid-cols-3 gap-3">
           {luck.liuNian.map((y, i) => (
-            <div key={i} className={`rounded border-l-4 p-3 bg-gray-50 ${TAG_BORDER[y.tag]}`}>
+            <div key={i} className={`rounded border-l-4 p-3 bg-gray-50 ${FORTUNE_BORDER[y.tag]}`}>
               <div className="flex items-center justify-between gap-1">
                 <span className="font-bold text-amber-800">{y.year}年 {y.ganZhi}</span>
-                <span className={`text-[11px] px-1.5 py-0.5 rounded whitespace-nowrap ${TAG_BADGE[y.tag]}`}>{y.tag}</span>
+                <span className={`text-[11px] px-1.5 py-0.5 rounded whitespace-nowrap ${FORTUNE_BADGE[y.tag]}`}>{y.tag}</span>
               </div>
               <div className="text-xs text-gray-500 mt-1">
                 {y.shiShenGan}主事{y.daYunGanZhi ? ` · 行${y.daYunGanZhi}运` : ''}

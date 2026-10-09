@@ -7,8 +7,12 @@ import { SHI_SHEN } from './paipan'
 import { LIU_CHONG, LIU_HE } from './branchRelations'
 import type { Zhi } from './branchRelations'
 
-// 岁运倾向标签（刻意移除「大吉/大凶」，改为中性留余地）
+// ★ 7 档吉凶判词：专供【大运】与【流年】（十年/一年尺度的时段判定）
+export type FortuneTier = '大吉' | '吉' | '小吉' | '平' | '小凶' | '凶' | '大凶'
+
+// 中性轻量标签：保留给【日运】与【流月】—— 两者定位不同，不参与吉凶分档
 export type LuckTag = '较宜' | '平顺' | '一般' | '宜慎' | '大防'
+
 // 分维度倾向（事业/财运/健康/六亲各自独立，不合并为单一标签）
 export type DomainTendency = '吉' | '平' | '滞'
 
@@ -36,7 +40,7 @@ export interface LuckDaYunItem {
   shiShenGan: string     // 运干对日主十神
   shiShenZhi: string     // 运支本气对日主十神
   score: number
-  tag: LuckTag
+  tag: FortuneTier
   current: boolean
   relations: string[]
   note: string
@@ -51,7 +55,7 @@ export interface LuckLiuNianItem {
   shiShenGan: string
   shiShenZhi: string
   score: number
-  tag: LuckTag
+  tag: FortuneTier
   current: boolean
   daYunGanZhi: string    // 该年所在大运
   relations: string[]
@@ -639,6 +643,18 @@ const TAG_ADVICE: Record<LuckTag, string> = {
   '大防': '岁运动荡，重大决定宜缓行，注意健康与是非'
 }
 
+// ★ 7 档判词建议语（大运/流年 FortuneTier 专用；§3.3）
+// ★★★ 硬要求：七句全部过 findForbidden() 零命中（B/C 两类词不得混入），有断言守护
+export const FORTUNE_ADVICE: Record<FortuneTier, string> = {
+  '大吉': '岁运与命局高度契合，宜顺势布局中长期目标',
+  '吉': '岁运扶助喜用，可稳步推进计划',
+  '小吉': '岁运略有助力，循序而为即可',
+  '平': '平平之运，重在积累，重要决定宜缓',
+  '小凶': '岁运略有牵制，宜守成、少扩张',
+  '凶': '岁运多阻，避免大额投入与重大变更',
+  '大凶': '岁运结构不利，宜静守、防健康与是非'
+}
+
 // 公历月对应的"节"（命理以节令换月，非农历初一）
 const JIE_BY_MONTH = ['小寒', '立春', '惊蛰', '清明', '立夏', '芒种', '小暑', '立秋', '白露', '寒露', '立冬', '大雪']
 
@@ -658,17 +674,23 @@ function baseScore(ganZhi: string, favorable: string[], unfavorable: string[]): 
   return s
 }
 
-// 大运标签：score 高但有结构病则降级，绝不输出"大吉"
-function scoreToTag(score: number, structuralIssues: string[] = []): LuckTag {
-  // 有结构病者，最高只到"平顺"
-  const cap = structuralIssues.length > 0 ? 1 : 2
-  let s = score
-  if (s > cap) s = cap
-  if (s >= 2) return '较宜'
-  if (s === 1) return '平顺'
-  if (s === 0) return '一般'
-  if (s === -1) return '宜慎'
-  return '大防'
+// ★ 大运/流年 7 档判词（事故 18 纪律保留：结构性缺陷封顶——"用神到位 ≠ 用神有效"）
+// cap 分三级：无结构病 → 可达「大吉」；1 个结构病 → 最高「小吉」；≥2 个 → 最高「平」
+// 反向不设 floor（结构病只封上限、不封下限）；0 与 1 合并归「平」（正向不虚增）
+export function fortuneTierOf(score: number, structuralIssues: string[] = []): FortuneTier {
+  const cap =
+    structuralIssues.length === 0 ? 4 :      // 无结构病 → 可达「大吉」
+    structuralIssues.length === 1 ? 2 :      // 1 个     → 最高「小吉」
+    0                                        // ≥2 个    → 最高「平」
+  const s = Math.min(score, cap)
+
+  if (s >= 4) return '大吉'
+  if (s === 3) return '吉'
+  if (s === 2) return '小吉'
+  if (s >= 0) return '平'          // 0 与 1 合并为「平」（正向不虚增）
+  if (s === -1) return '小凶'
+  if (s === -2) return '凶'
+  return '大凶'                    // ≤ −3
 }
 
 // 天干相克（任一方向）
@@ -926,7 +948,7 @@ function buildLuckDaYun(
     const { issues, validity } = analyzeValidity(chart, dy.ganZhi, shiShenGan, shiShenZhi, strong)
     const domains = judgeDomains(chart, shiShenGan, shiShenZhi, score, validity)
 
-    const tag = scoreToTag(score, issues)
+    const tag = fortuneTierOf(score, issues)
     const current = nowYear >= dy.startYear && dy.endYear >= nowYear
     // 断语：以结构病为先，措辞具体留余地，绝不"积极进取"
     const issueText = issues.length > 0 ? issues.join('；') + '。' : ''
@@ -1019,8 +1041,8 @@ function buildLuckLiuNian(
       }
     }
 
-    const tag = scoreToTag(score, issues)
-    const note = `${shiShenGan}主事——${GOD_DOMAIN[shiShenGan]}；${TAG_ADVICE[tag]}${issues.length ? '；' + issues.join('；') : ''}。`
+    const tag = fortuneTierOf(score, issues)
+    const note = `${shiShenGan}主事——${GOD_DOMAIN[shiShenGan]}；${FORTUNE_ADVICE[tag]}${issues.length ? '；' + issues.join('；') : ''}。`
     out.push({
       year, ganZhi: gz, shiShenGan, shiShenZhi, score, tag,
       current: i === 0, daYunGanZhi: dyGanZhi, relations, note, structuralIssues: issues

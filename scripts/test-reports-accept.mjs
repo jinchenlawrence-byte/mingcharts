@@ -6,6 +6,8 @@ import { deriveReportTitle, REPORT_KIND_LABELS, saveReport } from '../src/lib/re
 let allPass = true
 const fail = (msg) => { allPass = false; console.log('  ✗ ' + msg) }
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8')
+// ⚠️ stripComments 不区分字符串内的 // 与 /* */（会误剥字符串内容），仅可用于【正向断言】
+//   （要求某形态必须存在；误剥只致假红、不致假绿）；反向断言（要求某形态不存在）不得使用
 const stripComments = (src) => src.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
 
 // ---------- ① deriveReportTitle 行为断言（真调生产纯函数，§纪律）----------

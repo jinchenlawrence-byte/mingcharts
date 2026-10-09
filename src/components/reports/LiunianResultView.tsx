@@ -29,7 +29,18 @@ export interface LiunianResultData {
   dstNotice: string | null
 }
 
+// ★ 标签配色：大运/流年为 7 档判词（FortuneTier）；流月为三档中性标签（LuckTag）
+//   文字标签本身即判词，不只靠颜色区分（色盲可达）
 const TAG_STYLE: Record<string, string> = {
+  // FortuneTier 7 档（大运/流年）：emerald 梯度 → amber 中性 → red 梯度
+  '大吉': 'bg-emerald-100 text-emerald-800 border-emerald-400',
+  '吉': 'bg-emerald-50 text-emerald-700 border-emerald-300',
+  '小吉': 'bg-emerald-50 text-emerald-600 border-emerald-200',
+  '平': 'bg-amber-50 text-amber-600 border-amber-200',
+  '小凶': 'bg-red-50 text-red-600 border-red-200',
+  '凶': 'bg-red-100 text-red-700 border-red-300',
+  '大凶': 'bg-red-200 text-red-800 border-red-400',
+  // LuckTag（流月三档 + 兼容旧快照数据）
   '较宜': 'bg-green-100 text-green-800 border-green-300',
   '平顺': 'bg-emerald-50 text-emerald-700 border-emerald-200',
   '一般': 'bg-gray-100 text-gray-600 border-gray-300',

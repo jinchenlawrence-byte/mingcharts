@@ -15,9 +15,14 @@ const lc = a.luckCycles
 let pass = true
 const allText = JSON.stringify(a) 
 
-// 硬门槛1：不得出现"大吉"
-if (allText.includes('大吉')) { console.log('\n✗ 仍出现"大吉"'); pass = false } else { console.log('\n✓ 无"大吉"字样') }
-// 不得出现鼓励进攻措辞
+// 硬门槛1：B/C 两类禁用词（积极进取/突破性进展）绝不可出现
+// ★ 7 档判词启用后「大吉」是合法判词（A 类移出拦截），不再全文禁「大吉」——
+//   改为断言：大运/流年 tag 全部落在 7 档集合内（无越界标签）
+const FORTUNE_TIERS = ['大吉', '吉', '小吉', '平', '小凶', '凶', '大凶']
+const dyTags = lc.daYun.map(d => d.tag), lnTags = lc.liuNian.map(y => y.tag)
+if (dyTags.concat(lnTags).every(t => FORTUNE_TIERS.includes(t))) { console.log('\n✓ 大运/流年 tag 均在 7 档集合内') }
+else { console.log('\n✗ 大运/流年 tag 越界：' + dyTags.concat(lnTags).filter(t => !FORTUNE_TIERS.includes(t)).join('、')); pass = false }
+// 不得出现鼓励进攻措辞（C 类行动指令，事故 18 致害者）
 if (allText.includes('积极进取') || allText.includes('突破性进展')) { console.log('✗ 仍含鼓励进攻措辞'); pass = false } else { console.log('✓ 无"积极进取/突破性进展"措辞') }
 
 console.log('\n=== 大运逐运（含结构病与分维度） ===')
@@ -37,7 +42,8 @@ else {
   console.log(`己丑运 tag=${jichou.tag}`)
   console.log(`事业倾向=${jichou.domains.career.tendency}  财运倾向=${jichou.domains.wealth.tendency}`)
   const jt = JSON.stringify(jichou)
-  if (jichou.tag === '大吉') { console.log('✗ 己丑运仍判大吉'); pass = false } else { console.log('✓ 己丑运非大吉') }
+  // ★ 事故 18 纪律的新形态：己丑运有 ≥2 个结构病 → cap=0 → tag 最高「平」，不得进正向三档
+  if (['大吉', '吉', '小吉'].includes(jichou.tag)) { console.log(`✗ 己丑运（${jichou.structuralIssues.length}个结构病）进入正向档 ${jichou.tag}`); pass = false } else { console.log(`✓ 己丑运未进正向档（tag=${jichou.tag}，结构病${jichou.structuralIssues.length}个封顶）`) }
   if (jichou.domains.wealth.tendency !== '滞') { console.log('✗ 财运未判滞'); pass = false } else { console.log('✓ 财运判滞') }
   if (jichou.domains.career.tendency !== '平') { console.log('✗ 事业未判平'); pass = false } else { console.log('✓ 事业判平') }
   if (!jt.includes('忌') || !(jt.includes('杠杆') || jt.includes('投机'))) { console.log('✗ 未出现"忌杠杆投机"类警示'); pass = false } else { console.log('✓ 出现"忌杠杆投机"类警示') }
@@ -46,10 +52,11 @@ else {
   }
 }
 
-// 流月不得有"大吉/吉"
+// 流月红线：只用「较宜/一般/宜慎」三档，7 档判词一律不得出现
 console.log('\n=== 流月标签校验 ===')
 const yueTags = [...new Set(lc.liuYue.map(m => m.tag))]
 console.log('流月标签集合:', yueTags.join('、'))
-if (lc.liuYue.some(m => ['大吉', '吉'].includes(m.tag))) { console.log('✗ 流月仍有吉标签'); pass = false } else { console.log('✓ 流月无"大吉/吉"') }
+const LIUYUE_TAGS = ['较宜', '一般', '宜慎']
+if (lc.liuYue.every(m => LIUYUE_TAGS.includes(m.tag))) { console.log('✓ 流月仅用三档（7 档判词未越界）') } else { console.log('✗ 流月出现三档外标签：' + yueTags.filter(t => !LIUYUE_TAGS.includes(t)).join('、')); pass = false }
 
 console.log('\n' + (pass ? 'SELFTEST_PASS' : 'SELFTEST_FAIL'))

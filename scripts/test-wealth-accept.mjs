@@ -14,7 +14,8 @@ const dy = a.luckCycles.daYun
 let pass = true
 const check = (cond, msg) => { console.log((cond ? '✓ ' : '✗ ') + msg); if (!cond) pass = false }
 
-check(!JSON.stringify(a).includes('大吉'), '全分析无「大吉」字样')
+// ★ 7 档判词启用后「大吉」是合法判词（A 类移出拦截）；此关改为拦 B/C 两类（确定性承诺/行动指令）
+check(!JSON.stringify(a).includes('积极进取') && !JSON.stringify(a).includes('突破性进展'), '全分析无「积极进取/突破性进展」行动指令')
 
 console.log('\n=== 九步大运财运/事业 ===')
 for (const d of dy) {

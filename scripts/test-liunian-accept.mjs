@@ -6,6 +6,8 @@ import { findForbidden } from '../src/lib/ai-check.ts'
 let allPass = true
 const fail = (msg) => { allPass = false; console.log('  ✗ ' + msg) }
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8')
+// ⚠️ stripComments 不区分字符串内的 // 与 /* */（会误剥字符串内容），仅可用于【正向断言】
+//   （要求某形态必须存在；误剥只致假红、不致假绿）；反向断言（要求某形态不存在）不得使用
 const stripComments = (src) => src.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
 
 // ---------- ① fallback 行为断言（真调生产函数：喂数据看输出）----------
@@ -13,7 +15,7 @@ console.log('—— ① fallbackLiunianText 行为断言 ——')
 // 结构化流年事实样例（与 LuckLiuNianItem/LuckLiuYueItem 字段一致；喂数据真跑生产函数）
 const item = {
   year: 2026, ganZhi: '丙午', shiShenGan: '食神', shiShenZhi: '正财',
-  score: 1, tag: '较宜', current: true, daYunGanZhi: '甲戌',
+  score: 2, tag: '小吉', current: true, daYunGanZhi: '甲戌',
   relations: ['流年支午合夫妻宫未，关系和合', '流年支合运支戌，多得平台际遇之助'],
   note: '食神主事——才华表达、生活享受；全年倾向积极开展，宜稳中求进。',
   structuralIssues: []
@@ -68,15 +70,33 @@ for (const [pat, why] of WIRING) {
   if (!aiSrc.includes(pat)) { aiFail++; fail(`aiLiunian.ts 缺「${pat}」——${why}（模式：includes，剥注释）`) }
 }
 if (aiSrc.includes('findForbidden(text, true)')) { aiFail++; fail('年运应使用 findForbidden 默认口径（非合婚 strictBi），检出 findForbidden(text, true)') }
-// 禁词清单（aiGeo 教训：prompt 缺禁词清单 → 模型偶发输出含禁词被拦截回退）
-for (const w of ['大吉', '大凶', '一定', '注定', '替换范例']) {
-  if (!aiSrc.includes(w)) { aiFail++; fail(`SYSTEM_PROMPT 禁词清单缺「${w}」`) }
-}
+// ★ 禁词清单已派生化（7档任务 §4.2.2②）：aiLiunian 原系最后一处手抄，现已收掉——
+//   正向断言模板引用（剥注释后）；反向断言（旧手抄文案不得残留）用【原始源码】（stripComments 仅限正向断言）
+if (!aiSrc.includes('${FORBIDDEN_WORDS_PROMPT}')) { aiFail++; fail('aiLiunian SYSTEM_PROMPT 未引用 FORBIDDEN_WORDS_PROMPT 派生常量（可能手抄）') }
+const aiRaw = read('../src/lib/aiLiunian.ts')
+if (aiRaw.includes('亦严禁')) { aiFail++; fail('aiLiunian 仍残留手抄禁词清单（检出"亦严禁"），未收编为派生引用') }
+// 流月分档约束保持手写、但措辞须明确（§4.2.3：7 档启用后旧表述会让模型混乱）
+if (!aiSrc.includes('【流月】以节气换月（若提供），标签只用 较宜/一般/宜慎 三档')) { aiFail++; fail('流月三档限制措辞未按 §4.2.3 改明确') }
 // 免责语（overview 固定免责 + 兜底追加）
 if (!aiSrc.includes('仅供参考，非确定性结论，不构成')) { aiFail++; fail('SYSTEM_PROMPT/兜底缺固定免责语') }
 console.log(aiFail === 0
-  ? `✓ 合规接线：重试/溯源/禁词（默认口径）/不必替换/facts含胎元命宫/板块条件化 ${WIRING.length} 判据全中；禁词清单与免责语齐备`
+  ? `✓ 合规接线：重试/溯源/禁词（默认口径）/不必替换/facts含胎元命宫/板块条件化 ${WIRING.length} 判据全中；禁词派生引用+流月措辞齐备`
   : '✗ 合规接线断言失败')
+
+// ---------- ②-b liuYueFor 纯函数真调（§八-②：流月仅当年——曾被注入恒 true 而断言全绿的缺口）----------
+console.log('—— ②-b liuYueFor 流月条件（真调生产纯函数，零 AI/零 IO）——')
+const { liuYueFor } = await import('../src/lib/aiLiunian.ts')
+const luckStub = { liuNian: [{ year: 2026 }], liuYue: [{ month: 3, ganZhi: '辛卯' }] }
+let lyFail = 0
+if (liuYueFor(2026, luckStub) !== luckStub.liuYue) { lyFail++; fail('liuYueFor(当年) 应返回 liuYue 数组本体') }
+if (liuYueFor(2027, luckStub) !== null) { lyFail++; fail('liuYueFor(明年) 应返回 null（严禁编造流月）') }
+if (liuYueFor(2025, luckStub) !== null) { lyFail++; fail('liuYueFor(去年) 应返回 null') }
+// 接线断言：buildUserPrompt 与 generateAILiunian 两处都须经 liuYueFor 判定（不再各自手算）
+const lyHits = (aiSrc.match(/liuYueFor\(targetYear, luck\)/g) || []).length
+if (lyHits < 2) { lyFail++; fail(`liuYueFor 接线不足 2 处（实际 ${lyHits}），buildUserPrompt/generateAILiunian 有手算残留`) }
+console.log(lyFail === 0
+  ? `✓ liuYueFor：当年→数组本体 / 明年→null / 去年→null；接线 ${lyHits} 处（模式：liuYueFor\\(targetYear, luck\\)，命中数已打）`
+  : '✗ liuYueFor 断言失败')
 
 // ---------- ③ route：targetYear 校验 + 规则引擎同源 + 保存 ----------
 console.log('—— ③ /api/liunian route ——')

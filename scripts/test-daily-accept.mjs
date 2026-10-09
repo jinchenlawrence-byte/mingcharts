@@ -136,7 +136,7 @@ console.log(styleFail === 0
 
 // #8 ★ 合规：findForbidden(strictBi=true，物理禁「必」)＋日签专属禁用词＋决策指导组合
 //   全部 180 条逐条扫描，0 命中才放行。
-const SIGN_FORBIDDEN = ['凶', '劫', '灾', '破财', '血光', '小人', '犯太岁', '化解', '开运', '谨防', '切忌', '千万']
+const SIGN_FORBIDDEN = ['凶', '劫', '灾', '破财', '血光', '小人', '犯太岁', '化解', '开运', '谨防', '切忌', '千万', '大吉', '大凶']
 const DECISION_RE = /(宜|忌|适合|不宜)[^，。]{0,6}(签约|出行|投资|手术|辞职|结婚|搬家|开业)/
 let compFail = 0
 for (const k of signKeys) {
@@ -282,7 +282,7 @@ console.log(pStyle === 0
   : '✗ 日运文风断言失败')
 
 // #14 ★ 合规：findForbidden(strictBi)＋日签专属禁词＋追加负面词＋负面词密度＋决策指导
-const P_FORBIDDEN = ['凶', '劫', '灾', '破财', '血光', '小人', '犯太岁', '化解', '开运', '谨防', '切忌', '千万']
+const P_FORBIDDEN = ['凶', '劫', '灾', '破财', '血光', '小人', '犯太岁', '化解', '开运', '谨防', '切忌', '千万', '大吉', '大凶']
 const P_EXTRA_NEG = ['不顺', '不利', '当心', '提防', '警惕', '危机', '损失', '口舌', '是非', '阻碍', '麻烦', '压抑', '煎熬', '凶险', '暗算']
 const DENSITY_WORDS = ['消耗', '消磨', '耗损', '磨损', '纠缠', '拉扯', '内耗', '压抑', '憋闷', '亏', '损失', '反复']
 const P_DECISION = /(宜|忌|适合|不宜)[^，。]{0,6}(签约|出行|投资|手术|辞职|结婚|搬家|开业)/
@@ -475,6 +475,8 @@ console.log(syncFail === 0
 let toothFail = 0
 
 // 牙口1：植入「今日大吉」→ 合规扫描须翻红
+//   ★ 7 档启用后「大吉/大凶」已移出通用拦截表（A 类判词合法用于大运/流年），
+//   但日签定位「今日一省、非吉凶判决」→ 由日签专属禁词表（P_FORBIDDEN）检出
 {
   const clone = structuredClone(PERSONAL_DAILY)
   clone.比肩.冲[0] = '今日大吉，风推两树相撞。'
@@ -483,7 +485,10 @@ let toothFail = 0
   if (!injected) { toothFail++; fail('牙口1 注入未生效（无「大吉」）') }
   else {
     let hit = 0
-    for (const { text } of collectAll(clone)) if (findForbidden(text, true).hits.length) hit++
+    for (const { text } of collectAll(clone)) {
+      if (findForbidden(text, true).hits.length) hit++
+      else if (P_FORBIDDEN.some((w) => text.includes(w))) hit++
+    }
     if (hit === 0) { toothFail++; fail('牙口1：植入「大吉」后合规扫描仍 0 命中（断言无判别力）') }
   }
 }

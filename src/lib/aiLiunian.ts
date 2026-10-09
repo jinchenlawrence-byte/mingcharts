@@ -6,7 +6,7 @@ import { Solar } from 'lunar-javascript'
 import type { AnalyzableChart, LuckCycles, LuckLiuNianItem, LuckLiuYueItem } from './analysis'
 import { getFavorSets, TIAO_HOU } from './analysis'
 import type { AIUsage } from './ai-types'
-import { unknownGanzhi, withComplianceRetry, findForbidden } from './ai-check'
+import { unknownGanzhi, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT } from './ai-check'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -39,8 +39,7 @@ const SYSTEM_PROMPT = `你是一位精通传统子平命理的资深命理师，
 3. 语言典雅通俗，让普通人看得懂。
 4. 若目标流年不是当年（未提供流月数据），全文严禁提及任何流月、月份节奏内容。
 5. 输出必须是纯 JSON 对象，不要 markdown 代码块、不要任何额外文字。
-6. 全文不得出现"必"这个字（含"不必""未必""必然""务必"等，否定请用"无须"，推断请用"往往、多半、倾向于"）；亦严禁"一定""注定""大吉""大凶"。
-   逐字替换范例（想写左边时改写为右边）："不必担心→无须担心"、"未必→难讲、往往不"、"务必注意→建议留意"、"必然→多半"、"一定→倾向于"。
+6. ${FORBIDDEN_WORDS_PROMPT}
 7. "annualOverview"（年运总纲）板块必须以这句固定免责语收尾、原文照写：
    "以上为流年倾向性分析，仅供参考，非确定性结论，不构成任何重大决策依据。"
 
@@ -48,13 +47,20 @@ const SYSTEM_PROMPT = `你是一位精通传统子平命理的资深命理师，
 A. "冲"只能用于六冲对：子午、丑未、寅申、卯酉、辰戌、巳亥。水克火、木克土等只能说"克"，严禁把克说成冲。
 B. 十神严格按提供的流年十神数据引用；地支藏干必须逐字引用给定的藏干，严禁提及任何支中不存在的字（例如寅只藏甲丙戊，不得说寅中藏乙）。
 C. 流年干支、所在大运、流年与夫妻宫/月令/大运的冲合关系，只能引用【算法已确认的流年事实】中算出的结果，严禁自行编造或遗漏其中的重点关系。
-D. 流月以节气换月（若提供），标签只用"较宜/一般/宜慎"，严禁出现"大吉/吉"。
+D. 【流月】以节气换月（若提供），标签只用 较宜/一般/宜慎 三档，不得使用大运/流年的 7 档判词（大吉/吉/小吉/平/小凶/凶/大凶）。
 E. 全文须带"流年为倾向性参考、非确定性预言"的立场，对投资、杠杆、投机等重大决策不作鼓励，必要时提示"宜守""忌投机"。`
 
 const CANG_GAN: Record<string, string[]> = {
   '子': ['癸'], '丑': ['己', '癸', '辛'], '寅': ['甲', '丙', '戊'], '卯': ['乙'],
   '辰': ['戊', '乙', '癸'], '巳': ['丙', '庚', '戊'], '午': ['丁', '己'], '未': ['己', '丁', '乙'],
   '申': ['庚', '壬', '戊'], '酉': ['辛'], '戌': ['戊', '辛', '丁'], '亥': ['壬', '甲']
+}
+
+// ★ 流月条件单一事实源（§八-②）：仅目标流年=当年时提供流月数据
+//   （liuYue 只算当年；明年/后年严禁 AI 自行编造流月内容）——buildUserPrompt 与
+//   generateAILiunian 共用此判定，有真调断言守护（改恒 true 会翻红）
+export function liuYueFor(targetYear: number, luck: LuckCycles): LuckLiuYueItem[] | null {
+  return targetYear === luck.liuNian[0].year ? luck.liuYue : null
 }
 
 function buildUserPrompt(
@@ -64,8 +70,7 @@ function buildUserPrompt(
 ): string {
   const p = chart.pillars
   const gender = chart.input.gender === 1 ? '男' : '女'
-  const nowYear = luck.liuNian[0].year
-  const includeMonthFlow = targetYear === nowYear
+  const includeMonthFlow = liuYueFor(targetYear, luck) !== null
   const specs = includeMonthFlow ? [...SECTION_SPECS_BASE, MONTHFLOW_SPEC] : SECTION_SPECS_BASE
 
   const pillarLine = (label: string, pl: typeof p.year) =>
@@ -156,8 +161,7 @@ export async function generateAILiunian(
     return null
   }
 
-  const nowYear = luck.liuNian[0].year
-  const includeMonthFlow = targetYear === nowYear
+  const includeMonthFlow = liuYueFor(targetYear, luck) !== null
   const specs = includeMonthFlow ? [...SECTION_SPECS_BASE, MONTHFLOW_SPEC] : SECTION_SPECS_BASE
 
   // 免责兜底语（与 SYSTEM_PROMPT 第7条一致）

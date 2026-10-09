@@ -71,7 +71,7 @@ The data controller for this Service is:
 
 - **Account Information**: email address, password (stored hashed), display name (optional).
 - **★ Birth Information**: birth date, birth time, birth place (city and, optionally, longitude/time zone), and gender. **We need this information to calculate your chart — the Service cannot function without it.**
-- **Chart & Reading Data**: your calculated charts, generated reports, and daily readings.
+- **Chart & Reading Data**: your calculated charts, generated reports, and daily readings. Reports and readings may include fortune-tier tendency labels (seven tiers, rendered in Chinese as 大吉 through 大凶); these are **tendency descriptions** derived from your chart data, not action recommendations, and they do not predict specific events.
 - **Communications**: emails, support requests, and feedback you send us.
 - **Payment Information**: transaction amount, order number, and payment status. **Full card numbers are not stored by us** — card data is processed by our Merchant of Record (see Section 5).
 

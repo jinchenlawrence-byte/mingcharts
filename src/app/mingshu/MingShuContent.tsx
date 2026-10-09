@@ -134,7 +134,7 @@ export default function MingShuContent() {
             <div className="text-3xl mb-3">🔒</div>
             <h3 className="font-bold text-amber-900 mb-2">克制不吓唬</h3>
             <p className="text-sm text-gray-600 leading-relaxed">
-              断语留余地，用「倾向」「需注意」等表述，不做绝对化凶吉断言，拒绝恐吓式营销。
+              吉凶判词分七档、只描述时段倾向并标注结构依据；不作确定性承诺，不给行动指令，拒绝恐吓式营销。
             </p>
           </div>
         </div>
