@@ -97,7 +97,9 @@ export function buildDemoFatebook(args: {
     luckCycles: {
       currentDaYunGanZhi: luckCycles.currentDaYunGanZhi,
       daYun: luckCycles.daYun.slice(0, DEMO_DAYUN_COUNT),
-      liuNian: luckCycles.liuNian.slice(0, DEMO_LIUNIAN_COUNT),
+      // ★ 流年范围于 19 号扩为「过去 8 年应期回看 + 未来三年」后，slice(0,1) 会取到 8 年前；
+      //   示例只展示【当年】，故按 current 选取（与范围排序解耦）
+      liuNian: luckCycles.liuNian.filter(y => y.current).slice(0, DEMO_LIUNIAN_COUNT),
       liuYue: []
     },
     similarCases: similarCases.slice(0, DEMO_CASE_COUNT)
