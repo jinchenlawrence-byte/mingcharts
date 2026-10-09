@@ -936,12 +936,45 @@ function buildLuckDaYun(
         }
       })
     }
+    // ★ 步骤①：年支/时支覆盖（依据等级：通行做法——运与四柱冲合是命理常论）
+    //   日支/月支的既有判据与权重不动；此处增补年柱/时柱，各柱独立、可同时命中
+    for (const { zhi, pillarName, palaceName } of [
+      { zhi: chart.pillars.year.zhi, pillarName: '年柱', palaceName: '祖上/父母宫' },
+      { zhi: chart.pillars.hour.zhi, pillarName: '时柱', palaceName: '子女/晚年宫' },
+    ]) {
+      if (LUCK_CHONG[z] === zhi) {
+        score--
+        relations.push(`运支${z}冲${pillarName}${zhi}，十年${palaceName}所主领域多有牵动`)
+      } else if (LUCK_LIU_HE[z] === zhi) {
+        score++
+        relations.push(`运支${z}合${pillarName}${zhi}，十年${palaceName}多得助力`)
+      } else if (z === zhi) {
+        relations.push(`运支${z}与${pillarName}伏吟，十年${palaceName}事宜易有反复`)
+      } else {
+        sanHeInfo(z, zhi).forEach(({ label, ju }) => {
+          if (favorable.includes(ju)) {
+            score++
+            relations.push(`运支与${pillarName}${label}，合出${ju}气助喜用`)
+          } else {
+            score--
+            relations.push(`运支与${pillarName}${label}，合出${ju}气助忌神`)
+          }
+        })
+      }
+    }
     if (GAN_HE[g] === dayGan) {
       relations.push(`运干${g}与日主${dayGan}相合，事宜有羁绊亦有合作`)
     }
     if (dy.ganZhi === dayPillar) {
       relations.push('运临日柱伏吟，心境易有反复，宜守本心')
     }
+    // ★ 步骤①：年柱/月柱/时柱 整柱伏吟 + 年干/月干/时干 天干五合（不止日柱/日干）
+    if (dy.ganZhi === chart.pillars.year.ganZhi) relations.push('运临年柱伏吟，祖上/父母宫事宜易有反复')
+    if (dy.ganZhi === chart.pillars.month.ganZhi) relations.push('运临月柱伏吟，提纲/事业宫事宜易有反复')
+    if (dy.ganZhi === chart.pillars.hour.ganZhi) relations.push('运临时柱伏吟，子女/晚年宫事宜易有反复')
+    if (GAN_HE[g] === chart.pillars.year.gan) relations.push(`运干${g}与年干${chart.pillars.year.gan}相合，长辈、合作有羁绊之象`)
+    if (GAN_HE[g] === chart.pillars.month.gan) relations.push(`运干${g}与月干${chart.pillars.month.gan}相合，事业、平台有羁绊之象`)
+    if (GAN_HE[g] === chart.pillars.hour.gan) relations.push(`运干${g}与时干${chart.pillars.hour.gan}相合，子女、下属有羁绊之象`)
 
     // 结构有效性分析（§3.2）：用神到位 ≠ 用神有效
     const strong = ['身旺', '身强'].includes(chart.analysis.wangShuai)
@@ -1008,6 +1041,32 @@ function buildLuckLiuNian(
         }
       })
     }
+    // ★ 步骤①：年支/时支覆盖（依据等级：通行做法——流年与四柱冲合是命理常论，非本产品发明）
+    //   日支/月支的既有判据与权重不动；此处增补年柱/时柱，各柱独立、可同时命中（非互斥）
+    for (const { zhi, pillarName, palaceName } of [
+      { zhi: chart.pillars.year.zhi, pillarName: '年柱', palaceName: '祖上/父母宫' },
+      { zhi: chart.pillars.hour.zhi, pillarName: '时柱', palaceName: '子女/晚年宫' },
+    ]) {
+      if (LUCK_CHONG[z] === zhi) {
+        score--
+        relations.push(`流年支${z}冲${pillarName}${zhi}，${palaceName}所主领域多有牵动`)
+      } else if (LUCK_LIU_HE[z] === zhi) {
+        score++
+        relations.push(`流年支${z}合${pillarName}${zhi}，${palaceName}多得助力`)
+      } else if (z === zhi) {
+        relations.push(`流年支${z}与${pillarName}伏吟，${palaceName}事宜易有反复`)
+      } else {
+        sanHeInfo(z, zhi).forEach(({ label, ju }) => {
+          if (favorable.includes(ju)) {
+            score++
+            relations.push(`流年支与${pillarName}${label}，合出${ju}气助喜用`)
+          } else {
+            score--
+            relations.push(`流年支与${pillarName}${label}，合出${ju}气助忌神`)
+          }
+        })
+      }
+    }
     if (LUCK_CHONG[z] === monthZhi) {
       score--
       relations.push(`流年冲提纲（${z}冲${monthZhi}），环境、事业多有变动`)
@@ -1015,8 +1074,16 @@ function buildLuckLiuNian(
       score++
       relations.push('流年支合月令，事业多得呼应')
     }
-    if (gz === dayPillar) relations.push('流年与日柱伏吟，心境事宜易反复')
+    if (gz === dayPillar) relations.push('流年与日柱伏吟，心境事宜易有反复')
     if (GAN_HE[g] === dayGan) relations.push(`流年干${g}与日主相合，合作羁绊之象`)
+    // ★ 步骤①：年柱/月柱/时柱 整柱伏吟（不止日柱；伏吟只报描述、不加减分）
+    if (gz === chart.pillars.year.ganZhi) relations.push('流年与年柱伏吟，祖上/父母宫事宜易有反复')
+    if (gz === chart.pillars.month.ganZhi) relations.push('流年与月柱伏吟，提纲/事业宫事宜易有反复')
+    if (gz === chart.pillars.hour.ganZhi) relations.push('流年与时柱伏吟，子女/晚年宫事宜易有反复')
+    // ★ 步骤①：年干/月干/时干 天干五合（不止日干；五合只报描述、不加减分）
+    if (GAN_HE[g] === chart.pillars.year.gan) relations.push(`流年干${g}与年干${chart.pillars.year.gan}相合，长辈、合作有羁绊之象`)
+    if (GAN_HE[g] === chart.pillars.month.gan) relations.push(`流年干${g}与月干${chart.pillars.month.gan}相合，事业、平台有羁绊之象`)
+    if (GAN_HE[g] === chart.pillars.hour.gan) relations.push(`流年干${g}与时干${chart.pillars.hour.gan}相合，子女、下属有羁绊之象`)
 
     // 流年与所在大运
     const dyItem = daYunItems.find(d => year >= d.startYear && year <= d.endYear)
