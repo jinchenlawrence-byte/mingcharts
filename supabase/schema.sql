@@ -46,17 +46,33 @@ CREATE TABLE IF NOT EXISTS charts (
 );
 
 -- 支付记录表
+-- ★ Waffo 集成（HANDOFF-Waffo支付集成 §5.8）：
+--   · payment_method 枚举纳入 'card'（Waffo 本轮只接卡支付；旧库需跑文件末迁移段）
+--   · order_merchant_external_id：我们自己的业务单号 MC-<userId>-<ts>，
+--     兜底对账快路径与反查用户共同依赖它；与 transaction_id（Waffo PAY_xxx）是两个东西
+--   · transaction_id UNIQUE：幂等方案 (b) 主——并发重投靠数据库约束拒绝，严禁先查后写
 CREATE TABLE IF NOT EXISTS payments (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID REFERENCES profiles(id) ON DELETE CASCADE,
   chart_id UUID REFERENCES charts(id) ON DELETE SET NULL,
   amount DECIMAL(10, 2) NOT NULL,
   payment_type TEXT NOT NULL CHECK (payment_type IN ('single', 'monthly', 'yearly', 'lifetime')),
-  payment_method TEXT CHECK (payment_method IN ('wechat', 'alipay', 'stripe')),
+  payment_method TEXT CHECK (payment_method IN ('card', 'wechat', 'alipay', 'stripe')),
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'failed', 'refunded')),
   transaction_id TEXT,
-  paid_at TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+  order_merchant_external_id TEXT,
+  paid_at TIMESTAMPTZ,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT payments_transaction_id_key UNIQUE (transaction_id)
+);
+
+-- Webhook 处理记录表：幂等方案 (a) 辅——
+--   未产生权益的事件（重复投递/非支付事件）也在此留痕；(event_type,event_id) 官方保证系统内唯一
+CREATE TABLE IF NOT EXISTS processed_webhooks (
+  event_type TEXT NOT NULL,
+  event_id TEXT NOT NULL,
+  processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (event_type, event_id)
 );
 
 -- 创建索引
@@ -64,6 +80,7 @@ CREATE INDEX IF NOT EXISTS idx_charts_user_id ON charts(user_id);
 CREATE INDEX IF NOT EXISTS idx_charts_created_at ON charts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);
 CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
+CREATE INDEX IF NOT EXISTS idx_payments_omer ON payments(order_merchant_external_id);
 
 -- 行级安全策略 (RLS)
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -118,3 +135,34 @@ CREATE POLICY "Users can delete own reports" ON reports
 
 CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id);
 CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports(created_at DESC);
+
+-- ─────────────────────────────────────────────────────────────
+-- Waffo 支付集成迁移（HANDOFF-Waffo支付集成 §5.8）
+-- 新建库跑上方 CREATE TABLE 即已就位；【已有数据库】需在 SQL Editor 补跑本段。
+-- ─────────────────────────────────────────────────────────────
+
+-- 1) payment_method 枚举纳入 'card'（不先改，order.completed 首次写入即被 CHECK 拒绝）
+ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_payment_method_check;
+ALTER TABLE payments ADD CONSTRAINT payments_payment_method_check
+  CHECK (payment_method IN ('card', 'wechat', 'alipay', 'stripe'));
+
+-- 2) 业务单号列（MC-xxx；兜底对账快路径 + 反查用户）
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS order_merchant_external_id TEXT;
+CREATE INDEX IF NOT EXISTS idx_payments_omer ON payments(order_merchant_external_id);
+
+-- 3) transaction_id 唯一（幂等方案 b 主）。
+--    ★ 现网若残留重复 transaction_id（历史 MOCK_ 假流水可能撞号），先查重：
+--      SELECT transaction_id, count(*) FROM payments
+--        WHERE transaction_id IS NOT NULL GROUP BY transaction_id HAVING count(*) > 1;
+--    确认为内测假流水后人工清理重复行，再执行下一句；否则 ADD CONSTRAINT 会失败。
+ALTER TABLE payments ADD CONSTRAINT payments_transaction_id_key UNIQUE (transaction_id);
+
+-- 4) Webhook 处理记录表（幂等方案 a 辅）
+CREATE TABLE IF NOT EXISTS processed_webhooks (
+  event_type TEXT NOT NULL,
+  event_id TEXT NOT NULL,
+  processed_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (event_type, event_id)
+);
+-- 仅 service_role（Webhook 处理器）读写；不向客户端开放任何策略
+ALTER TABLE processed_webhooks ENABLE ROW LEVEL SECURITY;

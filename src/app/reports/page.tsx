@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
 import { REPORT_KIND_LABELS, type ReportKind } from '@/lib/reportSave'
+import { WAFFO_PORTAL_URL } from '@/lib/waffo-products'
 
 interface ReportRow {
   id: string
@@ -94,9 +95,25 @@ export default function MyReports() {
             去生成新报告 →
           </Link>
         </div>
-        <p className="text-sm text-gray-500 mb-6">
+        <p className="text-sm text-gray-500 mb-4">
           合婚、紫微、地理、年运报告生成后自动保存于此，可反复回看；命书请见「我的命盘」
         </p>
+
+        {/* Waffo 客户门户：为后续会员订阅的改卡/取消铺路；本轮订阅未上线，仅放链接 */}
+        <div className="bg-white rounded-lg shadow p-4 mb-6 flex items-center justify-between gap-4">
+          <div className="text-sm">
+            <span className="font-semibold text-amber-900">管理订阅</span>
+            <span className="text-gray-400 ml-2">（订阅功能开放后可用：查看账单、更换卡片、取消续费）</span>
+          </div>
+          <a
+            href={WAFFO_PORTAL_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="shrink-0 text-sm text-amber-600 hover:text-amber-800"
+          >
+            前往支付门户 →
+          </a>
+        </div>
 
         {rows.length === 0 ? (
           <div className="bg-white rounded-lg shadow p-10 text-center text-gray-500">

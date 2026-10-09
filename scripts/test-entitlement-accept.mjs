@@ -143,9 +143,9 @@ console.log(unlockWriteFail === 0
   ? '✓ 不写假流水：unlock POST 不含 payments.insert / MOCK_，判定走 canView，拒绝返回 402'
   : '✗ 不写假流水断言失败')
 
-// ---------- ③ ★★ 架构约束：payments 全 src 零写入（除支付回调外）----------
-// payments 是"账"——除将来的支付回调 webhook 外，全 src 不得写它。
-// 当前还没有 webhook，所以全 src 写 payments 的地方应为 0。
+// ---------- ③ ★★ 架构约束：payments 写入只允许支付链路 ----------
+// payments 是"账"——除 Waffo 支付回调 / 兜底补单外，全 src 不得写它。
+// 唯一合规写入者：src/lib/waffo-repo.ts（webhook 与 verify-payment 共用的幂等写入）。
 function walk(dir) {
   const out = []
   for (const e of readdirSync(dir, { withFileTypes: true })) {
@@ -156,6 +156,8 @@ function walk(dir) {
   return out
 }
 const srcRoot = new URL('../src/', import.meta.url).pathname.replace(/^\/(\w:)/, '$1')
+// 支付链路唯一合规写入者白名单（HANDOFF-Waffo支付集成 §5.3/§5.4）
+const PAY_WRITE_ALLOWLIST = ['src/lib/waffo-repo.ts']
 let payWriteFail = 0
 const payWriteHits = []
 for (const file of walk(srcRoot)) {
@@ -163,15 +165,16 @@ for (const file of walk(srcRoot)) {
   const code = content.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
   // 查 .from('payments').insert 或 .from("payments").insert
   if (/\.from\(\s*['"]payments['"]\s*\)[\s\S]*?\.insert\(/.test(code)) {
-    payWriteHits.push(file.replace(srcRoot, 'src/'))
+    const rel = file.replace(srcRoot, 'src/').replace(/\\/g, '/').replace(/\/+/g, '/')
+    if (!PAY_WRITE_ALLOWLIST.includes(rel)) payWriteHits.push(rel)
   }
 }
 if (payWriteHits.length > 0) {
   payWriteFail++
-  fail(`payments 表仍有写入（应仅由支付回调写）：${payWriteHits.join('、')}`)
+  fail(`payments 表出现非支付链路写入：${payWriteHits.join('、')}`)
 }
 console.log(payWriteFail === 0
-  ? `✓ 架构约束：payments 全 src 零写入（除支付回调外）—— 当前 ${payWriteHits.length} 处`
+  ? `✓ 架构约束：payments 写入仅白名单 [${PAY_WRITE_ALLOWLIST.join('、')}]，越界 ${payWriteHits.length} 处`
   : '✗ 架构约束断言失败')
 
 // ---------- ④ canView 分支正确性 ----------

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Nav from '@/components/Nav'
+import CheckoutButton from '@/components/CheckoutButton'
 import {
   SKUS,
   REPORT_GRANTS,
@@ -9,6 +10,7 @@ import {
   type GrantId,
   type SkuId,
 } from '@/lib/pricing'
+import { waffoProductId } from '@/lib/waffo-products'
 
 export const metadata = {
   title: `价格方案：免费排盘 · 命书报告 ${formatPriceUSD(SKUS.fatebook.priceUSD)} · 会员订阅`,
@@ -69,6 +71,8 @@ interface PriceCard {
   membership: boolean
   features: string[]
   cta: { text: string; href: string }
+  // 设了 buySku 的卡片渲染 Waffo 购买按钮（productId 是否已登记决定可用/即将推出）
+  buySku?: SkuId
 }
 
 // ★ 展示卡片，非价目定义：价格全部派生自 pricing.ts 的 SKUS（单一事实源）
@@ -105,7 +109,9 @@ const CARDS: PriceCard[] = [
       '事业财运 / 婚姻感情 / 子女六亲 / 健康提示',
       '永久保存到「我的命盘」，可反复查看',
     ],
-    cta: { text: '查看命书详情', href: '/mingshu' },
+    // 命书购买走 Waffo 卡支付；productId 未登记时按钮显示「即将推出」（见 waffo-products.ts）
+    buySku: 'fatebook',
+    cta: { text: '购买命书详批', href: '/mingshu' },
   },
   {
     name: '会员订阅',
@@ -245,9 +251,25 @@ export default function PricingPage() {
               </ul>
 
               {card.membership ? (
-                // ★ 订阅权益（日运等）尚未上线，暂不开放购买（会员权益修复 §二）
+                // ★ 订阅权益（日运等）尚未上线，暂不开放购买（会员权益修复 §二）——本轮不动
                 <div className="block text-center py-2.5 rounded-md font-semibold bg-gray-100 text-gray-400 cursor-not-allowed">
                   即将推出
+                </div>
+              ) : card.buySku ? (
+                <div>
+                  <CheckoutButton
+                    sku={card.buySku}
+                    available={waffoProductId(card.buySku) !== null}
+                    highlight={card.highlight}
+                  >
+                    {card.cta.text}
+                  </CheckoutButton>
+                  <Link
+                    href={card.cta.href}
+                    className="block text-center text-sm text-amber-600 hover:text-amber-800 mt-2"
+                  >
+                    查看命书详情
+                  </Link>
                 </div>
               ) : (
                 <Link
