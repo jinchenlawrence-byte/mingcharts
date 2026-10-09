@@ -676,7 +676,10 @@ function baseScore(ganZhi: string, favorable: string[], unfavorable: string[]): 
 
 // ★ 大运/流年 7 档判词（事故 18 纪律保留：结构性缺陷封顶——"用神到位 ≠ 用神有效"）
 // cap 分三级：无结构病 → 可达「大吉」；1 个结构病 → 最高「小吉」；≥2 个 → 最高「平」
-// 反向不设 floor（结构病只封上限、不封下限）；0 与 1 合并归「平」（正向不虚增）
+// 反向不设 floor（结构病只封上限、不封下限）
+// ★ 步骤③分位校准（依据：7488 样本 score 分位数 P3=-4/P10=-3/P25=-1/P50=0/P75=1/P90=2/P97=3）：
+//   阈值对齐分位数，让每一档都真的可用（避免大吉形同虚设、大凶宿命化）。
+//   事故 18 的 cap 纪律保留（封顶上限），不参与分位校准。
 export function fortuneTierOf(score: number, structuralIssues: string[] = []): FortuneTier {
   const cap =
     structuralIssues.length === 0 ? 4 :      // 无结构病 → 可达「大吉」
@@ -684,13 +687,13 @@ export function fortuneTierOf(score: number, structuralIssues: string[] = []): F
     0                                        // ≥2 个    → 最高「平」
   const s = Math.min(score, cap)
 
-  if (s >= 4) return '大吉'
-  if (s === 3) return '吉'
-  if (s === 2) return '小吉'
-  if (s >= 0) return '平'          // 0 与 1 合并为「平」（正向不虚增）
-  if (s === -1) return '小凶'
-  if (s === -2) return '凶'
-  return '大凶'                    // ≤ −3
+  if (s >= 3) return '大吉'         // top 3%
+  if (s === 2) return '吉'          // top 3–10%
+  if (s === 1) return '小吉'        // top 10–25%
+  if (s >= -1) return '平'          // 中位区（s=0 与 s=-1，约 P25–P75）
+  if (s === -2) return '小凶'       // bottom 10–25%
+  if (s === -3) return '凶'         // bottom 3–10%
+  return '大凶'                     // ≤ −4（bottom 3%）
 }
 
 // 天干相克（任一方向）
