@@ -273,7 +273,7 @@ export function fortuneTierOf(score: number, structuralIssues: string[] = []): F
 ## 4.3 `aiAnalysis.ts` 的 `H` 条必须重写
 
 ```
-现文（:53）：
+现文（**`aiAnalysis.ts:64`**）：
   H. 大运段严禁输出"大吉""大凶""积极进取""突破性进展"这类绝对化或鼓励进攻的表述；
      必须按【岁运核查】给出的结构病…点明喜用是否真正有效，并分维度…给出倾向；
      流月只用"较宜/一般/宜慎"，严禁出现"大吉/吉"。
@@ -464,7 +464,7 @@ export function fortuneTierOf(score: number, structuralIssues: string[] = []): F
 | 2 | ★ `FORBIDDEN_WORDS_PROMPT` 内容更新（去掉大吉/大凶，含替换范例） | ✓ 贴改后文本 |
 | 3 | ★★ **`aiLiunian.ts:42` 改为引用派生**（收掉最后一处手抄） | ✓ |
 | 4 | ★ `aiLiunian.ts:51` 流月限制措辞改明确（保持手写） | ✓ |
-| 5 | ★ `aiAnalysis.ts:53` 的 H 条按 §4.3 重写 | ✓ |
+| 5 | ★ `aiAnalysis.ts:64` 的 H 条按 §4.3 重写 | ✓ |
 | 6 | ★★ **新建 `FortuneTier`（7 档），大运与流年改用它；`LuckTag` 原样不动** | ✓ |
 | 7 | `fortuneTierOf` 的 **cap 分三级**（无病 4 / 1 个 2 / ≥2 个 0），注释标明是事故 18 的纪律 | ✓ |
 | 8 | 7 档判词语（`TAG_ADVICE`）＋ 前端配色（`TAG_BADGE`/`TAG_BORDER`）改完 | ✓ |
