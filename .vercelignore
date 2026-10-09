@@ -1,0 +1,36 @@
+# Vercel 部署排除清单
+# ★ 目的：确保【密钥】与【无关大文件】不会被上传到 Vercel
+# 建立日期：2026-10-08
+
+# ────────── 密钥（最重要，绝不能上传）──────────
+.env
+.env.*
+!.env.example
+
+# ────────── 大体积临时文件 / 缓存（部署不需要）──────────
+temp/
+.geonames-cache/
+*.tsbuildinfo
+
+# ────────── 开发与文档（部署不需要）──────────
+docs/
+scripts/
+.trae/
+.trae-cn/
+.vscode/
+.idea/
+
+# ────────── 依赖与构建产物 ──────────
+node_modules/
+.next/
+out/
+build/
+.vercel/
+
+# ────────── 系统与日志 ──────────
+.DS_Store
+Thumbs.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

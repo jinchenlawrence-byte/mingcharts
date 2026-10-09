@@ -1,0 +1,41 @@
+{
+  "name": "bazi-mvp",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint",
+    "verify": "tsc --noEmit && tsx scripts/test-checker-accept.mjs && tsx scripts/test-pricing-accept.mjs && tsx scripts/test-solar-time.mjs && tsx scripts/test-entry-consistency.mjs && tsx scripts/test-ganzhi-consistency.mjs && tsx scripts/test-dayboundary-accept.mjs && tsx scripts/test-daily-accept.mjs && tsx scripts/test-entitlement-accept.mjs && tsx scripts/test-legal-accept.mjs && tsx scripts/test-geo-accept.mjs && tsx scripts/test-wealth-accept.mjs && tsx scripts/test-site-audit.mjs && tsx scripts/test-regression.mjs",
+    "verify:ai": "tsx scripts/test-ai-compliance.mjs"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.2",
+    "@types/d3-geo": "^3.1.1",
+    "@types/topojson-client": "^3.1.5",
+    "d3-geo": "^3.1.1",
+    "https-proxy-agent": "^9.1.0",
+    "iztro": "^2.6.1",
+    "lunar-javascript": "^1.7.7",
+    "next": "16.3.7",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "topojson-client": "^3.1.0",
+    "undici": "^8.11.2",
+    "world-atlas": "^2.0.2"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "16.3.7",
+    "pinyin-pro": "^3.29.4",
+    "tailwindcss": "^4",
+    "tsx": "^4.19.0",
+    "typescript": "^5"
+  }
+}

@@ -1,0 +1,3064 @@
+[
+  {
+    "id": 1,
+    "name": "北京",
+    "province": "北京",
+    "lat": 39.9,
+    "lng": 116.4,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 2,
+    "name": "上海",
+    "province": "上海",
+    "lat": 31.23,
+    "lng": 121.47,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 3,
+    "name": "天津",
+    "province": "天津",
+    "lat": 39.13,
+    "lng": 117.2,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 4,
+    "name": "重庆",
+    "province": "重庆",
+    "lat": 29.56,
+    "lng": 106.55,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 5,
+    "name": "石家庄",
+    "province": "河北",
+    "lat": 38.04,
+    "lng": 114.51,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 6,
+    "name": "唐山",
+    "province": "河北",
+    "lat": 39.63,
+    "lng": 118.18,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 7,
+    "name": "秦皇岛",
+    "province": "河北",
+    "lat": 39.93,
+    "lng": 119.6,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 8,
+    "name": "邯郸",
+    "province": "河北",
+    "lat": 36.61,
+    "lng": 114.54,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 9,
+    "name": "邢台",
+    "province": "河北",
+    "lat": 37.07,
+    "lng": 114.5,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 10,
+    "name": "保定",
+    "province": "河北",
+    "lat": 38.87,
+    "lng": 115.46,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 11,
+    "name": "张家口",
+    "province": "河北",
+    "lat": 40.77,
+    "lng": 114.89,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 12,
+    "name": "承德",
+    "province": "河北",
+    "lat": 40.95,
+    "lng": 117.96,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 13,
+    "name": "沧州",
+    "province": "河北",
+    "lat": 38.31,
+    "lng": 116.84,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 14,
+    "name": "廊坊",
+    "province": "河北",
+    "lat": 39.52,
+    "lng": 116.68,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 15,
+    "name": "衡水",
+    "province": "河北",
+    "lat": 37.74,
+    "lng": 115.67,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 16,
+    "name": "太原",
+    "province": "山西",
+    "lat": 37.87,
+    "lng": 112.55,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 17,
+    "name": "大同",
+    "province": "山西",
+    "lat": 40.08,
+    "lng": 113.3,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 18,
+    "name": "阳泉",
+    "province": "山西",
+    "lat": 37.86,
+    "lng": 113.58,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 19,
+    "name": "长治",
+    "province": "山西",
+    "lat": 36.19,
+    "lng": 113.11,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 20,
+    "name": "晋城",
+    "province": "山西",
+    "lat": 35.49,
+    "lng": 112.85,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 21,
+    "name": "朔州",
+    "province": "山西",
+    "lat": 39.33,
+    "lng": 112.43,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 22,
+    "name": "晋中",
+    "province": "山西",
+    "lat": 37.69,
+    "lng": 112.74,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 23,
+    "name": "运城",
+    "province": "山西",
+    "lat": 35.03,
+    "lng": 111.01,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 24,
+    "name": "忻州",
+    "province": "山西",
+    "lat": 38.42,
+    "lng": 112.73,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 25,
+    "name": "临汾",
+    "province": "山西",
+    "lat": 36.09,
+    "lng": 111.52,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 26,
+    "name": "吕梁",
+    "province": "山西",
+    "lat": 37.52,
+    "lng": 111.14,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 27,
+    "name": "呼和浩特",
+    "province": "内蒙古",
+    "lat": 40.84,
+    "lng": 111.75,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 28,
+    "name": "包头",
+    "province": "内蒙古",
+    "lat": 40.66,
+    "lng": 109.84,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 29,
+    "name": "乌海",
+    "province": "内蒙古",
+    "lat": 39.66,
+    "lng": 106.79,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 30,
+    "name": "赤峰",
+    "province": "内蒙古",
+    "lat": 42.26,
+    "lng": 118.96,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 31,
+    "name": "通辽",
+    "province": "内蒙古",
+    "lat": 43.65,
+    "lng": 122.24,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 32,
+    "name": "鄂尔多斯",
+    "province": "内蒙古",
+    "lat": 39.61,
+    "lng": 109.78,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 33,
+    "name": "呼伦贝尔",
+    "province": "内蒙古",
+    "lat": 49.21,
+    "lng": 119.77,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 34,
+    "name": "巴彦淖尔",
+    "province": "内蒙古",
+    "lat": 40.74,
+    "lng": 107.39,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 35,
+    "name": "乌兰察布",
+    "province": "内蒙古",
+    "lat": 40.99,
+    "lng": 113.11,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 36,
+    "name": "兴安盟",
+    "province": "内蒙古",
+    "lat": 46.08,
+    "lng": 122.07,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 37,
+    "name": "锡林郭勒",
+    "province": "内蒙古",
+    "lat": 43.94,
+    "lng": 116.09,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 38,
+    "name": "阿拉善盟",
+    "province": "内蒙古",
+    "lat": 38.85,
+    "lng": 105.71,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 39,
+    "name": "沈阳",
+    "province": "辽宁",
+    "lat": 41.8,
+    "lng": 123.43,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 40,
+    "name": "大连",
+    "province": "辽宁",
+    "lat": 38.92,
+    "lng": 121.62,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 41,
+    "name": "鞍山",
+    "province": "辽宁",
+    "lat": 41.11,
+    "lng": 122.99,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 42,
+    "name": "抚顺",
+    "province": "辽宁",
+    "lat": 41.88,
+    "lng": 123.96,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 43,
+    "name": "本溪",
+    "province": "辽宁",
+    "lat": 41.29,
+    "lng": 123.77,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 44,
+    "name": "丹东",
+    "province": "辽宁",
+    "lat": 40,
+    "lng": 124.35,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 45,
+    "name": "锦州",
+    "province": "辽宁",
+    "lat": 41.1,
+    "lng": 121.13,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 46,
+    "name": "营口",
+    "province": "辽宁",
+    "lat": 40.67,
+    "lng": 122.24,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 47,
+    "name": "阜新",
+    "province": "辽宁",
+    "lat": 42.02,
+    "lng": 121.67,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 48,
+    "name": "辽阳",
+    "province": "辽宁",
+    "lat": 41.27,
+    "lng": 123.17,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 49,
+    "name": "盘锦",
+    "province": "辽宁",
+    "lat": 41.12,
+    "lng": 122.07,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 50,
+    "name": "铁岭",
+    "province": "辽宁",
+    "lat": 42.22,
+    "lng": 123.73,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 51,
+    "name": "朝阳",
+    "province": "辽宁",
+    "lat": 41.58,
+    "lng": 120.45,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 52,
+    "name": "葫芦岛",
+    "province": "辽宁",
+    "lat": 40.71,
+    "lng": 120.84,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 53,
+    "name": "长春",
+    "province": "吉林",
+    "lat": 43.82,
+    "lng": 125.32,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 54,
+    "name": "吉林",
+    "province": "吉林",
+    "lat": 43.84,
+    "lng": 126.55,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 55,
+    "name": "四平",
+    "province": "吉林",
+    "lat": 43.17,
+    "lng": 124.35,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 56,
+    "name": "辽源",
+    "province": "吉林",
+    "lat": 42.89,
+    "lng": 125.14,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 57,
+    "name": "通化",
+    "province": "吉林",
+    "lat": 41.73,
+    "lng": 125.94,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 58,
+    "name": "白山",
+    "province": "吉林",
+    "lat": 41.94,
+    "lng": 126.42,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 59,
+    "name": "松原",
+    "province": "吉林",
+    "lat": 45.14,
+    "lng": 124.82,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 60,
+    "name": "白城",
+    "province": "吉林",
+    "lat": 45.62,
+    "lng": 122.84,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 61,
+    "name": "延边",
+    "province": "吉林",
+    "lat": 42.91,
+    "lng": 129.51,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 62,
+    "name": "哈尔滨",
+    "province": "黑龙江",
+    "lat": 45.75,
+    "lng": 126.63,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 63,
+    "name": "齐齐哈尔",
+    "province": "黑龙江",
+    "lat": 47.35,
+    "lng": 123.92,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 64,
+    "name": "鸡西",
+    "province": "黑龙江",
+    "lat": 45.3,
+    "lng": 130.97,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 65,
+    "name": "鹤岗",
+    "province": "黑龙江",
+    "lat": 47.33,
+    "lng": 130.3,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 66,
+    "name": "双鸭山",
+    "province": "黑龙江",
+    "lat": 46.65,
+    "lng": 131.16,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 67,
+    "name": "大庆",
+    "province": "黑龙江",
+    "lat": 46.59,
+    "lng": 125.1,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 68,
+    "name": "伊春",
+    "province": "黑龙江",
+    "lat": 47.72,
+    "lng": 128.9,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 69,
+    "name": "佳木斯",
+    "province": "黑龙江",
+    "lat": 46.8,
+    "lng": 130.32,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 70,
+    "name": "七台河",
+    "province": "黑龙江",
+    "lat": 45.77,
+    "lng": 131,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 71,
+    "name": "牡丹江",
+    "province": "黑龙江",
+    "lat": 44.55,
+    "lng": 129.63,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 72,
+    "name": "黑河",
+    "province": "黑龙江",
+    "lat": 50.25,
+    "lng": 127.53,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 73,
+    "name": "绥化",
+    "province": "黑龙江",
+    "lat": 46.65,
+    "lng": 126.97,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 74,
+    "name": "大兴安岭",
+    "province": "黑龙江",
+    "lat": 52.34,
+    "lng": 124.71,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 75,
+    "name": "南京",
+    "province": "江苏",
+    "lat": 32.06,
+    "lng": 118.8,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 76,
+    "name": "无锡",
+    "province": "江苏",
+    "lat": 31.49,
+    "lng": 120.31,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 77,
+    "name": "徐州",
+    "province": "江苏",
+    "lat": 34.26,
+    "lng": 117.18,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 78,
+    "name": "常州",
+    "province": "江苏",
+    "lat": 31.81,
+    "lng": 119.97,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 79,
+    "name": "苏州",
+    "province": "江苏",
+    "lat": 31.32,
+    "lng": 120.62,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 80,
+    "name": "南通",
+    "province": "江苏",
+    "lat": 32.01,
+    "lng": 120.89,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 81,
+    "name": "连云港",
+    "province": "江苏",
+    "lat": 34.6,
+    "lng": 119.22,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 82,
+    "name": "淮安",
+    "province": "江苏",
+    "lat": 33.61,
+    "lng": 119.02,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 83,
+    "name": "盐城",
+    "province": "江苏",
+    "lat": 33.35,
+    "lng": 120.16,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 84,
+    "name": "扬州",
+    "province": "江苏",
+    "lat": 32.39,
+    "lng": 119.42,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 85,
+    "name": "镇江",
+    "province": "江苏",
+    "lat": 32.19,
+    "lng": 119.42,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 86,
+    "name": "泰州",
+    "province": "江苏",
+    "lat": 32.46,
+    "lng": 119.92,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 87,
+    "name": "宿迁",
+    "province": "江苏",
+    "lat": 33.96,
+    "lng": 118.28,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 88,
+    "name": "杭州",
+    "province": "浙江",
+    "lat": 30.28,
+    "lng": 120.15,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 89,
+    "name": "宁波",
+    "province": "浙江",
+    "lat": 29.87,
+    "lng": 121.55,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 90,
+    "name": "温州",
+    "province": "浙江",
+    "lat": 28,
+    "lng": 120.7,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 91,
+    "name": "嘉兴",
+    "province": "浙江",
+    "lat": 30.75,
+    "lng": 120.76,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 92,
+    "name": "湖州",
+    "province": "浙江",
+    "lat": 30.89,
+    "lng": 120.09,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 93,
+    "name": "绍兴",
+    "province": "浙江",
+    "lat": 30.03,
+    "lng": 120.58,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 94,
+    "name": "金华",
+    "province": "浙江",
+    "lat": 29.08,
+    "lng": 119.65,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 95,
+    "name": "衢州",
+    "province": "浙江",
+    "lat": 28.94,
+    "lng": 118.86,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 96,
+    "name": "舟山",
+    "province": "浙江",
+    "lat": 30.02,
+    "lng": 122.11,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 97,
+    "name": "台州",
+    "province": "浙江",
+    "lat": 28.66,
+    "lng": 121.42,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 98,
+    "name": "丽水",
+    "province": "浙江",
+    "lat": 28.45,
+    "lng": 119.92,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 99,
+    "name": "合肥",
+    "province": "安徽",
+    "lat": 31.86,
+    "lng": 117.28,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 100,
+    "name": "芜湖",
+    "province": "安徽",
+    "lat": 31.35,
+    "lng": 118.43,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 101,
+    "name": "蚌埠",
+    "province": "安徽",
+    "lat": 32.92,
+    "lng": 117.39,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 102,
+    "name": "淮南",
+    "province": "安徽",
+    "lat": 32.63,
+    "lng": 117,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 103,
+    "name": "马鞍山",
+    "province": "安徽",
+    "lat": 31.67,
+    "lng": 118.51,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 104,
+    "name": "淮北",
+    "province": "安徽",
+    "lat": 33.96,
+    "lng": 116.8,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 105,
+    "name": "铜陵",
+    "province": "安徽",
+    "lat": 30.95,
+    "lng": 117.81,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 106,
+    "name": "安庆",
+    "province": "安徽",
+    "lat": 30.53,
+    "lng": 117.06,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 107,
+    "name": "黄山",
+    "province": "安徽",
+    "lat": 29.71,
+    "lng": 118.34,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 108,
+    "name": "滁州",
+    "province": "安徽",
+    "lat": 32.3,
+    "lng": 118.32,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 109,
+    "name": "阜阳",
+    "province": "安徽",
+    "lat": 32.89,
+    "lng": 115.81,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 110,
+    "name": "宿州",
+    "province": "安徽",
+    "lat": 33.65,
+    "lng": 116.96,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 111,
+    "name": "六安",
+    "province": "安徽",
+    "lat": 31.74,
+    "lng": 116.52,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 112,
+    "name": "亳州",
+    "province": "安徽",
+    "lat": 33.84,
+    "lng": 115.78,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 113,
+    "name": "池州",
+    "province": "安徽",
+    "lat": 30.66,
+    "lng": 117.49,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 114,
+    "name": "宣城",
+    "province": "安徽",
+    "lat": 30.94,
+    "lng": 118.76,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 115,
+    "name": "福州",
+    "province": "福建",
+    "lat": 26.08,
+    "lng": 119.3,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 116,
+    "name": "厦门",
+    "province": "福建",
+    "lat": 24.48,
+    "lng": 118.08,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 117,
+    "name": "莆田",
+    "province": "福建",
+    "lat": 25.45,
+    "lng": 119.01,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 118,
+    "name": "三明",
+    "province": "福建",
+    "lat": 26.26,
+    "lng": 117.64,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 119,
+    "name": "泉州",
+    "province": "福建",
+    "lat": 24.87,
+    "lng": 118.67,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 120,
+    "name": "漳州",
+    "province": "福建",
+    "lat": 24.51,
+    "lng": 117.65,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 121,
+    "name": "南平",
+    "province": "福建",
+    "lat": 26.64,
+    "lng": 118.18,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 122,
+    "name": "龙岩",
+    "province": "福建",
+    "lat": 25.08,
+    "lng": 117.02,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 123,
+    "name": "宁德",
+    "province": "福建",
+    "lat": 26.67,
+    "lng": 119.55,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 124,
+    "name": "南昌",
+    "province": "江西",
+    "lat": 28.68,
+    "lng": 115.86,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 125,
+    "name": "景德镇",
+    "province": "江西",
+    "lat": 29.27,
+    "lng": 117.18,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 126,
+    "name": "萍乡",
+    "province": "江西",
+    "lat": 27.62,
+    "lng": 113.85,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 127,
+    "name": "九江",
+    "province": "江西",
+    "lat": 29.71,
+    "lng": 116,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 128,
+    "name": "新余",
+    "province": "江西",
+    "lat": 27.82,
+    "lng": 114.92,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 129,
+    "name": "鹰潭",
+    "province": "江西",
+    "lat": 28.26,
+    "lng": 117.07,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 130,
+    "name": "赣州",
+    "province": "江西",
+    "lat": 25.83,
+    "lng": 114.93,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 131,
+    "name": "吉安",
+    "province": "江西",
+    "lat": 27.09,
+    "lng": 114.99,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 132,
+    "name": "宜春",
+    "province": "江西",
+    "lat": 27.8,
+    "lng": 114.42,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 133,
+    "name": "抚州",
+    "province": "江西",
+    "lat": 27.95,
+    "lng": 116.36,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 134,
+    "name": "上饶",
+    "province": "江西",
+    "lat": 28.45,
+    "lng": 117.94,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 135,
+    "name": "济南",
+    "province": "山东",
+    "lat": 36.67,
+    "lng": 117,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 136,
+    "name": "青岛",
+    "province": "山东",
+    "lat": 36.07,
+    "lng": 120.38,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 137,
+    "name": "淄博",
+    "province": "山东",
+    "lat": 36.81,
+    "lng": 118.05,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 138,
+    "name": "枣庄",
+    "province": "山东",
+    "lat": 34.81,
+    "lng": 117.32,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 139,
+    "name": "东营",
+    "province": "山东",
+    "lat": 37.43,
+    "lng": 118.67,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 140,
+    "name": "烟台",
+    "province": "山东",
+    "lat": 37.54,
+    "lng": 121.39,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 141,
+    "name": "潍坊",
+    "province": "山东",
+    "lat": 36.71,
+    "lng": 119.16,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 142,
+    "name": "济宁",
+    "province": "山东",
+    "lat": 35.41,
+    "lng": 116.59,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 143,
+    "name": "泰安",
+    "province": "山东",
+    "lat": 36.2,
+    "lng": 117.09,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 144,
+    "name": "威海",
+    "province": "山东",
+    "lat": 37.51,
+    "lng": 122.12,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 145,
+    "name": "日照",
+    "province": "山东",
+    "lat": 35.42,
+    "lng": 119.53,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 146,
+    "name": "临沂",
+    "province": "山东",
+    "lat": 35.1,
+    "lng": 118.36,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 147,
+    "name": "德州",
+    "province": "山东",
+    "lat": 37.43,
+    "lng": 116.31,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 148,
+    "name": "聊城",
+    "province": "山东",
+    "lat": 36.46,
+    "lng": 115.99,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 149,
+    "name": "滨州",
+    "province": "山东",
+    "lat": 37.38,
+    "lng": 117.97,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 150,
+    "name": "菏泽",
+    "province": "山东",
+    "lat": 35.23,
+    "lng": 115.48,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 151,
+    "name": "郑州",
+    "province": "河南",
+    "lat": 34.75,
+    "lng": 113.62,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 152,
+    "name": "开封",
+    "province": "河南",
+    "lat": 34.8,
+    "lng": 114.31,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 153,
+    "name": "洛阳",
+    "province": "河南",
+    "lat": 34.62,
+    "lng": 112.45,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 154,
+    "name": "平顶山",
+    "province": "河南",
+    "lat": 33.77,
+    "lng": 113.19,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 155,
+    "name": "安阳",
+    "province": "河南",
+    "lat": 36.1,
+    "lng": 114.39,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 156,
+    "name": "鹤壁",
+    "province": "河南",
+    "lat": 35.75,
+    "lng": 114.3,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 157,
+    "name": "新乡",
+    "province": "河南",
+    "lat": 35.3,
+    "lng": 113.93,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 158,
+    "name": "焦作",
+    "province": "河南",
+    "lat": 35.22,
+    "lng": 113.24,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 159,
+    "name": "濮阳",
+    "province": "河南",
+    "lat": 35.76,
+    "lng": 115.03,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 160,
+    "name": "许昌",
+    "province": "河南",
+    "lat": 34.04,
+    "lng": 113.85,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 161,
+    "name": "漯河",
+    "province": "河南",
+    "lat": 33.58,
+    "lng": 114.02,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 162,
+    "name": "三门峡",
+    "province": "河南",
+    "lat": 34.77,
+    "lng": 111.2,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 163,
+    "name": "南阳",
+    "province": "河南",
+    "lat": 32.99,
+    "lng": 112.53,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 164,
+    "name": "商丘",
+    "province": "河南",
+    "lat": 34.44,
+    "lng": 115.66,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 165,
+    "name": "信阳",
+    "province": "河南",
+    "lat": 32.15,
+    "lng": 114.09,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 166,
+    "name": "周口",
+    "province": "河南",
+    "lat": 33.63,
+    "lng": 114.7,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 167,
+    "name": "驻马店",
+    "province": "河南",
+    "lat": 33.01,
+    "lng": 114.02,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 168,
+    "name": "武汉",
+    "province": "湖北",
+    "lat": 30.59,
+    "lng": 114.3,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 169,
+    "name": "黄石",
+    "province": "湖北",
+    "lat": 30.2,
+    "lng": 115.04,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 170,
+    "name": "十堰",
+    "province": "湖北",
+    "lat": 32.63,
+    "lng": 110.8,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 171,
+    "name": "宜昌",
+    "province": "湖北",
+    "lat": 30.7,
+    "lng": 111.29,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 172,
+    "name": "襄阳",
+    "province": "湖北",
+    "lat": 32.04,
+    "lng": 112.14,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 173,
+    "name": "鄂州",
+    "province": "湖北",
+    "lat": 30.39,
+    "lng": 114.88,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 174,
+    "name": "荆门",
+    "province": "湖北",
+    "lat": 31.04,
+    "lng": 112.2,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 175,
+    "name": "孝感",
+    "province": "湖北",
+    "lat": 30.92,
+    "lng": 113.92,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 176,
+    "name": "荆州",
+    "province": "湖北",
+    "lat": 30.33,
+    "lng": 112.24,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 177,
+    "name": "黄冈",
+    "province": "湖北",
+    "lat": 30.45,
+    "lng": 114.87,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 178,
+    "name": "咸宁",
+    "province": "湖北",
+    "lat": 29.84,
+    "lng": 114.32,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 179,
+    "name": "随州",
+    "province": "湖北",
+    "lat": 31.69,
+    "lng": 113.38,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 180,
+    "name": "恩施",
+    "province": "湖北",
+    "lat": 30.27,
+    "lng": 109.49,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 181,
+    "name": "长沙",
+    "province": "湖南",
+    "lat": 28.23,
+    "lng": 112.94,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 182,
+    "name": "株洲",
+    "province": "湖南",
+    "lat": 27.83,
+    "lng": 113.13,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 183,
+    "name": "湘潭",
+    "province": "湖南",
+    "lat": 27.83,
+    "lng": 112.94,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 184,
+    "name": "衡阳",
+    "province": "湖南",
+    "lat": 26.89,
+    "lng": 112.57,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 185,
+    "name": "邵阳",
+    "province": "湖南",
+    "lat": 27.24,
+    "lng": 111.47,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 186,
+    "name": "岳阳",
+    "province": "湖南",
+    "lat": 29.37,
+    "lng": 113.13,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 187,
+    "name": "常德",
+    "province": "湖南",
+    "lat": 29.03,
+    "lng": 111.7,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 188,
+    "name": "张家界",
+    "province": "湖南",
+    "lat": 29.12,
+    "lng": 110.48,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 189,
+    "name": "益阳",
+    "province": "湖南",
+    "lat": 28.55,
+    "lng": 112.36,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 190,
+    "name": "郴州",
+    "province": "湖南",
+    "lat": 25.77,
+    "lng": 113.02,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 191,
+    "name": "永州",
+    "province": "湖南",
+    "lat": 26.42,
+    "lng": 111.61,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 192,
+    "name": "怀化",
+    "province": "湖南",
+    "lat": 27.57,
+    "lng": 110,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 193,
+    "name": "娄底",
+    "province": "湖南",
+    "lat": 27.7,
+    "lng": 112,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 194,
+    "name": "湘西",
+    "province": "湖南",
+    "lat": 28.31,
+    "lng": 109.74,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 195,
+    "name": "广州",
+    "province": "广东",
+    "lat": 23.13,
+    "lng": 113.26,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 196,
+    "name": "韶关",
+    "province": "广东",
+    "lat": 24.81,
+    "lng": 113.6,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 197,
+    "name": "深圳",
+    "province": "广东",
+    "lat": 22.55,
+    "lng": 114.06,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 198,
+    "name": "珠海",
+    "province": "广东",
+    "lat": 22.27,
+    "lng": 113.58,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 199,
+    "name": "汕头",
+    "province": "广东",
+    "lat": 23.35,
+    "lng": 116.68,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 200,
+    "name": "佛山",
+    "province": "广东",
+    "lat": 23.02,
+    "lng": 113.12,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 201,
+    "name": "江门",
+    "province": "广东",
+    "lat": 22.58,
+    "lng": 113.08,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 202,
+    "name": "湛江",
+    "province": "广东",
+    "lat": 21.27,
+    "lng": 110.36,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 203,
+    "name": "茂名",
+    "province": "广东",
+    "lat": 21.66,
+    "lng": 110.93,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 204,
+    "name": "肇庆",
+    "province": "广东",
+    "lat": 23.05,
+    "lng": 112.47,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 205,
+    "name": "惠州",
+    "province": "广东",
+    "lat": 23.11,
+    "lng": 114.42,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 206,
+    "name": "梅州",
+    "province": "广东",
+    "lat": 24.29,
+    "lng": 116.12,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 207,
+    "name": "汕尾",
+    "province": "广东",
+    "lat": 22.79,
+    "lng": 115.38,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 208,
+    "name": "河源",
+    "province": "广东",
+    "lat": 23.74,
+    "lng": 114.7,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 209,
+    "name": "阳江",
+    "province": "广东",
+    "lat": 21.86,
+    "lng": 111.98,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 210,
+    "name": "清远",
+    "province": "广东",
+    "lat": 23.68,
+    "lng": 113.06,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 211,
+    "name": "东莞",
+    "province": "广东",
+    "lat": 23.04,
+    "lng": 113.75,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 212,
+    "name": "中山",
+    "province": "广东",
+    "lat": 22.52,
+    "lng": 113.39,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 213,
+    "name": "潮州",
+    "province": "广东",
+    "lat": 23.66,
+    "lng": 116.62,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 214,
+    "name": "揭阳",
+    "province": "广东",
+    "lat": 23.55,
+    "lng": 116.37,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 215,
+    "name": "云浮",
+    "province": "广东",
+    "lat": 22.92,
+    "lng": 112.04,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 216,
+    "name": "南宁",
+    "province": "广西",
+    "lat": 22.82,
+    "lng": 108.37,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 217,
+    "name": "柳州",
+    "province": "广西",
+    "lat": 24.33,
+    "lng": 109.42,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 218,
+    "name": "桂林",
+    "province": "广西",
+    "lat": 25.27,
+    "lng": 110.29,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 219,
+    "name": "梧州",
+    "province": "广西",
+    "lat": 23.48,
+    "lng": 111.28,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 220,
+    "name": "北海",
+    "province": "广西",
+    "lat": 21.48,
+    "lng": 109.12,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 221,
+    "name": "防城港",
+    "province": "广西",
+    "lat": 21.69,
+    "lng": 108.35,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 222,
+    "name": "钦州",
+    "province": "广西",
+    "lat": 21.98,
+    "lng": 108.65,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 223,
+    "name": "贵港",
+    "province": "广西",
+    "lat": 23.11,
+    "lng": 109.6,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 224,
+    "name": "玉林",
+    "province": "广西",
+    "lat": 22.65,
+    "lng": 110.18,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 225,
+    "name": "百色",
+    "province": "广西",
+    "lat": 23.9,
+    "lng": 106.62,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 226,
+    "name": "贺州",
+    "province": "广西",
+    "lat": 24.4,
+    "lng": 111.55,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 227,
+    "name": "河池",
+    "province": "广西",
+    "lat": 24.7,
+    "lng": 108.06,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 228,
+    "name": "来宾",
+    "province": "广西",
+    "lat": 23.73,
+    "lng": 109.23,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 229,
+    "name": "崇左",
+    "province": "广西",
+    "lat": 22.4,
+    "lng": 107.36,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 230,
+    "name": "海口",
+    "province": "海南",
+    "lat": 20.03,
+    "lng": 110.33,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 231,
+    "name": "三亚",
+    "province": "海南",
+    "lat": 18.25,
+    "lng": 109.51,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 232,
+    "name": "三沙",
+    "province": "海南",
+    "lat": 16.83,
+    "lng": 112.33,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 233,
+    "name": "儋州",
+    "province": "海南",
+    "lat": 19.52,
+    "lng": 109.58,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 234,
+    "name": "成都",
+    "province": "四川",
+    "lat": 30.67,
+    "lng": 104.07,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 235,
+    "name": "自贡",
+    "province": "四川",
+    "lat": 29.34,
+    "lng": 104.78,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 236,
+    "name": "攀枝花",
+    "province": "四川",
+    "lat": 26.58,
+    "lng": 101.72,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 237,
+    "name": "泸州",
+    "province": "四川",
+    "lat": 28.87,
+    "lng": 105.44,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 238,
+    "name": "德阳",
+    "province": "四川",
+    "lat": 31.13,
+    "lng": 104.4,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 239,
+    "name": "绵阳",
+    "province": "四川",
+    "lat": 31.46,
+    "lng": 104.74,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 240,
+    "name": "广元",
+    "province": "四川",
+    "lat": 32.44,
+    "lng": 105.84,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 241,
+    "name": "遂宁",
+    "province": "四川",
+    "lat": 30.53,
+    "lng": 105.59,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 242,
+    "name": "内江",
+    "province": "四川",
+    "lat": 29.58,
+    "lng": 105.06,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 243,
+    "name": "乐山",
+    "province": "四川",
+    "lat": 29.55,
+    "lng": 103.77,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 244,
+    "name": "南充",
+    "province": "四川",
+    "lat": 30.84,
+    "lng": 106.11,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 245,
+    "name": "眉山",
+    "province": "四川",
+    "lat": 30.08,
+    "lng": 103.85,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 246,
+    "name": "宜宾",
+    "province": "四川",
+    "lat": 28.75,
+    "lng": 104.64,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 247,
+    "name": "广安",
+    "province": "四川",
+    "lat": 30.46,
+    "lng": 106.63,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 248,
+    "name": "达州",
+    "province": "四川",
+    "lat": 31.21,
+    "lng": 107.47,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 249,
+    "name": "雅安",
+    "province": "四川",
+    "lat": 30.01,
+    "lng": 103.01,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 250,
+    "name": "巴中",
+    "province": "四川",
+    "lat": 31.86,
+    "lng": 106.75,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 251,
+    "name": "资阳",
+    "province": "四川",
+    "lat": 30.13,
+    "lng": 104.63,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 252,
+    "name": "阿坝",
+    "province": "四川",
+    "lat": 31.9,
+    "lng": 102.22,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 253,
+    "name": "甘孜",
+    "province": "四川",
+    "lat": 30.05,
+    "lng": 101.96,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 254,
+    "name": "凉山",
+    "province": "四川",
+    "lat": 27.88,
+    "lng": 102.27,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 255,
+    "name": "贵阳",
+    "province": "贵州",
+    "lat": 26.58,
+    "lng": 106.71,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 256,
+    "name": "六盘水",
+    "province": "贵州",
+    "lat": 26.59,
+    "lng": 104.83,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 257,
+    "name": "遵义",
+    "province": "贵州",
+    "lat": 27.7,
+    "lng": 106.93,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 258,
+    "name": "安顺",
+    "province": "贵州",
+    "lat": 26.25,
+    "lng": 105.95,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 259,
+    "name": "毕节",
+    "province": "贵州",
+    "lat": 27.3,
+    "lng": 105.29,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 260,
+    "name": "铜仁",
+    "province": "贵州",
+    "lat": 27.72,
+    "lng": 109.19,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 261,
+    "name": "黔西南",
+    "province": "贵州",
+    "lat": 25.09,
+    "lng": 104.91,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 262,
+    "name": "黔东南",
+    "province": "贵州",
+    "lat": 26.58,
+    "lng": 107.98,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 263,
+    "name": "黔南",
+    "province": "贵州",
+    "lat": 26.26,
+    "lng": 107.52,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 264,
+    "name": "昆明",
+    "province": "云南",
+    "lat": 24.88,
+    "lng": 102.83,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 265,
+    "name": "曲靖",
+    "province": "云南",
+    "lat": 25.49,
+    "lng": 103.8,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 266,
+    "name": "玉溪",
+    "province": "云南",
+    "lat": 24.35,
+    "lng": 102.55,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 267,
+    "name": "保山",
+    "province": "云南",
+    "lat": 25.11,
+    "lng": 99.16,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 268,
+    "name": "昭通",
+    "province": "云南",
+    "lat": 27.34,
+    "lng": 103.72,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 269,
+    "name": "丽江",
+    "province": "云南",
+    "lat": 26.88,
+    "lng": 100.23,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 270,
+    "name": "普洱",
+    "province": "云南",
+    "lat": 22.82,
+    "lng": 100.97,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 271,
+    "name": "临沧",
+    "province": "云南",
+    "lat": 23.88,
+    "lng": 100.09,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 272,
+    "name": "楚雄",
+    "province": "云南",
+    "lat": 25.03,
+    "lng": 101.55,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 273,
+    "name": "红河",
+    "province": "云南",
+    "lat": 23.36,
+    "lng": 103.37,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 274,
+    "name": "文山",
+    "province": "云南",
+    "lat": 23.4,
+    "lng": 104.22,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 275,
+    "name": "西双版纳",
+    "province": "云南",
+    "lat": 22.01,
+    "lng": 100.8,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 276,
+    "name": "大理",
+    "province": "云南",
+    "lat": 25.59,
+    "lng": 100.23,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 277,
+    "name": "德宏",
+    "province": "云南",
+    "lat": 24.43,
+    "lng": 98.58,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 278,
+    "name": "怒江",
+    "province": "云南",
+    "lat": 25.85,
+    "lng": 98.85,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 279,
+    "name": "迪庆",
+    "province": "云南",
+    "lat": 27.83,
+    "lng": 99.7,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 280,
+    "name": "拉萨",
+    "province": "西藏",
+    "lat": 29.65,
+    "lng": 91.13,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 281,
+    "name": "日喀则",
+    "province": "西藏",
+    "lat": 29.27,
+    "lng": 88.88,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 282,
+    "name": "昌都",
+    "province": "西藏",
+    "lat": 31.14,
+    "lng": 97.17,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 283,
+    "name": "林芝",
+    "province": "西藏",
+    "lat": 29.65,
+    "lng": 94.36,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 284,
+    "name": "山南",
+    "province": "西藏",
+    "lat": 29.24,
+    "lng": 91.77,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 285,
+    "name": "那曲",
+    "province": "西藏",
+    "lat": 31.48,
+    "lng": 92.05,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 286,
+    "name": "阿里",
+    "province": "西藏",
+    "lat": 32.5,
+    "lng": 80.11,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 287,
+    "name": "西安",
+    "province": "陕西",
+    "lat": 34.34,
+    "lng": 108.94,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 288,
+    "name": "铜川",
+    "province": "陕西",
+    "lat": 34.9,
+    "lng": 108.94,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 289,
+    "name": "宝鸡",
+    "province": "陕西",
+    "lat": 34.36,
+    "lng": 107.24,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 290,
+    "name": "咸阳",
+    "province": "陕西",
+    "lat": 34.33,
+    "lng": 108.71,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 291,
+    "name": "渭南",
+    "province": "陕西",
+    "lat": 34.5,
+    "lng": 109.51,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 292,
+    "name": "延安",
+    "province": "陕西",
+    "lat": 36.6,
+    "lng": 109.49,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 293,
+    "name": "汉中",
+    "province": "陕西",
+    "lat": 33.07,
+    "lng": 107.02,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 294,
+    "name": "榆林",
+    "province": "陕西",
+    "lat": 38.29,
+    "lng": 109.73,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 295,
+    "name": "安康",
+    "province": "陕西",
+    "lat": 32.69,
+    "lng": 109.03,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 296,
+    "name": "商洛",
+    "province": "陕西",
+    "lat": 33.87,
+    "lng": 109.94,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 297,
+    "name": "兰州",
+    "province": "甘肃",
+    "lat": 36.06,
+    "lng": 103.83,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 298,
+    "name": "嘉峪关",
+    "province": "甘肃",
+    "lat": 39.77,
+    "lng": 98.29,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 299,
+    "name": "金昌",
+    "province": "甘肃",
+    "lat": 38.52,
+    "lng": 102.19,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 300,
+    "name": "白银",
+    "province": "甘肃",
+    "lat": 36.54,
+    "lng": 104.14,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 301,
+    "name": "天水",
+    "province": "甘肃",
+    "lat": 34.58,
+    "lng": 105.72,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 302,
+    "name": "武威",
+    "province": "甘肃",
+    "lat": 37.93,
+    "lng": 102.64,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 303,
+    "name": "张掖",
+    "province": "甘肃",
+    "lat": 38.93,
+    "lng": 100.45,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 304,
+    "name": "平凉",
+    "province": "甘肃",
+    "lat": 35.54,
+    "lng": 106.67,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 305,
+    "name": "酒泉",
+    "province": "甘肃",
+    "lat": 39.74,
+    "lng": 98.51,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 306,
+    "name": "庆阳",
+    "province": "甘肃",
+    "lat": 35.73,
+    "lng": 107.64,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 307,
+    "name": "定西",
+    "province": "甘肃",
+    "lat": 35.58,
+    "lng": 104.63,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 308,
+    "name": "陇南",
+    "province": "甘肃",
+    "lat": 33.4,
+    "lng": 104.92,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 309,
+    "name": "临夏",
+    "province": "甘肃",
+    "lat": 35.6,
+    "lng": 103.21,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 310,
+    "name": "甘南",
+    "province": "甘肃",
+    "lat": 34.98,
+    "lng": 102.91,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 311,
+    "name": "西宁",
+    "province": "青海",
+    "lat": 36.62,
+    "lng": 101.78,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 312,
+    "name": "海东",
+    "province": "青海",
+    "lat": 36.5,
+    "lng": 102.1,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 313,
+    "name": "海北",
+    "province": "青海",
+    "lat": 36.96,
+    "lng": 100.9,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 314,
+    "name": "黄南",
+    "province": "青海",
+    "lat": 35.52,
+    "lng": 102.02,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 315,
+    "name": "海南州",
+    "province": "青海",
+    "lat": 36.28,
+    "lng": 100.62,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 316,
+    "name": "果洛",
+    "province": "青海",
+    "lat": 34.47,
+    "lng": 100.24,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 317,
+    "name": "玉树",
+    "province": "青海",
+    "lat": 33,
+    "lng": 97.01,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 318,
+    "name": "海西",
+    "province": "青海",
+    "lat": 37.38,
+    "lng": 97.37,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 319,
+    "name": "银川",
+    "province": "宁夏",
+    "lat": 38.49,
+    "lng": 106.23,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 320,
+    "name": "石嘴山",
+    "province": "宁夏",
+    "lat": 38.98,
+    "lng": 106.38,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 321,
+    "name": "吴忠",
+    "province": "宁夏",
+    "lat": 37.98,
+    "lng": 106.2,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 322,
+    "name": "固原",
+    "province": "宁夏",
+    "lat": 36.02,
+    "lng": 106.24,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 323,
+    "name": "中卫",
+    "province": "宁夏",
+    "lat": 37.5,
+    "lng": 105.2,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 324,
+    "name": "乌鲁木齐",
+    "province": "新疆",
+    "lat": 43.83,
+    "lng": 87.62,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 325,
+    "name": "克拉玛依",
+    "province": "新疆",
+    "lat": 45.58,
+    "lng": 84.87,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 326,
+    "name": "吐鲁番",
+    "province": "新疆",
+    "lat": 42.95,
+    "lng": 89.19,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 327,
+    "name": "哈密",
+    "province": "新疆",
+    "lat": 42.82,
+    "lng": 93.52,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 328,
+    "name": "昌吉",
+    "province": "新疆",
+    "lat": 44.01,
+    "lng": 87.31,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 329,
+    "name": "博尔塔拉",
+    "province": "新疆",
+    "lat": 44.91,
+    "lng": 82.07,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 330,
+    "name": "巴音郭楞",
+    "province": "新疆",
+    "lat": 41.76,
+    "lng": 86.15,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 331,
+    "name": "阿克苏",
+    "province": "新疆",
+    "lat": 41.17,
+    "lng": 80.26,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 332,
+    "name": "克孜勒苏",
+    "province": "新疆",
+    "lat": 39.72,
+    "lng": 76.17,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 333,
+    "name": "喀什",
+    "province": "新疆",
+    "lat": 39.47,
+    "lng": 75.99,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 334,
+    "name": "和田",
+    "province": "新疆",
+    "lat": 37.11,
+    "lng": 79.92,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 335,
+    "name": "伊犁",
+    "province": "新疆",
+    "lat": 43.92,
+    "lng": 81.32,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 336,
+    "name": "塔城",
+    "province": "新疆",
+    "lat": 46.75,
+    "lng": 82.98,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 337,
+    "name": "阿勒泰",
+    "province": "新疆",
+    "lat": 47.85,
+    "lng": 88.14,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 338,
+    "name": "石河子",
+    "province": "新疆",
+    "lat": 44.31,
+    "lng": 86.06,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 339,
+    "name": "香港",
+    "province": "香港",
+    "lat": 22.32,
+    "lng": 114.17,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 340,
+    "name": "澳门",
+    "province": "澳门",
+    "lat": 22.2,
+    "lng": 113.55,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 341,
+    "name": "台北",
+    "province": "台湾",
+    "lat": 25.03,
+    "lng": 121.56,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 342,
+    "name": "新北",
+    "province": "台湾",
+    "lat": 25.01,
+    "lng": 121.46,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 343,
+    "name": "桃园",
+    "province": "台湾",
+    "lat": 24.99,
+    "lng": 121.3,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 344,
+    "name": "台中",
+    "province": "台湾",
+    "lat": 24.15,
+    "lng": 120.68,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 345,
+    "name": "台南",
+    "province": "台湾",
+    "lat": 22.99,
+    "lng": 120.21,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 346,
+    "name": "高雄",
+    "province": "台湾",
+    "lat": 22.63,
+    "lng": 120.3,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 347,
+    "name": "基隆",
+    "province": "台湾",
+    "lat": 25.13,
+    "lng": 121.74,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 348,
+    "name": "新竹",
+    "province": "台湾",
+    "lat": 24.8,
+    "lng": 120.97,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 349,
+    "name": "嘉义",
+    "province": "台湾",
+    "lat": 23.48,
+    "lng": 120.45,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 350,
+    "name": "宜兰",
+    "province": "台湾",
+    "lat": 24.75,
+    "lng": 121.75,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 351,
+    "name": "花莲",
+    "province": "台湾",
+    "lat": 23.98,
+    "lng": 121.6,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 352,
+    "name": "台东",
+    "province": "台湾",
+    "lat": 22.76,
+    "lng": 121.14,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 353,
+    "name": "屏东",
+    "province": "台湾",
+    "lat": 22.67,
+    "lng": 120.49,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 354,
+    "name": "澎湖",
+    "province": "台湾",
+    "lat": 23.57,
+    "lng": 119.58,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 355,
+    "name": "南投",
+    "province": "台湾",
+    "lat": 23.91,
+    "lng": 120.69,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 356,
+    "name": "云林",
+    "province": "台湾",
+    "lat": 23.71,
+    "lng": 120.54,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 357,
+    "name": "彰化",
+    "province": "台湾",
+    "lat": 24.08,
+    "lng": 120.54,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 358,
+    "name": "苗栗",
+    "province": "台湾",
+    "lat": 24.56,
+    "lng": 120.82,
+    "zone": "Asia/Shanghai"
+  },
+  {
+    "id": 359,
+    "name": "洛杉矶",
+    "nameEn": "Los Angeles",
+    "province": "美国 加州",
+    "lat": 34.05,
+    "lng": -118.24,
+    "zone": "America/Los_Angeles"
+  },
+  {
+    "id": 360,
+    "name": "旧金山",
+    "nameEn": "San Francisco",
+    "province": "美国 加州",
+    "lat": 37.77,
+    "lng": -122.42,
+    "zone": "America/Los_Angeles"
+  },
+  {
+    "id": 361,
+    "name": "西雅图",
+    "nameEn": "Seattle",
+    "province": "美国 华盛顿州",
+    "lat": 47.61,
+    "lng": -122.33,
+    "zone": "America/Los_Angeles"
+  },
+  {
+    "id": 362,
+    "name": "圣迭戈",
+    "nameEn": "San Diego",
+    "province": "美国 加州",
+    "lat": 32.72,
+    "lng": -117.16,
+    "zone": "America/Los_Angeles"
+  },
+  {
+    "id": 363,
+    "name": "拉斯维加斯",
+    "nameEn": "Las Vegas",
+    "province": "美国 内华达州",
+    "lat": 36.17,
+    "lng": -115.14,
+    "zone": "America/Los_Angeles"
+  },
+  {
+    "id": 364,
+    "name": "波特兰",
+    "nameEn": "Portland",
+    "province": "美国 俄勒冈州",
+    "lat": 45.52,
+    "lng": -122.68,
+    "zone": "America/Los_Angeles"
+  },
+  {
+    "id": 365,
+    "name": "纽约",
+    "nameEn": "New York",
+    "province": "美国 纽约州",
+    "lat": 40.71,
+    "lng": -74.01,
+    "zone": "America/New_York"
+  },
+  {
+    "id": 366,
+    "name": "波士顿",
+    "nameEn": "Boston",
+    "province": "美国 麻省",
+    "lat": 42.36,
+    "lng": -71.06,
+    "zone": "America/New_York"
+  },
+  {
+    "id": 367,
+    "name": "华盛顿",
+    "nameEn": "Washington, D.C.",
+    "province": "美国 华盛顿特区",
+    "lat": 38.9,
+    "lng": -77.04,
+    "zone": "America/New_York"
+  },
+  {
+    "id": 368,
+    "name": "费城",
+    "nameEn": "Philadelphia",
+    "province": "美国 宾州",
+    "lat": 39.95,
+    "lng": -75.17,
+    "zone": "America/New_York"
+  },
+  {
+    "id": 369,
+    "name": "亚特兰大",
+    "nameEn": "Atlanta",
+    "province": "美国 佐治亚州",
+    "lat": 33.75,
+    "lng": -84.39,
+    "zone": "America/New_York"
+  },
+  {
+    "id": 370,
+    "name": "迈阿密",
+    "nameEn": "Miami",
+    "province": "美国 佛州",
+    "lat": 25.76,
+    "lng": -80.19,
+    "zone": "America/New_York"
+  },
+  {
+    "id": 371,
+    "name": "芝加哥",
+    "nameEn": "Chicago",
+    "province": "美国 伊利诺伊州",
+    "lat": 41.88,
+    "lng": -87.63,
+    "zone": "America/Chicago"
+  },
+  {
+    "id": 372,
+    "name": "休斯敦",
+    "nameEn": "Houston",
+    "province": "美国 德州",
+    "lat": 29.76,
+    "lng": -95.37,
+    "zone": "America/Chicago"
+  },
+  {
+    "id": 373,
+    "name": "达拉斯",
+    "nameEn": "Dallas",
+    "province": "美国 德州",
+    "lat": 32.78,
+    "lng": -96.8,
+    "zone": "America/Chicago"
+  },
+  {
+    "id": 374,
+    "name": "丹佛",
+    "nameEn": "Denver",
+    "province": "美国 科罗拉多州",
+    "lat": 39.74,
+    "lng": -104.99,
+    "zone": "America/Denver"
+  },
+  {
+    "id": 375,
+    "name": "明尼阿波利斯",
+    "nameEn": "Minneapolis",
+    "province": "美国 明尼苏达州",
+    "lat": 44.98,
+    "lng": -93.27,
+    "zone": "America/Chicago"
+  },
+  {
+    "id": 376,
+    "name": "多伦多",
+    "nameEn": "Toronto",
+    "province": "加拿大 安大略省",
+    "lat": 43.65,
+    "lng": -79.38,
+    "zone": "America/Toronto"
+  },
+  {
+    "id": 377,
+    "name": "温哥华",
+    "nameEn": "Vancouver",
+    "province": "加拿大 BC省",
+    "lat": 49.28,
+    "lng": -123.12,
+    "zone": "America/Vancouver"
+  },
+  {
+    "id": 378,
+    "name": "蒙特利尔",
+    "nameEn": "Montreal",
+    "province": "加拿大 魁北克省",
+    "lat": 45.5,
+    "lng": -73.57,
+    "zone": "America/Toronto"
+  },
+  {
+    "id": 379,
+    "name": "卡尔加里",
+    "nameEn": "Calgary",
+    "province": "加拿大 阿尔伯塔省",
+    "lat": 51.05,
+    "lng": -114.07,
+    "zone": "America/Edmonton"
+  },
+  {
+    "id": 380,
+    "name": "渥太华",
+    "nameEn": "Ottawa",
+    "province": "加拿大 安大略省",
+    "lat": 45.42,
+    "lng": -75.7,
+    "zone": "America/Toronto"
+  }
+]

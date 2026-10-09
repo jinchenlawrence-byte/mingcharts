@@ -1,0 +1,268 @@
+﻿=== text<12 全量（人工抽检用）===
+{"gz":"乙卯己卯戊戌壬戌","person":"聂辑规","len":10,"text":"专用官星，位至巡抚。","src":"穷通宝鉴"}
+{"gz":"己巳丙子戊寅壬戌","person":"张寿龄","len":11,"text":"丙透通根寅巳，财星秉令","src":"穷通宝鉴"}
+{"gz":"己丑丁丑己巳丁卯","person":"潘祖荫","len":4,"text":"丁透丙藏","src":"穷通宝鉴"}
+{"gz":"己巳壬申己卯戊辰","person":"袁乃宽","len":9,"text":"壬透丙藏，专用丙火","src":"穷通宝鉴"}
+{"gz":"辛酉壬辰庚子甲申","person":"端方","len":9,"text":"井栏义格，位至决督","src":"穷通宝鉴"}
+{"gz":"庚寅丁亥庚寅乙酉","person":"潘祖荫","len":4,"text":"丁透丙藏","src":"穷通宝鉴"}
+{"gz":"戊申辛酉庚申辛巳","person":"孙诒让","len":9,"text":"金多火熄，著述傅世","src":"穷通宝鉴"}
+{"gz":"甲申癸酉庚辰丁亥","person":"王树常","len":10,"text":"丁甲出干，惜支无丙火","src":"穷通宝鉴"}
+{"gz":"甲申丙寅壬子庚戌","person":"蒋作宾","len":9,"text":"甲丙并透，庚金出干","src":"穷通宝鉴"}
+{"gz":"庚辰丁亥庚子庚辰","person":"张凯嵩","len":4,"text":"丁火煅金","src":"穷通宝鉴"}
+{"gz":"辛卯辛丑乙亥辛巳","person":"何起凤","len":2,"text":"尚书","src":"穷通宝鉴"}
+{"gz":"辛卯庚寅丁酉癸卯","person":"女命","len":10,"text":"女命财旺生煞而煞无制","src":"穷通宝鉴"}
+{"gz":"癸巳丙辰辛卯癸巳","person":"武庭麟","len":11,"text":"两癸出干破丙，总领师干","src":"穷通宝鉴"}
+{"gz":"丙午丙申甲寅丁卯","person":"赵侍郎","len":2,"text":"侍郎","src":"神峰通考"}
+{"gz":"癸巳己未甲子乙丑","person":null,"len":10,"text":"生员，以上造化无钥。","src":"穷通宝鉴"}
+{"gz":"辛丑庚子甲戌辛未","person":null,"len":5,"text":"位至府尹。","src":"穷通宝鉴"}
+{"gz":"乙巳戊子甲辰壬申","person":null,"len":11,"text":"为商，得申运溺水而死。","src":"穷通宝鉴"}
+{"gz":"己丑丁丑甲辰癸酉","person":null,"len":10,"text":"癸水伤丁，贫而且贱。","src":"穷通宝鉴"}
+{"gz":"庚申丙戌乙丑丁亥","person":null,"len":8,"text":"贫苦，早年有刑。","src":"穷通宝鉴"}
+{"gz":"庚申戊子乙巳丙子","person":null,"len":8,"text":"丙戊两透，词林。","src":"穷通宝鉴"}
+{"gz":"丁酉癸丑乙卯丙子","person":null,"len":2,"text":"都宪","src":"穷通宝鉴"}
+{"gz":"庚子己丑乙丑丙子","person":null,"len":2,"text":"平章","src":"穷通宝鉴"}
+{"gz":"甲寅丁丑乙酉辛巳","person":null,"len":2,"text":"举人","src":"穷通宝鉴"}
+{"gz":"丁巳癸丑乙丑辛巳","person":null,"len":6,"text":"都宪，十子。","src":"穷通宝鉴"}
+{"gz":"丁巳壬寅戊辰丙辰","person":null,"len":5,"text":"癸运夭折。","src":"穷通宝鉴"}
+{"gz":"丙戌丁酉丁亥壬寅","person":null,"len":8,"text":"女命，四子孤穷。","src":"穷通宝鉴"}
+{"gz":"甲午甲戌丁未丙午","person":null,"len":5,"text":"位至侍讲。","src":"穷通宝鉴"}
+{"gz":"丙戌辛丑丁巳庚戌","person":null,"len":10,"text":"伤官伤尽，武举守备。","src":"穷通宝鉴"}
+{"gz":"壬午癸丑丁卯丙午","person":null,"len":8,"text":"用癸，孤女之命。","src":"穷通宝鉴"}
+{"gz":"戊戌戊午戊午戊午","person":"张歆海","len":6,"text":"阳刃化印格。","src":"穷通宝鉴"}
+{"gz":"癸未乙卯戊寅丙辰","person":null,"len":11,"text":"癸丙甲俱全，官拜郎中。","src":"穷通宝鉴"}
+{"gz":"己未戊辰戊寅甲寅","person":null,"len":8,"text":"煞印相生，探花。","src":"穷通宝鉴"}
+{"gz":"癸卯乙丑戊申壬子","person":null,"len":10,"text":"此时上偏财格，大贵。","src":"穷通宝鉴"}
+{"gz":"己未丁丑戊子丙辰","person":null,"len":6,"text":"秀才，富家。","src":"穷通宝鉴"}
+{"gz":"丙辰甲午己丑丁卯","person":"段书云","len":11,"text":"用丑宫金水，喜运行西北","src":"穷通宝鉴"}
+{"gz":"甲午丁丑己未癸酉","person":"邢知府","len":2,"text":"知府","src":"神峰通考"}
+{"gz":"丙戌庚寅庚寅戊寅","person":null,"len":6,"text":"欠水，孤贫。","src":"穷通宝鉴"}
+{"gz":"癸巳庚申庚申丁亥","person":null,"len":6,"text":"一榜，府尹。","src":"穷通宝鉴"}
+{"gz":"甲子丙子庚午壬午","person":null,"len":2,"text":"武举","src":"穷通宝鉴"}
+{"gz":"乙卯己卯辛酉壬辰","person":null,"len":2,"text":"都堂","src":"穷通宝鉴"}
+{"gz":"乙酉己卯辛卯丙申","person":null,"len":10,"text":"用庚不用壬，木多故也","src":"穷通宝鉴"}
+{"gz":"辛卯辛卯辛卯戊子","person":null,"len":2,"text":"孤寡","src":"穷通宝鉴"}
+{"gz":"戊午庚申辛卯戊子","person":null,"len":8,"text":"水少见戊，非佳命","src":"穷通宝鉴"}
+{"gz":"甲寅壬申辛卯壬辰","person":null,"len":2,"text":"生员","src":"穷通宝鉴"}
+{"gz":"甲午壬申辛卯癸巳","person":null,"len":8,"text":"壬甲两透，词林。","src":"穷通宝鉴"}
+{"gz":"戊辰辛酉辛酉戊子","person":"张知院","len":10,"text":"六阴朝阳格，富贵之极","src":"神峰通考"}
+{"gz":"癸丑乙丑辛卯戊子","person":null,"len":6,"text":"用戊土制多癸","src":"穷通宝鉴"}
+{"gz":"癸卯丁巳壬寅壬寅","person":null,"len":2,"text":"主簿","src":"穷通宝鉴"}
+{"gz":"甲寅丁丑壬寅壬寅","person":null,"len":6,"text":"用丙，贡士。","src":"穷通宝鉴"}
+{"gz":"乙未己丑壬午辛亥","person":null,"len":2,"text":"生员","src":"穷通宝鉴"}
+{"gz":"丙辰辛卯癸酉癸亥","person":"张尚书","len":5,"text":"来兵拱财格","src":"神峰通考"}
+{"gz":"甲辰己巳癸酉乙卯","person":null,"len":8,"text":"用辛得地，八座。","src":"穷通宝鉴"}
+{"gz":"庚戌戊子癸巳癸亥","person":null,"len":2,"text":"宰相","src":"穷通宝鉴"}
+{"gz":"庚子戊子癸丑丙辰","person":null,"len":6,"text":"两榜，府尹。","src":"穷通宝鉴"}
+{"gz":"癸亥壬戌癸卯甲寅","person":null,"len":5,"text":"食神生才格","src":"穷通宝鉴"}
+{"gz":"乙巳己丑癸卯壬子","person":null,"len":2,"text":"教谕","src":"穷通宝鉴"}
+{"gz":"戊子辛酉甲寅甲子","person":null,"len":6,"text":"戊子通判辛酉","src":"三命通会"}
+{"gz":"庚午庚辰甲寅甲子","person":null,"len":8,"text":"庚辰布政庚午年卒","src":"三命通会"}
+{"gz":"乙酉戊子甲申乙丑","person":null,"len":7,"text":"戊子 乙酉元戎","src":"三命通会"}
+{"gz":"乙巳乙酉甲申乙丑","person":null,"len":7,"text":"乙酉 乙巳進士","src":"三命通会"}
+{"gz":"甲辰庚午甲子丙寅","person":null,"len":6,"text":"庚午甲辰主政","src":"三命通会"}
+{"gz":"乙未乙酉甲子丙寅","person":null,"len":6,"text":"乙酉乙未太守","src":"三命通会"}
+{"gz":"戊子丙辰甲午丁卯","person":null,"len":8,"text":"丙辰 戊子 貴戚","src":"三命通会"}
+{"gz":"乙酉壬午甲戌戊辰","person":null,"len":4,"text":"乙酉壬午","src":"三命通会"}
+{"gz":"壬寅甲辰甲戌庚午","person":null,"len":6,"text":"甲辰壬寅進士","src":"三命通会"}
+{"gz":"丙申甲午甲午辛未","person":null,"len":8,"text":"甲午 丙申 舉人","src":"三命通会"}
+{"gz":"己丑丁丑甲戌壬申","person":null,"len":8,"text":"丁丑 巳丑 評事","src":"三命通会"}
+{"gz":"乙巳戊寅甲戌壬申","person":null,"len":8,"text":"戊寅 乙巳 平章","src":"三命通会"}
+{"gz":"庚午辛巳甲戌壬申","person":null,"len":8,"text":"辛巳 庚午 丞相","src":"三命通会"}
+{"gz":"丙申戊戌甲午乙亥","person":"状元尚书","len":8,"text":"甲趋干又地天交泰","src":"三命通会"}
+{"gz":"丁酉戊申乙未丁丑","person":null,"len":7,"text":"戊申 丁酉愈懬","src":"三命通会"}
+{"gz":"甲子丙子乙酉庚辰","person":null,"len":7,"text":"丙子 甲子御史","src":"三命通会"}
+{"gz":"丙申戊戌乙卯辛巳","person":null,"len":8,"text":"戊戌 丙申 参政","src":"三命通会"}
+{"gz":"己未丙子乙丑壬午","person":null,"len":8,"text":"丙子都窻已未罷官","src":"三命通会"}
+{"gz":"辛未壬辰乙丑壬午","person":null,"len":5,"text":"壬辰辛未卒","src":"三命通会"}
+{"gz":"庚辰壬午乙未壬午","person":null,"len":6,"text":"壬午 庚辰貴","src":"三命通会"}
+{"gz":"乙亥丙戌丙申己丑","person":null,"len":7,"text":"丙戌 乙亥侍郎","src":"三命通会"}
+{"gz":"甲戌癸酉丙申己丑","person":null,"len":7,"text":"癸酉 甲戌侍郎","src":"三命通会"}
+{"gz":"丁酉癸丑丙午庚寅","person":null,"len":6,"text":"癸丑丁酉侍制","src":"三命通会"}
+{"gz":"丙辰乙未丙子辛卯","person":null,"len":9,"text":"丙辰進士縣令乙未革","src":"三命通会"}
+{"gz":"丁卯庚戌丙子癸巳","person":"倪岳 ","len":11,"text":"庚戌 丁卯 倪岳 尚書","src":"三命通会"}
+{"gz":"丁未戊申丙午癸巳","person":null,"len":7,"text":"戊申 丁未舉人","src":"三命通会"}
+{"gz":"丁未丙午丙申癸巳","person":null,"len":7,"text":"丙午 丁未大貴","src":"三命通会"}
+{"gz":"丁酉戊申丙申癸巳","person":null,"len":6,"text":"戊申丁酉進士","src":"三命通会"}
+{"gz":"丙辰壬辰丙子丁酉","person":null,"len":6,"text":"丙辰壬辰元戎","src":"三命通会"}
+{"gz":"丙申戊戌丙申丁酉","person":null,"len":8,"text":"戊戌 丙申 方伯","src":"三命通会"}
+{"gz":"丙午戊戌丙申丁酉","person":null,"len":6,"text":"戊戌丙午太守","src":"三命通会"}
+{"gz":"戊申乙丑丙午戊戌","person":null,"len":6,"text":"乙丑戊申太守","src":"三命通会"}
+{"gz":"丁巳丙午丙午戊戌","person":null,"len":7,"text":"丙午 丁巳太守","src":"三命通会"}
+{"gz":"壬申癸丑丙午戊戌","person":null,"len":6,"text":"癸丑壬申亞劔","src":"三命通会"}
+{"gz":"丙子庚子丁卯庚子","person":null,"len":8,"text":"庚子 丙子 寫副","src":"三命通会"}
+{"gz":"丙午乙未丁卯庚子","person":null,"len":8,"text":"乙未 丙午 御史","src":"三命通会"}
+{"gz":"己酉庚午丁巳癸卯","person":null,"len":10,"text":"已酉一庚午科推官歙人","src":"三命通会"}
+{"gz":"辛卯戊戌丁未甲辰","person":null,"len":7,"text":"戊戌 辛卯進士","src":"三命通会"}
+{"gz":"壬戌丙午丁未甲辰","person":null,"len":7,"text":"丙午 壬戌檢討","src":"三命通会"}
+{"gz":"己卯丙寅丁未甲辰","person":null,"len":9,"text":"丙寅 已卯中書法死","src":"三命通会"}
+{"gz":"丁卯庚戌丁巳乙巳","person":null,"len":7,"text":"庚戌 丁卯武貴","src":"三命通会"}
+{"gz":"丁丑戊申丁酉丁未","person":null,"len":8,"text":"戊申 丁丑 舉人","src":"三命通会"}
+{"gz":"己丑丁丑丁丑庚戌","person":null,"len":6,"text":"丁丑已丑内官","src":"三命通会"}
+{"gz":"己巳戊辰丁丑庚戌","person":null,"len":5,"text":"戊辰已巳富","src":"三命通会"}
+{"gz":"丁丑丙午戊子壬子","person":"楊魏","len":10,"text":"丙午 丁丑 楊魏侍郎","src":"三命通会"}
+{"gz":"癸卯甲子戊寅壬子","person":null,"len":6,"text":"癸卯甲子元戎","src":"三命通会"}
+{"gz":"庚午乙酉戊寅壬子","person":null,"len":8,"text":"乙酉 庚午 荼花","src":"三命通会"}
+{"gz":"辛亥戊戌戊寅甲寅","person":null,"len":8,"text":"戊戌 辛亥 大參","src":"三命通会"}
+{"gz":"丙辰乙未戊辰乙卯","person":null,"len":7,"text":"乙未 丙辰御史","src":"三命通会"}
+{"gz":"壬申庚戌戊辰乙卯","person":null,"len":7,"text":"庚戌 壬申員外","src":"三命通会"}
+{"gz":"戊申庚申戊辰乙卯","person":null,"len":8,"text":"庚申 戊申 丞相","src":"三命通会"}
+{"gz":"甲子丙子戊午乙卯","person":null,"len":8,"text":"甲子丙子年四月辛","src":"三命通会"}
+{"gz":"丙午辛卯戊午丁巳","person":null,"len":6,"text":"丙午辛卯侍郎","src":"三命通会"}
+{"gz":"甲寅乙亥戊午丁巳","person":"主政","len":10,"text":"乙亥主政甲寅進士早卒","src":"三命通会"}
+{"gz":"癸酉戊午戊辰戊午","person":null,"len":6,"text":"戊午癸酉凶死","src":"三命通会"}
+{"gz":"辛未戊戌戊辰庚申","person":null,"len":6,"text":"戊戌辛未太守","src":"三命通会"}
+{"gz":"戊午丙辰戊辰壬戌","person":null,"len":6,"text":"丙辰戊午進士","src":"三命通会"}
+{"gz":"丁酉壬子己未戊辰","person":null,"len":6,"text":"壬子丁酉通判","src":"三命通会"}
+{"gz":"丙午辛丑己未戊辰","person":null,"len":4,"text":"辛丑丙午","src":"三命通会"}
+{"gz":"丁酉癸卯己亥戊辰","person":null,"len":7,"text":"癸卯 丁酉御史","src":"三命通会"}
+{"gz":"丙戌壬辰己未壬申","person":null,"len":4,"text":"壬辰丙戌","src":"三命通会"}
+{"gz":"辛巳壬辰庚辰丙子","person":null,"len":9,"text":"壬辰誅坦辛巳四月卒","src":"三命通会"}
+{"gz":"己卯癸酉庚申丙子","person":null,"len":7,"text":"癸酉 已卯元戌","src":"三命通会"}
+{"gz":"庚子戊寅庚申丁丑","person":null,"len":7,"text":"戊寅 庚子大参","src":"三命通会"}
+{"gz":"丁丑癸丑庚申辛巳","person":"楊旦","len":8,"text":"丁丑楊旦癸丑進士","src":"三命通会"}
+{"gz":"丙戌甲午庚子甲申","person":null,"len":8,"text":"甲午 丙戌 御史","src":"三命通会"}
+{"gz":"乙酉甲申辛卯庚寅","person":null,"len":8,"text":"甲申 乙酉 贫天","src":"三命通会"}
+{"gz":"丙寅辛卯辛未丁酉","person":null,"len":4,"text":"丙寅辛卯","src":"三命通会"}
+{"gz":"庚戌己卯辛酉戊戌","person":null,"len":8,"text":"已卯中庚戌科巡士","src":"三命通会"}
+{"gz":"甲辰庚午辛丑己亥","person":"中科","len":8,"text":"甲辰中庚午科舉人","src":"三命通会"}
+{"gz":"丁酉戊申壬申辛丑","person":null,"len":7,"text":"戊申 丁酉附馬","src":"三命通会"}
+{"gz":"丁未庚戌壬申辛丑","person":null,"len":7,"text":"庚戌 丁未進士","src":"三命通会"}
+{"gz":"戊申甲寅壬申辛丑","person":null,"len":7,"text":"甲寅 戊申封官","src":"三命通会"}
+{"gz":"甲戌壬申壬申辛丑","person":null,"len":6,"text":"壬申 甲戌公","src":"三命通会"}
+{"gz":"甲辰戊辰壬子乙巳","person":null,"len":11,"text":"戊辰 甲辰 款銑 祭酒","src":"三命通会"}
+{"gz":"辛未壬辰壬寅戊申","person":null,"len":9,"text":"辛未林大鉃壬辰状元","src":"三命通会"}
+{"gz":"丁卯壬寅壬子辛亥","person":null,"len":5,"text":"壬寅 丁卯","src":"三命通会"}
+{"gz":"庚戌丙戌壬申辛亥","person":null,"len":7,"text":"丙戌 庚戌甲部","src":"三命通会"}
+{"gz":"辛卯庚子癸丑甲寅","person":null,"len":6,"text":"庚子辛卯元戌","src":"三命通会"}
+{"gz":"丁未庚戌癸未乙卯","person":null,"len":6,"text":"庚戌 丁未侯","src":"三命通会"}
+{"gz":"丁酉戊申癸酉丙辰","person":null,"len":8,"text":"戊申 丁酉 孫人","src":"三命通会"}
+{"gz":"癸卯甲寅癸巳癸亥","person":null,"len":8,"text":"甲寅 癸卯 進士","src":"三命通会"}
+{"gz":"庚寅乙酉甲子戊辰","person":"李廉使","len":2,"text":"廉使","src":"神峰通考"}
+{"gz":"己未壬申丙申庚寅","person":"曾参政","len":2,"text":"参政","src":"神峰通考"}
+{"gz":"戊子辛酉戊申壬子","person":"陈尚书","len":2,"text":"尚书","src":"神峰通考"}
+{"gz":"壬午壬寅庚子戊寅","person":"刑司令","len":2,"text":"司令","src":"神峰通考"}
+{"gz":"丁亥戊申壬申丙午","person":"侯知阁","len":2,"text":"知阁","src":"神峰通考"}
+{"gz":"癸卯戊午丁丑辛丑","person":"王少师","len":2,"text":"少师","src":"神峰通考"}
+{"gz":"壬申丙午己亥庚午","person":"赵丞相","len":2,"text":"丞相","src":"神峰通考"}
+{"gz":"甲戌甲戌癸酉甲寅","person":"陈侍郎","len":10,"text":"刑合格，午戌不能绊寅","src":"神峰通考"}
+{"gz":"甲子癸酉癸酉癸亥","person":"柳总管","len":5,"text":"来兵拱财格","src":"神峰通考"}
+{"gz":"甲寅丙子丁巳甲辰","person":"毛价川尚书","len":2,"text":"尚书","src":"神峰通考"}
+{"gz":"戊申辛酉乙巳丙子","person":"帖木丞相","len":2,"text":"丞相","src":"神峰通考"}
+{"gz":"丙子甲午辛亥辛卯","person":"郎中","len":7,"text":"合杀有去留而贵","src":"神峰通考"}
+{"gz":"壬寅壬寅己卯壬申","person":"叶丞相","len":2,"text":"丞相","src":"神峰通考"}
+{"gz":"乙酉辛巳辛未戊子","person":"陈寺丞","len":2,"text":"寺丞","src":"神峰通考"}
+{"gz":"癸亥癸亥丙午壬辰","person":null,"len":10,"text":"古时偏官杂正官有制例","src":"神峰通考"}
+{"gz":"庚午辛巳甲申壬申","person":"三宝奴丞相","len":2,"text":"丞相","src":"神峰通考"}
+{"gz":"辛巳辛丑乙卯丁亥","person":"范尚书","len":2,"text":"尚书","src":"神峰通考"}
+{"gz":"壬子壬子壬子壬寅","person":"横行正使浩","len":9,"text":"三子暗冲午财官出。","src":"神峰通考"}
+{"gz":"丙戌庚寅辛巳甲午","person":"章丞相","len":11,"text":"此乃丙辛从火，妻从夫化","src":"神峰通考"}
+{"gz":"庚寅戊寅庚寅戊寅","person":"叶丞相","len":8,"text":"此为两干不杂格也","src":"三命通会"}
+{"gz":"辛丑壬辰丙戌乙未","person":"邵豳","len":9,"text":"行官印运，早年登科","src":"神峰通考"}
+{"gz":"乙丑己丑癸丑癸丑","person":"叶侍郎","len":7,"text":"乃是叶侍郎之命","src":"神峰通考"}
+{"gz":"丁丑癸丑辛丑己丑","person":"王通判","len":8,"text":"此是王通判之命也","src":"神峰通考"}
+{"gz":"甲申丁丑乙亥甲申","person":null,"len":7,"text":"行壬午运作当路","src":"三命通会"}
+{"gz":"乙未乙酉乙丑丁亥","person":null,"len":11,"text":"行辛巳运作监司大振声望","src":"三命通会"}
+{"gz":"壬子丁未辛亥己亥","person":null,"len":4,"text":"两重亡神","src":"三命通会"}
+{"gz":"辛丑丁酉乙未戊寅","person":null,"len":6,"text":"犯官司后大发","src":"三命通会"}
+{"gz":"己巳壬申甲寅壬申","person":null,"len":4,"text":"刺配吏也","src":"三命通会"}
+{"gz":"辛未辛丑壬申戊申","person":null,"len":7,"text":"早发而呕血痨病","src":"三命通会"}
+{"gz":"甲戌庚午戊辰戊午","person":null,"len":3,"text":"病缠身","src":"三命通会"}
+{"gz":"癸酉辛酉壬寅壬寅","person":null,"len":11,"text":"被牛触出骨病五日而后死","src":"三命通会"}
+{"gz":"甲子乙亥己亥己巳","person":null,"len":8,"text":"是合煞，被人杀死","src":"三命通会"}
+{"gz":"己卯丁卯乙卯辛巳","person":null,"len":4,"text":"杀猪屠户","src":"三命通会"}
+{"gz":"乙亥丁亥己卯丁卯","person":null,"len":4,"text":"是一奴婢","src":"三命通会"}
+{"gz":"己亥乙亥丁酉己酉","person":null,"len":4,"text":"是一过房","src":"三命通会"}
+{"gz":"乙酉庚辰庚辰乙酉","person":null,"len":10,"text":"非犯法徒刑必破相有疾","src":"三命通会"}
+{"gz":"辛未辛丑甲午丙寅","person":null,"len":11,"text":"早年入仕，缘为丙寅胜也","src":"三命通会"}
+{"gz":"辛巳丙申壬午壬寅","person":null,"len":7,"text":"互换见贵，无气","src":"三命通会"}
+{"gz":"丙子庚寅丁丑丙午","person":null,"len":8,"text":"阴错阳差，娶三妻","src":"三命通会"}
+{"gz":"辛亥壬辰辛酉壬辰","person":null,"len":7,"text":"因女人官司破家","src":"三命通会"}
+{"gz":"丙寅壬辰丙子甲午","person":null,"len":11,"text":"谓之攒防聚煞，贫贱早夭","src":"三命通会"}
+{"gz":"丙辰乙未甲申己巳","person":null,"len":9,"text":"二命用火土皆吉命也","src":"三命通会"}
+{"gz":"丙寅乙未甲申乙丑","person":null,"len":9,"text":"二命用火土皆吉命也","src":"三命通会"}
+{"gz":"辛亥丁酉甲辰丙寅","person":null,"len":4,"text":"是贵命也","src":"三命通会"}
+{"gz":"庚申甲申甲申庚午","person":null,"len":8,"text":"煞重木死无印困穷","src":"三命通会"}
+{"gz":"庚寅庚辰甲申壬申","person":null,"len":9,"text":"甲日春生煞多有印富","src":"三命通会"}
+{"gz":"丁酉癸卯甲申壬申","person":null,"len":9,"text":"甲木春生煞纯有印贵","src":"三命通会"}
+{"gz":"乙酉乙酉乙酉壬午","person":null,"len":9,"text":"乙木秋生纯煞有印贵","src":"三命通会"}
+{"gz":"庚寅戊寅丙戌甲午","person":null,"len":4,"text":"合格富贵","src":"三命通会"}
+{"gz":"丁亥癸卯丁卯庚子","person":"高文荐都宪","len":8,"text":"柱多亥子煞印为贵","src":"三命通会"}
+{"gz":"甲子己巳丁酉庚戌","person":null,"len":5,"text":"行戊子运防","src":"三命通会"}
+{"gz":"癸未丁巳丁巳戊申","person":null,"len":6,"text":"俱行戊子运防","src":"三命通会"}
+{"gz":"癸未丙辰丁卯戊申","person":null,"len":2,"text":"合此","src":"三命通会"}
+{"gz":"戊子丙辰丁卯戊申","person":null,"len":2,"text":"合此","src":"三命通会"}
+{"gz":"乙亥乙酉癸巳癸亥","person":null,"len":8,"text":"冲破其鬼，反为福","src":"三命通会"}
+{"gz":"辛丑庚寅庚子丙戌","person":null,"len":8,"text":"身弱行子亥运颠困","src":"三命通会"}
+{"gz":"癸卯甲寅庚戌丙戌","person":null,"len":4,"text":"此亦不足","src":"三命通会"}
+{"gz":"己丑甲戌己丑甲子","person":null,"len":4,"text":"二品武职","src":"三命通会"}
+{"gz":"甲午甲戌己巳甲戌","person":null,"len":4,"text":"富贵清髙","src":"三命通会"}
+{"gz":"甲午甲戌己巳甲子","person":null,"len":4,"text":"巨富纳贵","src":"三命通会"}
+{"gz":"辛巳壬辰己巳甲戌","person":null,"len":3,"text":"富贵轻","src":"三命通会"}
+{"gz":"癸巳己未壬午己酉","person":null,"len":6,"text":"财官多者皆贵","src":"三命通会"}
+{"gz":"癸巳己未壬午庚子","person":null,"len":6,"text":"财官多者皆贵","src":"三命通会"}
+{"gz":"癸亥庚申癸亥乙卯","person":null,"len":2,"text":"南贵","src":"三命通会"}
+{"gz":"甲子丙寅癸丑甲寅","person":null,"len":5,"text":"行申中休致","src":"三命通会"}
+{"gz":"丙子辛卯癸亥甲寅","person":null,"len":4,"text":"行申休官","src":"三命通会"}
+{"gz":"乙亥丁亥乙丑丙戌","person":"孟重都宪","len":9,"text":"十二位包承，多一格","src":"三命通会"}
+{"gz":"庚午己丑乙卯壬午","person":"秦桧","len":4,"text":"食神同窠","src":"三命通会"}
+{"gz":"乙亥辛巳戊申庚申","person":"王崇古","len":9,"text":"食神同窠，不贵即富","src":"三命通会"}
+{"gz":"辛巳壬辰癸巳癸亥","person":"陈朝议","len":8,"text":"墨池涌泉，主文贵","src":"三命通会"}
+{"gz":"甲戌辛未癸丑甲寅","person":null,"len":4,"text":"合格为贵","src":"三命通会"}
+{"gz":"甲戌辛未癸未癸丑","person":null,"len":4,"text":"合格俱贵","src":"三命通会"}
+{"gz":"庚申癸未辛未乙未","person":null,"len":4,"text":"合格俱贵","src":"三命通会"}
+{"gz":"壬寅辛亥乙未丙子","person":null,"len":2,"text":"合格","src":"三命通会"}
+{"gz":"庚午丁亥戊戌丙辰","person":"张时佥事","len":8,"text":"魁罡日只取财官印","src":"三命通会"}
+{"gz":"丁亥癸丑庚戌戊寅","person":"刘大受少卿","len":8,"text":"魁罡日只取财官印","src":"三命通会"}
+{"gz":"丁巳甲辰甲寅丁卯","person":null,"len":8,"text":"木火光辉清贵之造","src":"三命通会"}
+{"gz":"甲午丙寅丁卯丙午","person":null,"len":8,"text":"木火光辉清贵之造","src":"三命通会"}
+{"gz":"丁巳甲辰乙巳丁亥","person":null,"len":8,"text":"木火光辉清贵之造","src":"三命通会"}
+{"gz":"戊申己未丙午乙未","person":null,"len":11,"text":"火土夹杂，主愚浊，平常","src":"三命通会"}
+{"gz":"戊戌丁巳己未丙寅","person":null,"len":11,"text":"火土夹杂，主愚浊，平常","src":"三命通会"}
+{"gz":"甲寅癸酉癸未辛酉","person":null,"len":10,"text":"水土败于酉，不利晚景","src":"三命通会"}
+{"gz":"癸亥乙丑癸酉辛酉","person":null,"len":10,"text":"水土败于酉，不利晚景","src":"三命通会"}
+{"gz":"癸酉甲子戊辰辛酉","person":null,"len":10,"text":"水土败于酉，不利晚景","src":"三命通会"}
+{"gz":"辛酉甲午戊子辛酉","person":null,"len":10,"text":"水土败于酉，不利晚景","src":"三命通会"}
+{"gz":"己未辛未丙子癸巳","person":null,"len":4,"text":"合格大贵","src":"三命通会"}
+{"gz":"壬子癸丑戊午壬子","person":null,"len":7,"text":"两子包午，主贵","src":"三命通会"}
+{"gz":"甲子庚午丙申戊子","person":null,"len":7,"text":"两子包午，主贵","src":"三命通会"}
+{"gz":"戊子戊午丁未庚子","person":null,"len":7,"text":"两子包午，主贵","src":"三命通会"}
+{"gz":"戊午甲子甲申庚午","person":null,"len":7,"text":"两午包子，主贵","src":"三命通会"}
+{"gz":"甲午壬申甲子庚午","person":null,"len":7,"text":"两午包子，主贵","src":"三命通会"}
+{"gz":"甲戌丙寅丙午庚寅","person":null,"len":8,"text":"照上无破，宰相命","src":"三命通会"}
+{"gz":"庚戌戊寅庚午丙戌","person":null,"len":8,"text":"金类火，浊而不清","src":"三命通会"}
+{"gz":"丁丑丙午庚寅丙戌","person":null,"len":9,"text":"亦金类火，贵而不久","src":"三命通会"}
+{"gz":"乙亥己卯己卯乙亥","person":null,"len":4,"text":"己土类木","src":"三命通会"}
+{"gz":"戊寅甲寅壬寅戊申","person":"吴远都宪","len":4,"text":"集福发福","src":"三命通会"}
+{"gz":"甲戌丙子戊午庚申","person":"黄华卿","len":4,"text":"一路连珠","src":"三命通会"}
+{"gz":"丁巳丙午丁未戊申","person":"英国公","len":11,"text":"天干地支俱连，富贵双全","src":"三命通会"}
+{"gz":"庚子戊寅庚辰壬午","person":"诚意伯刘瑜","len":11,"text":"天干地支俱连，富贵双全","src":"三命通会"}
+{"gz":"戊辰癸亥戊寅甲寅","person":null,"len":11,"text":"六合双鸳，坐槐庭而布政","src":"三命通会"}
+{"gz":"甲寅丙寅甲寅丙寅","person":null,"len":10,"text":"双飞蝴蝶格，此格极贵","src":"三命通会"}
+{"gz":"乙酉壬午甲申己巳","person":null,"len":8,"text":"甲木无倚乃能从土","src":"三命通会"}
+{"gz":"辛未丁酉己卯甲戌","person":"林见素尚书","len":4,"text":"天地德合","src":"三命通会"}
+{"gz":"己卯甲戌乙酉庚辰","person":"魏丞相","len":4,"text":"君臣庆会","src":"三命通会"}
+{"gz":"丁巳己酉甲申壬申","person":"谢源明尚书","len":4,"text":"君臣庆会","src":"三命通会"}
+{"gz":"乙未庚辰壬寅辛亥","person":"凌相都宪","len":4,"text":"一气为根","src":"三命通会"}
+{"gz":"乙巳戊子丙申丁酉","person":"王一夔状元","len":4,"text":"一气为根","src":"三命通会"}
+{"gz":"戊午己未癸巳丁巳","person":"翁万达尚书","len":4,"text":"一气为根","src":"三命通会"}
+{"gz":"辛丑甲午丙申戊戌","person":"李廷相尚书","len":4,"text":"五行俱足","src":"三命通会"}
+{"gz":"丙申辛丑壬子辛亥","person":"何洛文翰林","len":4,"text":"五行俱足","src":"三命通会"}
+{"gz":"丁卯丁未癸亥己未","person":"李东阳阁老","len":4,"text":"聚精会神","src":"三命通会"}
+{"gz":"甲戌丙子壬午丁未","person":"杨一清阁老","len":4,"text":"聚精会神","src":"三命通会"}
+{"gz":"甲申乙亥丙辰庚寅","person":null,"len":5,"text":"锦衣特赐局","src":"三命通会"}
+{"gz":"庚申己丑庚寅庚辰","person":null,"len":8,"text":"大富八子夀五十余","src":"三命通会"}
+{"gz":"丙午辛丑己未甲子","person":null,"len":6,"text":"子进士女王妃","src":"三命通会"}
+{"gz":"癸酉己未丙午庚寅","person":null,"len":7,"text":"自贪色，妻亦淫","src":"三命通会"}
+{"gz":"丁酉癸丑己巳甲子","person":null,"len":9,"text":"受封生子，与上大同","src":"三命通会"}
+{"gz":"壬寅乙巳庚寅丙子","person":null,"len":11,"text":"身强煞旺有制，所以大贵","src":"三命通会"}
+{"gz":"丙戌戊戌戊子壬子","person":null,"len":11,"text":"时上偏财格，只一位为吉","src":"三命通会"}
+{"gz":"戊辰丁巳壬辰甲辰","person":null,"len":8,"text":"食神格，贵而且寿","src":"三命通会"}
+{"gz":"甲戌戊辰庚辰丙子","person":null,"len":6,"text":"清高长老之命","src":"三命通会"}
+{"gz":"甲戌戊辰庚辰丁丑","person":null,"len":6,"text":"清高长老之命","src":"三命通会"}
+{"gz":"丙子庚寅丙午癸巳","person":null,"len":5,"text":"喜寅午戌全","src":"三命通会"}
+{"gz":"庚寅壬午丙午戊戌","person":null,"len":5,"text":"喜寅午戌全","src":"三命通会"}
+{"gz":"乙丑庚辰辛酉戊子","person":null,"len":5,"text":"六阴朝阳格","src":"三命通会"}
+{"gz":"癸卯庚申戊辰戊午","person":null,"len":3,"text":"拱巳禄","src":"三命通会"}
+{"gz":"壬辰戊申己未己巳","person":null,"len":7,"text":"此格也，故大贵","src":"三命通会"}
+{"gz":"壬寅戊申丙寅癸巳","person":null,"len":6,"text":"此合官留煞也","src":"子平真诠评注"}
+{"gz":"己亥甲戌癸亥丙辰","person":null,"len":6,"text":"合煞存财也。","src":"子平真诠评注"}
