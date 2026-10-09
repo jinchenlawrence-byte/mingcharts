@@ -1,204 +1,13 @@
 'use client'
 
-import { useMemo, useRef, useState } from 'react'
-import { geoMercator, geoPath, geoGraticule10 } from 'd3-geo'
-import type { FeatureCollection, Geometry } from 'geojson'
+import { useRef, useState } from 'react'
 import Nav from '@/components/Nav'
-import citiesData from '@/data/geo-cities.json'
-import { cities as allCities } from '@/lib/birthCities'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
-import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
+import GeoResultView from '@/components/reports/GeoResultView'
+import type { GeoResultData } from '@/components/reports/GeoResultView'
 import { loadWorldData, searchCities } from '@/lib/worldCitiesClient'
-import worldData from '@/data/world-countries.json'
-import type { GeoAnalysis, CategoryResult, GeoCityHit } from '@/lib/geo'
-import type { GeoAIReport } from '@/lib/aiGeo'
-
-// ---------- SVG 地图组件（离线渲染，无瓦片请求） ----------
-const W = 1000
-const H = 480
-
-interface MarkerHit {
-  cat: CategoryResult
-  city: GeoCityHit
-  label: string
-  x: number
-  y: number
-}
-interface PopupState {
-  x: number
-  y: number
-  below: boolean
-  hit: MarkerHit
-}
-
-function PopupCard({ p, onClose }: { p: PopupState; onClose: () => void }) {
-  const { hit, x, y, below } = p
-  const c = hit.city
-  const cat = hit.cat
-  return (
-    <div
-      className="absolute z-10 w-[230px] rounded-lg bg-white shadow-lg border border-gray-200 p-3 text-xs"
-      style={{
-        left: x,
-        top: y,
-        transform: `translate(-50%, ${below ? '12px' : 'calc(-100% - 12px)'})`
-      }}
-    >
-      <button onClick={onClose}
-        className="absolute top-1 right-2 text-gray-400 hover:text-gray-600">×</button>
-      <div className="font-bold pr-4" style={{ color: cat.color }}>
-        {cat.icon} {cat.label} · {c.name}
-      </div>
-      <div className="text-gray-500 mt-1">
-        {c.region}　方位{c.fangLabel}（五行{c.menWx}{c.menWx !== c.fangWx ? `，卦位${c.fangWx}` : ''}）
-        {c.diqi ? <>　地气{c.diqi}（产品设定）</> : ''}
-      </div>
-      <div className="font-semibold mt-1">
-        影响指数 {c.score}（{c.impact}）
-      </div>
-      <div className="text-gray-600 mt-1.5 leading-relaxed">{c.reasons[0]}</div>
-    </div>
-  )
-}
-
-function GeoMap({ geo }: { geo: GeoAnalysis }) {
-  const wrapRef = useRef<HTMLDivElement>(null)
-  const [popup, setPopup] = useState<PopupState | null>(null)
-
-  const markers = useMemo<MarkerHit[]>(() => {
-    const out: Array<Omit<MarkerHit, 'x' | 'y'>> = []
-    geo.categories.forEach((cat) =>
-      cat.cities.forEach((city, i) =>
-        out.push({ cat, city, label: i === 0 ? cat.icon : city.name.slice(0, 1) })
-      )
-    )
-    // 投影在 paths 阶段完成
-    return out as MarkerHit[]
-  }, [geo])
-
-  const paths = useMemo(() => {
-    const pointsFC: FeatureCollection = {
-      type: 'FeatureCollection',
-      features: markers.map((m) => ({
-        type: 'Feature',
-        properties: {},
-        geometry: { type: 'Point', coordinates: [m.city.lng, m.city.lat] }
-      }))
-    }
-    // 投影范围按所有命主城市拟合（墨卡托）
-    const projection = geoMercator()
-    projection.fitExtent([[46, 26], [W - 46, H - 26]], pointsFC)
-    const path = geoPath(projection)
-
-    const projected: MarkerHit[] = markers.map((m) => {
-      const xy = projection([m.city.lng, m.city.lat])!
-      return { ...m, x: xy[0], y: xy[1] }
-    })
-
-    let birth: { name: string; x: number; y: number } | null = null
-    if (geo.birthplace) {
-      // 略偏移，避免与同位置城市标记重叠
-      const xy = projection([geo.birthplace.lng, geo.birthplace.lat])!
-      birth = { name: geo.birthplace.name, x: xy[0] - 11, y: xy[1] - 10 }
-    }
-
-    const countries = worldData as unknown as FeatureCollection<Geometry>
-    return {
-      sphere: path({ type: 'Sphere' }) || '',
-      graticule: path(geoGraticule10()) || '',
-      countryPaths: countries.features.map((f) => ({
-        d: path(f) || '',
-        china: String(f.id) === '156'
-      })),
-      projected,
-      birth
-    }
-  }, [markers, geo])
-
-  const onMarkerClick = (e: React.MouseEvent, hit: MarkerHit) => {
-    const rect = wrapRef.current!.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
-    setPopup({ x, y, below: y > rect.height * 0.55, hit })
-  }
-
-  return (
-    <div ref={wrapRef} className="relative w-full rounded-lg overflow-hidden bg-[#eef4fa]">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto block">
-        <path d={paths.sphere} fill="#eef4fa" />
-        <path d={paths.graticule} fill="none" stroke="#d7e3ef" strokeWidth={0.6} />
-        {paths.countryPaths.map((p, i) => (
-          <path key={i} d={p.d}
-            fill={p.china ? '#fcd9a8' : '#dcd8cf'}
-            stroke="#ffffff" strokeWidth={0.5} />
-        ))}
-        {paths.projected.map((m, i) => (
-          <g key={i} className="cursor-pointer" onClick={(e) => onMarkerClick(e, m)}>
-            <circle cx={m.x} cy={m.y} r={9} fill={m.cat.color}
-              stroke="#fff" strokeWidth={1.5} opacity={0.95} />
-            <text x={m.x} y={m.y + 3.5} textAnchor="middle" fontSize={9} fill="#fff">
-              {m.label}
-            </text>
-          </g>
-        ))}
-        {paths.birth && (
-          <g>
-            <title>出生地参照 · {paths.birth.name}</title>
-            <circle cx={paths.birth.x} cy={paths.birth.y} r={6.5}
-              fill="#374151" stroke="#fff" strokeWidth={1.5} />
-            <text x={paths.birth.x} y={paths.birth.y + 3.2}
-              textAnchor="middle" fontSize={8.5} fill="#fff">★</text>
-          </g>
-        )}
-      </svg>
-      {popup && <PopupCard p={popup} onClose={() => setPopup(null)} />}
-    </div>
-  )
-}
-
-// ---------- 城市卡片 ----------
-function CategorySection({ cat }: { cat: CategoryResult }) {
-  return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <h3 className="font-semibold mb-3" style={{ color: cat.color }}>
-        {cat.icon} {cat.label}
-        <span className="text-xs text-gray-400 font-normal ml-2">
-          目标{cat.targetGod} · {cat.targetWx}
-        </span>
-      </h3>
-      <div className="space-y-3">
-        {cat.notice && cat.cities.length < 6 && (
-          <div className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-md p-3">
-            {cat.notice}
-          </div>
-        )}
-        {cat.cities.map((c) => (
-          <div key={c.name} className="rounded-md border border-gray-200 p-3">
-            <div className="flex flex-wrap items-baseline gap-2">
-              <span className="font-bold text-gray-800">{c.name}</span>
-              <span className="text-xs text-gray-400">{c.region}</span>
-              <span className="text-xs px-2 py-0.5 rounded-full text-white ml-auto"
-                style={{ background: cat.color }}>
-                {c.score}分 · {c.impact}
-              </span>
-            </div>
-            <div className="text-xs text-gray-500 mt-1">
-              方位{c.fangLabel}（五行{c.menWx}{c.menWx !== c.fangWx ? `，卦位${c.fangWx}` : ''}）{c.diqi ? ` · 地气${c.diqi}（产品设定）` : ''}
-            </div>
-            <ul className="mt-2 space-y-1">
-              {c.reasons.map((r, i) => (
-                <li key={i} className="text-sm text-gray-600 flex gap-1.5">
-                  <span style={{ color: cat.color }}>·</span>{r}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
-    </div>
-  )
-}
+import { getAuthToken } from '@/lib/authToken'
 
 // ---------- 现居城市搜索选择（全球库 3.2 万城；替代旧 380 城下拉） ----------
 function CurrentCitySelect({ value, onChange }: {
@@ -273,20 +82,18 @@ export default function GeoPage() {
   })
   const [birth, setBirth] = useState<BirthPlaceValue>({ mode: 'none' })
   const [loading, setLoading] = useState(false)
-  const [geo, setGeo] = useState<GeoAnalysis | null>(null)
-  const [solar, setSolar] = useState<{
-    offsetMin: number; zone: string; dstNotice: string | null
-  } | null>(null)
-  const [ai, setAi] = useState<GeoAIReport | null>(null)
-  const [aiSource, setAiSource] = useState('')
-  const [locked, setLocked] = useState<{ skus: string[]; preview: string } | null>(null)
+  const [data, setData] = useState<GeoResultData | null>(null)
+  // 报告资产：saved=true 已入账户；false=游客（提示登录后可保存）
+  const [saved, setSaved] = useState<boolean | null>(null)
   const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setSaved(null)
     try {
+      const token = await getAuthToken()
       const res = await fetch('/api/geo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -304,18 +111,16 @@ export default function GeoPage() {
             ? { birthCityId: birth.cityId }
             : birth.mode === 'zone'
               ? { birthZone: birth.zone, birthLng: birth.lng }
-              : {})
+              : {}),
+          ...(token ? { token } : {})
         })
       })
-      const data = await res.json()
-      if (data.success) {
-        setGeo(data.data.geo)
-        setSolar(data.data.trueSolar)
-        setAi(data.data.ai)
-        setAiSource(data.data.aiSource)
-        setLocked(data.data.locked)
+      const json = await res.json()
+      if (json.success) {
+        setData(json.data as GeoResultData)
+        setSaved(!!json.reportId)
       } else {
-        setError(data.error || '解析失败')
+        setError(json.error || '解析失败')
       }
     } catch {
       setError('网络错误')
@@ -410,155 +215,19 @@ export default function GeoPage() {
         </div>
 
         {/* 结果 */}
-        {geo && (
-          <div className="space-y-6">
-            {/* 喜忌摘要 */}
-            <div className="bg-white rounded-lg shadow p-4">
-              <div className="grid md:grid-cols-2 gap-3 text-sm">
-                <div>
-                  <span className="text-gray-500">日主：</span>
-                  <span className="font-medium">{geo.dayMaster}（{geo.dayWx}）· {geo.wangShuai}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500">喜用五行：</span>
-                  <span className="text-green-700 font-medium">{geo.favorableWx.join('、')}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500">宜行方位：</span>
-                  <span className="text-green-700">{geo.favorableDirections.join('、')}</span>
-                </div>
-                <div>
-                  <span className="text-gray-500">忌行方位：</span>
-                  <span className="text-red-600">{geo.unfavorableDirections.join('、')}</span>
-                </div>
-              </div>
-              {solar && (
-                <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-gray-600">
-                  真太阳时 {solar.offsetMin >= 0 ? '+' : ''}{solar.offsetMin} 分钟（{solar.zone}）
-                  {solar.dstNotice && (
-                    <span className="ml-2 text-amber-700 bg-amber-50 border border-amber-200 rounded px-1.5 py-0.5">
-                      {solar.dstNotice}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* 现居城市影响 */}
-            {geo.currentCity && (
-              <div className="bg-white rounded-lg shadow p-4 border-l-4" style={{ borderColor: geo.currentCity.level === '吉' ? '#059669' : geo.currentCity.level === '忌' ? '#dc2626' : '#d97706' }}>
-                <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-                  <h2 className="font-semibold text-sky-800">现居城市 · {geo.currentCity.name}</h2>
-                  <div className="flex items-center gap-1.5">
-                    <span className={`text-[11px] rounded px-2 py-0.5 border ${
-                      geo.currentCity.level === '吉'
-                        ? 'bg-green-50 border-green-200 text-green-700'
-                        : geo.currentCity.level === '忌'
-                          ? 'bg-red-50 border-red-200 text-red-700'
-                          : 'bg-amber-50 border-amber-200 text-amber-700'
-                    }`}>{geo.currentCity.level}</span>
-                    <span className="text-[11px] rounded px-2 py-0.5 bg-sky-50 border border-sky-200 text-sky-700">
-                      影响指数 {geo.currentCity.score} · {geo.currentCity.impact}
-                    </span>
-                  </div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-2 text-sm mb-3">
-                  <div>
-                    <span className="text-gray-500">主判五行：</span>
-                    {geo.currentCity.primaryWx ? (
-                      <>
-                        <span className="font-medium">{geo.currentCity.primaryWx}</span>
-                        <span className="text-[11px] text-gray-500">（来源：{geo.currentCity.primarySource}）</span>
-                        <span className="text-gray-500 ml-2">与日主关系：</span>
-                        <span className="font-medium">{geo.currentCity.godRelation}</span>
-                        <span className={`ml-1 ${geo.currentCity.favorable ? 'text-green-700' : 'text-red-600'}`}>
-                          （{geo.currentCity.favorable ? '喜用' : '忌神'}）
-                        </span>
-                      </>
-                    ) : <span className="text-gray-400">资料不足，无法判定</span>}
-                  </div>
-                  <div className="text-gray-600">
-                    {geo.currentCity.fangWx
-                      ? <>相对出生地：{geo.currentCity.fangLabel}（约 {geo.currentCity.distanceKm} 公里）</>
-                      : geo.currentCity.center
-                        ? '与出生地同城近距，按中央土论'
-                        : '未提供出生地，不论相对方位'}
-                  </div>
-                </div>
-                <div className="text-sm text-gray-700 space-y-1 mb-3">
-                  {geo.currentCity.effects.map((f, i) => (
-                    <div key={i} className="flex gap-1.5"><span className="text-sky-400">·</span><span>{f}</span></div>
-                  ))}
-                </div>
-                <div className="text-xs bg-sky-50 rounded p-2.5 space-y-0.5">
-                  <div className="font-medium text-sky-800 mb-1">趋避建议</div>
-                  {geo.currentCity.advice.map((a, i) => (
-                    <div key={i} className="text-sky-900">· {a}</div>
-                  ))}
-                </div>
-                <p className="text-[11px] text-gray-400 mt-2">
-                  地气影响是长期渐染的过程，以上为趋势参考；福地福人居，心态与努力为本
-                </p>
-              </div>
-            )}
-
-            {/* 地图 */}
-            <div className="bg-white rounded-lg shadow p-3 md:p-4">
-              <h2 className="font-semibold text-sky-800 mb-3">命主方位地图</h2>
-              <GeoMap geo={geo} />
-              <div className="flex flex-wrap gap-3 mt-3 text-xs text-gray-500">
-                {geo.categories.map((c) => (
-                  <span key={c.key} className="flex items-center gap-1">
-                    <span className="w-3 h-3 rounded-full inline-block" style={{ background: c.color }} />
-                    {c.label}
-                  </span>
-                ))}
-                <span className="flex items-center gap-1">
-                  <span className="w-3 h-3 rounded-full inline-block bg-gray-700" />出生地
-                </span>
-              </div>
-            </div>
-
-            {/* 四类城市明细 */}
-            {geo.categories.map((cat) => (
-              <CategorySection key={cat.key} cat={cat} />
-            ))}
-
-            {/* AI 解读 */}
-            {locked && (
-              <div className="bg-gray-100 rounded-lg p-6 text-center">
-                <p className="text-sm text-gray-600 mb-4">{locked.preview}</p>
-                {locked.skus.map((skuId) => {
-                  const sku = SKUS[skuId as keyof typeof SKUS]
-                  if (!sku) return null
-                  return (
-                    <a key={skuId} href="/pricing" className="inline-block px-6 py-2 bg-sky-600 text-white rounded-lg font-semibold hover:bg-sky-700 mr-2">
-                      解锁 {sku.name} {formatPriceUSD(sku.priceUSD)}
-                    </a>
-                  )
-                })}
-              </div>
-            )}
-            {ai && (
-              <div className="space-y-4">
-                <h2 className="text-xl font-bold text-sky-900">深度解读 · {aiSource}</h2>
-                {([
-                  ['方位总论', ai.overview],
-                  ['现居城市影响', ai.currentCity],
-                  ['财富之城', ai.wealth],
-                  ['事业之城', ai.career],
-                  ['贵人之城', ai.patron],
-                  ['安居之城', ai.home],
-                  ['才华之城', ai.talent],
-                  ['迁居开运', ai.advice]
-                ] as [string, string][]).filter(([, text]) => text).map(([title, text]) => (
-                  <div key={title} className="bg-white rounded-lg shadow p-4">
-                    <h3 className="font-semibold text-sky-800 mb-2">{title}</h3>
-                    <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{text}</p>
-                  </div>
-                ))}
-              </div>
-            )}
+        {data && (
+          <div>
+            {/* 资产保存提示 */}
+            {saved === true ? (
+              <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2 mb-4">
+                ✓ 报告已保存到你的账户，可在「我的报告」中随时回看
+              </p>
+            ) : saved === false ? (
+              <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-3 py-2 mb-4">
+                登录后生成结果可保存到「我的报告」，随时回看
+              </p>
+            ) : null}
+            <GeoResultView data={data} />
           </div>
         )}
       </div>

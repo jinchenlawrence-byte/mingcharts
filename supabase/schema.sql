@@ -92,3 +92,29 @@ CREATE POLICY "Users can view own payments" ON payments
 -- 这个策略允许匿名用户插入charts，但user_id为NULL
 CREATE POLICY "Anonymous can insert charts" ON charts
   FOR INSERT WITH CHECK (auth.uid() IS NULL);
+
+-- 付费报告资产表（合婚/紫微/地理/年运；命书存于 charts 表）
+-- 写入走 service_role（绕过 RLS）；列表/详情走客户端会话 + 下方 SELECT 策略
+CREATE TABLE IF NOT EXISTS reports (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL CHECK (kind IN ('hemun', 'ziwei', 'geo', 'annual')),
+  title TEXT NOT NULL,
+  input JSONB NOT NULL,
+  result JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own reports" ON reports
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own reports" ON reports
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own reports" ON reports
+  FOR DELETE USING (auth.uid() = user_id);
+
+CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id);
+CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports(created_at DESC);

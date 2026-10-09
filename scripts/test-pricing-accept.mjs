@@ -128,5 +128,32 @@ console.log(bareFail === 0
   ? '✓ 裸数字金额：src 全量扫描 amount:/price: 字面量 0 命中（价格须取自 SKUS）'
   : `✗ 裸数字金额 ${bareFail} 处残留`)
 
+// ---------- ⑦ ★ CTA 文案守卫（HANDOFF-四问题修复 §A/§B：会员不得与报告同框误导）----------
+// chart 页：删除「会员免费解锁/开通会员」误导分支，按钮为「内测期免费体验」
+const chartSrc = readFileSync(new URL('../src/app/chart/page.tsx', import.meta.url), 'utf8')
+let ctaFail = 0
+const CTA_MISS = ['会员免费解锁', '开通会员']
+for (const w of CTA_MISS) {
+  const n = chartSrc.split(w).length - 1
+  if (n > 0) { ctaFail++; fail(`chart 页残留误导文案「${w}」${n} 处（模式：字符串计数，会员不含报告）`) }
+}
+const CTA_HIT = ['内测期免费体验', '会员不含报告']
+for (const w of CTA_HIT) {
+  const n = chartSrc.split(w).length - 1
+  if (n === 0) { ctaFail++; fail(`chart 页缺披露「${w}」（模式：字符串计数）`) }
+}
+// pricing 页：年运行标注单项购买；单项卡有模块页入口
+const pricingSrc = readFileSync(new URL('../src/app/pricing/page.tsx', import.meta.url), 'utf8')
+for (const [w, min] of [['单项购买', 1], ['单项报告', 1], ['会员不含报告', 1]]) {
+  const n = pricingSrc.split(w).length - 1
+  if (n < min) { ctaFail++; fail(`pricing 页「${w}」命中 ${n} < ${min}（模式：字符串计数）`) }
+}
+if (!pricingSrc.includes("annual_report: '/liunian'")) {
+  ctaFail++; fail('pricing 页 SKU_HREF 缺 annual_report → /liunian 单项入口')
+}
+console.log(ctaFail === 0
+  ? `✓ CTA 文案守卫：chart 页误导词 ${CTA_MISS.join('/')} 0 命中、披露语齐备；pricing 页年运行「单项购买」标注+单项入口/liunian`
+  : '✗ CTA 文案守卫失败')
+
 console.log('\n' + (allPass ? 'PRICING_ACCEPT_PASS' : 'PRICING_ACCEPT_FAIL'))
 if (!allPass) process.exit(1)

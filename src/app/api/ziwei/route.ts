@@ -5,6 +5,7 @@ import { checkDSTTransition } from '@/lib/solarTime'
 import { resolveBirthFromBody } from '@/lib/birthRequest'
 import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
 import { createServerSupabase } from '@/lib/supabase'
+import { saveReport, deriveReportTitle } from '@/lib/reportSave'
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,30 +70,38 @@ export async function POST(request: NextRequest) {
       : '规则版（AI结果未过合规校验）'
     const dstNotice = ref ? checkDSTTransition(ref.zone, { year, month, day, hour, minute }) : null
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        chart,
-        analysis,
-        // ★ free 层保留结构化星盘数据；ai 在未解锁时为 null
-        free: { chart, analysis },
-        locked: unlocked ? null : {
-          skus: ['ziwei_deep'],
-          preview: '紫微十二宫深度解读（命格总论、事业、财运、感情、健康、大限流年）解锁后可见。'
-        },
-        ai,
-        aiSource,
-        trueSolar: ref
-          ? {
-              birthplace: city?.name || null,
-              lng: ref.lng,
-              zone: ref.zone,
-              offsetMin: chart.timezoneOffsetApplied,
-              dstNotice: dstNotice?.message || null
-            }
-          : null
-      }
+    const data = {
+      chart,
+      analysis,
+      // ★ free 层保留结构化星盘数据；ai 在未解锁时为 null
+      free: { chart, analysis },
+      locked: unlocked ? null : {
+        skus: ['ziwei_deep'],
+        preview: '紫微十二宫深度解读（命格总论、事业、财运、感情、健康、大限流年）解锁后可见。'
+      },
+      ai,
+      aiSource,
+      trueSolar: ref
+        ? {
+            birthplace: city?.name || null,
+            lng: ref.lng,
+            zone: ref.zone,
+            offsetMin: chart.timezoneOffsetApplied,
+            dstNotice: dstNotice?.message || null
+          }
+        : null
+    }
+
+    // 登录用户：报告作为账户资产自动保存（静默降级，不阻断主流程）
+    const reportInput = { year, month, day, hour, gender }
+    const reportId = await saveReport(token || undefined, {
+      kind: 'ziwei',
+      title: deriveReportTitle('ziwei', reportInput),
+      input: reportInput,
+      result: data
     })
+
+    return NextResponse.json({ success: true, data, reportId })
   } catch (error) {
     console.error('紫微排盘错误:', error)
     const msg = error instanceof Error ? error.message : String(error)

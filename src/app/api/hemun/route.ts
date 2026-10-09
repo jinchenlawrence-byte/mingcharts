@@ -8,6 +8,7 @@ import { checkDSTTransition } from '@/lib/solarTime'
 import { resolveBirthFromBody } from '@/lib/birthRequest'
 import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
 import { createServerSupabase } from '@/lib/supabase'
+import { saveReport, deriveReportTitle } from '@/lib/reportSave'
 
 interface RawBirth {
   year?: unknown; month?: unknown; day?: unknown
@@ -101,18 +102,29 @@ export async function POST(request: NextRequest) {
       : aiReport ? 'AI 深度解读'
       : '规则版（AI结果未过合规校验）'
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        male, female, result, ai, aiSource, dstNotices,
-        // ★ free 层保留结构化干支事实与评分；ai 在未解锁时为 null
-        free: { male, female, result },
-        locked: unlocked ? null : {
-          skus: ['hemun'],
-          preview: '合婚双人九维深度解读（典籍干支、古法纳音、民俗生肖分级呈现）解锁后可见。'
-        }
+    const data = {
+      male, female, result, ai, aiSource, dstNotices,
+      // ★ free 层保留结构化干支事实与评分；ai 在未解锁时为 null
+      free: { male, female, result },
+      locked: unlocked ? null : {
+        skus: ['hemun'],
+        preview: '合婚双人九维深度解读（典籍干支、古法纳音、民俗生肖分级呈现）解锁后可见。'
       }
+    }
+
+    // 登录用户：报告作为账户资产自动保存（静默降级，不阻断主流程）
+    const reportInput = {
+      year: m.data!.year, month: m.data!.month, day: m.data!.day, gender: m.data!.gender,
+      partnerYear: f.data!.year, partnerMonth: f.data!.month, partnerDay: f.data!.day, partnerGender: f.data!.gender
+    }
+    const reportId = await saveReport(token || undefined, {
+      kind: 'hemun',
+      title: deriveReportTitle('hemun', reportInput),
+      input: reportInput,
+      result: data
     })
+
+    return NextResponse.json({ success: true, data, reportId })
   } catch (error) {
     console.error('合婚错误:', error)
     const msg = error instanceof Error ? error.message : String(error)

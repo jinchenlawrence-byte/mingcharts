@@ -183,6 +183,9 @@ const CLIENT_PAGES = [
   { route: '/hemun', file: 'src/app/hemun/page.tsx' },
   { route: '/ziwei', file: 'src/app/ziwei/page.tsx' },
   { route: '/geo', file: 'src/app/geo/page.tsx' },
+  { route: '/liunian', file: 'src/app/liunian/page.tsx' },
+  { route: '/reports', file: 'src/app/reports/page.tsx' },
+  { route: '/reports/[id]', file: 'src/app/reports/[id]/page.tsx' },
   { route: '/auth', file: 'src/app/auth/page.tsx' },
 ]
 let clientFail = 0

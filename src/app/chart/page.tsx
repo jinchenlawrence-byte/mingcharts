@@ -11,7 +11,6 @@ import type { PaidAnalysis, LuckCycles, LuckTag } from '@/lib/analysis'
 
 // 价格一律取自 SKUS（单一事实源），本文件不得硬编码价格
 const FATEBOOK_PRICE = formatPriceUSD(SKUS.fatebook.priceUSD)
-const MEMBER_MONTHLY_PRICE = formatPriceUSD(SKUS.member_monthly.priceUSD)
 
 interface ChartData {
   input: {
@@ -46,6 +45,7 @@ interface ChartData {
     zone: string
     dstNotice: string | null
   }
+  // ★ 门禁（§8.5.1）：未解锁时给 preview 与 skus，已解锁为 null
   locked?: { skus: string[]; preview: string } | null
 }
 
@@ -178,7 +178,6 @@ export default function ChartPage() {
   const [chart, setChart] = useState<ChartData | null>(null)
   const [unlocking, setUnlocking] = useState(false)
   const [payError, setPayError] = useState('')
-  const [isMember, setIsMember] = useState(false)
 
   const handleUnlock = async () => {
     const supabase = getSupabase()
@@ -214,21 +213,6 @@ export default function ChartPage() {
       router.push('/')
     }
   }, [router])
-
-  useEffect(() => {
-    ;(async () => {
-      const supabase = getSupabase()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) return
-      try {
-        const res = await fetch(`/api/membership?token=${session.access_token}`)
-        const data = await res.json()
-        if (data.success) setIsMember(!!data.data?.active)
-      } catch {
-        // 会员状态查询失败不影响排盘展示
-      }
-    })()
-  }, [])
 
   if (!chart) return <div className="min-h-screen flex items-center justify-center">加载中...</div>
 
@@ -454,16 +438,13 @@ export default function ChartPage() {
             disabled={unlocking}
             className="bg-white text-amber-600 px-8 py-3 rounded-full font-bold hover:bg-amber-50 transition disabled:opacity-60"
           >
-            {unlocking ? 'AI命理师解读生成中（约30秒）...' : isMember ? '会员免费解锁' : `解锁完整分析 ${FATEBOOK_PRICE}`}
+            {unlocking ? 'AI命理师解读生成中（约30秒）...' : `解锁完整分析（内测期免费体验）`}
           </button>
           {payError && <p className="text-sm mt-2 text-red-100">{payError}</p>}
-          {isMember ? (
-            <p className="text-xs mt-3 opacity-75">✓ 会员已生效</p>
-          ) : (
-            <p className="text-xs mt-3 opacity-75">
-              或 <Link href="/pricing" className="underline">开通会员 {MEMBER_MONTHLY_PRICE}/月</Link>
-            </p>
-          )}
+          <p className="text-xs mt-3 opacity-75">
+            正式开放后 {FATEBOOK_PRICE}/次（会员不含报告）·{' '}
+            <Link href="/mingshu" className="underline">查看命书详情</Link>
+          </p>
         </div>
         )}
 

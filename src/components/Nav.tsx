@@ -46,6 +46,9 @@ export default function Nav() {
           <Link href="/ziwei" className="text-gray-700 hover:text-amber-700">
             紫微斗数
           </Link>
+          <Link href="/liunian" className="text-gray-700 hover:text-amber-700 hidden sm:inline">
+            年运报告
+          </Link>
           <Link href="/geo" className="text-gray-700 hover:text-amber-700 hidden sm:inline">
             方位城市
           </Link>
@@ -65,6 +68,9 @@ export default function Nav() {
             <>
               <Link href="/charts" className="text-gray-700 hover:text-amber-700">
                 我的命盘
+              </Link>
+              <Link href="/reports" className="text-gray-700 hover:text-amber-700">
+                我的报告
               </Link>
               <span className="text-gray-400 max-w-[160px] truncate hidden sm:inline">
                 {email}

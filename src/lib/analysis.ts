@@ -642,7 +642,8 @@ const TAG_ADVICE: Record<LuckTag, string> = {
 // 公历月对应的"节"（命理以节令换月，非农历初一）
 const JIE_BY_MONTH = ['小寒', '立春', '惊蛰', '清明', '立夏', '芒种', '小暑', '立秋', '白露', '寒露', '立冬', '大雪']
 
-function getFavorSets(chart: AnalyzableChart): { favorable: string[]; unfavorable: string[] } {
+// 导出原因：年运模块（aiLiunian）prompt 需要同一套喜忌事实，严禁另写第二份判定
+export function getFavorSets(chart: AnalyzableChart): { favorable: string[]; unfavorable: string[] } {
   const { yong, xi, ji } = getYongWx(chart)
   return { favorable: [...yong, ...xi], unfavorable: ji }
 }

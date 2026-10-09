@@ -9,6 +9,7 @@ import { generateAIGeo, fallbackGeoText } from '@/lib/aiGeo'
 import { tiaoHouWuxing } from '@/lib/analysis'
 import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
 import { createServerSupabase } from '@/lib/supabase'
+import { saveReport, deriveReportTitle } from '@/lib/reportSave'
 import type { WX } from '@/lib/geo'
 
 export async function POST(request: NextRequest) {
@@ -108,34 +109,42 @@ export async function POST(request: NextRequest) {
       : aiReport ? 'AI 深度解读'
       : '规则版（AI结果未过合规校验）'
 
-    return NextResponse.json({
-      success: true,
-      data: {
+    const data = {
+      chart: { ...chart, analysis: { wangShuai, isPaid: false } },
+      geo: analysis,
+      // ★ free 层保留【结构化的城市推荐与指数】—— 这是"试吃"：让用户看到有什么
+      free: {
         chart: { ...chart, analysis: { wangShuai, isPaid: false } },
-        geo: analysis,
-        // ★ free 层保留【结构化的城市推荐与指数】—— 这是"试吃"：让用户看到有什么
-        free: {
-          chart: { ...chart, analysis: { wangShuai, isPaid: false } },
-          geo: analysis
-        },
-        // ★★ locked 在已解锁时为 null（与现在一致 ✓）；未解锁时给 preview 与 skus
-        locked: unlocked ? null : {
-          skus: ['geo'],
-          preview: '方位总论 · 现居城市影响 · 财富/事业/贵/安居/才华五城解读 · 迁居开运建议（AI 深度解读，共 8 节）解锁后可见。'
-        },
-        trueSolar: ref
-          ? {
-              birthplace: city?.name || null,
-              lng: ref.lng,
-              zone: ref.zone,
-              offsetMin: chart.timezoneOffsetApplied,
-              dstNotice: dstNotice?.message || null
-            }
-          : null,
-        ai,
-        aiSource
-      }
+        geo: analysis
+      },
+      // ★★ locked 在已解锁时为 null（与现在一致 ✓）；未解锁时给 preview 与 skus
+      locked: unlocked ? null : {
+        skus: ['geo'],
+        preview: '方位总论 · 现居城市影响 · 财富/事业/贵/安居/才华五城解读 · 迁居开运建议（AI 深度解读，共 8 节）解锁后可见。'
+      },
+      trueSolar: ref
+        ? {
+            birthplace: city?.name || null,
+            lng: ref.lng,
+            zone: ref.zone,
+            offsetMin: chart.timezoneOffsetApplied,
+            dstNotice: dstNotice?.message || null
+          }
+        : null,
+      ai,
+      aiSource
+    }
+
+    // 登录用户：报告作为账户资产自动保存（静默降级，不阻断主流程）
+    const reportInput = { year, month, day, hour, gender }
+    const reportId = await saveReport(token || undefined, {
+      kind: 'geo',
+      title: deriveReportTitle('geo', reportInput),
+      input: reportInput,
+      result: data
     })
+
+    return NextResponse.json({ success: true, data, reportId })
   } catch (error) {
     console.error('地理位置解析错误:', error)
     const msg = error instanceof Error ? error.message : String(error)

@@ -80,18 +80,21 @@ console.log(gateFail === 0
 
 // ---------- ③ 前端消费 locked ----------
 console.log('—— ③ 前端消费 locked（4 个页面源码有 locked 读取）——')
+// ★ 17 轮 ResultView 重构后，geo/ziwei/hemun 的 locked 消费在共享组件里（页面薄壳）
+//   语义不变：「前端消费 locked」—— 页面自身或其 ResultView 组件任一处消费即通过
 const FRONTEND_PAGES = [
-  'src/app/geo/page.tsx',
-  'src/app/ziwei/page.tsx',
-  'src/app/hemun/page.tsx',
-  'src/app/chart/page.tsx',
+  ['src/app/geo/page.tsx', 'src/components/reports/GeoResultView.tsx'],
+  ['src/app/ziwei/page.tsx', 'src/components/reports/ZiweiResultView.tsx'],
+  ['src/app/hemun/page.tsx', 'src/components/reports/HemunResultView.tsx'],
+  ['src/app/chart/page.tsx'],
 ]
 let feFail = 0
-for (const rel of FRONTEND_PAGES) {
-  const file = root + rel.slice(4) // src/ -> root
-  if (!existsSync(file)) { fail(`文件不存在：${rel}`); feFail++; continue }
-  const content = readFileSync(file, 'utf8')
-  if (!/locked/.test(content)) { fail(`${rel} 未读取 locked`); feFail++ }
+for (const candidates of FRONTEND_PAGES) {
+  const hit = candidates.some((rel) => {
+    const file = root + rel.slice(4) // src/ -> root
+    return existsSync(file) && /locked/.test(readFileSync(file, 'utf8'))
+  })
+  if (!hit) { fail(`${candidates[0]} 未读取 locked`); feFail++ }
 }
 console.log(feFail === 0
   ? `✓ 前端消费 locked：${FRONTEND_PAGES.length} 个页面均读取了 data.locked`

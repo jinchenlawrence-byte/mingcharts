@@ -7,6 +7,7 @@ import {
   formatPriceUSD,
   ONE_TIME_SKUS,
   type GrantId,
+  type SkuId,
 } from '@/lib/pricing'
 
 export const metadata = {
@@ -37,6 +38,14 @@ const SUBSCRIPTION_LABELS = SUBSCRIPTION_GRANTS.map((g) => GRANT_LABELS[g]).join
 const REPORT_SKU_NAMES = REPORT_GRANTS
   .map((g) => SKUS[g as keyof typeof SKUS].name)
   .join('、')
+
+// 单项报告 → 模块页直达入口（bundle3 为套餐组合无独立模块页，不设链接）
+const SKU_HREF: Partial<Record<SkuId, string>> = {
+  annual_report: '/liunian',
+  hemun: '/hemun',
+  ziwei_deep: '/ziwei',
+  geo: '/geo',
+}
 
 const SECTIONS = [
   '八字总览',
@@ -153,6 +162,8 @@ interface CompareRow {
   grant?: GrantId
   /** 订阅类能力尚未上线，标签缀「即将推出」 */
   coming?: boolean
+  /** 行尾补充说明（如单项报告的「单项购买 $19.99」） */
+  note?: string
 }
 
 const COMPARE_ROWS: CompareRow[] = [
@@ -162,7 +173,11 @@ const COMPARE_ROWS: CompareRow[] = [
   { label: 'AI 命理师深度解读', free: false, grant: 'fatebook' },
   { label: '近三年流年趋势', free: false, grant: 'fatebook' },
   { label: '报告永久保存，可反复查看', free: false, grant: 'fatebook' },
-  { label: GRANT_LABELS.annual_report, free: false, grant: 'annual_report' },
+  // 年运报告为独立单项 SKU：不属于免费/命书/会员任何一方，标注「单项购买」防止误读为缺漏
+  {
+    label: GRANT_LABELS.annual_report, free: false, grant: 'annual_report',
+    note: `单项购买 ${formatPriceUSD(SKUS.annual_report.priceUSD)}`,
+  },
   ...SUBSCRIPTION_GRANTS.map((g) => ({
     label: GRANT_LABELS[g], free: false, grant: g, coming: true,
   })),
@@ -262,6 +277,14 @@ export default function PricingPage() {
                 <div>
                   <h3 className="font-bold text-amber-900">{s.name}</h3>
                   <p className="text-sm text-gray-600 mt-1">{s.desc}</p>
+                  {SKU_HREF[s.id] && (
+                    <Link
+                      href={SKU_HREF[s.id]!}
+                      className="inline-block text-sm text-amber-600 hover:text-amber-800 mt-2"
+                    >
+                      去体验 →
+                    </Link>
+                  )}
                 </div>
                 <div className="text-right shrink-0">
                   <div className="text-2xl font-bold text-amber-800">{formatPriceUSD(s.priceUSD)}</div>
@@ -311,6 +334,9 @@ export default function PricingPage() {
                         {row.coming && (
                           <span className="ml-2 text-xs text-amber-600">即将推出</span>
                         )}
+                        {row.note && (
+                          <span className="ml-2 text-xs text-gray-400">{row.note}</span>
+                        )}
                       </td>
                       {cells.map((on, i) => (
                         <td key={i} className="py-3 px-4 text-center">
@@ -327,6 +353,9 @@ export default function PricingPage() {
               </tbody>
             </table>
           </div>
+          <p className="text-xs text-gray-500 text-center mt-3">
+            年运 / 合婚 / 紫微 / 地理为单项报告，按次单独购买（会员不含报告），价目见上方「单项报告」。
+          </p>
         </section>
 
         {/* FAQ */}
