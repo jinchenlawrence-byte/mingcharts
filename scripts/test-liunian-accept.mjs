@@ -144,5 +144,41 @@ console.log(pFail === 0
   ? `✓ 页面：/liunian（use client+三档年份+共享View+定价披露）、layout、Nav 年运/我的报告链接齐备`
   : '✗ 页面断言失败')
 
+// ---------- ⑤ 流年 note 去重率（步骤④：同 tag 不同结构病须分叉，去重率 = 100%）----------
+console.log('\n—— ⑤ 流年 note 去重率（步骤④：结构病分叉守护）——')
+let dedupFail = 0
+try {
+  const { paipan } = await import('../src/lib/paipan.ts')
+  const { getWangShuai, getGeJu } = await import('../src/lib/paipan.ts')
+  const { buildLuckCycles } = await import('../src/lib/analysis.ts')
+  // 取多命盘验证去重（覆盖不同格局，避免单盘特例）
+  const cases = [
+    { year: 1991, month: 4, day: 12, hour: 3, minute: 10, gender: 1 },
+    { year: 1985, month: 8, day: 20, hour: 14, minute: 30, gender: 0 },
+    { year: 2000, month: 1, day: 1, hour: 8, minute: 0, gender: 1 },
+    { year: 1978, month: 11, day: 5, hour: 22, minute: 45, gender: 0 },
+  ]
+  let totalNotes = 0, totalUnique = 0
+  for (const c of cases) {
+    const chart = paipan(c)
+    chart.analysis = { wangShuai: getWangShuai(chart), geJu: getGeJu(chart), isPaid: true }
+    const luck = buildLuckCycles(chart, new Date(2026, 5, 15))
+    const notes = luck.liuNian.map(l => l.note)
+    const uniq = new Set(notes).size
+    totalNotes += notes.length
+    totalUnique += uniq
+    if (uniq !== notes.length) {
+      dedupFail++
+      fail(`命盘 ${c.year}-${c.month}-${c.day} 流年 note 去重率 ${(uniq / notes.length * 100).toFixed(0)}%（期望 100%），存在重复判词`)
+    }
+  }
+  console.log(dedupFail === 0
+    ? `✓ 流年 note 去重率 100%（${cases.length} 盘 × ${totalNotes / cases.length} 年 = ${totalNotes} 条，全部唯一；同 tag 按结构病分叉）`
+    : '✗ 流年 note 去重断言失败')
+} catch (e) {
+  dedupFail++
+  fail('流年 note 去重率断言执行异常：' + e.message)
+}
+
 console.log('\n' + (allPass ? 'LIUNIAN_ACCEPT_PASS' : 'LIUNIAN_ACCEPT_FAIL'))
 if (!allPass) process.exit(1)

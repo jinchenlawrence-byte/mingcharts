@@ -655,6 +655,17 @@ export const FORTUNE_ADVICE: Record<FortuneTier, string> = {
   '大凶': '岁运结构不利，宜静守、防健康与是非'
 }
 
+// ★ 步骤④：判词按结构病分叉（同 tag 不得共用一句）
+//   无结构病 → 用 FORTUNE_ADVICE 基础句；有结构病 → 截取基础句首段，以「然」引出结构病
+//   （如 平+官星被化 → "平平之运，然运干正官透干被印化泄，官星有名无权"）
+//   这样同 tag 不同结构病的 note 必然不同，去重率 100%
+export function fortuneAdviceOf(tag: FortuneTier, issues: string[]): string {
+  const base = FORTUNE_ADVICE[tag]
+  if (issues.length === 0) return base
+  const head = base.split(/[，,。]/)[0]
+  return `${head}，然${issues.join('；')}`
+}
+
 // 公历月对应的"节"（命理以节令换月，非农历初一）
 const JIE_BY_MONTH = ['小寒', '立春', '惊蛰', '清明', '立夏', '芒种', '小暑', '立秋', '白露', '寒露', '立冬', '大雪']
 
@@ -1112,7 +1123,9 @@ function buildLuckLiuNian(
     }
 
     const tag = fortuneTierOf(score, issues)
-    const note = `${shiShenGan}主事——${GOD_DOMAIN[shiShenGan]}；${FORTUNE_ADVICE[tag]}${issues.length ? '；' + issues.join('；') : ''}。`
+    // 步骤④：判词按结构病分叉；有结构病时结构病进入主句（「然」引出），不再后置
+    const advice = fortuneAdviceOf(tag, issues)
+    const note = `${shiShenGan}主事——${GOD_DOMAIN[shiShenGan]}；${advice}。`
     out.push({
       year, ganZhi: gz, shiShenGan, shiShenZhi, score, tag,
       current: i === 0, daYunGanZhi: dyGanZhi, relations, note, structuralIssues: issues
