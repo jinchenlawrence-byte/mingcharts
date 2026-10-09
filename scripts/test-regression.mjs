@@ -42,7 +42,8 @@ else {
   console.log(`己丑运 tag=${jichou.tag}`)
   console.log(`事业倾向=${jichou.domains.career.tendency}  财运倾向=${jichou.domains.wealth.tendency}`)
   const jt = JSON.stringify(jichou)
-  // ★ 事故 18 纪律的新形态（任务20 方案 ii 拍板更新）：己丑运有 ≥2 个结构病 → cap=1 → tag 最高「小吉」。
+  // ★ 事故 18 纪律的新形态（依据 2026-10-10 用户拍板【方案 ii】：≥2 病 → 最高小吉；非天然如此）：
+  //   己丑运有 ≥2 个结构病 → cap=1 → tag 最高「小吉」。
   //   精确钉死「小吉」：score=2 被 cap=1 压到 s=1 → 小吉；若 cap 被进一步放宽到 2 会给「吉」→ 翻红。
   //   （旧规 cap=0 最高「平」已被方案 ii 取代：纯放宽，负向/大凶不变；梯度保留——病越多评价越低）
   if (jichou.tag !== '小吉') { console.log(`✗ 己丑运（${jichou.structuralIssues.length}个结构病）tag=${jichou.tag}，期望「小吉」（cap=1 封顶）`); pass = false } else { console.log(`✓ 己丑运（${jichou.structuralIssues.length}个结构病）封顶「小吉」（方案 ii：多重结构病仍被压制，不及其上「吉」）`) }
