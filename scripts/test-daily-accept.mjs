@@ -301,8 +301,63 @@ console.log(pComp === 0
   ? `✓ 日运合规：180 条过 findForbidden(strictBi)＋专属禁词＋追加负面词＋密度(≤1)＋决策指导，0 命中`
   : `✗ 日运合规断言失败（${pComp} 处）`)
 
-// #15 ★ §8.6.8 两层：词级(变体3「心」开头≤6) ＋ 属性兜底(逐变体单一前两字≤6) ＋ 同一十神6条不得≥3同前两字
+// #15 ★ 句式多样性四条（HANDOFF-万字补全与文案返修 §2.3；§8.6.8 断言盖属性本身）：
+//   ① 前两字种数 ≥50/60（逐变体）—— 直接盯「多样性」属性，不再只盯某个计数上限
+//   ② 半句重复检测：任一变体内逗号后子串不得 ≥3 条相同 —— 专抓「把绷着的肩放一放」×4 那类
+//   ③ 同十神内起句不得相同（<2，由原 <3 收紧）—— 同十神连续两天不撞同起句
+//   ④ 保留原两条作辅助：变体[2]「心」开头 ≤6；逐变体单一前两字 ≤6
 let pDiv = 0
+const divReport = []
+// ① 前两字种数 ≥ 50/60（逐变体各自算）
+for (let vi = 0; vi < 3; vi++) {
+  const freq = new Map()
+  for (const ss of SHI_SHEN_NAMES) {
+    for (const rel of RELATIONS) {
+      const t = PERSONAL_DAILY[ss][rel][vi]
+      const p = [...t].slice(0, 2).join('')
+      freq.set(p, (freq.get(p) || 0) + 1)
+    }
+  }
+  divReport.push(`[${vi}]${freq.size}/60`)
+  if (freq.size < 50) {
+    pDiv++
+    const dups = [...freq.entries()].filter(([, n]) => n >= 2).map(([p, n]) => `「${p}」×${n}`)
+    fail(`变体[${vi}] 前两字种数 ${freq.size}/60（< 50），重复组：${dups.join(' ')}`)
+  }
+}
+// ② 半句重复检测（逗号之后子串，≥3 条相同即翻红）
+let halfMax = 0
+for (let vi = 0; vi < 3; vi++) {
+  const half = new Map()
+  for (const ss of SHI_SHEN_NAMES) {
+    for (const rel of RELATIONS) {
+      const t = PERSONAL_DAILY[ss][rel][vi]
+      const idx = t.indexOf('，')
+      if (idx < 0) continue
+      const h = t.slice(idx + 1)
+      if (!half.has(h)) half.set(h, [])
+      half.get(h).push(`${ss}·${rel}`)
+    }
+  }
+  for (const [h, keys] of half) {
+    if (keys.length > halfMax) halfMax = keys.length
+    if (keys.length >= 3) { pDiv++; fail(`变体[${vi}] 半句「${h}」×${keys.length}/60（≥3）：${keys.join(' ')}`) }
+  }
+}
+// ③ 同十神内起句不得相同（任一变体；<2 即零容忍）
+for (const ss of SHI_SHEN_NAMES) {
+  for (let vi = 0; vi < 3; vi++) {
+    const freq = new Map()
+    for (const rel of RELATIONS) {
+      const t = PERSONAL_DAILY[ss][rel][vi]
+      const p = [...t].slice(0, 2).join('')
+      freq.set(p, (freq.get(p) || 0) + 1)
+    }
+    const top = [...freq.entries()].sort((a, b) => b[1] - a[1])[0]
+    if (top[1] >= 2) { pDiv++; fail(`${ss} 变体[${vi}] 内「${top[0]}」起句 ${top[1]}/6（≥2，同十神内不许同起句）`) }
+  }
+}
+// ④ 保留（辅助）：变体[2]「心」开头 ≤6；逐变体单一前两字 ≤6
 let xinOpen2 = 0
 for (const { shiShen, rel, vi, text } of collectAll()) {
   if (vi === 2 && text.startsWith('心')) xinOpen2++
@@ -320,21 +375,8 @@ for (let vi = 0; vi < 3; vi++) {
   const top = [...freq.entries()].sort((a, b) => b[1] - a[1])[0]
   if (top[1] > 6) { pDiv++; fail(`变体[${vi}] 前两字「${top[0]}」×${top[1]}/60（>6）`) }
 }
-// 同一十神内 6 条不得有 ≥3 条同一前两字起句（任一变体）
-for (const ss of SHI_SHEN_NAMES) {
-  for (let vi = 0; vi < 3; vi++) {
-    const freq = new Map()
-    for (const rel of RELATIONS) {
-      const t = PERSONAL_DAILY[ss][rel][vi]
-      const p = [...t].slice(0, 2).join('')
-      freq.set(p, (freq.get(p) || 0) + 1)
-    }
-    const top = [...freq.entries()].sort((a, b) => b[1] - a[1])[0]
-    if (top[1] >= 3) { pDiv++; fail(`${ss} 变体[${vi}] 内「${top[0]}」起句 ${top[1]}/6（≥3）`) }
-  }
-}
 console.log(pDiv === 0
-  ? `✓ 日运句式：变体[2]「心」开头 ${xinOpen2}/60（≤6）；逐变体前两字≤6；同十神内<3 同起句`
+  ? `✓ 日运句式：前两字种数 ${divReport.join(' ')}（≥50）；半句最高 ×${halfMax}（<3）；同十神内零同起句；「心」开头 ${xinOpen2}/60（≤6）`
   : '✗ 日运句式断言失败')
 
 // #16 ★★ 事实表穷举（P0）—— 冲/合/害/刑 144 组合 ＋ 十神 100 组合 ＋ dayBranchRelation 两层
@@ -532,8 +574,30 @@ let toothFail = 0
     // got==='害' ≠ '刑' → #16(c) 的 expectShiShen/relFailC 逻辑会判红（此处已证明差异存在）
   }
 }
+// 牙口7：「难得」4 条改回同一后半句（把绷着的肩放一放。）→ #15② 半句重复断言须翻红（§2.3）
+{
+  const clone = structuredClone(PERSONAL_DAILY)
+  const victims = [['劫财', '无'], ['正财', '无'], ['正官', '无'], ['正印', '无']]
+  for (const [ss, rel] of victims) clone[ss][rel][2] = '难得清静的一天，把绷着的肩放一放。'
+  // 确认注入有效（肯定性证据）
+  const injected = victims.every(([ss, rel]) => clone[ss][rel][2].endsWith('把绷着的肩放一放。'))
+  if (!injected) { toothFail++; fail('牙口7 注入未生效（后半句未植入）') }
+  else {
+    // 复演 #15② 的半句统计逻辑：注入后变体[2] 后半句最高须 ≥3
+    const half = new Map()
+    for (const ss of SHI_SHEN_NAMES) for (const rel of RELATIONS) {
+      const t = clone[ss][rel][2]
+      const idx = t.indexOf('，')
+      if (idx < 0) continue
+      const h = t.slice(idx + 1)
+      half.set(h, (half.get(h) || 0) + 1)
+    }
+    const maxHalf = Math.max(...half.values())
+    if (maxHalf < 3) { toothFail++; fail(`牙口7：注入 4 条同后半句后最高仅 ×${maxHalf}（<3），半句断言无判别力`) }
+  }
+}
 console.log(toothFail === 0
-  ? `✓ 牙口：6 种注入（大吉/不宜出行/密度/7同起句/自算归日/寅巳改害）均确认有效且断言翻红`
+  ? `✓ 牙口：7 种注入（大吉/不宜出行/密度/7同起句/自算归日/寅巳改害/4条同后半句）均确认有效且断言翻红`
   : `✗ 牙口断言失败（${toothFail} 处）`)
 
 console.log('\n' + (allPass ? 'DAILY_ACCEPT_PASS' : 'DAILY_ACCEPT_FAIL'))

@@ -6,7 +6,7 @@ import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT } from './ai
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
 const AI_MODEL = process.env.AI_MODEL || 'deepseek-chat'
-const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS || 90000)
+const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS || 120000)
 
 export interface ZiweiAIReport {
   overview: string   // 命格总论

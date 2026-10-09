@@ -84,7 +84,12 @@ export default function MingShuContent() {
               先免费排盘
             </Link>
           </div>
-          <p className="text-xs text-gray-400 mt-4">
+          <div className="mt-4">
+            <Link href="/mingshu/demo" className="text-sm text-amber-700 hover:underline">
+              先看公开示例命书（虚构资料 · 展示前约 30%）→
+            </Link>
+          </div>
+          <p className="text-xs text-gray-400 mt-3">
             已生成命盘永久保存 · 30 秒左右出结果 · 可反复查看
           </p>
         </div>

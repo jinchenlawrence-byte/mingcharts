@@ -11,24 +11,34 @@ import type { Zhi } from './branchRelations'
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
 const AI_MODEL = process.env.AI_MODEL || 'deepseek-chat'
-const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS || 90000)
+const AI_TIMEOUT_MS = Number(process.env.AI_TIMEOUT_MS || 120000)
 
 // AI 只产出十个文字板块，结构化岁运 luckCycles 与相似命例 similarCases 由规则引擎补充
 export type AIPaidAnalysis = Omit<PaidAnalysis, 'luckCycles' | 'similarCases'>
 
 // 十大板块及其写作要求（与 PaidAnalysis 键一一对应）
-const SECTION_SPECS: Array<{ key: keyof AIPaidAnalysis; name: string; requirement: string }> = [
-  { key: 'overview', name: '八字总览', requirement: '用200字左右总评此命：日主、月令、旺衰、格局、命局最大特点与一句话人生主题' },
-  { key: 'personality', name: '性格天赋', requirement: '结合日主五行本性（参考滴天髓性情章）与局中十神组合，描述性格优势、短板与天赋所在，200-300字' },
-  { key: 'yongShen', name: '用神喜忌', requirement: '明确用神、喜神、忌神及取用理由；给出对应的五行、方位、行业、颜色建议，200-300字' },
-  { key: 'geJuAnalysis', name: '格局成败', requirement: '按《子平真诠》格局法分析：用神是否得相神辅佐、有无忌神破格、成格或带瑕疵、格局层次，并引用一句经典原文，300字左右' },
-  { key: 'tiaoHou', name: '调候用神', requirement: '按《穷通宝鉴》分析该日干生于该月的寒暖燥湿之病与调候用神，说明局中调候神是透干、藏支还是不见，300字左右' },
-  { key: 'daYunAnalysis', name: '大运流年', requirement: '先点明当前所行大运的干支、十神，并依据算法给出的"结构病"（被合/被冲/被化/被夺/深藏/孤立）点明喜用是否真正有效——用神到位不等于用神有效；再分维度（事业/财运/健康/六亲）给出倾向，措辞具体留余地，严禁使用"大吉""大凶""积极进取""突破性进展"等绝对化或鼓励进攻的表述；然后依次点评今年、明年、后年三年流年：流年天干十神主事领域、与大运及原局的作用（天克地冲/岁运并临/冲合夫妻宫或月令等），最后简述流月节奏与当年需要把握/回避的月份（流月只用"较宜/一般/宜慎"），400-500字' },
-  { key: 'career', name: '事业财运', requirement: '结合格局、用神与财官配置，给出适合的行业方向、求财方式、财富层次趋势与发力时段，250-350字' },
-  { key: 'marriage', name: '婚姻感情', requirement: '男命以财为妻星、女命以官为夫星，结合日支夫妻宫的刑冲合害，分析感情模式、配偶特征、婚姻趋势与注意事项，250-350字' },
-  { key: 'children', name: '子女六亲', requirement: '男命看官杀、女命看食伤为子女星，结合时柱分析子女缘；并简述与父母、兄弟姐妹的六亲关系，200-300字' },
-  { key: 'health', name: '健康提示', requirement: '根据五行偏旺偏弱指出对应脏腑的养护重点（木肝胆、火心脏、土脾胃、金肺、水肾），给出生活方式建议，200-300字' }
+// ★ 字数要求已从 2850 提到 5750（万字补全 §1.2）；每个板块同时补了内容要点
+export const SECTION_SPECS: Array<{ key: keyof AIPaidAnalysis; name: string; requirement: string }> = [
+  { key: 'overview', name: '八字总览', requirement: '用400-500字总评此命：日主、月令、旺衰、格局、命局最大特点与一句话人生主题。须含以下要点：日主五行本性在月令得令得地得势的完整判断、格局名称与成格/瑕疵简评、命局最显著的一个优势与一个需注意之处、一句话人生主题定调。本板块正文不少于 400 字，低于下限为不合格' },
+  { key: 'personality', name: '性格天赋', requirement: '结合日主五行本性（参考滴天髓性情章）与局中十神组合，描述性格优势、短板与天赋所在。须含以下要点：日主本性一词定性、至少两个具体性格特质及其干支来源、一个明显短板及其成因、天赋适合发挥的场合，500-600字。本板块正文不少于 500 字，低于下限为不合格' },
+  { key: 'yongShen', name: '用神喜忌', requirement: '明确用神、喜神、忌神及取用理由；给出对应的五行、方位、行业、颜色建议。须含以下要点：用神取用理由（为何取此而非彼）、喜神与忌神的区分及各自影响、至少三个具体建议（行业/方位/颜色/行为习惯），500-600字。本板块正文不少于 500 字，低于下限为不合格' },
+  { key: 'geJuAnalysis', name: '格局成败', requirement: '按《子平真诠》格局法分析：用神是否得相神辅佐、有无忌神破格、成格或带瑕疵、格局层次，并引用一句经典原文。须含以下要点：格局名称与取用依据、相神/忌神的在局有无及影响、成格程度判断（上/中/下格或带瑕疵）、一句经典原文及白话解释，600-700字。本板块正文不少于 600 字，低于下限为不合格' },
+  { key: 'tiaoHou', name: '调候用神', requirement: '按《穷通宝鉴》分析该日干生于该月的寒暖燥湿之病与调候用神，说明局中调候神是透干、藏支还是不见。须含以下要点：月令气候特征一词定性、首神在局有无与位置（透干/藏支/不见）、调候对整体层次的影响、若调候不见则给出后天补救方向，600-700字。本板块正文不少于 600 字，低于下限为不合格' },
+  { key: 'daYunAnalysis', name: '大运流年', requirement: '先点明当前所行大运的干支、十神，并依据算法给出的"结构病"（被合/被冲/被化/被夺/深藏/孤立）点明喜用是否真正有效——用神到位不等于用神有效；再分维度（事业/财运/健康/六亲）给出倾向，措辞具体留余地，严禁使用"大吉""大凶""积极进取""突破性进展"等绝对化或鼓励进攻的表述；然后依次点评今年、明年、后年三年流年：流年天干十神主事领域、与大运及原局的作用（天克地冲/岁运并临/冲合夫妻宫或月令等），最后简述流月节奏与当年需要把握/回避的月份（流月只用"较宜/一般/宜慎"）。须含以下要点：当前大运干支与十神、结构病判断及喜用有效性、三年流年逐年点评（天干十神主事+与大运原局作用）、流月节奏简述、分维度倾向（至少三个维度），800-1000字。本板块正文不少于 800 字，低于下限为不合格' },
+  { key: 'career', name: '事业财运', requirement: '结合格局、用神与财官配置，给出适合的行业方向、求财方式、财富层次趋势与发力时段。须含以下要点：适合的行业方向至少两个、求财方式（正财/偏财/技术/管理）一词定性、财富层次趋势判断、发力时段建议（结合大运），500-600字。本板块正文不少于 500 字，低于下限为不合格' },
+  { key: 'marriage', name: '婚姻感情', requirement: '男命以财为妻星、女命以官为夫星，结合日支夫妻宫的刑冲合害，分析感情模式、配偶特征、婚姻趋势与注意事项。须含以下要点：配偶星在局状态（透干/藏支/不见）、日支夫妻宫的刑冲合害关系、感情模式一词定性、配偶特征简评、注意事项至少两条，500-600字。本板块正文不少于 500 字，低于下限为不合格' },
+  { key: 'children', name: '子女六亲', requirement: '男命看官杀、女命看食伤为子女星，结合时柱分析子女缘；并简述与父母、兄弟姐妹的六亲关系。须含以下要点：子女星在局状态、时柱对子女缘的影响、与父母关系简评、与兄弟姐妹关系简评，400-500字。本板块正文不少于 400 字，低于下限为不合格' },
+  { key: 'health', name: '健康提示', requirement: '根据五行偏旺偏弱指出对应脏腑的养护重点（木肝胆、火心脏、土脾胃、金肺、水肾），给出生活方式建议。须含以下要点：五行偏旺偏弱对应脏腑、至少两个养护重点、生活方式建议至少三条、情绪与心理层面的提示，400-500字。本板块正文不少于 400 字，低于下限为不合格' }
 ]
+
+// ★ 逐板块调用（万字补全两轮实测教训）：
+//   一轮：单次调用写 10 板块 → 实测 2964 字（要求 5750，达成 52%）——
+//         模型在一次响应里给每个板块的预算约 300 字，提高要求无效。
+//   二轮：两批各 5 板块并行 → 实测 3821 字（达成 66%）——仍不达标。
+//   结论：拆为【每板块一次调用】（10 次并行），「本板块不少于 X 字」才有稳定约束力。
+//   墙钟耗时≈单次调用（并行）；prompt 开销 ×10 但单价极低，换字数达标值得。
+//   合并后仍走同一合规校验（withComplianceRetry），任一板块失败则整体失败重试。
+export const SECTION_BATCHES: Array<Array<keyof AIPaidAnalysis>> = SECTION_SPECS.map(s => [s.key])
 
 const SYSTEM_PROMPT = `你是一位精通传统子平命理的资深命理师，熟读《子平真诠》《滴天髓》《穷通宝鉴》《千里命稿》《渊海子平》《三命通会》六部经典。
 
@@ -91,7 +101,7 @@ function zhiRelations(branches: Array<{ key: string; label: string; zhi: string 
   return out
 }
 
-function buildUserPrompt(chart: AnalyzableChart): string {
+function buildUserPrompt(chart: AnalyzableChart, specs: Array<{ key: keyof AIPaidAnalysis; name: string; requirement: string }> = SECTION_SPECS): string {
   const p = chart.pillars
   const gender = chart.input.gender === 1 ? '男' : '女'
   const pillarLine = (label: string, pl: typeof p.year) =>
@@ -140,7 +150,7 @@ function buildUserPrompt(chart: AnalyzableChart): string {
   const innerRel = zhiRelations(branchArr)
   const yearRel = zhiRelations(branchArr, { label: '流年支', zhi: currentZhi })
 
-  const sections = SECTION_SPECS.map((s, i) => `${i + 1}. "${s.key}"（${s.name}）：${s.requirement}`).join('\n')
+  const sections = specs.map((s, i) => `${i + 1}. "${s.key}"（${s.name}）：${s.requirement}`).join('\n')
 
   // 岁运核查（规则引擎确定性结果，AI 只引用不修改）
   const luck = buildLuckCycles(chart, now)
@@ -191,7 +201,7 @@ ${daYunLines}
 　${liuNianCheck}
 　${liuYueCheck}。
 
-请严格按以下结构输出 JSON（共10个键，每个键的值为该板块的正文文本，可用 \\n\\n 分段）：
+请严格按以下结构输出 JSON（共${specs.length}个键，每个键的值为该板块的正文文本，可用 \\n\\n 分段）：
 ${sections}`
 }
 
@@ -211,18 +221,22 @@ export async function generateAIAnalysis(chart: AnalyzableChart): Promise<(AIPai
 
   // overview 固定免责语（与 SYSTEM_PROMPT 第7条一致）
   const ANALYSIS_DISCLAIMER = '以上为命理倾向性分析，仅供参考，非确定性结论，不构成任何投资或人生决策依据。'
-  // 事实集（与 prompt 实际给出的事实一致：四柱/九步大运/三年流年/当年流月）
+  // 事实集（与 prompt 实际给出的事实一致：四柱/胎元/命宫/九步大运/三年流年/当年流月）
+  // ★ 胎元、命宫也在 prompt 中给出（逐字对齐原则：prompt 给了的事实，AI 引用不算编造）
   const luckNow = buildLuckCycles(chart, new Date())
   const facts = new Set([
     chart.pillars.year.ganZhi, chart.pillars.month.ganZhi,
     chart.pillars.day.ganZhi, chart.pillars.hour.ganZhi,
+    chart.taiYuan, chart.mingGong,
     ...chart.daYun.map(d => d.ganZhi),
     ...luckNow.liuNian.map(y => y.ganZhi),
     ...luckNow.liuYue.map(m => m.ganZhi)
   ])
 
-  // 单次 API 调用，失败返回 null
-  const attempt = async (): Promise<(AIPaidAnalysis & { _usage?: AIUsage }) | null> => {
+  // 单批 API 调用（一批板块子集），失败返回 null
+  const callAI = async (
+    specs: Array<{ key: keyof AIPaidAnalysis; name: string; requirement: string }>
+  ): Promise<(Partial<AIPaidAnalysis> & { _usage?: AIUsage }) | null> => {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
     try {
@@ -238,7 +252,7 @@ export async function generateAIAnalysis(chart: AnalyzableChart): Promise<(AIPai
           response_format: { type: 'json_object' },
           messages: [
             { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: buildUserPrompt(chart) }
+            { role: 'user', content: buildUserPrompt(chart, specs) }
           ]
         }),
         signal: controller.signal
@@ -257,9 +271,9 @@ export async function generateAIAnalysis(chart: AnalyzableChart): Promise<(AIPai
       const jsonText = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
       const parsed = JSON.parse(jsonText) as Record<string, unknown>
 
-      // 校验十个键齐全且为字符串
-      const result = {} as Record<keyof PaidAnalysis, string>
-      for (const spec of SECTION_SPECS) {
+      // 校验本批键齐全且为字符串
+      const result = {} as Record<string, string>
+      for (const spec of specs) {
         const v = parsed[spec.key]
         if (typeof v !== 'string' || v.trim().length < 50) {
           console.error(`[ai] 板块 ${spec.key} 缺失或过短，放弃 AI 结果`)
@@ -267,13 +281,34 @@ export async function generateAIAnalysis(chart: AnalyzableChart): Promise<(AIPai
         }
         result[spec.key] = v.trim()
       }
-      return { ...result, _usage: data.usage } as unknown as AIPaidAnalysis & { _usage?: AIUsage }
+      return { ...result, _usage: data.usage } as Partial<AIPaidAnalysis> & { _usage?: AIUsage }
     } catch (err) {
       console.error('[ai] AI 解读失败:', err instanceof Error ? err.message : err)
       return null
     } finally {
       clearTimeout(timer)
     }
+  }
+
+  // 一次完整尝试：按 SECTION_BATCHES 分批并行调用，合并为十个板块（任一批失败则整体失败）
+  const attempt = async (): Promise<(AIPaidAnalysis & { _usage?: AIUsage }) | null> => {
+    const batches = SECTION_BATCHES.map(keys =>
+      keys.map(k => SECTION_SPECS.find(s => s.key === k)!)
+    )
+    const results = await Promise.all(batches.map(callAI))
+    if (results.some(r => r === null)) return null
+    const merged = {} as Record<string, string>
+    const usage: AIUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
+    for (const r of results as Array<Partial<AIPaidAnalysis> & { _usage?: AIUsage }>) {
+      const { _usage, ...rest } = r
+      Object.assign(merged, rest)
+      if (_usage) {
+        usage.prompt_tokens = (usage.prompt_tokens || 0) + (_usage.prompt_tokens || 0)
+        usage.completion_tokens = (usage.completion_tokens || 0) + (_usage.completion_tokens || 0)
+        usage.total_tokens = (usage.total_tokens || 0) + (_usage.total_tokens || 0)
+      }
+    }
+    return { ...merged, _usage: usage } as unknown as AIPaidAnalysis & { _usage?: AIUsage }
   }
 
   // 合规校验（与 aiHemun 对称接线，共享判据 ai-check.ts）：
@@ -317,8 +352,11 @@ export async function generateAIAnalysis(chart: AnalyzableChart): Promise<(AIPai
 export function makeAnalysisComplianceValidator(facts: Set<string>) {
   return <T extends object>(r: T): string | null => {
     const text = Object.values(r).filter(v => typeof v === 'string').join('')
-    if (unknownGanzhi(text, facts).length) return '检出未溯源干支'
-    if (findForbidden(text).hits.length) return '检出禁用词'
+    // ★ 日志须带具体命中项（与 aiGeo 同规）：只报「检出未溯源干支」无法甄别是模型编造还是事实集漏项
+    const unknown = unknownGanzhi(text, facts)
+    if (unknown.length) return `检出未溯源干支：${unknown.join('、')}`
+    const { hits } = findForbidden(text)
+    if (hits.length) return `检出禁用词：${[...new Set(hits.map(h => h.w))].join('、')}`
     return null
   }
 }

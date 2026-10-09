@@ -45,7 +45,8 @@ const WIRING_BLOCK = ['务必谨慎行事', '势必有所取舍', '必定如此'
 const WIRING_PASS = ['此事未必如愿', '竞争压力不可避免', '运程起伏难免，宜稳守为上']
 for (const s of WIRING_BLOCK) {
   const r = validateWiring({ overview: s })
-  const ok = r === '检出禁用词' || r === '检出未溯源干支'
+  // 校验器消息带具体命中项（如「检出禁用词：务必」），按前缀判定 violation 类别
+  const ok = typeof r === 'string' && (r.startsWith('检出禁用词') || r.startsWith('检出未溯源干支'))
   if (!ok) allOk = false
   console.log(`${ok ? '✓' : '✗'} 接线拦截「${s}」→ ${r ?? '✗ 未拦截，会漏上线'}`)
 }
