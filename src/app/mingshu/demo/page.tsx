@@ -12,10 +12,10 @@ export const metadata: Metadata = {
     '公开示例命书：以虚构出生资料（1990-06-15 10:30 男 上海）生成的真实命书节选。完整展示八字总览、性格天赋、用神喜忌三个板块，其余七个板块为摘要，供你在解锁前了解命书报告的深度与文风。',
 }
 
+// 旧 5 档键集合（供示例快照的大运/流年/流月标签配色；'大防' 死键已清——任务20步骤④，产出者为零）
 const TAG_BADGE: Record<string, string> = {
   '较宜': 'bg-emerald-50 text-emerald-600', '平顺': 'bg-gray-100 text-gray-500',
-  '一般': 'bg-amber-100 text-amber-700', '宜慎': 'bg-orange-100 text-orange-700',
-  '大防': 'bg-red-100 text-red-700'
+  '一般': 'bg-amber-100 text-amber-700', '宜慎': 'bg-orange-100 text-orange-700'
 }
 
 export default function DemoFatebookPage() {

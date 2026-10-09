@@ -66,17 +66,18 @@ const FORTUNE_BORDER: Record<FortuneTier, string> = {
   '小凶': 'border-red-200', '凶': 'border-red-300', '大凶': 'border-red-400'
 }
 
-// 流月标签配色（LuckTag，三档中性——流月红线：只用 较宜/一般/宜慎，不用 7 档判词）
-const TAG_BADGE: Record<LuckTag, string> = {
+// 流月标签配色（LuckTag——流月红线：只用 较宜/一般/宜慎 三档，不用 7 档判词）
+// ★ 本页共三套样式表：FORTUNE_BADGE/BORDER（7 档＝大运/流年）、TAG_BADGE/BORDER（旧 5 档键集合＝流月，实际只产出三档）、DOMAIN_BADGE（分维度）
+// ★ '大防' 死键已清（任务20步骤④）：产出者为零（7 档判词不含、流月内联三档不含、日运 DAILY_TAGS 排除），故类型放开为 Partial
+const TAG_BADGE: Partial<Record<LuckTag, string>> = {
   '较宜': 'bg-emerald-50 text-emerald-600',
   '平顺': 'bg-gray-100 text-gray-500',
   '一般': 'bg-amber-50 text-amber-600',
-  '宜慎': 'bg-orange-100 text-orange-700',
-  '大防': 'bg-red-100 text-red-700'
+  '宜慎': 'bg-orange-100 text-orange-700'
 }
-const TAG_BORDER: Record<LuckTag, string> = {
+const TAG_BORDER: Partial<Record<LuckTag, string>> = {
   '较宜': 'border-emerald-200', '平顺': 'border-gray-200', '一般': 'border-amber-200',
-  '宜慎': 'border-orange-300', '大防': 'border-red-300'
+  '宜慎': 'border-orange-300'
 }
 
 // 分维度倾向徽章（大运四维度）

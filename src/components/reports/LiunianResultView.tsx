@@ -40,12 +40,12 @@ const TAG_STYLE: Record<string, string> = {
   '小凶': 'bg-red-50 text-red-600 border-red-200',
   '凶': 'bg-red-100 text-red-700 border-red-300',
   '大凶': 'bg-red-200 text-red-800 border-red-400',
-  // LuckTag（流月三档 + 兼容旧快照数据）
+  // LuckTag（旧 5 档键集合＝流月，实际只产出 较宜/一般/宜慎 三档；'平顺' 键保留兼容日运/旧快照）
+  // ★ '大防' 死键已清（任务20步骤④）：产出者为零（7 档判词不含、流月内联三档不含、日运 DAILY_TAGS 排除）
   '较宜': 'bg-green-100 text-green-800 border-green-300',
   '平顺': 'bg-emerald-50 text-emerald-700 border-emerald-200',
   '一般': 'bg-gray-100 text-gray-600 border-gray-300',
-  '宜慎': 'bg-orange-100 text-orange-800 border-orange-300',
-  '大防': 'bg-red-100 text-red-800 border-red-300'
+  '宜慎': 'bg-orange-100 text-orange-800 border-orange-300'
 }
 
 const AI_SECTIONS: Array<{ key: keyof AILiunianSections; name: string }> = [

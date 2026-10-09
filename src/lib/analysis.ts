@@ -11,6 +11,7 @@ import type { Zhi } from './branchRelations'
 export type FortuneTier = '大吉' | '吉' | '小吉' | '平' | '小凶' | '凶' | '大凶'
 
 // 中性轻量标签：保留给【日运】与【流月】—— 两者定位不同，不参与吉凶分档
+// ★ '大防' 当前无产出者（历史遗留）；日运 DAILY_TAGS 已明确排除；类型保留是因为 TAG_ADVICE: Record<LuckTag,…> 要求全键
 export type LuckTag = '较宜' | '平顺' | '一般' | '宜慎' | '大防'
 
 // 分维度倾向（事业/财运/健康/六亲各自独立，不合并为单一标签）
