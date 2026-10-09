@@ -86,7 +86,9 @@ console.log(aiFail === 0
 // ---------- ②-b liuYueFor 纯函数真调（§八-②：流月仅当年——曾被注入恒 true 而断言全绿的缺口）----------
 console.log('—— ②-b liuYueFor 流月条件（真调生产纯函数，零 AI/零 IO）——')
 const { liuYueFor } = await import('../src/lib/aiLiunian.ts')
-const luckStub = { liuNian: [{ year: 2026 }], liuYue: [{ month: 3, ganZhi: '辛卯' }] }
+// ★ 当年判定已改为读显式字段 currentYear（流月索引事故，2026-10-10）；
+//   本用例仍为假数据接线测试；真实命盘的太岁/当年流月断言在 test-liuyue-index-fix.mjs
+const luckStub = { currentYear: 2026, liuNian: [{ year: 2026 }], liuYue: [{ month: 3, ganZhi: '辛卯' }] }
 let lyFail = 0
 if (liuYueFor(2026, luckStub) !== luckStub.liuYue) { lyFail++; fail('liuYueFor(当年) 应返回 liuYue 数组本体') }
 if (liuYueFor(2027, luckStub) !== null) { lyFail++; fail('liuYueFor(明年) 应返回 null（严禁编造流月）') }

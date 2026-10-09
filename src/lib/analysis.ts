@@ -79,6 +79,10 @@ export interface LuckLiuYueItem {
 
 export interface LuckCycles {
   currentDaYunGanZhi: string
+  // ★ 当年（与 liuNian 中 current 项的年份一致）。
+  //   消费者一律读本字段取"当年"，严禁 liuNian[0]/slice(0,1) 按索引猜——
+  //   流年范围已扩为「过去8年回看+未来三年」，数组首位是 8 年前（复核 2026-10-10：流月整体失效事故）。
+  currentYear: number
   daYun: LuckDaYunItem[]
   liuNian: LuckLiuNianItem[]
   liuYue: LuckLiuYueItem[]
@@ -1037,7 +1041,7 @@ function buildLuckDaYun(
   })
 }
 
-// 流年：今年起三年
+// 流年：过去 8 年应期回看 + 当年 + 未来 2 年（共 11 项，首位非当年——消费者勿按索引取当年）
 function buildLuckLiuNian(
   chart: AnalyzableChart,
   favorable: string[],
@@ -1230,9 +1234,15 @@ export function buildLuckCycles(chart: AnalyzableChart, now: Date = new Date()):
   const daYun = buildLuckDaYun(chart, favorable, unfavorable, nowYear)
   const currentDaYunGanZhi = daYun.find(d => d.current)?.ganZhi || ''
   const liuNian = buildLuckLiuNian(chart, favorable, unfavorable, nowYear, daYun)
-  const nianZhi = liuNian[0].ganZhi[1]
-  const liuYue = buildLuckLiuYue(chart, favorable, unfavorable, nowYear, nianZhi)
-  return { currentDaYunGanZhi, daYun, liuNian, liuYue }
+  // ★ 太岁必须取【当年流年】的地支（current 项），严禁 liuNian[0]——
+  //   流年首位是 8 年前；流月「冲/合太岁」对错太岁会整体失效（复核 2026-10-10）。
+  //   i=0（当年）恒在范围 [-8,2] 内；以同一 Solar 链作兜底，保证 nianZhi 永不为 undefined。
+  const currentNian = liuNian.find(y => y.current)
+  const currentYear = currentNian?.year ?? nowYear
+  const nianZhi = currentNian?.ganZhi[1]
+    ?? Solar.fromYmdHms(nowYear, 6, 15, 12, 0, 0).getLunar().getEightChar().getYear()[1]
+  const liuYue = buildLuckLiuYue(chart, favorable, unfavorable, currentYear, nianZhi)
+  return { currentDaYunGanZhi, currentYear, daYun, liuNian, liuYue }
 }
 
 export function generateAnalysis(chart: AnalyzableChart): PaidAnalysis {

@@ -29,6 +29,9 @@ export interface DemoFatebook {
     place: string
     fictional: true
     generatedAt: string
+    // ★ 岁运锚定年份（= 生成时 luckCycles.currentYear，单一事实源）。
+    //   静态资产跨年过期提醒：B8 断言 anchoredYear >= 运行年-1；翻红＝预期的年度刷新提醒（重跑 build:demo），非缺陷。
+    anchoredYear: number
   }
   pillars: Array<{ label: string; ganZhi: string; tenGodGan: string; cangGanText: string }>
   dayMaster: string
@@ -77,7 +80,8 @@ export function buildDemoFatebook(args: {
       birthText: `公历 ${chart.input.year} 年 ${chart.input.month} 月 ${chart.input.day} 日 ${chart.input.hour} 时 ${chart.input.minute} 分`,
       place: DEMO_BIRTH.place,
       fictional: true,
-      generatedAt
+      generatedAt,
+      anchoredYear: luckCycles.currentYear
     },
     pillars: [
       { label: '年柱', ganZhi: p.year.ganZhi, tenGodGan: p.year.tenGodGan, cangGanText: p.year.cangGan.map((g, i) => `${g}${p.year.tenGodCangGan[i]}`).join('、') },
@@ -96,6 +100,7 @@ export function buildDemoFatebook(args: {
     sectionList: sectionMeta.map(s => ({ key: s.key, name: s.name })),
     luckCycles: {
       currentDaYunGanZhi: luckCycles.currentDaYunGanZhi,
+      currentYear: luckCycles.currentYear,
       daYun: luckCycles.daYun.slice(0, DEMO_DAYUN_COUNT),
       // ★ 流年范围于 19 号扩为「过去 8 年应期回看 + 未来三年」后，slice(0,1) 会取到 8 年前；
       //   示例只展示【当年】，故按 current 选取（与范围排序解耦）

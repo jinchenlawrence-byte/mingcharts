@@ -58,9 +58,10 @@ const CANG_GAN: Record<string, string[]> = {
 
 // ★ 流月条件单一事实源（§八-②）：仅目标流年=当年时提供流月数据
 //   （liuYue 只算当年；明年/后年严禁 AI 自行编造流月内容）——buildUserPrompt 与
-//   generateAILiunian 共用此判定，有真调断言守护（改恒 true 会翻红）
+//   generateAILiunian 共用此判定，有真调断言守护（改恒 true 会翻红）。
+//   ★ 当年读显式字段 luck.currentYear，严禁 luck.liuNian[0]（首位是 8 年前；复核 2026-10-10 流月失效事故）
 export function liuYueFor(targetYear: number, luck: LuckCycles): LuckLiuYueItem[] | null {
-  return targetYear === luck.liuNian[0].year ? luck.liuYue : null
+  return targetYear === luck.currentYear ? luck.liuYue : null
 }
 
 function buildUserPrompt(

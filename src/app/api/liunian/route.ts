@@ -77,8 +77,8 @@ export async function POST(request: NextRequest) {
     const dstNotice = ref ? checkDSTTransition(ref.zone, { year, month, day, hour, minute }) : null
 
     // AI 深度文字解读；失败回退规则版（流月仅当年提供）
-    const nowYear2 = luck.liuNian[0].year
-    const liuYue = targetYear === nowYear2 ? luck.liuYue : null
+    // ★ 当年读 luck.currentYear 显式字段，严禁 luck.liuNian[0]（首位是 8 年前；复核 2026-10-10）
+    const liuYue = targetYear === luck.currentYear ? luck.liuYue : null
     const favorSets = getFavorSets(analyzable)
     const aiReport = await generateAILiunian(analyzable, luck, targetYear)
 
@@ -101,7 +101,7 @@ export async function POST(request: NextRequest) {
     const curDaYun = luck.daYun.find(d => d.current) || null
     const data = {
       targetYear,
-      nowYear: nowYear2,
+      nowYear: luck.currentYear,
       input: { year, month, day, hour, minute, gender },
       pillars: chart.pillars,
       dayMaster: chart.dayMaster,

@@ -5,7 +5,8 @@
     "birthText": "公历 1990 年 6 月 15 日 10 时 30 分",
     "place": "上海",
     "fictional": true,
-    "generatedAt": "2026-10-09T09:22:14.072Z"
+    "generatedAt": "2026-10-09T09:22:14.072Z",
+    "anchoredYear": 2026
   },
   "pillars": [
     {
@@ -113,6 +114,7 @@
   ],
   "luckCycles": {
     "currentDaYunGanZhi": "乙酉",
+    "currentYear": 2026,
     "daYun": [
       {
         "ganZhi": "癸未",

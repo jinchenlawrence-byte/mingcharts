@@ -191,6 +191,23 @@ if (demo) {
   console.log(b7Fail === 0
     ? `✓ B7 岁运重算一致：${demo.luckCycles.daYun.length} 步大运 × ${DY_FIELDS.length} 字段、${demo.luckCycles.liuNian.length} 年流年 × ${LN_FIELDS.length} 字段，与当前规则重算全等；示例流年为当年条目`
     : `✗ B7 岁运重算不一致 ${b7Fail} 处`)
+
+  // B8 ★ 静态资产跨年过期提醒（REPLY-流月索引假设缺陷复核 §五）：
+  //   快照刻意与运行时钟解耦（B7），跨年不会被 B7 发现 → 另立锚定年份断言。
+  //   ★ 本断言翻红是【预期的年度提醒】：提示重跑 npm run build:demo 刷新静态资产，不是产品缺陷。
+  //   余量 1 年（当年/次年通过，第三年翻红）；anchoredYear 必须与 luckCycles.currentYear 同源。
+  let b8Fail = 0
+  const runYear = new Date().getFullYear()
+  const ay = demo.meta?.anchoredYear
+  if (typeof ay !== 'number') {
+    b8Fail++; fail('B8 demo.meta.anchoredYear 缺失或非数字（buildDemoFatebook 应写入 luckCycles.currentYear）')
+  } else {
+    if (ay !== demo.luckCycles?.currentYear) { b8Fail++; fail(`B8 meta.anchoredYear=${ay} 与 luckCycles.currentYear=${demo.luckCycles?.currentYear} 不同源`) }
+    if (ay < runYear - 1) { b8Fail++; fail(`B8 示例命书锚定 ${ay} 年已过期（运行年 ${runYear}，余量 1 年）——请重跑 npm run build:demo（此为预期年度提醒，非缺陷）`) }
+  }
+  console.log(b8Fail === 0
+    ? `✓ B8 锚定新鲜度：anchoredYear=${ay}，运行年=${runYear}（差距 ≤1；此处翻红＝预期的年度刷新提醒，非缺陷）`
+    : `✗ B8 锚定过期/缺失 ${b8Fail} 处`)
 }
 
 // ---------- C 示例页 ----------
