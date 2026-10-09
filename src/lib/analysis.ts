@@ -711,9 +711,9 @@ function baseScore(ganZhi: string, favorable: string[], unfavorable: string[]): 
 // ★ 用户拍板理由：「吉凶是相对用户个人而言的，不是相对别人而言的，对用户来说吉就是吉」
 //   → 分档由"这个时段本身如何"决定，不按人群分位数设阈值（阈值注释不得使用 top X% 类人群分位标注）
 // 反向不设 floor（结构病只封上限、不封下限）
-// ★ 步骤③分位校准（依据：7488 样本 score 分位数 P3=-4/P10=-3/P25=-1/P50=0/P75=1/P90=2/P97=3）：
-//   阈值对齐分位数，让每一档都真的可用（避免大吉形同虚设、大凶宿命化）。
-//   事故 18 的 cap 纪律保留（封顶上限），不参与分位校准。
+// ★ 历史记录：阈值曾于任务19步骤③做一次性校准，让每一档都真的可用（避免大吉形同虚设、大凶宿命化）。
+//   事故 18 的 cap 纪律保留（封顶上限），不参与校准。
+//   ★ 红线：本任务之后的任何阈值改动都【不该以"占比好看"为由】——分档语义见下方行内注释。
 export function fortuneTierOf(score: number, structuralIssues: string[] = []): FortuneTier {
   const cap =
     structuralIssues.length === 0 ? 4 :      // 无结构病 → 可达「大吉」
@@ -721,13 +721,15 @@ export function fortuneTierOf(score: number, structuralIssues: string[] = []): F
     1                                        // ≥2 个    → 最高「小吉」（方案 ii：纯放宽，负向/大凶不变）
   const s = Math.min(score, cap)
 
-  if (s >= 3) return '大吉'         // top 3%
-  if (s === 2) return '吉'          // top 3–10%
-  if (s === 1) return '小吉'        // top 10–25%
-  if (s >= -1) return '平'          // 中位区（s=0 与 s=-1，约 P25–P75）
-  if (s === -2) return '小凶'       // bottom 10–25%
-  if (s === -3) return '凶'         // bottom 3–10%
-  return '大凶'                     // ≤ −4（bottom 3%）
+  // ★ 分档语义（依据等级：产品设定语义描述，非古籍明文）——用户拍板：「吉凶是相对用户个人而言的，
+  //   不是相对别人而言的，对用户来说吉就是吉」→ 档位由「这个时段本身的判定」定义，不按人群分位数标注。
+  if (s >= 3) return '大吉'         // 喜用得力，且全无结构之病
+  if (s === 2) return '吉'          // 喜用有力，至多一处结构牵制
+  if (s === 1) return '小吉'        // 喜用略得扶助，或有多处牵制
+  if (s >= -1) return '平'          // 喜忌相当，无明显结构破坏
+  if (s === -2) return '小凶'       // 略有牵制
+  if (s === -3) return '凶'         // 多阻，结构不利
+  return '大凶'                     // 结构严重不利
 }
 
 // 天干相克（任一方向）
