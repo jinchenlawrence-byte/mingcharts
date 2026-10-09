@@ -7,6 +7,8 @@ import { resolveBirthFromBody } from '@/lib/birthRequest'
 import { findCityById } from '@/lib/worldCitiesServer'
 import { generateAIGeo, fallbackGeoText } from '@/lib/aiGeo'
 import { tiaoHouWuxing } from '@/lib/analysis'
+import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
+import { createServerSupabase } from '@/lib/supabase'
 import type { WX } from '@/lib/geo'
 
 export async function POST(request: NextRequest) {
@@ -89,20 +91,38 @@ export async function POST(request: NextRequest) {
       currentCity
     })
     const aiReport = await generateAIGeo(analysis)
-    const ai = aiReport || fallbackGeoText(analysis)
-    const aiSource = aiReport ? 'AI 深度解读' : '规则版（AI暂不可用）'
+
+    // ★ 门禁判定统一走 entitlement（§8.5.1），不得在本路由另写判断
+    // ENFORCE=false → unlocked 恒 true → 内测期行为与现在完全一致 ✓
+    const token = typeof body.token === 'string' ? body.token : ''
+    let ent = EMPTY_ENTITLEMENTS
+    if (token) {
+      const admin = createServerSupabase()
+      const { data: { user } } = await admin.auth.getUser(token)
+      if (user) ent = await getEntitlements(admin, user.id)
+    }
+    const unlocked = canView(ent, 'geo')
+    // ★ free 层保留结构化城市推荐与指数（试吃本意）；ai 在未解锁时为 null
+    const ai = unlocked ? (aiReport || fallbackGeoText(analysis)) : null
+    const aiSource = !unlocked ? '未解锁'
+      : aiReport ? 'AI 深度解读'
+      : '规则版（AI结果未过合规校验）'
 
     return NextResponse.json({
       success: true,
       data: {
         chart: { ...chart, analysis: { wangShuai, isPaid: false } },
         geo: analysis,
-        // §1.5 geo 为「试吃」模块，不设门禁：免费层全量开放，无锁定内容
+        // ★ free 层保留【结构化的城市推荐与指数】—— 这是"试吃"：让用户看到有什么
         free: {
           chart: { ...chart, analysis: { wangShuai, isPaid: false } },
           geo: analysis
         },
-        locked: null,
+        // ★★ locked 在已解锁时为 null（与现在一致 ✓）；未解锁时给 preview 与 skus
+        locked: unlocked ? null : {
+          skus: ['geo'],
+          preview: '方位总论 · 现居城市影响 · 财富/事业/贵/安居/才华五城解读 · 迁居开运建议（AI 深度解读，共 8 节）解锁后可见。'
+        },
         trueSolar: ref
           ? {
               birthplace: city?.name || null,

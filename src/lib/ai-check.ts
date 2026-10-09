@@ -3,6 +3,13 @@
 
 export const FORBIDDEN_WORDS = ['大吉', '大凶', '积极进取', '突破性进展', '必', '一定', '注定'] as const
 
+// ★ 禁词清单 prompt 片段（§4.5）：从 FORBIDDEN_WORDS 派生，不再各模块手抄
+// 四个 AI 模块的 SYSTEM_PROMPT 用此模板拼入，确保判据与 prompt 同源
+export const FORBIDDEN_WORDS_PROMPT =
+  `以下词语一律禁用：${FORBIDDEN_WORDS.join('、')}（"必"含务必/必然/必定）。\n` +
+  `逐字替换范例：务必→宜；必然/注定→往往；必定→多半；一定→往往；` +
+  `大吉→较为有利；积极进取→稳中求进；突破性进展→阶段性的进展。`
+
 const GANZHI_RE = /[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]/g
 
 export const splitSentences = (t: string): string[] =>

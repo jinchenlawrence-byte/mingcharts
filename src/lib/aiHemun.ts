@@ -3,7 +3,7 @@
 import type { AnalyzableChart } from './analysis'
 import type { HemunResult } from './hemun'
 import type { AIUsage } from './ai-types'
-import { findForbidden, withComplianceRetry } from './ai-check'
+import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT } from './ai-check'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -39,8 +39,8 @@ const SYSTEM_PROMPT = `你是一位精通传统合婚命理的资深命理师，
 6. "冲"只能用于六冲对（子午、丑未、寅申、卯酉、辰戌、巳亥），五行相克只能称"克"。
 7. 生肖合冲只是合婚的一个维度、权重有限，分析时须以日柱夫妻宫与全局五行为重，避免"生肖定终身"的民间俗论。
 8. 输出必须是纯 JSON 对象，不要 markdown 代码块、不要任何额外文字。
-9. 全文不得出现"必"这个字（含"不必""未必""必然"等，否定请用"无须"，推断请用"往往、多半、倾向于"）；亦严禁"一定""注定"。
-   逐字替换范例（想写左边时改写为右边）："不必介怀→无须介怀"、"不必担心→无须担心"、"未必→难讲、往往不"、"必然→多半"、"必定→倾向于"。
+9. ${FORBIDDEN_WORDS_PROMPT}
+   ★ 合婚全文禁"必"字（含不必/未必，否定请用"无须"）；逐字替换范例："不必介怀→无须介怀"、"不必担心→无须担心"、"未必→难讲、往往不"。
 10. "overview"（配对总评）板块必须以这句固定免责语收尾、原文照写：
     "以上为倾向性分析，仅供参考，非确定性结论，不构成婚姻决策依据；感情经营在人。"`
 

@@ -3,6 +3,8 @@ import { paipanZiwei, analyzeZiwei } from '@/lib/ziwei'
 import { generateAIZiwei, fallbackZiweiText } from '@/lib/aiZiwei'
 import { checkDSTTransition } from '@/lib/solarTime'
 import { resolveBirthFromBody } from '@/lib/birthRequest'
+import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
+import { createServerSupabase } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,8 +53,20 @@ export async function POST(request: NextRequest) {
     })
     const analysis = analyzeZiwei(chart, new Date())
     const aiReport = await generateAIZiwei(chart, analysis)
-    const ai = aiReport || fallbackZiweiText(chart, analysis)
-    const aiSource = aiReport ? 'AI 深度解读' : '规则版（AI暂不可用）'
+
+    // ★ 门禁判定统一走 entitlement（§8.5.1）
+    const token = typeof body.token === 'string' ? body.token : ''
+    let ent = EMPTY_ENTITLEMENTS
+    if (token) {
+      const admin = createServerSupabase()
+      const { data: { user } } = await admin.auth.getUser(token)
+      if (user) ent = await getEntitlements(admin, user.id)
+    }
+    const unlocked = canView(ent, 'ziwei_deep')
+    const ai = unlocked ? (aiReport || fallbackZiweiText(chart, analysis)) : null
+    const aiSource = !unlocked ? '未解锁'
+      : aiReport ? 'AI 深度解读'
+      : '规则版（AI结果未过合规校验）'
     const dstNotice = ref ? checkDSTTransition(ref.zone, { year, month, day, hour, minute }) : null
 
     return NextResponse.json({
@@ -60,9 +74,9 @@ export async function POST(request: NextRequest) {
       data: {
         chart,
         analysis,
-        // 新增 free/locked 分层（双写过渡：本轮 ENFORCE=false，ai 原文保留不下拦截）
+        // ★ free 层保留结构化星盘数据；ai 在未解锁时为 null
         free: { chart, analysis },
-        locked: {
+        locked: unlocked ? null : {
           skus: ['ziwei_deep'],
           preview: '紫微十二宫深度解读（命格总论、事业、财运、感情、健康、大限流年）解锁后可见。'
         },

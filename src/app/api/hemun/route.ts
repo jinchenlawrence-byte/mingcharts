@@ -6,6 +6,8 @@ import { generateAIHemun, fallbackHemunText } from '@/lib/aiHemun'
 import type { AnalyzableChart } from '@/lib/analysis'
 import { checkDSTTransition } from '@/lib/solarTime'
 import { resolveBirthFromBody } from '@/lib/birthRequest'
+import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
+import { createServerSupabase } from '@/lib/supabase'
 
 interface RawBirth {
   year?: unknown; month?: unknown; day?: unknown
@@ -83,20 +85,29 @@ export async function POST(request: NextRequest) {
     const result = hehun(male, female)
 
     // AI 深度文字解读；失败回退规则版
-    let aiSource = 'AI版'
-    let ai = await generateAIHemun(male, female, result)
-    if (!ai) {
-      ai = fallbackHemunText(result)
-      aiSource = '规则版（AI暂不可用）'
+    const aiReport = await generateAIHemun(male, female, result)
+
+    // ★ 门禁判定统一走 entitlement（§8.5.1）
+    const token = typeof body.token === 'string' ? body.token : ''
+    let ent = EMPTY_ENTITLEMENTS
+    if (token) {
+      const admin = createServerSupabase()
+      const { data: { user } } = await admin.auth.getUser(token)
+      if (user) ent = await getEntitlements(admin, user.id)
     }
+    const unlocked = canView(ent, 'hemun')
+    const ai = unlocked ? (aiReport || fallbackHemunText(result)) : null
+    const aiSource = !unlocked ? '未解锁'
+      : aiReport ? 'AI 深度解读'
+      : '规则版（AI结果未过合规校验）'
 
     return NextResponse.json({
       success: true,
       data: {
         male, female, result, ai, aiSource, dstNotices,
-        // 新增 free/locked 分层（双写过渡：本轮 ENFORCE=false，ai 原文保留不下拦截）
+        // ★ free 层保留结构化干支事实与评分；ai 在未解锁时为 null
         free: { male, female, result },
-        locked: {
+        locked: unlocked ? null : {
           skus: ['hemun'],
           preview: '合婚双人九维深度解读（典籍干支、古法纳音、民俗生肖分级呈现）解锁后可见。'
         }

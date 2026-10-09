@@ -3,6 +3,8 @@ import { paipan, getWangShuai, getGeJu } from '@/lib/paipan'
 import { buildLuckCycles, type AnalyzableChart } from '@/lib/analysis'
 import { checkDSTTransition } from '@/lib/solarTime'
 import { resolveBirthFromBody } from '@/lib/birthRequest'
+import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
+import { createServerSupabase } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
@@ -74,6 +76,19 @@ export async function POST(request: NextRequest) {
     const structuralIssues =
       buildLuckCycles(analyzable).daYun.find((d) => d.current)?.structuralIssues ?? []
 
+    // ★ 门禁判定统一走 entitlement（§8.5.1）
+    // fatebook 门禁已在 unlock route 接了；此 route 复核并驱动 locked 判定
+    // annual_report 门禁接线就位（年运报告内容当前在命书内，未独立拆分）
+    const token = typeof body.token === 'string' ? body.token : ''
+    let ent = EMPTY_ENTITLEMENTS
+    if (token) {
+      const admin = createServerSupabase()
+      const { data: { user } } = await admin.auth.getUser(token)
+      if (user) ent = await getEntitlements(admin, user.id)
+    }
+    const unlocked = canView(ent, 'fatebook')
+    void canView(ent, 'annual_report') // 门禁接线就位（§五 ② ④）
+
     return NextResponse.json({
       success: true,
       data: {
@@ -83,15 +98,15 @@ export async function POST(request: NextRequest) {
           geJu,
           isPaid: false
         },
-        // 新增 free/locked 分层（过渡期双写，原有字段全部保留）
+        // ★ free 层保留结构化排盘与岁运（试吃）；locked 按 unlocked 判定
         free: {
           chart: analyzable,
           wangShuai,
           geJu,
           structuralIssues
         },
-        locked: {
-          skus: ['fatebook'],
+        locked: unlocked ? null : {
+          skus: ['fatebook', 'annual_report'],
           preview: '命书深度报告含十大板块万字详批（八字总览、性格天赋、用神喜忌、格局成败、调候、大运流年、事业财运、婚姻感情、子女六亲、健康提示），解锁后可见。'
         },
         trueSolar: ref

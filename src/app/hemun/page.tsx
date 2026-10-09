@@ -4,6 +4,7 @@ import { useState } from 'react'
 import Nav from '@/components/Nav'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
+import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import type { HemunResult } from '@/lib/hemun'
 import type { AIHemunSections } from '@/lib/aiHemun'
 
@@ -15,9 +16,10 @@ interface BirthFormState {
 }
 interface HemunData {
   result: HemunResult
-  ai: AIHemunSections
+  ai: AIHemunSections | null
   aiSource: string
   dstNotices: { male: string | null; female: string | null }
+  locked?: { skus: string[]; preview: string } | null
 }
 
 const MALE_DEFAULT: BirthFormState = {
@@ -294,6 +296,21 @@ export default function HehunPage() {
             </div>
 
             {/* AI 深度解读 */}
+            {data.locked && (
+              <div className="bg-gray-100 rounded-lg p-6 text-center">
+                <p className="text-sm text-gray-600 mb-4">{data.locked.preview}</p>
+                {data.locked.skus.map((skuId: string) => {
+                  const sku = SKUS[skuId as keyof typeof SKUS]
+                  if (!sku) return null
+                  return (
+                    <a key={skuId} href="/pricing" className="inline-block px-6 py-2 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 mr-2">
+                      解锁 {sku.name} {formatPriceUSD(sku.priceUSD)}
+                    </a>
+                  )
+                })}
+              </div>
+            )}
+            {data.ai && (
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold text-amber-900">合婚深度解读</h2>
@@ -303,11 +320,12 @@ export default function HehunPage() {
                 <div key={s.key} className="bg-white rounded-lg shadow p-4">
                   <h3 className="font-semibold text-amber-800 mb-2">{s.name}</h3>
                   <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
-                    {data.ai[s.key]}
+                    {data.ai![s.key]}
                   </div>
                 </div>
               ))}
             </div>
+            )}
 
             {/* 免责声明 */}
             <p className="text-xs text-gray-400 text-center leading-relaxed border-t border-gray-100 pt-4">

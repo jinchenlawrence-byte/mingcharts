@@ -46,6 +46,7 @@ interface ChartData {
     zone: string
     dstNotice: string | null
   }
+  locked?: { skus: string[]; preview: string } | null
 }
 
 // 吉凶标签配色（已刻意移除「大吉/大凶」，岁运标签中性化）
@@ -431,6 +432,9 @@ export default function ChartPage() {
         <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg shadow-lg p-6 text-white text-center">
           <h3 className="text-xl font-bold mb-2">解锁完整命理分析</h3>
           <p className="mb-4 opacity-90">基于《子平真诠》《滴天髓》《穷通宝鉴》等六书精要</p>
+          {chart.locked?.preview && (
+            <p className="mb-4 text-sm opacity-90">{chart.locked.preview}</p>
+          )}
           
           <div className="grid md:grid-cols-3 gap-3 mb-4 text-sm">
             <div className="bg-white/20 rounded p-2">八字总览</div>

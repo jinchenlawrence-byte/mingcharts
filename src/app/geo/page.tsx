@@ -7,6 +7,7 @@ import Nav from '@/components/Nav'
 import citiesData from '@/data/geo-cities.json'
 import { cities as allCities } from '@/lib/birthCities'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
+import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import { loadWorldData, searchCities } from '@/lib/worldCitiesClient'
 import worldData from '@/data/world-countries.json'
@@ -278,6 +279,7 @@ export default function GeoPage() {
   } | null>(null)
   const [ai, setAi] = useState<GeoAIReport | null>(null)
   const [aiSource, setAiSource] = useState('')
+  const [locked, setLocked] = useState<{ skus: string[]; preview: string } | null>(null)
   const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -311,6 +313,7 @@ export default function GeoPage() {
         setSolar(data.data.trueSolar)
         setAi(data.data.ai)
         setAiSource(data.data.aiSource)
+        setLocked(data.data.locked)
       } else {
         setError(data.error || '解析失败')
       }
@@ -522,6 +525,20 @@ export default function GeoPage() {
             ))}
 
             {/* AI 解读 */}
+            {locked && (
+              <div className="bg-gray-100 rounded-lg p-6 text-center">
+                <p className="text-sm text-gray-600 mb-4">{locked.preview}</p>
+                {locked.skus.map((skuId) => {
+                  const sku = SKUS[skuId as keyof typeof SKUS]
+                  if (!sku) return null
+                  return (
+                    <a key={skuId} href="/pricing" className="inline-block px-6 py-2 bg-sky-600 text-white rounded-lg font-semibold hover:bg-sky-700 mr-2">
+                      解锁 {sku.name} {formatPriceUSD(sku.priceUSD)}
+                    </a>
+                  )
+                })}
+              </div>
+            )}
             {ai && (
               <div className="space-y-4">
                 <h2 className="text-xl font-bold text-sky-900">深度解读 · {aiSource}</h2>

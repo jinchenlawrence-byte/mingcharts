@@ -3,7 +3,7 @@ import { Solar } from 'lunar-javascript'
 import type { AnalyzableChart, PaidAnalysis } from './analysis'
 import { TIAO_HOU, buildLuckCycles } from './analysis'
 import type { AIUsage } from './ai-types'
-import { unknownGanzhi, withComplianceRetry, findForbidden } from './ai-check'
+import { unknownGanzhi, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT } from './ai-check'
 // ★ 冲/合/害表复用 branchRelations.ts 的单一事实源（HANDOFF-个性化日运 §二）
 import { LIU_CHONG, LIU_HAI, LIU_HE } from './branchRelations'
 import type { Zhi } from './branchRelations'
@@ -36,6 +36,7 @@ const SYSTEM_PROMPT = `你是一位精通传统子平命理的资深命理师，
 1. 排盘数据、旺衰、格局、【算法已确认的事实】区块中的所有结论均为确定性算法算出，你只做解读，严禁修改、否认或与其矛盾。
 2. 每个板块独立成段，语言典雅而通俗，让普通人能看懂；可适当引用经典原文一句并附白话解释。
 3. 断语留余地，用"倾向""易""需注意"等表述，严禁绝对化的生死、灾祸断言；不吓唬用户。
+   ${FORBIDDEN_WORDS_PROMPT}
 4. 分析要有针对性，紧扣这个命局的具体干支组合，禁止写放之四海皆准的套话。
 5. 结尾可有一句劝善修身、知命而为的寄语，但不要说教过度。
 6. 输出必须是纯 JSON 对象，不要 markdown 代码块、不要任何额外文字。

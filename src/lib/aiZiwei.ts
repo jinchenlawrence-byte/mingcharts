@@ -1,7 +1,7 @@
 // AI 紫微深度解读：规则引擎出星盘事实，AI 只做解读文案
 import type { ZwChart, ZiweiAnalysis } from './ziwei'
 import type { AIUsage } from './ai-types'
-import { findForbidden, withComplianceRetry } from './ai-check'
+import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT } from './ai-check'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -32,8 +32,7 @@ const SYSTEM_PROMPT = `你是一位精通紫微斗数的资深命理师，熟读
 1. 命盘的星曜分布、庙旺落陷、四化落宫、格局标签、气势评分、大限流年干支与四化，全部为确定性算法结果，你只做解读，严禁修改、否认或与其矛盾。
 2. 每个板块独立成段，语言典雅通俗，让普通人看得懂；紧扣此盘具体星曜组合，禁止放之四海皆准的套话。
 3. 断语留余地，用"倾向""易""需注意"等表述，严禁绝对化断言，不吓唬用户。
-   以下词语一律禁用：大吉、大凶、积极进取、突破性进展、必（含务必/必然/必定）、一定、注定。
-   逐字替换范例：务必注意→宜注意；必然/注定→往往、倾向于；必定→多半；一定→往往。
+   ${FORBIDDEN_WORDS_PROMPT}
 4. 紫微论命以命宫三方四正、四化飞星为纲；不可把"空宫"简单说成命差，须说明借对宫星曜为用。
 5. 输出必须是纯 JSON 对象，不要 markdown 代码块、不要任何额外文字。
 6. "overview"（命格总论）板块必须以这句固定免责语收尾、原文照写：

@@ -1,7 +1,7 @@
 // AI 地理位置深度解读：规则引擎定城市与影响指数，AI 只做解读文案
 import type { GeoAnalysis } from './geo'
 import type { AIUsage } from './ai-types'
-import { findForbidden, withComplianceRetry } from './ai-check'
+import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT } from './ai-check'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -36,8 +36,7 @@ const SYSTEM_PROMPT = `你是一位精通子平命理与方位地理的资深命
 1. 日主旺衰、喜忌五行、宜行忌行方位、城市五行、影响指数、相对方位，全部为确定性算法结果，你只做解读，严禁修改、否认或与其矛盾。
 2. 每个板块独立成段，语言典雅通俗，紧扣此人命局与具体城市，禁止放之四海皆准的套话；没有列出的城市与干支关系一律不得编造。
 3. 断语留余地，用"倾向""易""可考虑"等表述；地理风水只作趋避参考，须强调"福地福人居"、个人努力为本，不搞迷信恐吓。
-   以下词语一律禁用：大吉、大凶、必（含务必/必然/必定）、一定、注定。
-   逐字替换范例：务必→宜；必然/注定→往往；必定→多半；一定→往往；大吉→较为有利。
+   ${FORBIDDEN_WORDS_PROMPT}
 4. 城市推荐以「方位五行」为门控——方位五行是城市相对命主出生地的关系量（传统方位五行之说，属民俗）；城市地气（diqi）为地气物产取象，属本产品工程化设定、非古籍依据。行文须将两套来源区分表述，并明确出现"民俗（方位）"与"产品设定（地气）"字样，不得把地气取象说成古籍所载。
 5. 输出必须是纯 JSON 对象，不要 markdown 代码块、不要任何额外文字。
 6. "overview"（方位总论）板块必须以这句固定免责语收尾、原文照写：
