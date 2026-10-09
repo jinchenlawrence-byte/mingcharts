@@ -8,6 +8,8 @@
 //   B3 luckCycles 只含前 2 步大运 + 当年流年（无流月）；similarCases 只 1 条
 //   B4 虚构红线：示例四柱 ≠ 用户八字；meta.fictional === true；出生资料与 DEMO_BIRTH 一致
 //   B5 示例全文过 findForbidden（与 aiAnalysis 同口径）
+//   B7 ★ 岁运重算一致性：快照每个 大运/流年 的全字段必须 == 用当前规则对 DEMO_BIRTH 重算的结果
+//      （B6 只防"旧词残留"，B7 防"值算错"——2026-10-10 复核书 §二：手工重算把甲申写成「平」）
 // C 示例页（/mingshu/demo）：存在、零 AI 零 IO 零登录（源码扫描 + 无 middleware）、真调 Page 渲染、/mingshu 有入口
 import { existsSync, readFileSync } from 'node:fs'
 import { SECTION_SPECS } from '../src/lib/aiAnalysis.ts'
@@ -16,6 +18,8 @@ import {
   DEMO_LIUNIAN_COUNT, DEMO_CASE_COUNT, DEMO_BIRTH
 } from '../src/lib/demoFatebook.ts'
 import { findForbidden } from '../src/lib/ai-check.ts'
+import { paipan, getWangShuai, getGeJu } from '../src/lib/paipan.ts'
+import { buildLuckCycles } from '../src/lib/analysis.ts'
 
 let allPass = true
 const fail = (msg) => { allPass = false; console.log('  ✗ ' + msg) }
@@ -151,6 +155,42 @@ if (demo) {
   console.log(b6Fail === 0
     ? `✓ B6 档位同步：大运/流年 tag 均 ∈ 7 档 FortuneTier，流月 ∈ 较宜/一般/宜慎，无旧 5 档词（大防/平顺）`
     : `✗ B6 档位不同步 ${b6Fail} 处`)
+
+  // B7 ★ 岁运重算一致性（复核书 §二：B6 防得住旧词残留、防不住值算错；甲申曾被手工写成「平」而真实为「小吉」）
+  //   确定性、不依赖 AI：取快照命盘参数 → 当前规则重算 → 逐字段比对。
+  //   流年 now 锚定【快照条目自身的年份 6 月 15 日】——快照是标注年份的静态资产，比对与运行时钟解耦。
+  let b7Fail = 0
+  const demoChart = paipan(DEMO_BIRTH)
+  demoChart.analysis = { wangShuai: getWangShuai(demoChart), geJu: getGeJu(demoChart), isPaid: true }
+  const dyLive = buildLuckCycles(demoChart).daYun
+  const cmpFields = (label, snap, live, fields) => {
+    let n = 0
+    for (const f of fields) {
+      if (JSON.stringify(snap?.[f]) !== JSON.stringify(live?.[f])) {
+        n++; b7Fail++
+        fail(`B7 ${label} 字段「${f}」与当前规则重算不一致（快照 ${JSON.stringify(snap?.[f])?.slice(0, 80)} ≠ 重算 ${JSON.stringify(live?.[f])?.slice(0, 80)}）`)
+      }
+    }
+    return n
+  }
+  const DY_FIELDS = ['ganZhi', 'startYear', 'endYear', 'startAge', 'shiShenGan', 'shiShenZhi', 'score', 'tag', 'relations', 'note', 'structuralIssues', 'domains']
+  const LN_FIELDS = ['ganZhi', 'shiShenGan', 'shiShenZhi', 'score', 'tag', 'isPast', 'daYunGanZhi', 'relations', 'note', 'structuralIssues']
+  for (const dSnap of demo.luckCycles.daYun) {
+    const dLive = dyLive.find(d => d.ganZhi === dSnap.ganZhi)
+    if (!dLive) { b7Fail++; fail(`B7 大运「${dSnap.ganZhi}」在当前规则重算结果中不存在`) }
+    else cmpFields(`大运 ${dSnap.ganZhi}`, dSnap, dLive, DY_FIELDS)
+  }
+  for (const ySnap of demo.luckCycles.liuNian) {
+    const lk = buildLuckCycles(demoChart, new Date(ySnap.year, 5, 15))
+    const yLive = lk.liuNian.find(y => y.year === ySnap.year)
+    if (!yLive) { b7Fail++; fail(`B7 流年 ${ySnap.year} 在当前规则重算结果中不存在`) }
+    else cmpFields(`流年 ${ySnap.year} ${ySnap.ganZhi}`, ySnap, yLive, LN_FIELDS)
+    // ★ 选择语义守护：示例流年必须是【当年 current】条目——19 号流年扩为 -8..2 后，slice(0,1) 已退化为 8 年前
+    if (!yLive?.current) { b7Fail++; fail(`B7 示例流年 ${ySnap.year} 非 current 条目（demoFatebook 裁剪语义漂移）`) }
+  }
+  console.log(b7Fail === 0
+    ? `✓ B7 岁运重算一致：${demo.luckCycles.daYun.length} 步大运 × ${DY_FIELDS.length} 字段、${demo.luckCycles.liuNian.length} 年流年 × ${LN_FIELDS.length} 字段，与当前规则重算全等；示例流年为当年条目`
+    : `✗ B7 岁运重算不一致 ${b7Fail} 处`)
 }
 
 // ---------- C 示例页 ----------
