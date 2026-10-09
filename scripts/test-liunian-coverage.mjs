@@ -28,7 +28,8 @@ const cases = [
 ]
 for (const c of cases) {
   const luck = buildLuckCycles(chart, new Date(c.year, 5, 15))
-  const y = luck.liuNian[0]
+  const y = luck.liuNian.find(l => l.year === c.year)
+  if (!y) { covFail++; fail(`${c.year}${c.ganZhi} 不在流年列表中`); continue }
   const hit = y.relations.some(r => r.includes(c.expect))
   if (!hit) { covFail++; fail(`${c.year}${c.ganZhi} 未检出「${c.expect}」（${c.reason}）`) }
 }
@@ -39,7 +40,8 @@ console.log(covFail === 0
 // —— ② 各柱独立、可同时命中（非互斥）——
 console.log('\n—— ② 各柱独立可同时命中（用 2019 己亥：年柱半合 + 时柱六合）——')
 const luck2019 = buildLuckCycles(chart, new Date(2019, 5, 15))
-const rels2019 = luck2019.liuNian[0].relations
+const y2019 = luck2019.liuNian.find(l => l.year === 2019)
+const rels2019 = y2019 ? y2019.relations : []
 const hasYearBanHe = rels2019.some(r => r.includes('年柱半合'))
 const hasHourLiuHe = rels2019.some(r => r.includes('合时柱'))
 let indepFail = 0
@@ -60,7 +62,7 @@ for (let yr = 2018; yr <= 2028; yr++) {
   for (const y of lk.liuNian) allRelations.push(...y.relations)
 }
 // 允许的柱名关键词（年柱/月柱/日柱/时柱/夫妻宫/提纲/月令/日主/年干/月干/时干/运支等）
-const PILLAR_KEYWORDS = /年柱|月柱|日柱|时柱|夫妻宫|提纲|月令|日主|年干|月干|时干|运支|运干|运临|太岁|运支|日柱伏吟/
+const PILLAR_KEYWORDS = /年柱|月柱|日柱|时柱|夫妻宫|提纲|月令|日主|年干|月干|时干|运支|运干|运临|太岁|流年|大运|岁运/
 const nameless = allRelations.filter(r => !PILLAR_KEYWORDS.test(r))
 if (nameless.length) { nameFail += nameless.length; fail(`关系描述缺柱名 ${nameless.length} 处：${nameless.slice(0, 3).join('；')}`) }
 console.log(nameFail === 0

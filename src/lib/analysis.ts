@@ -57,6 +57,7 @@ export interface LuckLiuNianItem {
   score: number
   tag: FortuneTier
   current: boolean
+  isPast?: boolean       // 步骤⑤：是否为过去年份（过去用回顾性措辞）
   daYunGanZhi: string    // 该年所在大运
   relations: string[]
   note: string
@@ -666,6 +667,24 @@ export function fortuneAdviceOf(tag: FortuneTier, issues: string[]): string {
   return `${head}，然${issues.join('；')}`
 }
 
+// ★ 步骤⑤：过去年份回顾性判词（无未来承诺措辞，避免"宜/可/将/建议"）
+//   与 FORTUNE_ADVICE 一一对应，但语气改为回顾性（"该运/该年……多主……"）
+const RETRO_ADVICE: Record<FortuneTier, string> = {
+  '大吉': '该运与命局高度契合，多得顺势之利',
+  '吉': '该运扶助喜用，诸事多稳步推进',
+  '小吉': '该运略有助力，循序而为多有所得',
+  '平': '该运平平，重在积累，无大起伏',
+  '小凶': '该运略有牵制，守成为多',
+  '凶': '该运多阻，大额投入与重大变更易生波折',
+  '大凶': '该运结构不利，多静守、防健康与是非'
+}
+function retroAdviceOf(tag: FortuneTier, issues: string[]): string {
+  const base = RETRO_ADVICE[tag]
+  if (issues.length === 0) return base
+  const head = base.split(/[，,。]/)[0]
+  return `${head}，然${issues.join('；')}`
+}
+
 // 公历月对应的"节"（命理以节令换月，非农历初一）
 const JIE_BY_MONTH = ['小寒', '立春', '惊蛰', '清明', '立夏', '芒种', '小暑', '立秋', '白露', '寒露', '立冬', '大雪']
 
@@ -1023,10 +1042,14 @@ function buildLuckLiuNian(
   const dayPillar = chart.pillars.day.ganZhi
   const out: LuckLiuNianItem[] = []
 
-  for (let i = 0; i < 3; i++) {
+  // ★ 步骤⑤：流年向前扩 8 年（过去应期回看）+ 未来 3 年
+  for (let i = -8; i < 3; i++) {
     const year = nowYear + i
+    // 不早于出生年（出生前的流年无意义）
+    if (year < chart.input.year) continue
     const gz = Solar.fromYmdHms(year, 6, 15, 12, 0, 0).getLunar().getEightChar().getYear()
     const g = gz[0], z = gz[1]
+    const isPast = year < nowYear
     const shiShenGan = SHI_SHEN[dayGan][g]
     const shiShenZhi = SHI_SHEN[dayGan][CANG_GAN[z][0]]
     let score = baseScore(gz, favorable, unfavorable)
@@ -1123,12 +1146,12 @@ function buildLuckLiuNian(
     }
 
     const tag = fortuneTierOf(score, issues)
-    // 步骤④：判词按结构病分叉；有结构病时结构病进入主句（「然」引出），不再后置
-    const advice = fortuneAdviceOf(tag, issues)
+    // 步骤④：判词按结构病分叉；步骤⑤：过去年份用回顾性措辞（无未来承诺）
+    const advice = isPast ? retroAdviceOf(tag, issues) : fortuneAdviceOf(tag, issues)
     const note = `${shiShenGan}主事——${GOD_DOMAIN[shiShenGan]}；${advice}。`
     out.push({
       year, ganZhi: gz, shiShenGan, shiShenZhi, score, tag,
-      current: i === 0, daYunGanZhi: dyGanZhi, relations, note, structuralIssues: issues
+      current: i === 0, isPast, daYunGanZhi: dyGanZhi, relations, note, structuralIssues: issues
     })
   }
   return out

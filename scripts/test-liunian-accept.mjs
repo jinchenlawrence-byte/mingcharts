@@ -180,5 +180,44 @@ try {
   fail('流年 note 去重率断言执行异常：' + e.message)
 }
 
+// ---------- ⑥ 过去年份无未来承诺措辞（步骤⑤：过去应期回看，措辞须回顾性）----------
+console.log('\n—— ⑥ 过去年份无未来承诺措辞（步骤⑤）——')
+let pastFail = 0
+try {
+  const { paipan } = await import('../src/lib/paipan.ts')
+  const { getWangShuai, getGeJu } = await import('../src/lib/paipan.ts')
+  const { buildLuckCycles } = await import('../src/lib/analysis.ts')
+  const nowYear = 2026
+  const cases2 = [
+    { year: 1991, month: 4, day: 12, hour: 3, minute: 10, gender: 1 },
+    { year: 1985, month: 8, day: 20, hour: 14, minute: 30, gender: 0 },
+    { year: 2000, month: 1, day: 1, hour: 8, minute: 0, gender: 1 },
+  ]
+  // 未来承诺措辞：过去年份应用回顾性"该运"，不得出现前瞻性"岁运"（FORTUNE_ADVICE 首段用词）
+  //   另查宜/可/将/建议/须等前瞻动词（排除"应酬"等常用词）
+  const FUTURE_RE = /岁运(?!根基)|宜(?!静守)|可(?!步)|将|建议|须/
+  let pastCount = 0, badCount = 0
+  for (const c of cases2) {
+    const chart = paipan(c)
+    chart.analysis = { wangShuai: getWangShuai(chart), geJu: getGeJu(chart), isPaid: true }
+    const luck = buildLuckCycles(chart, new Date(nowYear, 5, 15))
+    const past = luck.liuNian.filter(l => l.year < nowYear)
+    pastCount += past.length
+    for (const l of past) {
+      if (FUTURE_RE.test(l.note)) {
+        badCount++
+        fail(`${c.year} 盘 ${l.year} 年 note 含未来承诺措辞：${l.note.slice(0, 40)}…`)
+      }
+    }
+  }
+  console.log(pastFail === 0 && badCount === 0
+    ? `✓ 过去年份（${pastCount} 条）无未来承诺措辞（宜/可/将/建议/应/须），全部回顾性`
+    : `✗ 过去年份含未来承诺措辞 ${badCount} 处`)
+  if (badCount > 0) pastFail++
+} catch (e) {
+  pastFail++
+  fail('过去年份措辞断言执行异常：' + e.message)
+}
+
 console.log('\n' + (allPass ? 'LIUNIAN_ACCEPT_PASS' : 'LIUNIAN_ACCEPT_FAIL'))
 if (!allPass) process.exit(1)

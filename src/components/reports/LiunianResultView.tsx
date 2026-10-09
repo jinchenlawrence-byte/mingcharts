@@ -128,19 +128,21 @@ export default function LiunianResultView({ data }: { data: LiunianResultData })
 
       {/* 三年流年概览 */}
       <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="font-semibold text-slate-900 mb-3">三年流年概览（今年起）</h3>
+        <h3 className="font-semibold text-slate-900 mb-3">流年概览（过去应期回看 + 未来三年）</h3>
         <div className="grid md:grid-cols-3 gap-3">
           {data.liuNian.map(y => {
             const isTarget = y.year === data.targetYear
+            const isPast = y.isPast
             return (
               <div key={y.year}
-                className={`rounded-md border p-3 text-sm ${isTarget ? 'border-slate-800 ring-2 ring-slate-300 bg-slate-50' : 'border-gray-200 bg-white'}`}>
+                className={`rounded-md border p-3 text-sm ${isTarget ? 'border-slate-800 ring-2 ring-slate-300 bg-slate-50' : isPast ? 'border-gray-200 bg-gray-50' : 'border-gray-200 bg-white'}`}>
                 <div className="flex items-center gap-2 mb-1">
                   <span className="font-bold text-slate-800">{y.year}年</span>
                   <span className="tracking-wider">{y.ganZhi}</span>
                   <span className={`px-2 py-0.5 rounded border text-xs ${TAG_STYLE[y.tag] || TAG_STYLE['一般']}`}>
                     {y.tag}
                   </span>
+                  {isPast && <span className="text-xs text-gray-400 ml-auto">已过·应期</span>}
                   {isTarget && <span className="text-xs text-slate-500 ml-auto">本次详批</span>}
                 </div>
                 <p className="text-gray-600">{y.shiShenGan}主事 · {y.shiShenZhi}</p>
