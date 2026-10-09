@@ -416,6 +416,37 @@ Pancake 的服务器【无法访问 http://localhost:3000】✗
   ★ 隧道地址每次重启都会变 → 要回 Dashboard 更新 Test Webhook URL ✓
 ```
 
+## 4.5 ★★★★ 生产审核的前提：**网站必须先上线**（★ Waffo 于 2026-10-09 来信更正）
+
+**★★★ 这一条是本任务书写作（10-07）之后才明确的** ✗ —— 请记入：
+
+```
+★ Waffo 原话（10-09 回信）：
+   「审核的对象是您已经上线、可公开访问的网站，而不是方案说明或演示截图。
+     您提到站点尚未正式上线，这意味着现在还无法提交审核。」
+
+★★★ 所以【部署上线】是【生产审核的前置】✗ —— 不是"可以后做"✓
+
+★★★★ 正确顺序（Waffo 给的）：
+   ① 注册账号建店 ✓【已完成】
+   ② 测试模式完成技术集成与全流程测试（★ 测试模式【不需要审核】✓）
+   ③ ★★★ 网站上线：
+        · 定价页可见 ✓
+        · 服务条款与隐私政策【已发布且全站可点击】✓
+        · 页脚有【有效的客服联系方式】✓
+        · ★ 我方可加：AIGC 披露 ✓ · 不承诺结果 ✓ · 不提供投资建议 ✓
+   ④ 后台「设置 → 企业详情」提交审核（★ 个人主体下入口名可能不同，待确认）
+   ⑤ 审核 1–3 个工作日 → 通过后开通生产收款与提现
+
+★★ 这几项正是【最常见的驳回原因】✗ —— 上线前请逐条自查 ✓
+★★★ 且【后台提交处有"网站 AI 自查"功能】✗ —— 上线后可以先跑一遍再正式提交 ✓
+
+★ 另注（对本任务无影响，但记录以免误解）：
+   · ★ 主体只能【个人】✗ —— 后台只有个人主体表单 ✗ 企业主体目前走不通 ✓
+   · ★ 提现：单笔必须 > 10 USD 且 ≤ 7000 USD ✗（与渠道无关 ✓）
+   · ★ 本类目【仅支持卡支付】✗ 微信支付不可用 ✗（且微信不支持订阅扣款 ✓）
+```
+
 ---
 
 # 五、逐文件实现
@@ -455,9 +486,11 @@ POST { sku: SkuId }
      ★ metadata: { userId, sku },
      ★ orderMerchantExternalId,
      ★ includePaymentMethods: ['card'],
-     successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success`,
+     ★★★ successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success?ref=${orderMerchantExternalId}`,
+        ← ★ 把业务单号【拼进 successUrl】✗ 理由见 §5.6 ①
+          （创建会话时我们手上就有它 ✓ 所以零成本 ✓）
    })
-⑤ 返回 { checkoutUrl, sessionId }
+⑤ 返回 { checkoutUrl, sessionId, ref }   ← ★ 一并返回 ref，供前端做 sessionStorage 兜底 ✓
 ```
 
 **★★ 要求**：
@@ -515,9 +548,14 @@ export async function POST(request: Request) {
        payment_method: 'card',
        status: 'paid',
        ★★★ transaction_id: event.data.paymentId,   ← 真实单号（PAY_xxx），不是 MOCK_
+       ★★★ order_merchant_external_id: event.data.orderMerchantExternalId,   ← ★ 新增列（§5.8.1）
        paid_at: event.data.paymentDate 或 new Date()
-   · ★★ 若 payments 表需要 chart_id 而 webhook 里没有：
-       可以留空（并说明），或按 userId + 最近一次命盘关联（你判断并说明）
+   · ★★★★ chart_id：【固定留 NULL】✗ —— 不需要任何关联 ✓
+       ★ 理由（我方有代码证据）：
+         entitlementFromRows 的查询是
+           .select('payment_type, status, transaction_id')   ← 【它根本不读 chart_id】✓
+         且 schema 里 chart_id 是 `REFERENCES charts(id) ON DELETE SET NULL` ✓ 允许 NULL ✓
+       ★★ 所以这里【不要做任何"按 userId 关联最近命盘"的推断】✗ —— 无必要且会引入不确定性 ✓
    · ★ 这条记录写进去之后，getEntitlements 就会授予 fatebook ✓
 
 ③ ★ 其余事件
@@ -536,7 +574,12 @@ export async function POST(request: Request) {
 ```ts
 POST { orderMerchantExternalId }   // 前端从 success 页带过来
 ① 验证登录，且该 orderMerchantExternalId 属于当前用户（★ 防止越权查询）
-② ★ 先查我们的 payments 表：已有该单号 → 直接返回"已解锁"（快路径 ✓）
+   ★ 做法：单号格式为 `MC-${userId}-${ts}` ✗ → 解析出 userId 并与登录用户比对 ✓
+   ★★ 若解析不出 userId → 【拒绝】✗（不要放行 ✗）
+② ★ 先查我们的 payments 表：
+     .eq('order_merchant_external_id', ref)     ← ★ 用 §5.8.1 新增的那一列 ✓
+     已有且 status = 'paid' → 直接返回"已解锁"（快路径 ✓）
+   ★★★ 不要用 transaction_id 查 ✗ —— 它是 PAY_xxx ✗ 与 MC-xxx 是两个不同的东西 ✗
 ③ 没有 → 用 GraphQL 反查 Waffo：
      payments(filter: { orderMerchantExternalId: { eq: ref } }) {
        id orderId status refundStatus orderMerchantExternalId createdAt
@@ -544,6 +587,8 @@ POST { orderMerchantExternalId }   // 前端从 success 页带过来
    ★ 或查 onetimeOrders(..., filter: { orderMerchantExternalId: { eq: ref } })
      { id buyerEmail status orderMerchantExternalId createdAt }
 ④ 若查到 status = "succeeded" → ★【补写 payments】（与 §5.3 相同的幂等写入）
+   ★★★ 必须【同时写入 order_merchant_external_id】✗ —— 否则下次兜底就查不到它 ✓
+   ★★ 这是"webhook 丢了也不丢单"的关键一步 ✓
 ⑤ 返回最新权益状态
 ```
 
@@ -572,7 +617,11 @@ const result = await waffo.graphql.query<{...}>({ query, variables: { ref } })
 ★★★ 关键：不能假设付款已确认（见 §二的时间线）
 
 行为：
-  ① 从 URL 取 orderMerchantExternalId（★ checkout 时前端要保存它，例如 sessionStorage）
+  ① ★★★ 从 URL query 取 `ref`（= orderMerchantExternalId）✗
+     —— 因为 §5.2 已把它【拼进 successUrl】✓ → ★★【跨设备也能兜底】✓
+     ★★★ 不要只依赖 sessionStorage ✗ ——
+       用户在【手机上付款、回到电脑看】时它是空的 ✗ → 兜底对账会失效 ✗
+     （★ sessionStorage 仅作可选补充：URL 无 ref 时再试它 ✓）
   ② 轮询 /api/entitlements（或现有等价接口），每 2 秒一次，最多 15 次
      → 解锁即停 ✓（覆盖 webhook 正常到达的情况，通常几秒内）
   ③ 轮询仍无 → 调 POST /api/verify-payment { orderMerchantExternalId }
@@ -636,7 +685,36 @@ status       CHECK IN ('pending','paid','failed','refunded')    ← 我们用 'p
 transaction_id TEXT（无唯一约束 → 见 5.8.1）✓
 ```
 
-### 5.8.1 幂等所需（按 §5.3 的方案选）
+### 5.8.1 ★★★★ 新增：我们的业务单号列（**必做**）
+
+**这一列是【兜底对账】与【反查用户】的共同依赖** —— 缺它，§5.4 的快路径无法实现 ✗
+
+```sql
+-- 2) ★★★★ 新增：我们的业务单号（orderMerchantExternalId）
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS order_merchant_external_id TEXT;
+CREATE INDEX IF NOT EXISTS idx_payments_omer ON payments(order_merchant_external_id);
+-- ★★ 同样必须【同步 schema.sql】（单一事实源，§8.5.1）—— 不要只改数据库 ✗
+```
+
+**★★★ 为什么必须有它**（我方已逐一核对现有 schema）：
+
+```
+★ 现在 payments 的全部列（schema.sql:49-63，实测）：
+   id · user_id · chart_id · amount · payment_type · payment_method
+   · status · transaction_id · paid_at · created_at
+→ ★★★★ 【没有任何列能装 orderMerchantExternalId】✗
+
+→ 而 §八 要求「orderMerchantExternalId 必须能从我们的库里反查回用户」✗
+  且 §5.4 要求「先查我们的 payments 表：已有该单号 → 快速返回」✗
+  —— ★★★★★ 没有这一列，这两条都【无法实现】✗
+
+★★ 不要试图用 transaction_id 替代 ✗：
+   · transaction_id 存的是 PAY_xxx（Waffo 的 Payment ID）
+   · orderMerchantExternalId 是 MC-xxx（我们自己的业务号）
+   → ★★★【两者是不同的东西】✗ 不能互换 ✗
+```
+
+### 5.8.2 幂等所需（按 §5.3 的方案选）
 
 ```sql
 -- 方案 b（推荐为主）：payments.transaction_id 唯一
@@ -708,9 +786,14 @@ order.completed
    ★ 这必须真的调用处理函数，不得只检查源码文本
 
 ③ ★★★ 权益衔接断言（本轮最有价值的一条）
-   · 造一条 payments 行（transaction_id: 'PAY_xxx', payment_type: 'single', status: 'paid'）
+   · 造一条 payments 行（transaction_id: 'PAY_xxx', payment_type: 'single', status: 'paid',
+     ★ order_merchant_external_id: 'MC-test-123'）   ← ★ 含 §5.8.1 新增列 ✓
    · 断言 entitlementsFromRows 返回的 ownedSkus 含 'fatebook' ✓
    · ★ 对照：transaction_id: 'MOCK_xxx' → 不含 'fatebook' ✓（上一轮已有，此处复核）
+   · ★★★ 新增断言（守护 §5.8.1 那一列）：
+       「按 order_merchant_external_id 能【真的查到】该 payments 行」✓
+       —— 即 §5.4 快路径的查询必须真的命中 ✓
+       ★ 牙口：把写入时的 order_merchant_external_id 去掉 → 本断言必须翻红 ✓
 
 ④ ★★ 会话创建参数断言
    · 对 /api/checkout 的构造参数（可用 mock SDK）断言：
@@ -723,11 +806,31 @@ order.completed
    · ★ 未越权：别人的 orderMerchantExternalId → 拒绝 ✓
 
 ⑥ ★★ 牙口（必须做，用【文本不变、行为变坏】的注入）
-   · 注入：把幂等的去重判断改成【永不去重】（如注释掉那行判断的【条件部分】，
-     保留文本），或把 45 分钟改成 5 分钟（★ 后者会改文本，所以更推荐前者）
-   · 预期：② 精确翻红
-   · ★ 注入前【先确认注入有效】（打出改动后的实际行内容与行为），确认失败即中止
-   · ★ 恢复后必须复绿
+
+   ★★★★ 先明确"文本不变"的含义：它指【断言用来判定的那段文本仍然存在】✗
+     —— 目的是验证【断言不是靠 grep 文本过关】✗
+     ★ 所以【不得用"注释掉某行"的方式注入】✗（注释必然改动文本 ✗ 与要求矛盾 ✗）
+
+   ★ 注入点（改【逻辑】而保留断言会 grep 的字段名 ✓，二选一）：
+
+   (a) 若幂等靠 Supabase upsert：
+       注入前： .upsert(row, { onConflict: 'event_type,event_id', ignoreDuplicates: true })
+       注入后： .upsert(row, { onConflict: 'id',                  ignoreDuplicates: true })
+       → ★★ 文本里 event_type / event_id 【仍然存在】✓ 但永不冲突 ✗ → ② 必须翻红 ✓
+
+   (b) 若幂等靠插入 processed_webhooks：
+       注入前： insert({ event_type, event_id })
+       注入后： insert({ event_type, event_id: event_id + '-x' })
+       → ★★ 同上：字段名仍在 ✓ 但永不重复 ✗ → ② 必须翻红 ✓
+
+   (c) ★★ 第三条牙口（针对 §5.8.1 新增列）：
+       注入：写 payments 时【去掉 order_merchant_external_id】✗
+       → ③ 的新增断言（能从该列反查回那一行）必须精确翻红 ✓
+
+   · 预期：② 与 ③ 精确翻红 ✓
+   · ★★ 注入前【先确认注入有效】—— 在回执里【贴出改动后的实际行内容】✓
+     确认失败即中止 ✓（§8.6.7 ✓）
+   · ★ 恢复后必须复绿 ✓
 ```
 
 **⚠️ 三条硬要求（§8.6.7）**：
@@ -764,18 +867,20 @@ order.completed
 |---|---|---|
 | 1 | `.env.example` 补 `WAFFO_MERCHANT_ID` / `WAFFO_PRIVATE_KEY` / `WAFFO_STORE_ID` / `NEXT_PUBLIC_APP_URL` | ✓ |
 | 2 | `src/lib/waffo.ts` 单例；环境变量缺失时启动明确报错 | ✓ |
-| 3 | `/api/checkout` 传齐 `metadata` / `orderMerchantExternalId` / `includePaymentMethods:['card']`；`successUrl` 是绝对 https | ✓ |
+| 3 | `/api/checkout` 传齐 `metadata` / `orderMerchantExternalId` / `includePaymentMethods:['card']`；`successUrl` 是绝对 https **且带 `?ref=`** | ✓ |
 | 4 | ★★★ `/api/webhooks/waffo` 用 raw body 验签；三个坑全部避开 | ✓ |
 | 5 | ★★★ 幂等靠数据库唯一约束（不是先查后写） | ✓ |
-| 6 | `order.completed` 写 payments，`transaction_id` = 真实 `paymentId` | ✓ **贴实测记录** |
-| 7 | ★★ `/api/verify-payment` 兜底可用（快路径 + GraphQL 反查 + 补写） | ✓ |
-| 8 | 成功页：轮询 → 兜底 → 明确文案（含业务单号与联系邮箱） | ✓ 贴截图 |
+| 6 | `order.completed` 写 payments，`transaction_id` = 真实 `paymentId`，**且写 `order_merchant_external_id`** | ✓ **贴实测记录** |
+| 7 | ★★ `/api/verify-payment` 兜底可用（快路径按 `order_merchant_external_id` 查 + GraphQL 反查 + 补写**含该列**） | ✓ |
+| 8 | 成功页：**从 URL `ref` 取单号** → 轮询 → 兜底 → 明确文案（含业务单号与联系邮箱） | ✓ 贴截图 |
 | 9 | ★ 客户门户链接已放（附你实际用的 URL 与出处） | ✓ |
-| 10 | SQL 变更写进 `supabase/schema.sql` | ✓ |
+| 10 | SQL 变更写进 `supabase/schema.sql`（**含 §5.8.0 的 `'card'` ＋ §5.8.1 的 `order_merchant_external_id`**） | ✓ |
 | 11 | `test-waffo-accept.mjs` 纳入 `verify`，含**行为断言** | ✓ |
-| 12 | ★ 牙口注入 → ② 翻红；恢复后复绿 | ✓ **贴注入前后实际值** |
-| 13 | `npm run verify` 全绿 ＋ `tsc --noEmit` 0 错误 | ✓ |
-| 14 | **未打开 ENFORCE · 未做订阅 · 未动法律文本 · 未动 `/pricing` 会员卡** | ✓ |
+| 12 | ★ 牙口注入 → ② 与 ③ 精确翻红；恢复后复绿 | ✓ **贴注入前后实际行内容** |
+| 13 | ★★★ **能从 `order_merchant_external_id` 反查回 payments 行**（§八 硬要求） | ✓ **贴实测** |
+| 14 | ★★ `chart_id` 写 NULL（**未做任何"关联最近命盘"的推断**） | ✓ |
+| 15 | `npm run verify` 全绿 ＋ `tsc --noEmit` 0 错误 | ✓ |
+| 16 | **未打开 ENFORCE · 未做订阅 · 未动法律文本 · 未动 `/pricing` 会员卡** | ✓ |
 
 **★★★ 另外必须交付一份【联调实测记录】**（因为有些事离线断言验不了）：
 
