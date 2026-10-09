@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     // ★ 门禁判定统一走 entitlement（§8.5.1）
     // fatebook 门禁已在 unlock route 接了；此 route 复核并驱动 locked 判定
-    // annual_report 门禁接线就位（年运报告内容当前在命书内，未独立拆分）
+    // annual_report 真门禁在 api/liunian（年运报告已独立成模块），此处不再占位
     const token = typeof body.token === 'string' ? body.token : ''
     let ent = EMPTY_ENTITLEMENTS
     if (token) {
@@ -87,7 +87,6 @@ export async function POST(request: NextRequest) {
       if (user) ent = await getEntitlements(admin, user.id)
     }
     const unlocked = canView(ent, 'fatebook')
-    void canView(ent, 'annual_report') // 门禁接线就位（§五 ② ④）
 
     return NextResponse.json({
       success: true,

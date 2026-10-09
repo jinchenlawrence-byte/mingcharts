@@ -5,6 +5,8 @@ import type { AnalyzableChart } from '@/lib/analysis'
 import { generateAILiunian, fallbackLiunianText } from '@/lib/aiLiunian'
 import { checkDSTTransition } from '@/lib/solarTime'
 import { resolveBirthFromBody } from '@/lib/birthRequest'
+import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
+import { createServerSupabase } from '@/lib/supabase'
 import { saveReport, deriveReportTitle } from '@/lib/reportSave'
 
 export async function POST(request: NextRequest) {
@@ -78,9 +80,23 @@ export async function POST(request: NextRequest) {
     const nowYear2 = luck.liuNian[0].year
     const liuYue = targetYear === nowYear2 ? luck.liuYue : null
     const favorSets = getFavorSets(analyzable)
-    const ai = await generateAILiunian(analyzable, luck, targetYear)
-    const aiSource = ai ? 'AI 深度解读' : '规则版（AI暂不可用）'
-    const aiSections = ai || fallbackLiunianText(targetYear, target, liuYue, favorSets)
+    const aiReport = await generateAILiunian(analyzable, luck, targetYear)
+
+    // ★ 门禁判定统一走 entitlement（§8.5.1），不得在本路由另写判断
+    // ENFORCE=false → unlocked 恒 true → 内测期行为与现在完全一致 ✓
+    const token = typeof body.token === 'string' ? body.token : ''
+    let ent = EMPTY_ENTITLEMENTS
+    if (token) {
+      const admin = createServerSupabase()
+      const { data: { user } } = await admin.auth.getUser(token)
+      if (user) ent = await getEntitlements(admin, user.id)
+    }
+    const unlocked = canView(ent, 'annual_report')
+    // ★ free 层保留结构化岁运事实（试吃本意）；ai 在未解锁时为 null
+    const ai = unlocked ? (aiReport || fallbackLiunianText(targetYear, target, liuYue, favorSets)) : null
+    const aiSource = !unlocked ? '未解锁'
+      : aiReport ? 'AI 深度解读'
+      : '规则版（AI结果未过合规校验）'
 
     const curDaYun = luck.daYun.find(d => d.current) || null
     const data = {
@@ -99,21 +115,20 @@ export async function POST(request: NextRequest) {
       curDaYun,
       liuNian: luck.liuNian,
       liuYue,
-      ai: aiSections,
+      ai,
       aiSource,
       dstNotice: dstNotice?.message || null,
-      // 新增 free/locked 分层（双写过渡：本轮 ENFORCE=false，ai 原文保留不下拦截）
+      // ★ free 层保留结构化岁运事实（试吃本意）；locked 在已解锁时为 null
       free: { targetYear, liuNian: luck.liuNian, liuYue },
-      locked: {
+      locked: unlocked ? null : {
         skus: ['annual_report'],
         preview: `${targetYear}年（${target.ganZhi}年）流年详批：事业/财运/感情/健康分维度深度解读解锁后可见。`
       }
     }
 
     // 登录用户：报告作为账户资产自动保存（静默降级，不阻断主流程）
-    const token = typeof body.token === 'string' ? body.token : undefined
     const reportInput = { year, month, day, hour, gender, targetYear }
-    const reportId = await saveReport(token, {
+    const reportId = await saveReport(token || undefined, {
       kind: 'annual',
       title: deriveReportTitle('annual', reportInput),
       input: reportInput,

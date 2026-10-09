@@ -4,6 +4,7 @@
 import type { LuckLiuNianItem, LuckLiuYueItem, LuckDaYunItem } from '@/lib/analysis'
 import type { Pillar } from '@/lib/paipan'
 import type { AILiunianSections } from '@/lib/aiLiunian'
+import { SKUS, formatPriceUSD } from '@/lib/pricing'
 
 export interface LiunianResultData {
   targetYear: number
@@ -21,8 +22,10 @@ export interface LiunianResultData {
   curDaYun: LuckDaYunItem | null
   liuNian: LuckLiuNianItem[]
   liuYue: LuckLiuYueItem[] | null
-  ai: AILiunianSections
+  ai: AILiunianSections | null
   aiSource: string
+  // ★ 门禁（§8.5.1）：未解锁时给 preview 与 skus，已解锁为 null
+  locked?: { skus: string[]; preview: string } | null
   dstNotice: string | null
 }
 
@@ -137,10 +140,26 @@ export default function LiunianResultView({ data }: { data: LiunianResultData })
         </div>
       </div>
 
-      {/* AI 深度解读板块 */}
+      {/* AI 深度解读板块：未解锁时显示 preview 与解锁引导（§8.5.1 门禁消费） */}
+      {data.locked && (
+        <div className="bg-gray-100 rounded-lg p-6 text-center">
+          <p className="text-sm text-gray-600 mb-4">{data.locked.preview}</p>
+          {data.locked.skus.map((skuId) => {
+            const sku = SKUS[skuId as keyof typeof SKUS]
+            if (!sku) return null
+            return (
+              <a key={skuId} href="/pricing"
+                className="inline-block px-6 py-2 bg-slate-700 text-white rounded-lg font-semibold hover:bg-slate-800 mr-2">
+                解锁 {sku.name} {formatPriceUSD(sku.priceUSD)}
+              </a>
+            )
+          })}
+        </div>
+      )}
+      {data.ai && (
       <div className="space-y-4">
         {AI_SECTIONS.map(({ key, name }) => {
-          const text = data.ai[key]
+          const text = data.ai![key]
           if (!text) return null
           return (
             <div key={key} className="bg-white rounded-lg shadow p-6">
@@ -153,6 +172,7 @@ export default function LiunianResultView({ data }: { data: LiunianResultData })
           )
         })}
       </div>
+      )}
 
       {/* 当年流月表（仅目标年=当年时展示） */}
       {data.liuYue && data.liuYue.length > 0 && (
