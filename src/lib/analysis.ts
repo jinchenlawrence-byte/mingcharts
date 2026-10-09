@@ -929,10 +929,10 @@ function buildLuckDaYun(
       sanHeInfo(z, dayZhi).forEach(({ label, ju }) => {
         if (favorable.includes(ju)) {
           score++
-          relations.push(`运支与日支${label}，合出${ju}气助喜用`)
+          relations.push(`运支与夫妻宫${label}，合出${ju}气助喜用`)
         } else {
           score--
-          relations.push(`运支与日支${label}，合出${ju}气助忌神`)
+          relations.push(`运支与夫妻宫${label}，合出${ju}气助忌神`)
         }
       })
     }
@@ -1034,10 +1034,10 @@ function buildLuckLiuNian(
       sanHeInfo(z, dayZhi).forEach(({ label, ju }) => {
         if (favorable.includes(ju)) {
           score++
-          relations.push(`流年支与日支${label}，合出${ju}气助喜用`)
+          relations.push(`流年支与夫妻宫${label}，合出${ju}气助喜用`)
         } else {
           score--
-          relations.push(`流年支与日支${label}，合出${ju}气助忌神`)
+          relations.push(`流年支与夫妻宫${label}，合出${ju}气助忌神`)
         }
       })
     }
