@@ -100,12 +100,12 @@ console.log(adviceHits === 0 ? `✓ 判词语合规：7 句逐句过 findForbidd
 //   分布断言是统计性守护（阈值有余量），本组逐点钉死：cap 三级（事故 18 纪律）+ 每个分档阈值点
 console.log('\n—— ⑥ fortuneTierOf 逐点映射（真调生产函数）——')
 const TIER_CASES = [
-  [4, [], '大吉'], [3, [], '大吉'],                 // s>=3 → 大吉（分位 top 3%）
+  [4, [], '大吉'], [3, [], '大吉'],                 // s>=3 → 大吉
   [2, [], '吉'], [1, [], '小吉'],                    // s=2吉 / s=1小吉
   [0, [], '平'], [-1, [], '平'],                     // s=0,-1 → 平（中位区）
   [-2, [], '小凶'], [-3, [], '凶'], [-4, [], '大凶'], [-5, [], '大凶'],
   [4, ['被合'], '吉'],                              // 1 个结构病 cap=2 → s=2 → 吉
-  [4, ['被合', '被冲'], '平'],                      // ≥2 个结构病 cap=0 → s=0 → 平
+  [4, ['被合', '被冲'], '小吉'],                    // ≥2 个结构病 cap=1（方案 ii）→ s=1 → 小吉
   [-5, ['被合', '被冲'], '大凶'],                   // 反向不设 floor
 ]
 let mapFail = 0
@@ -114,6 +114,31 @@ for (const [score, issues, want] of TIER_CASES) {
   if (got !== want) { mapFail++; fail(`fortuneTierOf(${score}, ${issues.length}个结构病) = 「${got}」，期望「${want}」`) }
 }
 console.log(mapFail === 0 ? `✓ 逐点映射：${TIER_CASES.length} 个边界点全中（含 cap 三级与反向无 floor）` : '✗ 逐点映射断言失败')
+
+// —— ⑦ 断言 A + B：cap 的【档位语义】守护（HANDOFF-判词封顶分级 §二-2.2，本任务最重要产出）——
+//   上一轮「注释说最高小吉、代码却给吉」之所以没被发现，根因就是没有任何断言守护 cap 对应的档位上限。
+//   score=99（极高）使 cap 成为唯一约束——否则测的是分数而不是 cap。
+//   ★ 断言 A（上限）：0 病→可达大吉；1 病→≤吉；≥2 病→≤小吉（用精确值钉死，强于 ≤：cap 抬高/压低都翻红）
+//   ★ 断言 B（可达性，不可省）：0 病 + 高 score【确实能】拿大吉——只测上限不测可达性，大吉永不可达也测不出
+console.log('\n—— ⑦ 断言 A/B：cap 档位语义（上限＋可达性，score=99 使 cap 成唯一约束）——')
+const tierRank = { '大吉': 7, '吉': 6, '小吉': 5, '平': 4, '小凶': 3, '凶': 2, '大凶': 1 }
+let capFail = 0
+const CAP_CASES = [
+  // [score, issues, 精确期望, 上限语义]
+  [99, [], '大吉', '0 病 → 可达「大吉」（断言 A 上限 + 断言 B 可达性）'],
+  [99, ['被合'], '吉', '1 病 → ≤「吉」（cap=2）'],
+  [99, ['被合', '被冲'], '小吉', '≥2 病 → ≤「小吉」（cap=1，方案 ii）'],
+  [99, ['被合', '被冲', '伏吟'], '小吉', '3 病 → ≤「小吉」（cap=1）'],
+]
+for (const [score, issues, want, desc] of CAP_CASES) {
+  const got = fortuneTierOf(score, issues)
+  if (got !== want) { capFail++; fail(`cap 语义：fortuneTierOf(${score}, ${issues.length}病) = 「${got}」，期望「${want}」（${desc}）`) }
+}
+// 断言 B 显式可达性（独立成句，语义醒目）：存在某个 score 使 0 病拿到大吉
+if (tierRank[fortuneTierOf(99, [])] !== tierRank['大吉']) { capFail++; fail('断言 B 可达性：0 病 + 高 score 未能拿到「大吉」——大吉形同虚设') }
+console.log(capFail === 0
+  ? `✓ cap 档位语义：${CAP_CASES.length} 点全中（0病→大吉可达 / 1病→最高吉 / ≥2病→最高小吉）`
+  : '✗ cap 档位语义断言失败')
 
 console.log('\n' + (allPass ? 'FORTUNE_TIER_PASS' : 'FORTUNE_TIER_FAIL'))
 if (!allPass) process.exit(1)

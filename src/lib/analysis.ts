@@ -705,7 +705,11 @@ function baseScore(ganZhi: string, favorable: string[], unfavorable: string[]): 
 }
 
 // ★ 大运/流年 7 档判词（事故 18 纪律保留：结构性缺陷封顶——"用神到位 ≠ 用神有效"）
-// cap 分三级：无结构病 → 可达「大吉」；1 个结构病 → 最高「小吉」；≥2 个 → 最高「平」
+// cap 分三级：无结构病 → 可达「大吉」；1 个结构病 → 最高「吉」；≥2 个 → 最高「小吉」
+// ★ 判词封顶分级（方案 ii，任务20拍板）：≥2 个病由 cap 0（最高「平」）抬为 cap 1（最高「小吉」）。
+//   现状把约 39.6% 的大运步一刀切压在「平」，无论多好用户最高只能看到「平」——纯放宽，负向/大凶完全不变。
+// ★ 用户拍板理由：「吉凶是相对用户个人而言的，不是相对别人而言的，对用户来说吉就是吉」
+//   → 分档由"这个时段本身如何"决定，不按人群分位数设阈值（阈值注释不得使用 top X% 类人群分位标注）
 // 反向不设 floor（结构病只封上限、不封下限）
 // ★ 步骤③分位校准（依据：7488 样本 score 分位数 P3=-4/P10=-3/P25=-1/P50=0/P75=1/P90=2/P97=3）：
 //   阈值对齐分位数，让每一档都真的可用（避免大吉形同虚设、大凶宿命化）。
@@ -713,8 +717,8 @@ function baseScore(ganZhi: string, favorable: string[], unfavorable: string[]): 
 export function fortuneTierOf(score: number, structuralIssues: string[] = []): FortuneTier {
   const cap =
     structuralIssues.length === 0 ? 4 :      // 无结构病 → 可达「大吉」
-    structuralIssues.length === 1 ? 2 :      // 1 个     → 最高「小吉」
-    0                                        // ≥2 个    → 最高「平」
+    structuralIssues.length === 1 ? 2 :      // 1 个     → 最高「吉」
+    1                                        // ≥2 个    → 最高「小吉」（方案 ii：纯放宽，负向/大凶不变）
   const s = Math.min(score, cap)
 
   if (s >= 3) return '大吉'         // top 3%

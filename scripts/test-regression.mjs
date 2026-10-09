@@ -42,8 +42,10 @@ else {
   console.log(`己丑运 tag=${jichou.tag}`)
   console.log(`事业倾向=${jichou.domains.career.tendency}  财运倾向=${jichou.domains.wealth.tendency}`)
   const jt = JSON.stringify(jichou)
-  // ★ 事故 18 纪律的新形态：己丑运有 ≥2 个结构病 → cap=0 → tag 最高「平」，不得进正向三档
-  if (['大吉', '吉', '小吉'].includes(jichou.tag)) { console.log(`✗ 己丑运（${jichou.structuralIssues.length}个结构病）进入正向档 ${jichou.tag}`); pass = false } else { console.log(`✓ 己丑运未进正向档（tag=${jichou.tag}，结构病${jichou.structuralIssues.length}个封顶）`) }
+  // ★ 事故 18 纪律的新形态（任务20 方案 ii 拍板更新）：己丑运有 ≥2 个结构病 → cap=1 → tag 最高「小吉」。
+  //   精确钉死「小吉」：score=2 被 cap=1 压到 s=1 → 小吉；若 cap 被进一步放宽到 2 会给「吉」→ 翻红。
+  //   （旧规 cap=0 最高「平」已被方案 ii 取代：纯放宽，负向/大凶不变；梯度保留——病越多评价越低）
+  if (jichou.tag !== '小吉') { console.log(`✗ 己丑运（${jichou.structuralIssues.length}个结构病）tag=${jichou.tag}，期望「小吉」（cap=1 封顶）`); pass = false } else { console.log(`✓ 己丑运（${jichou.structuralIssues.length}个结构病）封顶「小吉」（方案 ii：多重结构病仍被压制，不及其上「吉」）`) }
   if (jichou.domains.wealth.tendency !== '滞') { console.log('✗ 财运未判滞'); pass = false } else { console.log('✓ 财运判滞') }
   if (jichou.domains.career.tendency !== '平') { console.log('✗ 事业未判平'); pass = false } else { console.log('✓ 事业判平') }
   if (!jt.includes('忌') || !(jt.includes('杠杆') || jt.includes('投机'))) { console.log('✗ 未出现"忌杠杆投机"类警示'); pass = false } else { console.log('✓ 出现"忌杠杆投机"类警示') }
