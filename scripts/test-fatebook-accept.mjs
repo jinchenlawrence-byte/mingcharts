@@ -131,6 +131,26 @@ if (demo) {
   const { hits } = findForbidden(allText)
   if (hits.length) fail(`B5 示例命书禁词命中 ${hits.length} 处：${[...new Set(hits.map(h => h.w))].join('、')}`)
   else console.log(`✓ B5 合规：示例十板块全文 ${clen(allText)} 字过 findForbidden（aiAnalysis 同口径）0 命中`)
+
+  // B6 档位同步（步骤⑥：大运/流年 tag ∈ 7 档 FortuneTier；流月 ∈ 较宜/一般/宜慎；无旧 5 档词大防/平顺）
+  let b6Fail = 0
+  const FORTUNE_TIERS = new Set(['大吉', '吉', '小吉', '平', '小凶', '凶', '大凶'])
+  const LIUYUE_TAGS = new Set(['较宜', '一般', '宜慎'])
+  const OLD_5 = new Set(['大防', '平顺'])   // 旧 5 档禁用词（较宜/一般/宜慎为流月合法档）
+  for (const d of demo.luckCycles.daYun) {
+    if (!FORTUNE_TIERS.has(d.tag)) { b6Fail++; fail(`B6 大运 tag「${d.tag}」∉ 7 档 FortuneTier`) }
+    if (OLD_5.has(d.tag)) { b6Fail++; fail(`B6 大运残留旧 5 档词「${d.tag}」`) }
+  }
+  for (const y of demo.luckCycles.liuNian) {
+    if (!FORTUNE_TIERS.has(y.tag)) { b6Fail++; fail(`B6 流年 tag「${y.tag}」∉ 7 档 FortuneTier`) }
+    if (OLD_5.has(y.tag)) { b6Fail++; fail(`B6 流年残留旧 5 档词「${y.tag}」`) }
+  }
+  for (const m of demo.luckCycles.liuYue) {
+    if (!LIUYUE_TAGS.has(m.tag)) { b6Fail++; fail(`B6 流月 tag「${m.tag}」∉ 较宜/一般/宜慎`) }
+  }
+  console.log(b6Fail === 0
+    ? `✓ B6 档位同步：大运/流年 tag 均 ∈ 7 档 FortuneTier，流月 ∈ 较宜/一般/宜慎，无旧 5 档词（大防/平顺）`
+    : `✗ B6 档位不同步 ${b6Fail} 处`)
 }
 
 // ---------- C 示例页 ----------
