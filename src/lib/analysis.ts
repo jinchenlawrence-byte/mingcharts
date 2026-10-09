@@ -962,7 +962,8 @@ function buildLuckDaYun(
     } else if (LUCK_LIU_HE[z] === dayZhi) {
       score++
       relations.push(`运支${z}合夫妻宫${dayZhi}，人际感情和合`)
-    } else if (z === dayZhi) {
+    } else if (z === dayZhi && dy.ganZhi !== dayPillar) {
+      // ★ 整柱伏吟成立时不再单报同支伏吟（整柱优先，去重——任务20步骤③）；同支不同干仍是真伏吟
       relations.push(`运支${z}与夫妻宫伏吟，事宜心境易有反复`)
     } else {
       sanHeInfo(z, dayZhi).forEach(({ label, ju }) => {
@@ -977,9 +978,9 @@ function buildLuckDaYun(
     }
     // ★ 步骤①：年支/时支覆盖（依据等级：通行做法——运与四柱冲合是命理常论）
     //   日支/月支的既有判据与权重不动；此处增补年柱/时柱，各柱独立、可同时命中
-    for (const { zhi, pillarName, palaceName } of [
-      { zhi: chart.pillars.year.zhi, pillarName: '年柱', palaceName: '祖上/父母宫' },
-      { zhi: chart.pillars.hour.zhi, pillarName: '时柱', palaceName: '子女/晚年宫' },
+    for (const { zhi, pillarGZ, pillarName, palaceName } of [
+      { zhi: chart.pillars.year.zhi, pillarGZ: chart.pillars.year.ganZhi, pillarName: '年柱', palaceName: '祖上/父母宫' },
+      { zhi: chart.pillars.hour.zhi, pillarGZ: chart.pillars.hour.ganZhi, pillarName: '时柱', palaceName: '子女/晚年宫' },
     ]) {
       if (LUCK_CHONG[z] === zhi) {
         score--
@@ -987,7 +988,8 @@ function buildLuckDaYun(
       } else if (LUCK_LIU_HE[z] === zhi) {
         score++
         relations.push(`运支${z}合${pillarName}${zhi}，十年${palaceName}多得助力`)
-      } else if (z === zhi) {
+      } else if (z === zhi && dy.ganZhi !== pillarGZ) {
+        // ★ 整柱伏吟成立时不再单报该柱同支伏吟（整柱优先，去重——任务20步骤③）
         relations.push(`运支${z}与${pillarName}伏吟，十年${palaceName}事宜易有反复`)
       } else {
         sanHeInfo(z, zhi).forEach(({ label, ju }) => {
@@ -1071,7 +1073,8 @@ function buildLuckLiuNian(
     } else if (LUCK_LIU_HE[z] === dayZhi) {
       score++
       relations.push(`流年支${z}合夫妻宫${dayZhi}，关系和合`)
-    } else if (z === dayZhi) {
+    } else if (z === dayZhi && gz !== dayPillar) {
+      // ★ 整柱伏吟成立时不再单报同支伏吟（整柱优先，去重——任务20步骤③）；同支不同干仍是真伏吟
       relations.push(`流年支${z}与夫妻宫伏吟，事宜易有反复`)
     } else {
       sanHeInfo(z, dayZhi).forEach(({ label, ju }) => {
@@ -1086,9 +1089,9 @@ function buildLuckLiuNian(
     }
     // ★ 步骤①：年支/时支覆盖（依据等级：通行做法——流年与四柱冲合是命理常论，非本产品发明）
     //   日支/月支的既有判据与权重不动；此处增补年柱/时柱，各柱独立、可同时命中（非互斥）
-    for (const { zhi, pillarName, palaceName } of [
-      { zhi: chart.pillars.year.zhi, pillarName: '年柱', palaceName: '祖上/父母宫' },
-      { zhi: chart.pillars.hour.zhi, pillarName: '时柱', palaceName: '子女/晚年宫' },
+    for (const { zhi, pillarGZ, pillarName, palaceName } of [
+      { zhi: chart.pillars.year.zhi, pillarGZ: chart.pillars.year.ganZhi, pillarName: '年柱', palaceName: '祖上/父母宫' },
+      { zhi: chart.pillars.hour.zhi, pillarGZ: chart.pillars.hour.ganZhi, pillarName: '时柱', palaceName: '子女/晚年宫' },
     ]) {
       if (LUCK_CHONG[z] === zhi) {
         score--
@@ -1096,7 +1099,8 @@ function buildLuckLiuNian(
       } else if (LUCK_LIU_HE[z] === zhi) {
         score++
         relations.push(`流年支${z}合${pillarName}${zhi}，${palaceName}多得助力`)
-      } else if (z === zhi) {
+      } else if (z === zhi && gz !== pillarGZ) {
+        // ★ 整柱伏吟成立时不再单报该柱同支伏吟（整柱优先，去重——任务20步骤③）
         relations.push(`流年支${z}与${pillarName}伏吟，${palaceName}事宜易有反复`)
       } else {
         sanHeInfo(z, zhi).forEach(({ label, ju }) => {

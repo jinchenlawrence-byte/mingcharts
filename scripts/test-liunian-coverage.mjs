@@ -69,6 +69,43 @@ console.log(nameFail === 0
   ? `✓ 柱名回溯：${allRelations.length} 条关系描述全部含柱名（无主语残缺句）`
   : '✗ 存在无柱名关系描述')
 
+// —— ④ 伏吟去重（任务20步骤③）：整柱伏吟成立时不再单报该柱同支伏吟（整柱优先）——
+//   用真实命盘真实年份：该用户 2022 壬寅（时柱同为壬寅）→ 时柱伏吟描述必须【恰好 1 条】
+//   牙口：把「整柱优先」的判断去掉（gz !== pillarGZ / gz !== dayPillar）→ 本断言必须精确翻红
+console.log('\n—— ④ 伏吟去重（整柱优先：同一柱伏吟描述不得重复）——')
+let dupFail = 0
+{
+  const luck2022 = buildLuckCycles(chart, new Date(2022, 5, 15))
+  const y2022 = luck2022.liuNian.find(l => l.year === 2022)
+  const hourFuyin = y2022 ? y2022.relations.filter(r => r.includes('伏吟') && r.includes('时柱')) : []
+  if (hourFuyin.length !== 1) { dupFail++; fail(`2022 壬寅时柱伏吟描述 ${hourFuyin.length} 条（期望恰好 1 条）：${hourFuyin.join('；')}`) }
+  else console.log(`✓ 流年侧：2022 壬寅时柱伏吟恰好 1 条：「${hourFuyin[0]}」`)
+  // 通用不变量：该用户 2018-2028 全部流年，同一柱的伏吟描述不得超过 1 条
+  const pillarOf = (r) => r.includes('时柱') ? '时柱' : r.includes('月柱') ? '月柱' : (r.includes('夫妻宫') || r.includes('日柱')) ? '日柱' : r.includes('年柱') ? '年柱' : null
+  let invBad = 0
+  for (let yr = 2018; yr <= 2028; yr++) {
+    const lk = buildLuckCycles(chart, new Date(yr, 5, 15))
+    for (const y of lk.liuNian) {
+      const seen = {}
+      for (const r of y.relations.filter(r => r.includes('伏吟'))) {
+        const p = pillarOf(r)
+        if (p) { seen[p] = (seen[p] || 0) + 1; if (seen[p] > 1) { invBad++; fail(`${y.year}${y.ganZhi} ${p}伏吟重复 ${seen[p]} 条`) } }
+      }
+    }
+  }
+  if (invBad === 0) console.log('✓ 通用不变量：2018-2028 全部流年，同柱伏吟描述均 ≤1 条')
+  // 大运侧：真实命盘 1955-01-15 01:00 女（甲午 丁丑 丙子 己丑），大运丙子 = 日柱整柱伏吟
+  //   修复前同支路径「运支子与夫妻宫伏吟」与整柱路径「运临日柱伏吟」同时命中（2 条）；去重后恰好 1 条
+  const c2 = paipan({ year: 1955, month: 1, day: 15, hour: 1, minute: 0, gender: 0 })
+  c2.analysis = { wangShuai: getWangShuai(c2), geJu: getGeJu(c2), isPaid: true }
+  const luck2 = buildLuckCycles(c2)
+  const dyBingzi = luck2.daYun.find(d => d.ganZhi === '丙子')
+  const dayFuyin = dyBingzi ? dyBingzi.relations.filter(r => r.includes('伏吟') && (r.includes('日柱') || r.includes('夫妻宫'))) : []
+  if (!dyBingzi || dayFuyin.length !== 1) { dupFail++; fail(`大运侧：丙子运（=日柱丙子）伏吟描述 ${dayFuyin.length} 条（期望恰好 1 条）：${dayFuyin.join('；')}`) }
+  else console.log(`✓ 大运侧：丙子运临日柱伏吟恰好 1 条：「${dayFuyin[0]}」`)
+}
+console.log(dupFail === 0 ? '✓ 伏吟去重：流年/大运两侧整柱优先均成立' : '✗ 伏吟去重断言失败')
+
 // —— 牙口：删年柱检查 → ①必须精确翻红（注入前先确认有效）——
 //   注入方式：临时改 analysis.ts 把年支检查注释掉（本脚本用源码扫描验证判据结构，
 //   实际牙口在开发期手工注入验证；此处用正则断言守护「年支检查块存在」）
