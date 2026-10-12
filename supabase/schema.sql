@@ -139,9 +139,25 @@ CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports(created_at DESC);
 -- 报告缓存（HANDOFF-年运披露与报告缓存 §3.3 方案 A：报告与缓存同一份数据，不重复存）
 -- cache_key = annual:v{版本}:y{目标年}:{参数摘要}（见 src/lib/reportCache.ts）；
 -- 同一 (user_id, kind, cache_key) 覆盖写只保留一行（saveReport cacheKey 分支）。
--- ★ 已有数据库需在 SQL Editor 补跑这两句。
+-- ★ REPLY-23 复核 发现②：索引必须 UNIQUE——saveReport 是「先 SELECT 再 update/insert」，
+--   普通索引下并发两请求会同时未命中、同时 insert → 同键两行（原则③要消灭的堆积挪到了并发）；
+--   唯一约束由数据库层兜底，并发 loser 收 23505 后由 saveReport 降级 update。
+--   （呼应 waffo-repo.ts 既有原则：绝不做「先 SELECT 看在不在，再 INSERT」而无唯一约束兜底）
+-- ★ 采用【部分唯一索引】（复核认可的分支）：WHERE cache_key IS NOT NULL——
+--   · cache_key IS NULL 的行（其它四模块、旧行）不进索引、可任意并存（语义显式，
+--     不依赖「PG 标准 UNIQUE 允许多个 NULL」这一待实测前提——PostgREST 无 DDL 通道，
+--     编程方式无法先建索引验证 NULL 语义，故选语义显式的写法）；
+--   · 非 NULL 同键冲突 → PostgREST 透传 23505（waffo-repo.ts 已有同形态生产先例）。
+-- ★ 已有数据库迁移（SQL Editor 按序执行；新建库跑本文件即就位）：
+--     ① 先去重（有重复行建 UNIQUE 会失败）：
+--        DELETE FROM reports a USING reports b
+--        WHERE a.cache_key IS NOT NULL AND a.id < b.id
+--          AND a.user_id = b.user_id AND a.kind = b.kind AND a.cache_key = b.cache_key;
+--     ② DROP INDEX IF EXISTS idx_reports_cache;（旧的普通索引与 UNIQUE 同名冲突，须先删）
+--     ③ CREATE UNIQUE INDEX 那句（如下）。
 ALTER TABLE reports ADD COLUMN IF NOT EXISTS cache_key TEXT;
-CREATE INDEX IF NOT EXISTS idx_reports_cache ON reports(user_id, kind, cache_key);
+DROP INDEX IF EXISTS idx_reports_cache;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_reports_cache ON reports(user_id, kind, cache_key) WHERE cache_key IS NOT NULL;
 
 -- ─────────────────────────────────────────────────────────────
 -- Waffo 支付集成迁移（HANDOFF-Waffo支付集成 §5.8）

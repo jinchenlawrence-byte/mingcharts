@@ -119,6 +119,33 @@ export async function saveReport(
       })
       .select('id')
       .single()
+    // ★ 并发 loser 兜底（REPLY-23 复核 发现②）：上方「先 SELECT 再 INSERT」在真实并发下
+    //   两个请求会同时未命中、同时 INSERT——idx_reports_cache 是 UNIQUE 索引，
+    //   loser 的 INSERT 被数据库以 23505（唯一冲突）拒绝；此时 winner 的行已就位，
+    //   改为覆盖写它，保证同键永远只有一行（原则③在并发下同样成立）。
+    //   牙口注入点：下方 code 判断改坏（如 '23506'）→ 断言⑧b 翻红。
+    if (error && (error as { code?: string }).code === '23505' && payload.cacheKey) {
+      const { data: dup } = await admin
+        .from('reports')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('kind', payload.kind)
+        .eq('cache_key', payload.cacheKey)
+        .maybeSingle()
+      if (dup?.id) {
+        const { error: upErr } = await admin
+          .from('reports')
+          .update({
+            title: payload.title,
+            input: payload.input as never,
+            result: payload.result as never,
+            created_at: new Date().toISOString()
+          })
+          .eq('id', dup.id)
+        if (upErr) throw upErr
+        return dup.id
+      }
+    }
     if (error) throw error
     return data.id
   } catch (e) {

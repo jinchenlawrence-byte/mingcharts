@@ -7,6 +7,9 @@
 //   node scripts/test-liunian-cache.mjs --tooth=locked   → 缓存把 locked 存进去并原样下发 → 断言②翻红
 //   node scripts/test-liunian-cache.mjs --tooth=dup      → 覆盖写被破坏（总是 insert）→ 断言④翻红
 //   node scripts/test-liunian-cache.mjs --tooth=keyver   → 键模板去掉版本常量 → 断言③结构断言翻红
+//   node scripts/test-liunian-cache.mjs --tooth=secure   → resolveCachedHit 直发 hit.content 不重算 → 断言⑦翻红
+//   node scripts/test-liunian-cache.mjs --tooth=race     → saveReport 的 23505 判断改坏 → 断言⑧b翻红
+//   node scripts/test-liunian-cache.mjs --tooth=aiguard  → route 去掉 unlocked 三元守卫 → 断言⑨结构断言翻红
 // 每个牙口运行前，脚本先打出【注入后的实际行为】作肯定性证据；无证据即中止（§8.6.7）。
 process.env.AI_API_KEY = 'test-key-cache-accept'   // ★ 必须在任何 import 之前（aiLiunian 模块级常量）
 
@@ -17,9 +20,16 @@ const { setServerSupabaseForTest } = await import('../src/lib/supabase.ts')
 
 // ---------- 内存 admin（reports/profiles/payments 的最小可用替身） ----------
 function makeMockAdmin(userId) {
-  const db = { rows: [], seq: 0 }
+  const db = { rows: [], seq: 0, freezeAt: null }
   const matches = (row, table, filters) =>
     row.__table === table && filters.every(([c, v]) => row[c] === v)
+  // ★ 并发窗口模拟（REPLY-23 发现②）：db.freezeAt 开启后，下一次 select 只能看到冻结点
+  //   之前的行（模拟并发事务快照：loser 的 select 早于 winner 的 insert 提交）——
+  //   一次性语义，消费后自动清除；insert 的唯一约束检查始终看全量。
+  const visibleRows = () => {
+    if (db.freezeAt != null) { const n = db.freezeAt; db.freezeAt = null; return db.rows.slice(0, n) }
+    return db.rows
+  }
   const builder = (table) => {
     const filters = []
     let mode = 'select'
@@ -27,10 +37,18 @@ function makeMockAdmin(userId) {
     const b = {}
     b.select = () => b
     b.eq = (c, v) => { filters.push([c, v]); return b }
+    // ★ 模拟 idx_reports_cache UNIQUE 约束（REPLY-23 发现②）：cache_key 非 NULL 且
+    //   (user_id, kind, cache_key) 已存在 → 23505（PostgreSQL 唯一冲突码），
+    //   由 saveReport 降级分支捕获后改走 update；cache_key 为 NULL 的行可并存（PG 语义）。
     const doInsert = () => {
+      if (table === 'reports' && payload.cache_key != null) {
+        const dup = db.rows.find(r => r.__table === 'reports'
+          && r.user_id === payload.user_id && r.kind === payload.kind && r.cache_key === payload.cache_key)
+        if (dup) return { row: null, error: { code: '23505', message: 'duplicate key value violates unique constraint "idx_reports_cache"' } }
+      }
       const row = { ...payload, id: 'r' + (++db.seq), __table: table, created_at: new Date().toISOString() }
       db.rows.push(row)
-      return row
+      return { row, error: null }
     }
     const doUpdate = () => {
       let n = 0
@@ -38,18 +56,18 @@ function makeMockAdmin(userId) {
       return n
     }
     const finish = () => {
-      if (mode === 'insert') { doInsert(); return { data: null, error: null } }
+      if (mode === 'insert') { const { error } = doInsert(); return { data: null, error } }
       if (mode === 'update') { doUpdate(); return { data: null, error: null } }
-      return { data: db.rows.filter(r => matches(r, table, filters)), error: null }
+      return { data: visibleRows().filter(r => matches(r, table, filters)), error: null }
     }
     b.maybeSingle = async () => {
-      if (mode === 'insert') return { data: doInsert(), error: null }
+      if (mode === 'insert') { const { row, error } = doInsert(); return { data: row, error } }
       if (mode === 'update') return { data: doUpdate() ? db.rows[0] : null, error: null }
-      return { data: db.rows.find(r => matches(r, table, filters)) ?? null, error: null }
+      return { data: visibleRows().find(r => matches(r, table, filters)) ?? null, error: null }
     }
     b.single = async () => {
-      if (mode === 'insert') return { data: doInsert(), error: null }
-      const row = db.rows.find(r => matches(r, table, filters))
+      if (mode === 'insert') { const { row, error } = doInsert(); return { data: row, error } }
+      const row = visibleRows().find(r => matches(r, table, filters))
       return row ? { data: row, error: null } : { data: null, error: { message: 'no rows' } }
     }
     b.insert = (p) => { mode = 'insert'; payload = p; return b }
@@ -84,8 +102,9 @@ globalThis.fetch = async (url, opts) => {
 // ---------- 通用工具 ----------
 const { POST } = await import('../src/app/api/liunian/route.ts')
 const {
-  annualCacheKey, recomputeEntitlementFields, stripEntitlementState
+  annualCacheKey, recomputeEntitlementFields, stripEntitlementState, resolveCachedHit
 } = await import('../src/lib/reportCache.ts')
+const { saveReport } = await import('../src/lib/reportSave.ts')
 
 const call = async (payload) => {
   const req = new Request('http://localhost/api/liunian', {
@@ -150,6 +169,45 @@ if (tooth) {
     const red = !hasVer
     console.log(red ? '  ✓ 注入有效：版本常量已从键模板剥离（断言③结构判据变坏）' : '  ✗ 注入无效 → 中止')
     console.log(red ? 'KEYVER_TOOTH_RED_CONFIRMED' : 'KEYVER_TOOTH_INVALID')
+    process.exit(red ? 1 : 2)
+  }
+  if (tooth === 'secure') {
+    // 注入点：resolveCachedHit 函数体改回直接下发 hit.content（不按权益重算）→ 断言⑦翻红
+    // 证据：未解锁 + 带全文缓存 → 返回 ai 的实际值（泄漏即注入有效）
+    const denied = resolveCachedHit(
+      { reportId: 'r-sec', content: { targetYear: nowYear, liuNian: [{ year: nowYear, ganZhi: '丙午' }], ai: { annualOverview: '付费全文' }, aiSource: 'AI 深度解读' } },
+      { unlocked: false, skus: ['annual_report'], targetYear: nowYear })
+    const leaked = denied?.data?.ai != null
+    console.log(`  [证据] 注入后未解锁命中带全文缓存，返回 ai=${JSON.stringify(denied?.data?.ai ?? null)}`)
+    console.log(leaked ? '  ✓ 注入有效：未解锁用户拿到缓存全文（断言⑦场景变坏）' : '  ✗ 注入无效 → 中止')
+    console.log(leaked ? 'SECURE_TOOTH_RED_CONFIRMED' : 'SECURE_TOOTH_INVALID')
+    process.exit(leaked ? 1 : 2)
+  }
+  if (tooth === 'race') {
+    // 注入点：saveReport 的 23505 判断改坏（如 code === '23506'）→ 并发 loser 降级分支不触发
+    // 证据：复现并发 loser 场景（select 快照 miss → insert 撞 23505），saveReport 实际返回值
+    const { admin, db } = makeMockAdmin(USER_ID)
+    setServerSupabaseForTest(admin)
+    const key = annualCacheKey(keyInputOf(BASE))
+    db.freezeAt = 0   // select 快照冻结在 0 行（loser 的 select 早于 winner insert）
+    db.rows.push({ id: 'winner-1', __table: 'reports', user_id: USER_ID, kind: 'annual', cache_key: key,
+      title: 'winner', input: {}, result: { ai: { annualOverview: '旧' } } })
+    const id = await saveReport('tok-race', { kind: 'annual', title: 'loser-new', input: {}, result: { ai: { annualOverview: '新' } }, cacheKey: key })
+    const red = id !== 'winner-1'
+    console.log(`  [证据] 注入后并发 loser 的 saveReport 返回=${id}（降级有效时应返回 winner-1；null=23505 漏捕）`)
+    console.log(red ? '  ✓ 注入有效：23505 降级失效，loser 覆盖写丢失（断言⑧b 场景变坏）' : '  ✗ 注入无效 → 中止')
+    console.log(red ? 'RACE_TOOTH_RED_CONFIRMED' : 'RACE_TOOTH_INVALID')
+    process.exit(red ? 1 : 2)
+  }
+  if (tooth === 'aiguard') {
+    // 注入点：route 的「const aiReport = unlocked ? await generateAILiunian(…)」去掉守卫 → 断言⑨翻红
+    const { readFileSync } = await import('node:fs')
+    const src = readFileSync(new URL('../src/app/api/liunian/route.ts', import.meta.url), 'utf8')
+    const guarded = /const aiReport = unlocked \? await generateAILiunian/.test(src)
+    console.log(`  [证据] 注入后 route 的 AI 调用是否仍受 unlocked 守卫：${guarded ? '是（注入无效）' : '否（守卫已移除，未解锁也会调 AI）'}`)
+    const red = !guarded
+    console.log(red ? '  ✓ 注入有效：AI 调用失去 unlocked 守卫（断言⑨结构判据变坏）' : '  ✗ 注入无效 → 中止')
+    console.log(red ? 'AIGUARD_TOOTH_RED_CONFIRMED' : 'AIGUARD_TOOTH_INVALID')
     process.exit(red ? 1 : 2)
   }
   console.log('未知牙口模式：' + tooth)
@@ -299,6 +357,94 @@ console.log('—— ⑥ 未登录用户不走缓存（每次重算）——')
   if (r1.json.reportId !== null || r2.json.reportId !== null) fail('未登录不应返回 reportId')
   if (rowsOf(db).length !== 0) fail('未登录不应写入 reports')
   console.log('  ✓ 未登录：每次重算（AI 2 次）、不落库、无 reportId——与 saveReport 无 token 返回 null 一致')
+}
+
+// ---------- 断言 ⑦ 权益重算接线方向（REPLY-23 发现①：resolveCachedHit 端到端安全方向） ----------
+console.log('—— ⑦ 权益重算接线方向（未解锁命中带全文缓存 → ai 必须置空不外泄）——')
+{
+  // ★ 结构性缺口（REPLY-23 §五根因）：ENTITLEMENT_ENFORCE=false → canView 恒 true，
+  //   路由层【造不出】未解锁请求——「未解锁命中带全文缓存」这一安全方向只能
+  //   直接喂数据给 route 使用的同一纯函数（函数行为断言纪律：真调，不查源码文本）。
+  const fullContent = {
+    targetYear: nowYear, liuNian: [{ year: nowYear, ganZhi: '丙午' }],
+    ai: { annualOverview: '付费全文内容' }, aiSource: 'AI 深度解读'
+  }
+  const hit = { reportId: 'r-sec', content: fullContent }
+  // 安全方向：未解锁 → ai 必须 null、locked 必须非 null（缓存全文绝不外泄）
+  const denied = resolveCachedHit(hit, { unlocked: false, skus: ['annual_report'], targetYear: nowYear })
+  if (!denied) fail('带全文缓存应判定可用（返回非 null）')
+  else {
+    if (denied.data.ai !== null) fail('★ 未解锁用户拿到缓存全文 ai——付费内容外泄（安全方向）')
+    if (!denied.data.locked?.preview?.includes('丙午')) fail('未解锁应给 locked.preview（含流年干支）')
+    if (denied.data.aiSource !== '未解锁') fail(`未解锁 aiSource 应为「未解锁」，实际 ${denied.data.aiSource}`)
+  }
+  // 反向：已解锁 → 保留缓存全文、locked=null
+  const open = resolveCachedHit(hit, { unlocked: true, skus: ['annual_report'], targetYear: nowYear })
+  if (open?.data?.ai?.annualOverview !== '付费全文内容' || open.data.locked !== null) {
+    fail('已解锁应保留缓存全文且 locked=null')
+  }
+  // 空内容（试吃期写入）→ 返回 null（route 走重生成，缓存自愈）
+  const empty = resolveCachedHit({ reportId: 'r-e', content: { targetYear: nowYear, ai: null } },
+    { unlocked: true, skus: ['annual_report'], targetYear: nowYear })
+  if (empty !== null) fail('ai=null 的缓存应判不可用（返回 null）走自愈重生成')
+  // 结构守护：route 必须通过 resolveCachedHit 处置命中（防接线漂移回「直接下发 hit.content」）
+  const { readFileSync } = await import('node:fs')
+  const routeSrc = readFileSync(new URL('../src/app/api/liunian/route.ts', import.meta.url), 'utf8')
+  if (!routeSrc.includes('resolveCachedHit(hit,')) fail('route 未调用 resolveCachedHit——命中处置接线漂移')
+  console.log('  ✓ 未解锁→ai=null+locked.preview（含丙午）；已解锁→全文+locked=null；空内容→null（自愈）；route 一行调用结构断言')
+}
+
+// ---------- 断言 ⑧ 覆盖写并发安全（REPLY-23 发现②：UNIQUE 索引 + 23505 降级 + 并发 Promise.all） ----------
+console.log('—— ⑧ 覆盖写并发安全（先 SELECT 再 INSERT 的并发穿透由数据库兜底）——')
+{
+  // a) 结构：缓存索引必须 UNIQUE——普通索引下并发两请求同时未命中、同时 insert → 同键两行
+  const { readFileSync } = await import('node:fs')
+  const schemaSrc = readFileSync(new URL('../supabase/schema.sql', import.meta.url), 'utf8')
+  if (!/CREATE\s+UNIQUE\s+INDEX\s+IF\s+NOT\s+EXISTS\s+idx_reports_cache/i.test(schemaSrc)) {
+    fail('idx_reports_cache 必须是 UNIQUE 索引（普通索引并发下同键可两行）')
+  } else {
+    console.log('  ✓ 结构：schema 的 idx_reports_cache 为 UNIQUE（并发穿透由数据库层兜底）')
+  }
+  // b) 真调 saveReport：复现并发 loser 路径（select 快照 miss → insert 撞 23505 → 降级 update）
+  {
+    const { admin, db } = makeMockAdmin(USER_ID)
+    setServerSupabaseForTest(admin)
+    const key = annualCacheKey(keyInputOf(BASE))
+    db.freezeAt = 0   // select 快照冻结在 0 行（loser 的 select 早于 winner 的 insert 提交）
+    db.rows.push({ id: 'winner-1', __table: 'reports', user_id: USER_ID, kind: 'annual', cache_key: key,
+      title: 'winner', input: {}, result: { ai: { annualOverview: '旧' } } })
+    const id = await saveReport('tok-race', { kind: 'annual', title: 'loser-new', input: {}, result: { ai: { annualOverview: '新' } }, cacheKey: key })
+    if (id !== 'winner-1') fail(`23505 降级未返回 winner 行 id（实际 ${id}）——并发 loser 覆盖写丢失`)
+    if (rowsOf(db).length !== 1) fail(`23505 降级后行数 ${rowsOf(db).length} ≠ 1`)
+    if (rowsOf(db)[0]?.title !== 'loser-new') fail('23505 降级应把 winner 行 update 为最新内容')
+    console.log('  ✓ 真调 saveReport：select 快照 miss → insert 撞 23505 → 降级 update winner 行（行数=1、内容为最新）')
+  }
+  // c) 并发 Promise.all 同键两请求 → 行数=1 且 reportId 相同（最终状态守护）
+  {
+    const { admin, db } = makeMockAdmin(USER_ID)
+    setServerSupabaseForTest(admin)
+    aiCalls.length = 0
+    const [r1, r2] = await Promise.all([call(BASE), call(BASE)])
+    const rows = rowsOf(db)
+    if (rows.length !== 1) fail(`并发同键两请求行数 ${rows.length} ≠ 1（并发穿透堆积重复行）`)
+    if (!r1.json.reportId || r1.json.reportId !== r2.json.reportId) {
+      fail(`并发两请求 reportId 不一致（${r1.json.reportId} vs ${r2.json.reportId}）——loser 未落到同一行`)
+    }
+    console.log(`  ✓ 并发 Promise.all 同键 ×2 → 行数=${rows.length}、reportId 一致（${r1.json.reportId}）`)
+  }
+}
+
+// ---------- 断言 ⑨ 未解锁不调 AI（REPLY-23 发现③(a)：ENFORCE=false 下结构守护） ----------
+console.log('—— ⑨ 未解锁不调 AI（route 的 unlocked 三元守卫）——')
+{
+  // ★ ENFORCE=false → 路由造不出未解锁请求，此分支只能靠结构断言守护接线：
+  //   generateAILiunian 必须受 unlocked 三元守卫——未解锁试吃用户零 AI 成本，
+  //   否则「试吃」成为最贵路径且缓存永远建立不起来（ai=null → 下次未命中 → 再调）。
+  const { readFileSync } = await import('node:fs')
+  const routeSrc = readFileSync(new URL('../src/app/api/liunian/route.ts', import.meta.url), 'utf8')
+  const guarded = /const aiReport = unlocked \? await generateAILiunian/.test(routeSrc)
+  if (!guarded) fail('route 的 AI 调用未受 unlocked 守卫——未解锁试吃每次点击都在花 AI 钱（发现③）')
+  else console.log('  ✓ 结构守护：generateAILiunian 受 unlocked 三元守卫（未解锁 → null，零 AI 成本）')
 }
 
 console.log('\n' + (allPass ? 'LIUNIAN_CACHE_PASS' : 'LIUNIAN_CACHE_FAIL'))

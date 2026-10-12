@@ -10,8 +10,7 @@ import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
 import { createServerSupabase } from '@/lib/supabase'
 import { saveReport, deriveReportTitle } from '@/lib/reportSave'
 import {
-  annualCacheKey, stripEntitlementState, recomputeEntitlementFields,
-  isCacheContentUsable, cachedTargetOf, readReportCache,
+  annualCacheKey, stripEntitlementState, resolveCachedHit, readReportCache,
   type AnnualCacheInput
 } from '@/lib/reportCache'
 
@@ -91,21 +90,15 @@ export async function POST(request: NextRequest) {
     }
     const unlocked = canView(ent, 'annual_report')
 
-    // ★ 缓存读取（HANDOFF §3.4 流程②）：命中 → 直接用缓存内容（不调 AI），
-    //   locked/ai/aiSource 按当前权益重算（原则①）；ai 为空的缓存视为未命中（缓存自愈）。
+    // ★ 缓存读取（HANDOFF §3.4 流程②）：命中处置全在纯函数 resolveCachedHit（REPLY-23 发现①）——
+    //   判可用 → 按当前权益重算 locked/ai/aiSource → 组装响应，route 只剩一行调用；
+    //   「未解锁命中带全文缓存」的安全方向由断言⑦直接喂数据守护（ENFORCE=false 下路由造不出未解锁）。
     //   force=true（重新生成）与未登录用户跳过读取。
     if (!force && userId && admin) {
       const hit = await readReportCache(admin, userId, 'annual', cacheKey)
-      if (hit && isCacheContentUsable(hit.content)) {
-        const cachedItem = cachedTargetOf(hit.content, targetYear)
-        // ★ 权益字段永远重算，绝不复用缓存中的 locked/ai（原则①）。
-        //   牙口注入点：此处改回直接下发 hit.content（把 locked 也存也发）→ 断言②精确翻红。
-        const data = recomputeEntitlementFields(hit.content, {
-          unlocked,
-          skus: ['annual_report'],
-          lockedPreview: `${targetYear}年（${cachedItem?.ganZhi ?? ''}年）流年详批：事业/财运/感情/健康分维度深度解读解锁后可见。`
-        })
-        return NextResponse.json({ success: true, data, reportId: hit.reportId, cached: true })
+      const resolved = hit ? resolveCachedHit(hit, { unlocked, skus: ['annual_report'], targetYear }) : null
+      if (resolved) {
+        return NextResponse.json({ success: true, data: resolved.data, reportId: resolved.reportId, cached: true })
       }
     }
 
@@ -134,7 +127,11 @@ export async function POST(request: NextRequest) {
     // ★ 当年读 luck.currentYear 显式字段，严禁 luck.liuNian[0]（首位是 8 年前；复核 2026-10-10）
     const liuYue = targetYear === luck.currentYear ? luck.liuYue : null
     const favorSets = getFavorSets(analyzable)
-    const aiReport = await generateAILiunian(analyzable, luck, targetYear)
+    // ★ 未解锁不调 AI（REPLY-23 复核 发现③(a)）：试吃用户拿不到 AI 文本，调了也是丢弃——
+    //   无条件调用会让「试吃」成为最贵路径且缓存永远建立不起来（ai=null → 下次未命中 → 再调）。
+    //   未解锁时零 AI 成本；free 层结构化事实由规则引擎照常计算（不花钱）。
+    //   牙口注入点：去掉 unlocked 三元守卫 → 断言⑨结构断言翻红。
+    const aiReport = unlocked ? await generateAILiunian(analyzable, luck, targetYear) : null
 
     // ★ free 层保留结构化岁运事实（试吃本意）；ai 在未解锁时为 null
     const ai = unlocked ? (aiReport || fallbackLiunianText(targetYear, target, liuYue, favorSets)) : null

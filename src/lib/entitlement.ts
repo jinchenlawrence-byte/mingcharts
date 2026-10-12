@@ -9,6 +9,12 @@ import { SKUS } from './pricing'
  * 支付接入是第 6–7 步，本轮没做 —— 必须为 false，
  * 否则紫微/合婚/地理的用户永远拿不到内容，等于功能不可用。
  * 第 7 步（接 MoR/Stripe）完成后才改为 true。
+ *
+ * ★★ REPLY-23 复核 §五根因待办：ENFORCE=false 期间 canView 恒 true，
+ *   「未解锁分支」在各 route 完全不可达——其正确性只能靠纯函数层断言守护
+ *   （reportCache.resolveCachedHit 断言⑦：未解锁命中带全文缓存 → ai=null）。
+ *   【开 ENFORCE 前必须补端到端未解锁验证】：实测「未解锁请求拿不到 ai 全文、
+ *   不触发 AI 调用（route 的 unlocked 三元守卫）」，不得只信纯函数层。
  */
 export const ENTITLEMENT_ENFORCE = false
 

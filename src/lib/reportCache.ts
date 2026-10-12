@@ -105,6 +105,30 @@ export interface ReportCacheHit {
   content: Record<string, unknown>
 }
 
+/**
+ * ★ 缓存命中的完整处置（REPLY-23 复核 发现①）：判可用 → 按当前权益重算 → 组装响应数据，
+ *   全部收进一个纯函数，route 只剩一行调用（接线风险降到最低）。
+ *   抽纯函数的原因：ENTITLEMENT_ENFORCE=false 期间 canView 恒 true，路由层【造不出】
+ *   未解锁请求——「未解锁命中带全文的缓存」这一安全方向只能靠断言直接喂数据守护：
+ *   未解锁时必须 ai=null 且 locked 非 null（缓存里的付费全文绝不外泄）。
+ *   牙口注入点：函数体改回直接下发 hit.content（不重算）→ 断言⑦翻红。
+ *   （preview 文案目前是年运口径；接其它模块时把 preview 生成参数化即可，函数骨架通用。）
+ * @returns null = 缓存不可用（ai 为空的试吃期内容 → 调用方走重生成，缓存自愈）
+ */
+export function resolveCachedHit(
+  hit: ReportCacheHit,
+  opts: { unlocked: boolean; skus: string[]; targetYear: number }
+): { reportId: string; data: Record<string, unknown> } | null {
+  if (!isCacheContentUsable(hit.content)) return null
+  const cachedItem = cachedTargetOf(hit.content, opts.targetYear)
+  const data = recomputeEntitlementFields(hit.content, {
+    unlocked: opts.unlocked,
+    skus: opts.skus,
+    lockedPreview: `${opts.targetYear}年（${cachedItem?.ganZhi ?? ''}年）流年详批：事业/财运/感情/健康分维度深度解读解锁后可见。`
+  })
+  return { reportId: hit.reportId, data }
+}
+
 /** 读取缓存（service_role 客户端由调用方传入；查不到/出错一律返回 null，不阻断主流程） */
 export async function readReportCache(
   admin: SupabaseClient,
