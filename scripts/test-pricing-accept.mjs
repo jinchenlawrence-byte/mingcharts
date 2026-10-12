@@ -155,5 +155,35 @@ console.log(ctaFail === 0
   ? `✓ CTA 文案守卫：chart 页误导词 ${CTA_MISS.join('/')} 0 命中、披露语齐备；pricing 页年运行「单项购买」标注+单项入口/liunian`
   : '✗ CTA 文案守卫失败')
 
+// ---------- ⑧ ★ 年运覆盖范围披露（HANDOFF-年运披露与报告缓存 §二）----------
+// 事实：canView(ent,'annual_report') 不含年份，一次购买覆盖 今年/明年/后年 三份报告；
+//   文案曾写「一年节奏早知道」与实现矛盾。断言 desc 不得含「一年」、必须含三年口径。
+console.log('—— ⑧ 年运覆盖范围披露 ——')
+let covFail = 0
+const annualDesc = SKUS.annual_report.desc // 真调生产单一事实源
+const nOneYear = annualDesc.split('一年').length - 1
+if (nOneYear > 0) { covFail++; fail(`SKUS.annual_report.desc 含「一年」${nOneYear} 处，与实现（覆盖三年）矛盾（模式：字符串计数）`) }
+const hasThreeYear = annualDesc.includes('三年') || (annualDesc.includes('今年') && annualDesc.includes('明年') && annualDesc.includes('后年'))
+if (!hasThreeYear) { covFail++; fail('SKUS.annual_report.desc 缺「三年」或「今年/明年/后年」覆盖口径') }
+// 定价页年运行 note 必须由 SKU 价格与覆盖说明共同生成（防手抄第二份文案漂移）
+const noteNeeds = [
+  'formatPriceUSD(SKUS.annual_report.priceUSD)',
+  '覆盖今年/明年/后年三年',
+]
+for (const w of noteNeeds) {
+  const n = pricingSrc.split(w).length - 1
+  if (n === 0) { covFail++; fail(`pricing 页年运 note 缺「${w}」（note 须由价格+覆盖说明共同生成）`) }
+}
+// ★ 防误改：fatebook 的「近三年流年」是命书权益（非年运），不得被本轮文案统一误伤
+if (!pricingSrc.includes('近三年流年趋势')) { covFail++; fail('pricing 页 fatebook 行「近三年流年趋势」缺失——命书权益文案被误改') }
+// 布局页口径复核（年运模块页已正确标注三档年份，守护不回退）
+const liunianLayout = readFileSync(new URL('../src/app/liunian/layout.tsx', import.meta.url), 'utf8')
+for (const w of ['今年', '明年', '后年']) {
+  if (!liunianLayout.includes(w)) { covFail++; fail(`liunian/layout.tsx 缺「${w}」（覆盖口径回退）`) }
+}
+console.log(covFail === 0
+  ? `✓ 年运披露：desc 真调「${annualDesc}」（「一年」${nOneYear} 处）；定价页 note 由价格+覆盖说明生成；命书「近三年」未误伤`
+  : '✗ 年运覆盖披露断言失败')
+
 console.log('\n' + (allPass ? 'PRICING_ACCEPT_PASS' : 'PRICING_ACCEPT_FAIL'))
 if (!allPass) process.exit(1)

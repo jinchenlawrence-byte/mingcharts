@@ -182,7 +182,8 @@ const COMPARE_ROWS: CompareRow[] = [
   // 年运报告为独立单项 SKU：不属于免费/命书/会员任何一方，标注「单项购买」防止误读为缺漏
   {
     label: GRANT_LABELS.annual_report, free: false, grant: 'annual_report',
-    note: `单项购买 ${formatPriceUSD(SKUS.annual_report.priceUSD)}`,
+    // ★ 补披露（HANDOFF-年运披露与报告缓存 §二）：明确一次购买覆盖三年
+    note: `单项购买 ${formatPriceUSD(SKUS.annual_report.priceUSD)} · 覆盖今年/明年/后年三年`,
   },
   ...SUBSCRIPTION_GRANTS.map((g) => ({
     label: GRANT_LABELS[g], free: false, grant: g, coming: true,

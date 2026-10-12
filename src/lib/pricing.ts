@@ -61,7 +61,9 @@ export const SKUS: Record<SkuId, Sku> = {
   },
   annual_report: {
     id: 'annual_report', name: '年运报告',
-    desc: '流年详批，一年节奏早知道',
+    // ★ 覆盖范围与实现一致（HANDOFF-年运披露与报告缓存 §一）：canView(ent,'annual_report')
+    //   不含年份，一次购买解锁 今年/明年/后年 三份报告 —— 文案必须如实披露「三年」
+    desc: '流年详批，今年/明年/后年三年趋势早知道',
     priceUSD: 19.99, kind: 'one_time',
     grants: ['annual_report']
   },
