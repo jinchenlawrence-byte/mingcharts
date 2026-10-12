@@ -35,9 +35,13 @@ export function createServerSupabase() {
     throw new Error('Supabase配置缺失')
   }
 
-  // 服务端环境下使用代理（Node.js 默认不走系统代理，直连被墙）
-  if (typeof window === 'undefined') {
-    const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || 'http://127.0.0.1:7897'
+  // 服务端环境下按【显式设置】使用代理（Node.js 默认不走系统代理，直连被墙）
+  // ★ 绝不写死本地地址 fallback（HANDOFF-24）：setGlobalDispatcher 指向不存在的代理时
+  //   本身不抛错（try/catch 抓不到），但之后所有请求 ECONNREFUSED（2026-10-12 实测确认）。
+  //   本机 7897 恰好在跑所以开发一直正常，Vercel 上没有该端口 → 上线即全挂。
+  //   本机开发在 .env.local 设 HTTPS_PROXY；生产/Vercel 绝不设置。
+  const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY
+  if (typeof window === 'undefined' && proxyUrl) {
     try {
       const { ProxyAgent, setGlobalDispatcher } = require('undici')
       setGlobalDispatcher(new ProxyAgent(proxyUrl))

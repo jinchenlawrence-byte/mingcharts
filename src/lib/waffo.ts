@@ -65,9 +65,12 @@ export function getWaffo(): WaffoPancake {
   if (client) return client
   const cfg = readWaffoConfig()
 
-  // 服务端出口需走本地代理（与 createServerSupabase 同理：Node 默认不吃系统代理，直连被墙）
-  if (typeof window === 'undefined') {
-    const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || 'http://127.0.0.1:7897'
+  // 服务端出口按【显式设置】走代理（与 createServerSupabase 同理：Node 默认不吃系统代理，直连被墙）
+  // ★ 绝不写死本地地址 fallback（HANDOFF-24）：setGlobalDispatcher 指向不存在的代理时
+  //   本身不抛错，但之后所有请求 ECONNREFUSED（2026-10-12 实测确认）；
+  //   Vercel 上没有 7897 端口 → 写死 fallback 上线即全挂。本机开发设 HTTPS_PROXY，生产绝不设。
+  const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY
+  if (typeof window === 'undefined' && proxyUrl) {
     try {
       // eslint-disable-next-line @typescript-eslint/no-var-requires
       const { ProxyAgent, setGlobalDispatcher } = require('undici')
