@@ -3,7 +3,7 @@ import { paipan, getWangShuai, getGeJu } from '@/lib/paipan'
 import { buildLuckCycles, type AnalyzableChart } from '@/lib/analysis'
 import { checkDSTTransition } from '@/lib/solarTime'
 import { resolveBirthFromBody } from '@/lib/birthRequest'
-import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
+import { canViewFatebookForChart } from '@/lib/entitlement'
 import { createServerSupabase } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
@@ -76,17 +76,38 @@ export async function POST(request: NextRequest) {
     const structuralIssues =
       buildLuckCycles(analyzable).daYun.find((d) => d.current)?.structuralIssues ?? []
 
-    // ★ 门禁判定统一走 entitlement（§8.5.1）
-    // fatebook 门禁已在 unlock route 接了；此 route 复核并驱动 locked 判定
+    // ★ 门禁按盘判定（§8.5.1 统一走 entitlement，HANDOFF §4.2）
+    // fatebook：不再按「任意一份已付」粗判——查 charts 表【同八字行】（查重键与
+    // unlock 一致，含 birth_hour/minute，§4.3）拿 chartId 传双层判定。
+    // ★ 选择理由（任务书要求说明）：已购买的盘重排时应直接看全文（locked=null），
+    //   而重排请求只带出生参数不带 chartId，只能按同八字行反查；若传 null 则
+    //   ENFORCE=true 时已购用户重排会被误锁。未登录/无 token 时 chartId=null，
+    //   双层判定在 ENFORCE=false 下恒放行、ENFORCE=true 下不放行——与旧
+    //   canView(EMPTY_ENTITLEMENTS) 语义完全一致，单一代码路径覆盖两种登录态。
     // annual_report 真门禁在 api/liunian（年运报告已独立成模块），此处不再占位
+    const admin = createServerSupabase()
     const token = typeof body.token === 'string' ? body.token : ''
-    let ent = EMPTY_ENTITLEMENTS
+    let userId = ''
+    let chartId: string | null = null
     if (token) {
-      const admin = createServerSupabase()
       const { data: { user } } = await admin.auth.getUser(token)
-      if (user) ent = await getEntitlements(admin, user.id)
+      if (user) {
+        userId = user.id
+        const { data: savedChart } = await admin
+          .from('charts')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('birth_year', year)
+          .eq('birth_month', month)
+          .eq('birth_day', day)
+          .eq('birth_hour', hour)
+          .eq('birth_minute', minute)
+          .order('created_at', { ascending: false })
+          .limit(1)
+        chartId = savedChart?.[0]?.id ?? null
+      }
     }
-    const unlocked = canView(ent, 'fatebook')
+    const unlocked = await canViewFatebookForChart(admin, userId, chartId)
 
     return NextResponse.json({
       success: true,

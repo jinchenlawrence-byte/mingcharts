@@ -81,6 +81,8 @@ CREATE INDEX IF NOT EXISTS idx_charts_created_at ON charts(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_payments_user_id ON payments(user_id);
 CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
 CREATE INDEX IF NOT EXISTS idx_payments_omer ON payments(order_merchant_external_id);
+-- 命书按盘判定（HANDOFF-命书一份一付 §五）：(user_id, chart_id) 组合查更优
+CREATE INDEX IF NOT EXISTS idx_payments_chart ON payments(user_id, chart_id);
 
 -- 行级安全策略 (RLS)
 ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
@@ -172,6 +174,9 @@ ALTER TABLE payments ADD CONSTRAINT payments_payment_method_check
 -- 2) 业务单号列（MC-xxx；兜底对账快路径 + 反查用户）
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS order_merchant_external_id TEXT;
 CREATE INDEX IF NOT EXISTS idx_payments_omer ON payments(order_merchant_external_id);
+
+-- 2b) 命书按盘判定索引（HANDOFF-命书一份一付 §五）——【已有库需补跑本句】
+CREATE INDEX IF NOT EXISTS idx_payments_chart ON payments(user_id, chart_id);
 
 -- 3) transaction_id 唯一（幂等方案 b 主）。
 --    ★ 现网若残留重复 transaction_id（历史 MOCK_ 假流水可能撞号），先查重：

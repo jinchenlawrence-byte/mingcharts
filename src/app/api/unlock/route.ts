@@ -3,7 +3,7 @@ import { createServerSupabase } from '@/lib/supabase'
 import { generateAnalysis, type AnalyzableChart } from '@/lib/analysis'
 import { generateAIAnalysis } from '@/lib/aiAnalysis'
 import { searchSimilarCases } from '@/lib/caseSearch'
-import { getEntitlements, canView } from '@/lib/entitlement'
+import { canViewFatebookForChart } from '@/lib/entitlement'
 
 export async function POST(request: NextRequest) {
   try {
@@ -19,13 +19,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '登录无效，请重新登录' }, { status: 401 })
     }
 
-    // ★★ 门禁判定统一走 entitlement —— 不得在本路由另写判断（§8.5.1）
-    //    ENFORCE = false 时 canView 恒返回 true → 内测期行为与现在完全一致 ✓
-    const ent = await getEntitlements(admin, user.id)
-    const allowed = canView(ent, 'fatebook')
+    // ★★ 顺序调整（HANDOFF §4.2）：先查/建 chart 拿 chartId，再判权益 ——
+    //    chart_id 是权益凭据（§四），402 时行也必须在（用户接下来去购买，
+    //    webhook 靠 chartId 把付款关联到这份命盘，凭据链才闭合）；
+    //    且昂贵的 AI 生成必须挡在权益判定之后（402 时不触发任何 AI 调用）。
+    // 按出生时间查找该用户已有命盘，有则记 id，无则按分支补建。
+    // ★ 查重键含 birth_hour/birth_minute（§4.3 评估结论）：同一份命书的身份由
+    //    完整出生时间决定——同日不同时辰的命书是不同商品，不得共用一次付款
+    //    （旧键只到日，会把「买了 A 时辰」误判成「同日任意时辰都买过」）。
+    const input = chart.input
+    const { data: existing } = await admin
+      .from('charts')
+      .select('id')
+      .eq('user_id', user.id)
+      .eq('birth_year', input.year)
+      .eq('birth_month', input.month)
+      .eq('birth_day', input.day)
+      .eq('birth_hour', input.hour)
+      .eq('birth_minute', input.minute ?? 0)
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    let chartId: string | undefined = existing?.[0]?.id
+
+    // ★★ 门禁按盘判定（§四双层判定单一事实源）：ENFORCE=false 恒放行（内测期与现状一致）
+    const allowed = await canViewFatebookForChart(admin, user.id, chartId ?? null)
     if (!allowed) {
+      // 402 路径：命盘尚不存在时，先把客户端传来的盘落库（is_paid=false、
+      // 不含付费分析）——chartId 凭据链就位；is_paid 仍只在真实解锁后置 true。
+      if (!chartId) {
+        const { data: inserted, error: insertError } = await admin
+          .from('charts')
+          .insert({
+            user_id: user.id,
+            gender: input.gender,
+            birth_year: input.year,
+            birth_month: input.month,
+            birth_day: input.day,
+            birth_hour: input.hour,
+            birth_minute: input.minute ?? 0,
+            is_paid: false,
+            chart_data: chart
+          })
+          .select('id')
+          .single()
+        if (insertError) throw insertError
+        chartId = inserted.id
+      }
       return NextResponse.json(
-        { success: false, error: '尚未购买命书报告', locked: true, sku: 'fatebook' },
+        { success: false, error: '尚未购买命书报告', locked: true, sku: 'fatebook', chartId },
         { status: 402 }
       )
     }
@@ -43,23 +85,11 @@ export async function POST(request: NextRequest) {
       ...chart,
       analysis: { ...chart.analysis, isPaid: true, paid }
     }
-    const input = chart.input
 
-    // 按出生日期查找该用户已有命盘，有则更新，无则创建
-    const { data: existing } = await admin
-      .from('charts')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('birth_year', input.year)
-      .eq('birth_month', input.month)
-      .eq('birth_day', input.day)
-      .order('created_at', { ascending: false })
-      .limit(1)
-
-    let chartId: string | undefined = existing?.[0]?.id
     if (chartId) {
       // ★ is_paid 的语义是「该命盘已被用户解锁过」，【不代表已支付】。
-      //   它不参与任何权益判定（全库无人读它）；权益只由 getEntitlements 决定。
+      //   它不参与任何权益判定（全库无人读它）；权益凭据是 payments.chart_id
+      //   （§四 canViewFatebookForChart）。
       //   保留它的用途：将来若要给内测期用户保留访问权，可据此识别。
       await admin.from('charts').update({ is_paid: true, chart_data: chartData }).eq('id', chartId)
     } else {

@@ -148,3 +148,38 @@ export async function latestChartIdOf(
     .limit(1)
   return data?.[0]?.id ?? null
 }
+
+/**
+ * ★★★ 命书「按盘」判定（HANDOFF-命书一份一付 §四，2026-10-13）
+ *   第一层：ENTITLEMENT_ENFORCE —— 内测开关，false 时【一律放行】且【不查库】
+ *           （保持内测期行为与成本与现状完全一致）
+ *   第二层：该 chart 是否【已付款】—— 查 payments(user_id, chart_id, status='paid')
+ * ★ 两层都要过；权益凭据是 payments.chart_id（§3.2 归属校验后写入），
+ *   绝不用 charts.is_paid 当凭据（其语义是「解锁过」，不参与权益判定）。
+ * ★ chartId 为 null/undefined → 不放行（§五：NULL 行天然不匹配任何「已付某盘」，
+ *   且有守卫兜底——不带 chartId 的调用绝不放行，防旧数据 chart_id=NULL 被误判）。
+ * ★ opts.enforce 仅供断言注入双层判定的 ENFORCE=true 分支（默认读全局开关），
+ *   生产调用一律不传 —— ENFORCE 仍须为 false（§六：不得改它的值）。
+ *   ★ 牙口锚点（三条，见 scripts/test-fatebook-onepay.mjs ③段）：
+ *     · 去掉 `if (!enforce) return true` → 断言①（恒真＋零查询）翻红
+ *     · 去掉 `if (!chartId) return false` → 断言④翻红
+ *     · 删掉 .eq('chart_id', chartId) → 断言③翻红
+ */
+export async function canViewFatebookForChart(
+  admin: SupabaseClient,
+  userId: string,
+  chartId: string | null | undefined,
+  opts?: { enforce?: boolean }
+): Promise<boolean> {
+  const enforce = opts?.enforce ?? ENTITLEMENT_ENFORCE
+  if (!enforce) return true // ★ 内测期：与现状完全一致，不查库
+  if (!chartId) return false // ★ 无命盘归属 → 不放行（先于任何查询）
+  const { data } = await admin
+    .from('payments')
+    .select('id')
+    .eq('user_id', userId)
+    .eq('chart_id', chartId)
+    .eq('status', 'paid')
+    .limit(1)
+  return !!data?.length
+}

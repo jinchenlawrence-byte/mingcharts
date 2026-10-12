@@ -9,7 +9,7 @@
 // 组件层采用【正则锚定短路语义】的结构断言（先例：pricing CTA 守卫、site-audit 扫描），
 // helper 层（latestChartIdOf）为真调行为断言（喂内存 mock、真跑生产逻辑）。
 import { readFileSync } from 'node:fs'
-import { latestChartIdOf } from '../src/lib/entitlement.ts'
+import { latestChartIdOf, canViewFatebookForChart } from '../src/lib/entitlement.ts'
 import {
   handleWaffoEvent,
   reconcilePayment,
@@ -269,6 +269,144 @@ function paidEvent({ eventId = 'EVT_X1', paymentId = 'PAY_X1', metadata = { user
   assert(routeSrc.includes('chartId: chartId || undefined'), 'checkout route 把 chartId 传进 buildCheckoutParams')
   const waffoSrc = stripComments(read('../src/lib/waffo.ts'))
   assert(/chartId:\s*input\.chartId\s*\?\?/.test(waffoSrc), 'waffo.ts metadata 含 chartId（§3.1：走 metadata 不改单号）')
+}
+
+// ═════════════════════════════════════════════
+// ③ 按盘判定「这一份付过没」（HANDOFF §四：canViewFatebookForChart 双层判定 + 4 判定点接线）
+// ═════════════════════════════════════════════
+console.log('—— ③ 按盘判定「这一份付过没」 ——')
+
+// ★ 内存 admin：镜像 supabase-js 的 eq-null 语义——
+//   .eq('chart_id', null) 在 supabase-js/PostgREST 中翻译为 chart_id=is.null（匹配 NULL 行！）。
+//   这正是断言④守卫存在的理由：去掉守卫后，旧数据（chart_id=NULL 的 paid 行）会被误判
+//   成「已付某盘」。牙口①/④的翻红范围依赖此保真度，不得简化成「null 永不匹配」。
+function createEntAdmin({ payments = [] } = {}) {
+  const calls = []
+  const makeQuery = () => {
+    const q = {
+      _filters: [],
+      _limit: null,
+      select() { calls.push('select'); return q },
+      eq(col, val) { q._filters.push([col, val]); return q },
+      limit(n) { q._limit = n; return q },
+      then(onFul, onRej) {
+        calls.push('run')
+        const rows = payments.filter((p) =>
+          q._filters.every(([col, val]) => (val === null ? p[col] == null : p[col] === val))
+        )
+        const res = { data: q._limit != null ? rows.slice(0, q._limit) : rows, error: null }
+        return Promise.resolve(res).then(onFul, onRej)
+      },
+    }
+    return q
+  }
+  return {
+    calls,
+    payments,
+    from(table) { calls.push('from:' + table); return makeQuery() },
+  }
+}
+
+// 断言①：ENFORCE=false（全局开关，须保持 false）→ 恒 true 且【不查库】（§〇-4 第一层）
+{
+  // 种一条旧数据 paid 行（chart_id=NULL，现网存量形态）——ENFORCE=false 时根本不该被查到
+  const admin1 = createEntAdmin({
+    payments: [{ user_id: UID_A, chart_id: null, status: 'paid', transaction_id: 'PAY_old', payment_type: 'single' }],
+  })
+  const r1a = await canViewFatebookForChart(admin1, UID_A, null)
+  const r1b = await canViewFatebookForChart(admin1, UID_A, CHART_A)
+  assert(r1a === true && r1b === true, `断言① ENFORCE=false → 恒 true（null→${r1a}，CHART_A→${r1b}）`)
+  assert(
+    !admin1.calls.some((c) => String(c).startsWith('from:payments')),
+    '断言①b ENFORCE=false 不查库（payments 查询 0 次）',
+  )
+}
+
+// 断言②：ENFORCE=true ＋ 该 chart 有 paid 行 → true（§〇-4 第二层）
+{
+  const admin2 = createEntAdmin({
+    payments: [{ user_id: UID_A, chart_id: CHART_A, status: 'paid', transaction_id: 'PAY_1', payment_type: 'single' }],
+  })
+  const r2 = await canViewFatebookForChart(admin2, UID_A, CHART_A, { enforce: true })
+  assert(r2 === true, `断言② ENFORCE=true＋该盘有 paid 行 → true（got=${r2}）`)
+}
+
+// 断言③：ENFORCE=true ＋ 该 chart 无 paid 行 → false
+// ★ 必须种「同用户另有 paid 盘/旧 NULL 盘」：只按 user_id 查（牙口③注入后）会命中它们翻红
+{
+  const admin3 = createEntAdmin({
+    payments: [
+      { user_id: UID_A, chart_id: CHART_B, status: 'paid', transaction_id: 'PAY_2', payment_type: 'single' },
+      { user_id: UID_A, chart_id: null, status: 'paid', transaction_id: 'PAY_old', payment_type: 'single' },
+    ],
+  })
+  const r3 = await canViewFatebookForChart(admin3, UID_A, CHART_A, { enforce: true })
+  assert(r3 === false, `断言③ ENFORCE=true＋该盘无 paid 行（用户另有 paid 盘）→ false（got=${r3}）`)
+  const admin3b = createEntAdmin({
+    payments: [{ user_id: UID_A, chart_id: CHART_A, status: 'pending', transaction_id: 'PAY_3', payment_type: 'single' }],
+  })
+  const r3b = await canViewFatebookForChart(admin3b, UID_A, CHART_A, { enforce: true })
+  assert(r3b === false, `断言③b 流水未到账（pending）→ false（got=${r3b}）`)
+}
+
+// 断言④：ENFORCE=true ＋ chartId=null → false（即便该用户有旧 chart_id=NULL 的 paid 行）
+{
+  const admin4 = createEntAdmin({
+    payments: [{ user_id: UID_A, chart_id: null, status: 'paid', transaction_id: 'PAY_old', payment_type: 'single' }],
+  })
+  const r4 = await canViewFatebookForChart(admin4, UID_A, null, { enforce: true })
+  assert(r4 === false, `断言④ ENFORCE=true＋chartId=null → false（got=${r4}）`)
+}
+
+// ── 4 判定点接线断言（§8.5.1 消费者接线；§4.2 逐点改法）──
+const entSrc = stripComments(read('../src/lib/entitlement.ts'))
+assert(/export const ENTITLEMENT_ENFORCE = false/.test(entSrc), 'ENTITLEMENT_ENFORCE 仍为 false（§六：不得改值）')
+assert(/if \(!enforce\) return true/.test(entSrc), '双层第一层守卫在（ENFORCE 短路——牙口①锚点）')
+assert(/if \(!chartId\) return false/.test(entSrc), '双层第二层守卫在（无 chartId 不放行——牙口④锚点）')
+assert(/\.eq\('chart_id', chartId\)/.test(entSrc), '按盘查询带 chart_id 条件（牙口③锚点；§五：NULL 行天然不匹配）')
+assert(!/is_paid/.test(entSrc.match(/export async function canViewFatebookForChart[\s\S]*$/)[0]), 'helper 不用 charts.is_paid 当凭据（§六）')
+
+const unlockSrc = stripComments(read('../src/app/api/unlock/route.ts'))
+assert(unlockSrc.includes('canViewFatebookForChart'), 'unlock route 接线 canViewFatebookForChart（§4.2）')
+assert(!/canView\(/.test(unlockSrc) && !unlockSrc.includes('getEntitlements'), 'unlock route 不再粗判（canView(/getEntitlements 已移除）')
+assert(
+  /\.eq\('birth_hour', input\.hour\)/.test(unlockSrc) && /\.eq\('birth_minute', input\.minute \?\? 0\)/.test(unlockSrc),
+  'unlock 查重键含 birth_hour/minute（§4.3 评估结论）',
+)
+{
+  const iChart = unlockSrc.indexOf(".eq('birth_year'")
+  const iGate = unlockSrc.indexOf('canViewFatebookForChart(')
+  const i402 = unlockSrc.indexOf('尚未购买命书报告')
+  assert(iChart >= 0 && iChart < iGate && iGate < i402, `unlock 顺序：先查 chart（${iChart}）→ 判权益（${iGate}）→ 402（${i402}）（§4.2 ★★★★）`)
+  assert(
+    /is_paid: false/.test(unlockSrc) && unlockSrc.indexOf('is_paid: false') < unlockSrc.indexOf('is_paid: true'),
+    '402 路径落库 is_paid=false；is_paid=true 只在真实解锁分支（语义不混）',
+  )
+}
+
+const paipanSrc = stripComments(read('../src/app/api/paipan/route.ts'))
+assert(paipanSrc.includes('canViewFatebookForChart'), 'paipan route 接线 canViewFatebookForChart（§4.2：按同八字行反查）')
+assert(
+  !/canView\(/.test(paipanSrc) && !paipanSrc.includes('getEntitlements') && !paipanSrc.includes('EMPTY_ENTITLEMENTS'),
+  'paipan route 不再粗判（canView(/getEntitlements/EMPTY 已移除）',
+)
+assert(
+  /\.eq\('birth_hour', hour\)/.test(paipanSrc) && /\.eq\('birth_minute', minute\)/.test(paipanSrc),
+  'paipan 同八字行查重键与 unlock 一致（含时辰，§4.3）',
+)
+assert(paipanSrc.indexOf(".eq('birth_year'") < paipanSrc.indexOf('canViewFatebookForChart('), 'paipan 顺序：先查同八字行 → 再判权益')
+
+const entRouteSrc = stripComments(read('../src/app/api/entitlements/route.ts'))
+assert(/body\?\.chartId/.test(entRouteSrc), 'entitlements route 收可选 chartId（§4.2）')
+assert(entRouteSrc.includes('canViewFatebookForChart'), 'entitlements route 带 chartId → 按盘判定')
+assert(entRouteSrc.includes("canView(ent, 'fatebook')"), 'entitlements route 无 chartId → 粗判保留（任意一份已付，成功页场景）')
+// 第 4 判定点 checkout/success page 保持 ownedSkus 粗粒度（§4.2 明文允许），test-waffo-accept 已有断言守护
+
+const schemaSrc = read('../supabase/schema.sql')
+{
+  const n = (schemaSrc.match(/idx_payments_chart/g) || []).length
+  assert(n >= 2, `schema.sql idx_payments_chart 内联+迁移段双份事实（命中 ${n} 处，§五）`)
+  assert(/2b\) 命书按盘判定索引[\s\S]*?已有库需补跑/.test(schemaSrc), '迁移段注明已有库需补跑（§五）')
 }
 
 console.log('\n' + (allPass ? 'FATEBOOK_ONEPAY_PASS' : 'FATEBOOK_ONEPAY_FAIL'))

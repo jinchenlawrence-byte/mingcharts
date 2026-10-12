@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase'
-import { getEntitlements, canView } from '@/lib/entitlement'
+import { getEntitlements, canView, canViewFatebookForChart } from '@/lib/entitlement'
 
-// POST /api/entitlements { token }
+// POST /api/entitlements { token, chartId? }
 // 供成功页轮询「权益是否已到账」（webhook 正常时几秒内解锁）。
+// ★ chartId 可选（HANDOFF §4.2）：带 → 按盘判定（canViewFatebookForChart）；
+//   不带 → 按「是否有任意一份已付」粗判。成功页只关心「解锁了没」——
+//   付款刚完成，关联的 chart 就是刚买的那份，粗粒度足够（§4.2 明文）。
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null)
@@ -11,6 +14,8 @@ export async function POST(request: NextRequest) {
     if (!token) {
       return NextResponse.json({ error: '参数缺失或格式错误' }, { status: 400 })
     }
+    const chartId =
+      typeof body?.chartId === 'string' && body.chartId.trim() !== '' ? body.chartId.trim() : null
 
     const admin = createServerSupabase()
     const {
@@ -25,7 +30,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       ownedSkus: [...ent.ownedSkus],
       memberSkus: ent.memberSkus,
-      canViewFatebook: canView(ent, 'fatebook'),
+      canViewFatebook: chartId
+        ? await canViewFatebookForChart(admin, user.id, chartId)
+        : canView(ent, 'fatebook'),
     })
   } catch (error) {
     console.error('[entitlements] 查询失败:', error)
