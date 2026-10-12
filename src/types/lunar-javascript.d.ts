@@ -29,6 +29,16 @@ declare module 'lunar-javascript' {
     getMingGong(): string
     getShenGong(): string
     getYun(sex: number): Yun
+    /** 十二长生（此支对日干所处阶段）：CHANG_SHENG_OFFSET 表 + 阳加阴减 mod 12 */
+    getYearDiShi(): string
+    getMonthDiShi(): string
+    getDayDiShi(): string
+    getTimeDiShi(): string
+    /** 空亡（该柱干支所在旬空二支，如「子丑」；日柱版按 sect 处理晚子时） */
+    getYearXunKong(): string
+    getMonthXunKong(): string
+    getDayXunKong(): string
+    getTimeXunKong(): string
   }
 
   export class Yun {

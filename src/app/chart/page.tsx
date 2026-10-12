@@ -23,10 +23,10 @@ interface ChartData {
   }
   lunarDate: string
   pillars: {
-    year: { ganZhi: string; tenGodGan: string; cangGan: string[]; tenGodCangGan: string[] }
-    month: { ganZhi: string; tenGodGan: string; cangGan: string[]; tenGodCangGan: string[] }
-    day: { ganZhi: string; tenGodGan: string; cangGan: string[]; tenGodCangGan: string[] }
-    hour: { ganZhi: string; tenGodGan: string; cangGan: string[]; tenGodCangGan: string[] }
+    year: { ganZhi: string; tenGodGan: string; cangGan: string[]; tenGodCangGan: string[]; changSheng?: string; shenSha?: string[]; kongWang?: string }
+    month: { ganZhi: string; tenGodGan: string; cangGan: string[]; tenGodCangGan: string[]; changSheng?: string; shenSha?: string[]; kongWang?: string }
+    day: { ganZhi: string; tenGodGan: string; cangGan: string[]; tenGodCangGan: string[]; changSheng?: string; shenSha?: string[]; kongWang?: string }
+    hour: { ganZhi: string; tenGodGan: string; cangGan: string[]; tenGodCangGan: string[]; changSheng?: string; shenSha?: string[]; kongWang?: string }
   }
   dayMaster: string
   taiYuan: string
@@ -302,8 +302,43 @@ export default function ChartPage() {
                   </td>
                 ))}
               </tr>
+              {/* 十二长生 / 神煞：新排盘才有此字段，旧命盘（localStorage 旧数据）不显示 */}
+              {pillars.some(p => p.changSheng) && (
+                <tr className="border-b">
+                  <td className="py-3 px-4 font-medium text-gray-700">十二长生</td>
+                  {pillars.map((p, i) => (
+                    <td key={i} className="py-3 px-4 text-center text-sm text-gray-600">
+                      {p.changSheng || '—'}
+                    </td>
+                  ))}
+                </tr>
+              )}
+              {pillars.some(p => p.shenSha && p.shenSha.length > 0) && (
+                <tr className="border-b">
+                  <td className="py-3 px-4 font-medium text-gray-700">神煞</td>
+                  {pillars.map((p, i) => (
+                    <td key={i} className="py-3 px-4 text-center text-xs text-gray-600">
+                      {p.shenSha && p.shenSha.length > 0 ? p.shenSha.join('、') : '—'}
+                    </td>
+                  ))}
+                </tr>
+              )}
+              {pillars.some(p => p.kongWang) && (
+                <tr>
+                  <td className="py-3 px-4 font-medium text-gray-700">空亡</td>
+                  {pillars.map((p, i) => (
+                    <td key={i} className="py-3 px-4 text-center text-sm text-gray-600">
+                      {p.kongWang || '—'}
+                    </td>
+                  ))}
+                </tr>
+              )}
             </tbody>
           </table>
+          {/* 口径说明：文案与 src/lib/paipan.ts 的 SHEN_SHA_NOTE 同步（测试守护一致性） */}
+          <p className="px-4 py-3 text-[11px] text-gray-400 border-t border-gray-100">
+            神煞取法依《渊海子平》《三命通会》通行口径：天乙贵人、文昌、禄神、羊刃、太极贵人、福星贵人、国印贵人、金舆、红艳煞自日干起（羊刃仅阳干）；桃花、驿马、华盖、将星、劫煞、灾煞、亡神自年支、日支起（三合局取支）；孤辰寡宿、红鸾、天喜自年支起；天德贵人、月德贵人、天医、天赦、四废自月支起（天赦、四废见于日柱）；魁罡、阴阳差错、十恶大败、孤鸾煞取自日柱干支，三奇贵人取年月日或月日时天干顺布；空亡为各柱干支所在旬空之二支。均为传统民俗论法，流派间取法或有差异，仅供参考、非确定性，不构成任何决策建议。
+          </p>
         </div>
 
         {/* 基础信息 */}

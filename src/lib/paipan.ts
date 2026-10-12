@@ -21,7 +21,17 @@ export interface Pillar {
   tenGodGan: string
   cangGan: string[]
   tenGodCangGan: string[]
+  changSheng: string // 十二长生：此支对日主所处阶段（长生/沐浴/…/养）
+  shenSha: string[] // 此柱命中神煞（渊海子平/三命通会通行口径，见 SHEN_SHA_NOTE）
+  kongWang: string // 此柱干支所在旬空亡二支（如「子丑」）
 }
+
+/** 神煞取法说明（展示层直接引用，保证口径与实现同源；测试守护逐字同步） */
+export const SHEN_SHA_NOTE =
+  '神煞取法依《渊海子平》《三命通会》通行口径：天乙贵人、文昌、禄神、羊刃、太极贵人、福星贵人、国印贵人、金舆、红艳煞自日干起（羊刃仅阳干）；' +
+  '桃花、驿马、华盖、将星、劫煞、灾煞、亡神自年支、日支起（三合局取支）；孤辰寡宿、红鸾、天喜自年支起；' +
+  '天德贵人、月德贵人、天医、天赦、四废自月支起（天赦、四废见于日柱）；魁罡、阴阳差错、十恶大败、孤鸾煞取自日柱干支，三奇贵人取年月日或月日时天干顺布；' +
+  '空亡为各柱干支所在旬空之二支。均为传统民俗论法，流派间取法或有差异，仅供参考、非确定性，不构成任何决策建议。'
 
 export interface PaipanResult {
   input: PaipanInput
@@ -92,6 +102,242 @@ const CANG_GAN: Record<string, string[]> = {
   '申': ['庚', '壬', '戊'], '酉': ['辛'], '戌': ['戊', '辛', '丁'], '亥': ['壬', '甲']
 }
 
+// ===================== 神煞表（渊海子平/三命通会通行口径） =====================
+// 天干系神煞自【日干】起见四柱地支；地支系神煞自【年支/日支】或【年支】或【月支】起；
+// 日柱系神煞直接取日柱干支。各表来源口诀见每条注释。
+
+/** 天乙贵人：「甲戊庚牛羊，乙己鼠猴乡，丙丁猪鸡位，壬癸兔蛇藏，六辛逢马虎」（日干起） */
+const TIAN_YI: Record<string, string[]> = {
+  '甲': ['丑', '未'], '戊': ['丑', '未'], '庚': ['丑', '未'],
+  '乙': ['子', '申'], '己': ['子', '申'],
+  '丙': ['亥', '酉'], '丁': ['亥', '酉'],
+  '壬': ['卯', '巳'], '癸': ['卯', '巳'],
+  '辛': ['午', '寅']
+}
+
+/** 文昌：「甲乙巳午报君知，丙戊申宫丁己鸡，庚猪辛鼠壬逢虎，癸人见卯入云梯」（日干起） */
+const WEN_CHANG: Record<string, string> = {
+  '甲': '巳', '乙': '午', '丙': '申', '丁': '酉', '戊': '申',
+  '己': '酉', '庚': '亥', '辛': '子', '壬': '寅', '癸': '卯'
+}
+
+/** 禄神（临官之位，日干起）：「甲禄在寅，乙禄在卯，丙戊禄在巳，丁己禄在午，庚禄在申，辛禄在酉，壬禄在亥，癸禄在子」 */
+const LU_SHEN: Record<string, string> = {
+  '甲': '寅', '乙': '卯', '丙': '巳', '丁': '午', '戊': '巳',
+  '己': '午', '庚': '申', '辛': '酉', '壬': '亥', '癸': '子'
+}
+
+/** 羊刃（帝旺之位，仅阳干取；阴干不论羊刃） */
+const YANG_REN: Record<string, string> = {
+  '甲': '卯', '丙': '午', '戊': '午', '庚': '酉', '壬': '子'
+}
+
+/** 太极贵人：「甲乙生人子午中，丙丁鸡兔定亨通，戊己两干临四季（辰戌丑未），庚辛寅亥禄丰隆，壬癸巳申偏喜美」（日干起） */
+const TAI_JI: Record<string, string[]> = {
+  '甲': ['子', '午'], '乙': ['子', '午'],
+  '丙': ['卯', '酉'], '丁': ['卯', '酉'],
+  '戊': ['辰', '戌', '丑', '未'], '己': ['辰', '戌', '丑', '未'],
+  '庚': ['寅', '亥'], '辛': ['寅', '亥'],
+  '壬': ['巳', '申'], '癸': ['巳', '申']
+}
+
+/** 福星贵人：「甲丙相邀入虎乡，更游鼠穴最高强，戊猴己未丁宜亥，乙贵逢牛福禄昌，庚趁马头辛到巳，壬骑龙背喜非常，癸人见卯入云梯」（日干起） */
+const FU_XING: Record<string, string[]> = {
+  '甲': ['寅', '子'], '丙': ['寅', '子'],
+  '乙': ['丑'], '丁': ['亥'], '戊': ['申'], '己': ['未'],
+  '庚': ['午'], '辛': ['巳'], '壬': ['辰'], '癸': ['卯']
+}
+
+/** 国印贵人：「甲见戌、乙见亥、丙见丑、丁见寅、戊见丑、己见寅、庚见辰、辛见巳、壬见午、癸见未」（日干起） */
+const GUO_YIN: Record<string, string> = {
+  '甲': '戌', '乙': '亥', '丙': '丑', '丁': '寅', '戊': '丑',
+  '己': '寅', '庚': '辰', '辛': '巳', '壬': '午', '癸': '未'
+}
+
+/** 金舆（禄前二位，日干起）：甲辰、乙巳、丙未、丁申、戊未、己申、庚戌、辛亥、壬丑、癸寅 */
+const JIN_YU: Record<string, string> = {
+  '甲': '辰', '乙': '巳', '丙': '未', '丁': '申', '戊': '未',
+  '己': '申', '庚': '戌', '辛': '亥', '壬': '丑', '癸': '寅'
+}
+
+/** 红艳煞：「多情多欲少人知，六丙逢寅辛见鸡，癸临申上丁见未，甲乙午申庚见戌，戊己怕辰壬怕子」（日干起） */
+const HONG_YAN: Record<string, string> = {
+  '甲': '午', '乙': '申', '丙': '寅', '丁': '未', '戊': '辰',
+  '己': '辰', '庚': '戌', '辛': '酉', '壬': '子', '癸': '申'
+}
+
+type SanHeGroup = '申子辰' | '寅午戌' | '巳酉丑' | '亥卯未'
+
+/** 三合局归属：每支所属三合局 */
+const SAN_HE_GROUP: Record<string, SanHeGroup> = {
+  '申': '申子辰', '子': '申子辰', '辰': '申子辰',
+  '寅': '寅午戌', '午': '寅午戌', '戌': '寅午戌',
+  '巳': '巳酉丑', '酉': '巳酉丑', '丑': '巳酉丑',
+  '亥': '亥卯未', '卯': '亥卯未', '未': '亥卯未'
+}
+
+/** 桃花（咸池）：「申子辰在酉，寅午戌在卯，巳酉丑在午，亥卯未在子」（年支/日支起） */
+const TAO_HUA: Record<SanHeGroup, string> = { '申子辰': '酉', '寅午戌': '卯', '巳酉丑': '午', '亥卯未': '子' }
+/** 驿马：「申子辰马在寅，寅午戌马在申，巳酉丑马在亥，亥卯未马在巳」（年支/日支起） */
+const YI_MA: Record<SanHeGroup, string> = { '申子辰': '寅', '寅午戌': '申', '巳酉丑': '亥', '亥卯未': '巳' }
+/** 华盖（三合局库位，年支/日支起） */
+const HUA_GAI: Record<SanHeGroup, string> = { '申子辰': '辰', '寅午戌': '戌', '巳酉丑': '丑', '亥卯未': '未' }
+/** 将星（三合局旺位中神，年支/日支起） */
+const JIANG_XING: Record<SanHeGroup, string> = { '申子辰': '子', '寅午戌': '午', '巳酉丑': '酉', '亥卯未': '卯' }
+/** 劫煞（三合局绝位）：「申子辰劫在巳，寅午戌劫在亥，巳酉丑劫在寅，亥卯未劫在申」（年支/日支起） */
+const JIE_SHA: Record<SanHeGroup, string> = { '申子辰': '巳', '寅午戌': '亥', '巳酉丑': '寅', '亥卯未': '申' }
+/** 灾煞（三合局中神之冲）：「申子辰灾在午，寅午戌灾在子，巳酉丑灾在卯，亥卯未灾在酉」（年支/日支起） */
+const ZAI_SHA: Record<SanHeGroup, string> = { '申子辰': '午', '寅午戌': '子', '巳酉丑': '卯', '亥卯未': '酉' }
+/** 亡神（三合局临官位）：「申子辰亡在亥，寅午戌亡在巳，巳酉丑亡在申，亥卯未亡在寅」（年支/日支起） */
+const WANG_SHEN: Record<SanHeGroup, string> = { '申子辰': '亥', '寅午戌': '巳', '巳酉丑': '申', '亥卯未': '寅' }
+
+/** 孤辰（年支起）：「亥子丑孤在寅，寅卯辰孤在巳，巳午未孤在申，申酉戌孤在亥」 */
+const GU_CHEN: Record<string, string> = {
+  '亥': '寅', '子': '寅', '丑': '寅',
+  '寅': '巳', '卯': '巳', '辰': '巳',
+  '巳': '申', '午': '申', '未': '申',
+  '申': '亥', '酉': '亥', '戌': '亥'
+}
+/** 寡宿（年支起）：「亥子丑寡在戌，寅卯辰寡在丑，巳午未寡在辰，申酉戌寡在未」 */
+const GUA_SU: Record<string, string> = {
+  '亥': '戌', '子': '戌', '丑': '戌',
+  '寅': '丑', '卯': '丑', '辰': '丑',
+  '巳': '辰', '午': '辰', '未': '辰',
+  '申': '未', '酉': '未', '戌': '未'
+}
+/** 红鸾（年支起，卯上起子逆行）：子卯、丑寅、寅丑、卯子、辰亥、巳戌、午酉、未申、申未、酉午、戌巳、亥辰 */
+const HONG_LUAN: Record<string, string> = {
+  '子': '卯', '丑': '寅', '寅': '丑', '卯': '子', '辰': '亥', '巳': '戌',
+  '午': '酉', '未': '申', '申': '未', '酉': '午', '戌': '巳', '亥': '辰'
+}
+/** 天喜（红鸾之对冲，年支起） */
+const TIAN_XI: Record<string, string> = {
+  '子': '酉', '丑': '申', '寅': '未', '卯': '午', '辰': '巳', '巳': '辰',
+  '午': '卯', '未': '寅', '申': '丑', '酉': '子', '戌': '亥', '亥': '戌'
+}
+
+/** 天德贵人（月支起，见四柱天干或地支）：「正丁二申中，三壬四辛同，五乾六甲上，七癸八艮宫（寅），九丙十居乙，子巳（十一月巳）十二月庚」 */
+const TIAN_DE: Record<string, string> = {
+  '寅': '丁', '卯': '申', '辰': '壬', '巳': '辛', '午': '亥', '未': '甲',
+  '申': '癸', '酉': '寅', '戌': '丙', '亥': '乙', '子': '巳', '丑': '庚'
+}
+/** 月德贵人（月支三合局起，见四柱天干）：「寅午戌月在丙，申子辰月在壬，亥卯未月在甲，巳酉丑月在庚」 */
+const YUE_DE: Record<SanHeGroup, string> = { '申子辰': '壬', '寅午戌': '丙', '巳酉丑': '庚', '亥卯未': '甲' }
+/** 天医（月支前一支）：正月（寅月）见丑、二月见寅，依次类推 */
+const ZHI_ORDER: string[] = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
+/** 四季（月支→季节），供天赦/四废查表 */
+const SEASON: Record<string, '春' | '夏' | '秋' | '冬'> = {
+  '寅': '春', '卯': '春', '辰': '春',
+  '巳': '夏', '午': '夏', '未': '夏',
+  '申': '秋', '酉': '秋', '戌': '秋',
+  '亥': '冬', '子': '冬', '丑': '冬'
+}
+/** 天赦：「春戊寅，夏甲午，秋戊申，冬甲子」（见于日柱） */
+const TIAN_SHE: Record<'春' | '夏' | '秋' | '冬', string[]> = {
+  '春': ['戊寅'], '夏': ['甲午'], '秋': ['戊申'], '冬': ['甲子']
+}
+/** 四废：「春庚申辛酉，夏壬子癸亥，秋甲寅乙卯，冬丙午丁巳」（见于日柱） */
+const SI_FEI: Record<'春' | '夏' | '秋' | '冬', string[]> = {
+  '春': ['庚申', '辛酉'], '夏': ['壬子', '癸亥'], '秋': ['甲寅', '乙卯'], '冬': ['丙午', '丁巳']
+}
+
+/** 魁罡（日柱）：庚辰、庚戌、壬辰、戊戌 */
+const KUI_GANG: string[] = ['庚辰', '庚戌', '壬辰', '戊戌']
+/** 阴阳差错（日柱）：丙子丁丑戊寅辛卯壬辰癸巳丙午丁未戊申辛酉壬戌癸亥 */
+const YIN_YANG_CHA_CUO: string[] = ['丙子', '丁丑', '戊寅', '辛卯', '壬辰', '癸巳', '丙午', '丁未', '戊申', '辛酉', '壬戌', '癸亥']
+/** 十恶大败（日柱）：甲辰乙巳壬申丙申丁亥庚辰戊戌癸亥辛巳己丑 */
+const SHI_E_DA_BAI: string[] = ['甲辰', '乙巳', '壬申', '丙申', '丁亥', '庚辰', '戊戌', '癸亥', '辛巳', '己丑']
+/** 孤鸾煞（日柱）：「木火逢蛇大不祥，金猪何必强猴郎，土猴木虎夫何在」→ 乙巳、丁巳、辛亥、戊申、甲寅 */
+const GU_LUAN: string[] = ['乙巳', '丁巳', '辛亥', '戊申', '甲寅']
+/** 三奇贵人（年月日或月日时天干顺布）：天上甲戊庚、地下乙丙丁、人中壬癸辛 */
+const SAN_QI: string[] = ['甲戊庚', '乙丙丁', '壬癸辛']
+
+/**
+ * 四柱神煞（渊海子平/三命通会通行口径）。
+ * 输入四柱干支与日主，返回每柱命中的神煞名列表。
+ * 柱内顺序 = 扫描序：
+ *   ① 日干起：天乙贵人→文昌→禄神→羊刃→太极贵人→福星贵人→国印贵人→金舆→红艳煞；
+ *   ② 年支、日支逐局（去重）：桃花→驿马→华盖→将星→劫煞→灾煞→亡神；
+ *   ③ 年支起：孤辰→寡宿→红鸾→天喜；
+ *   ④ 月支起：天德贵人→月德贵人→天医（天赦、四废仅日柱）；
+ *   ⑤ 日柱：魁罡→阴阳差错→十恶大败→孤鸾煞；三奇贵人（年月日/月日时顺布）。
+ * 同柱重复命中只记一次。
+ */
+export function shenShaOf(
+  pillars: Array<{ gan: string; zhi: string }>,
+  dayMaster: string
+): string[][] {
+  const result: string[][] = [[], [], [], []]
+  const push = (name: string, match: (i: number) => boolean) => {
+    for (let i = 0; i < 4; i++) {
+      if (match(i) && !result[i].includes(name)) result[i].push(name)
+    }
+  }
+  const byZhi = (targets: string[]) => (i: number) => targets.includes(pillars[i].zhi)
+  const byGan = (targets: string[]) => (i: number) => targets.includes(pillars[i].gan)
+
+  // ① 日干起
+  push('天乙贵人', byZhi(TIAN_YI[dayMaster] || []))
+  push('文昌', byZhi([WEN_CHANG[dayMaster]].filter(Boolean)))
+  push('禄神', byZhi([LU_SHEN[dayMaster]].filter(Boolean)))
+  if (YANG_REN[dayMaster]) push('羊刃', byZhi([YANG_REN[dayMaster]]))
+  push('太极贵人', byZhi(TAI_JI[dayMaster] || []))
+  push('福星贵人', byZhi(FU_XING[dayMaster] || []))
+  push('国印贵人', byZhi([GUO_YIN[dayMaster]].filter(Boolean)))
+  push('金舆', byZhi([JIN_YU[dayMaster]].filter(Boolean)))
+  push('红艳煞', byZhi([HONG_YAN[dayMaster]].filter(Boolean)))
+
+  // ② 年支、日支起（三合局系）
+  for (const sz of [...new Set([pillars[0].zhi, pillars[2].zhi])]) {
+    const g = SAN_HE_GROUP[sz]
+    if (!g) continue
+    push('桃花', byZhi([TAO_HUA[g]]))
+    push('驿马', byZhi([YI_MA[g]]))
+    push('华盖', byZhi([HUA_GAI[g]]))
+    push('将星', byZhi([JIANG_XING[g]]))
+    push('劫煞', byZhi([JIE_SHA[g]]))
+    push('灾煞', byZhi([ZAI_SHA[g]]))
+    push('亡神', byZhi([WANG_SHEN[g]]))
+  }
+
+  // ③ 年支起
+  const yZhi = pillars[0].zhi
+  push('孤辰', byZhi([GU_CHEN[yZhi]].filter(Boolean)))
+  push('寡宿', byZhi([GUA_SU[yZhi]].filter(Boolean)))
+  push('红鸾', byZhi([HONG_LUAN[yZhi]].filter(Boolean)))
+  push('天喜', byZhi([TIAN_XI[yZhi]].filter(Boolean)))
+
+  // ④ 月支起（天德见天干或地支；月德见天干；天医＝月支前一支；天赦/四废见日柱干支）
+  const mZhi = pillars[1].zhi
+  const tianDe = TIAN_DE[mZhi]
+  if (tianDe) push('天德贵人', (i) => pillars[i].gan === tianDe || pillars[i].zhi === tianDe)
+  const yueDe = YUE_DE[SAN_HE_GROUP[mZhi]]
+  if (yueDe) push('月德贵人', byGan([yueDe]))
+  const mIdx = ZHI_ORDER.indexOf(mZhi)
+  if (mIdx > 0) push('天医', byZhi([ZHI_ORDER[mIdx - 1]]))
+  else if (mIdx === 0) push('天医', byZhi([ZHI_ORDER[11]]))
+  const season = SEASON[mZhi]
+  if (season) {
+    push('天赦', (i) => i === 2 && TIAN_SHE[season].includes(pillars[i].gan + pillars[i].zhi))
+    push('四废', (i) => i === 2 && SI_FEI[season].includes(pillars[i].gan + pillars[i].zhi))
+  }
+
+  // ⑤ 日柱系 + 三奇（年月日 / 月日时 干顺布）
+  const dayGanZhi = pillars[2].gan + pillars[2].zhi
+  push('魁罡', (i) => i === 2 && KUI_GANG.includes(dayGanZhi))
+  push('阴阳差错', (i) => i === 2 && YIN_YANG_CHA_CUO.includes(dayGanZhi))
+  push('十恶大败', (i) => i === 2 && SHI_E_DA_BAI.includes(dayGanZhi))
+  push('孤鸾煞', (i) => i === 2 && GU_LUAN.includes(dayGanZhi))
+  const gans = pillars.map(p => p.gan)
+  for (const [a, b, c] of [[0, 1, 2], [1, 2, 3]]) {
+    const seq = gans[a] + gans[b] + gans[c]
+    if (SAN_QI.includes(seq)) {
+      push('三奇贵人', (i) => i === a || i === b || i === c)
+    }
+  }
+  return result
+}
+
 export function paipan(input: PaipanInput): PaipanResult {
   const { year, month, day, hour, minute, gender } = input
 
@@ -132,8 +378,8 @@ export function paipan(input: PaipanInput): PaipanResult {
   // 日主
   const dayMaster = dayPillar[0]
   
-  // 构建单柱
-  const buildPillar = (ganZhi: string): Pillar => {
+  // 构建单柱（十二长生＝此支对日主阶段；神煞＝渊海子平/三命通会通行口径，见 shenShaOf；空亡＝本柱旬空）
+  const buildPillar = (ganZhi: string, changSheng: string, shenSha: string[], kongWang: string): Pillar => {
     const gan = ganZhi[0]
     const zhi = ganZhi[1]
     const cangGanList = CANG_GAN[zhi] || []
@@ -143,7 +389,10 @@ export function paipan(input: PaipanInput): PaipanResult {
       ganZhi,
       tenGodGan: SHI_SHEN[dayMaster]?.[gan] || '',
       cangGan: cangGanList,
-      tenGodCangGan: cangGanList.map(g => SHI_SHEN[dayMaster]?.[g] || '')
+      tenGodCangGan: cangGanList.map(g => SHI_SHEN[dayMaster]?.[g] || ''),
+      changSheng,
+      shenSha,
+      kongWang
     }
   }
   
@@ -168,15 +417,38 @@ export function paipan(input: PaipanInput): PaipanResult {
   // 起运时间
   const qiYun = `${yun.getStartYear()}年${yun.getStartMonth()}月${yun.getStartDay()}天后起运`
   
+  // 十二长生（lunar-javascript EightChar.get*DiShi：CHANG_SHENG_OFFSET 表 + 阳加阴减 mod 12，
+  // 与外部基准官方范例逐柱验证一致；须在 setSect(1) 之后调用以与四柱同源）
+  const diShiList = [
+    eightChar.getYearDiShi(),
+    eightChar.getMonthDiShi(),
+    eightChar.getDayDiShi(),
+    eightChar.getTimeDiShi()
+  ]
+
+  // 神煞（日干起 + 年支/日支/月支起 + 日柱系，渊海子平/三命通会通行口径）
+  const shenShaLists = shenShaOf(
+    [yearPillar, monthPillar, dayPillar, hourPillar].map(gz => ({ gan: gz[0], zhi: gz[1] })),
+    dayMaster
+  )
+
+  // 空亡（各柱干支所在旬空二支；EightChar 各getXunKong 与四柱同源，日柱版自带晚子时 sect 处理）
+  const kongWangList = [
+    eightChar.getYearXunKong(),
+    eightChar.getMonthXunKong(),
+    eightChar.getDayXunKong(),
+    eightChar.getTimeXunKong()
+  ]
+
   return {
     input,
     timezoneOffsetApplied: timezoneOffset,
     lunarDate: lunar.toFullString(),
     pillars: {
-      year: buildPillar(yearPillar),
-      month: buildPillar(monthPillar),
-      day: buildPillar(dayPillar),
-      hour: buildPillar(hourPillar)
+      year: buildPillar(yearPillar, diShiList[0], shenShaLists[0], kongWangList[0]),
+      month: buildPillar(monthPillar, diShiList[1], shenShaLists[1], kongWangList[1]),
+      day: buildPillar(dayPillar, diShiList[2], shenShaLists[2], kongWangList[2]),
+      hour: buildPillar(hourPillar, diShiList[3], shenShaLists[3], kongWangList[3])
     },
     dayMaster,
     taiYuan,
