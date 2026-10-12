@@ -43,31 +43,31 @@ export default function AuthPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white flex items-center justify-center">
-      <div className="bg-white rounded-lg shadow-lg p-8 max-w-md w-full mx-4">
-        <h1 className="text-2xl font-bold text-center text-amber-900 mb-6">
+    <main className="min-h-screen flex items-center justify-center">
+      <div className="paper-card rounded-xl p-8 max-w-md w-full mx-4">
+        <h1 className="text-2xl font-bold text-center text-ink mb-6">
           {isLogin ? '登录' : '注册'}
         </h1>
 
         <form onSubmit={handleAuth} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+            <label className="block text-sm font-medium text-ink/70 mb-1">邮箱</label>
             <input
               type="email"
               required
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">密码</label>
+            <label className="block text-sm font-medium text-ink/70 mb-1">密码</label>
             <input
               type="password"
               required
               minLength={6}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
@@ -90,7 +90,7 @@ export default function AuthPage() {
 
         <button
           onClick={() => setIsLogin(!isLogin)}
-          className="w-full mt-4 text-amber-600 hover:text-amber-800 text-sm"
+          className="w-full mt-4 text-amber-600 hover:text-ink text-sm"
         >
           {isLogin ? '没有账号？去注册' : '已有账号？去登录'}
         </button>

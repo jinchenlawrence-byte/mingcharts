@@ -69,7 +69,7 @@ export default function MyCharts() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white flex items-center justify-center">
+      <main className="min-h-screen flex items-center justify-center">
         加载中...
       </main>
     )
@@ -77,9 +77,9 @@ export default function MyCharts() {
 
   if (notLogged) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white flex items-center justify-center">
+      <main className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">请先登录后查看命盘</p>
+          <p className="text-ink-light mb-4">请先登录后查看命盘</p>
           <button
             onClick={() => router.push('/auth')}
             className="bg-amber-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-amber-700 transition"
@@ -92,11 +92,11 @@ export default function MyCharts() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white py-8">
+    <main className="min-h-screen py-8">
       <div className="container mx-auto px-4 max-w-3xl">
         {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-amber-900">我的命盘</h1>
+          <h1 className="text-2xl font-bold text-ink">我的命盘</h1>
           <button
             onClick={() => router.push('/')}
             className="bg-amber-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-amber-700 transition"
@@ -106,7 +106,7 @@ export default function MyCharts() {
         </div>
 
         {rows.length === 0 ? (
-          <div className="bg-white rounded-lg shadow p-10 text-center text-gray-500">
+          <div className="paper-card rounded-lg p-10 text-center text-ink-light/60">
             还没有保存的命盘，去排一个吧
           </div>
         ) : (
@@ -114,28 +114,28 @@ export default function MyCharts() {
             {rows.map((row) => (
               <div
                 key={row.id}
-                className="bg-white rounded-lg shadow p-4 flex items-center justify-between gap-4"
+                className="paper-card rounded-lg p-4 flex items-center justify-between gap-4"
               >
                 <div className="min-w-0">
-                  <p className="font-semibold text-amber-900">
+                  <p className="font-semibold text-ink">
                     {row.birth_year}年{row.birth_month}月{row.birth_day}日 {row.birth_hour}时
                     {row.birth_minute > 0 ? `${row.birth_minute}分` : ''}
                     {row.gender === 1 ? ' 男' : ' 女'}
                     {row.birth_place && (
-                      <span className="text-sm text-gray-400 ml-2">{row.birth_place}</span>
+                      <span className="text-sm text-ink-light/40 ml-2">{row.birth_place}</span>
                     )}
                   </p>
-                  <p className="text-sm text-gray-600 mt-1 tracking-wider">
+                  <p className="text-sm text-ink-light mt-1 tracking-wider">
                     {row.chart_data?.pillars
                       ? `${row.chart_data.pillars.year.ganZhi} ${row.chart_data.pillars.month.ganZhi} ${row.chart_data.pillars.day.ganZhi} ${row.chart_data.pillars.hour.ganZhi}`
                       : ''}
-                    <span className="text-gray-400 ml-2">日主 {row.chart_data?.dayMaster}</span>
+                    <span className="text-ink-light/40 ml-2">日主 {row.chart_data?.dayMaster}</span>
                   </p>
                 </div>
                 <div className="flex gap-2 shrink-0">
                   <button
                     onClick={() => handleView(row)}
-                    className="text-amber-600 hover:text-amber-800 text-sm"
+                    className="text-amber-600 hover:text-ink text-sm"
                   >
                     查看
                   </button>

@@ -21,7 +21,7 @@ const TONE_STYLE: Record<string, string> = {
   '吉': 'bg-green-50 text-green-700 border-green-200',
   '凶': 'bg-red-50 text-red-700 border-red-200',
   '动': 'bg-orange-50 text-orange-700 border-orange-200',
-  '平': 'bg-gray-50 text-gray-600 border-gray-200'
+  '平': 'bg-paper-dark/30 text-ink-light border-gold/15'
 }
 
 export default async function ShengXiaoPage({ params }: { params: Promise<{ animal: string }> }) {
@@ -30,28 +30,28 @@ export default async function ShengXiaoPage({ params }: { params: Promise<{ anim
   if (!sx) notFound()
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
+    <main className="min-h-screen ">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <nav className="text-sm text-gray-500 mb-4">
-          <Link href="/" className="hover:text-amber-700">首页</Link>
+        <nav className="text-sm text-ink-light/60 mb-4">
+          <Link href="/" className="hover:text-ink/70">首页</Link>
           <span className="mx-2">›</span>
-          <Link href="/shengxiao" className="hover:text-amber-700">十二生肖</Link>
+          <Link href="/shengxiao" className="hover:text-ink/70">十二生肖</Link>
           <span className="mx-2">›</span>
-          <span className="text-amber-900">属{sx.name}</span>
+          <span className="text-ink">属{sx.name}</span>
         </nav>
 
         {/* 头部信息 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="paper-card rounded-lg p-6 mb-6">
           <div className="flex items-center gap-5 mb-4">
-            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-4xl font-bold text-amber-800 shrink-0">
+            <div className="w-20 h-20 rounded-full bg-gradient-to-br from-amber-100 to-amber-200 flex items-center justify-center text-4xl font-bold text-ink shrink-0">
               {sx.name}
             </div>
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold text-amber-900">属{sx.name}人命运详解</h1>
-              <p className="text-gray-600 text-sm mt-1">
+              <h1 className="text-2xl md:text-3xl font-bold text-ink">属{sx.name}人命运详解</h1>
+              <p className="text-ink-light text-sm mt-1">
                 地支{sx.zhi} · 五行属{sx.wuxing} · 本命佛{sx.benmingfo}
               </p>
-              <p className="text-gray-400 text-xs mt-1">
+              <p className="text-ink-light/40 text-xs mt-1">
                 出生年份（以立春为界）：{sx.years.join('、')}年
               </p>
             </div>
@@ -60,23 +60,23 @@ export default async function ShengXiaoPage({ params }: { params: Promise<{ anim
           {/* 生肖关系 */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
             <div className="bg-green-50 border border-green-200 rounded p-2 text-center">
-              <div className="text-xs text-gray-500">六合贵人</div>
+              <div className="text-xs text-ink-light/60">六合贵人</div>
               <div className="font-bold text-green-700">属{sx.liuHe}</div>
             </div>
             <div className="bg-green-50 border border-green-200 rounded p-2 text-center">
-              <div className="text-xs text-gray-500">三合</div>
+              <div className="text-xs text-ink-light/60">三合</div>
               <div className="font-bold text-green-700">属{sx.sanHe[0]}、{sx.sanHe[1]}</div>
             </div>
             <div className="bg-red-50 border border-red-200 rounded p-2 text-center">
-              <div className="text-xs text-gray-500">六冲</div>
+              <div className="text-xs text-ink-light/60">六冲</div>
               <div className="font-bold text-red-700">属{sx.liuChong}</div>
             </div>
             <div className="bg-red-50 border border-red-200 rounded p-2 text-center">
-              <div className="text-xs text-gray-500">六害</div>
+              <div className="text-xs text-ink-light/60">六害</div>
               <div className="font-bold text-red-700">属{sx.liuHai}</div>
             </div>
             <div className="bg-orange-50 border border-orange-200 rounded p-2 text-center col-span-2 md:col-span-1">
-              <div className="text-xs text-gray-500">相刑</div>
+              <div className="text-xs text-ink-light/60">相刑</div>
               <div className="font-bold text-orange-700">{sx.sanXing.map(x => '属' + x).join('、')}</div>
             </div>
           </div>
@@ -90,8 +90,8 @@ export default async function ShengXiaoPage({ params }: { params: Promise<{ anim
         <Section title="健康养生" body={sx.health} />
 
         {/* 幸运物 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-bold text-amber-800 mb-4">属{sx.name}幸运物与开运指南</h2>
+        <div className="paper-card rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-bold text-ink mb-4">属{sx.name}幸运物与开运指南</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
             <LuckyItem label="幸运数字" value={sx.luckyNumber} />
             <LuckyItem label="幸运颜色" value={sx.luckyColor} />
@@ -100,14 +100,14 @@ export default async function ShengXiaoPage({ params }: { params: Promise<{ anim
             <LuckyItem label="吉祥花卉" value={sx.luckyFlower} />
             <LuckyItem label="幸运宝石" value={sx.luckyStone} />
           </div>
-          <p className="text-xs text-gray-400 mt-4">
+          <p className="text-xs text-ink-light/40 mt-4">
             提示：幸运物为传统民俗参考，最上等的改运之道是修心积德、勤奋努力。
           </p>
         </div>
 
         {/* 生肖配对表 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-bold text-amber-800 mb-4">属{sx.name}生肖配对表</h2>
+        <div className="paper-card rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-bold text-ink mb-4">属{sx.name}生肖配对表</h2>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             {SHENGXIAO.map(other => {
               const pd = getPeiDui(sx, other.name)
@@ -115,17 +115,17 @@ export default async function ShengXiaoPage({ params }: { params: Promise<{ anim
               return (
                 <div
                   key={other.slug}
-                  className={`border rounded p-3 text-sm ${good ? 'border-green-200 bg-green-50' : pd.level.includes('中等') ? 'border-gray-200' : 'border-red-100 bg-red-50/40'}`}
+                  className={`border rounded p-3 text-sm ${good ? 'border-green-200 bg-green-50' : pd.level.includes('中等') ? 'border-gold/15' : 'border-red-100 bg-red-50/40'}`}
                 >
                   <div className="flex justify-between items-center mb-1">
-                    <Link href={`/shengxiao/${other.slug}`} className="font-bold text-amber-800 hover:underline">
+                    <Link href={`/shengxiao/${other.slug}`} className="font-bold text-ink hover:underline">
                       {sx.name} + {other.name}
                     </Link>
-                    <span className={`text-xs px-2 py-0.5 rounded ${good ? 'bg-green-100 text-green-700' : pd.level.includes('中等') ? 'bg-gray-100 text-gray-600' : 'bg-red-100 text-red-600'}`}>
+                    <span className={`text-xs px-2 py-0.5 rounded ${good ? 'bg-green-100 text-green-700' : pd.level.includes('中等') ? 'bg-paper-dark/40 text-ink-light' : 'bg-red-100 text-red-600'}`}>
                       {pd.level}
                     </span>
                   </div>
-                  <p className="text-xs text-gray-600 leading-relaxed">{pd.desc}</p>
+                  <p className="text-xs text-ink-light leading-relaxed">{pd.desc}</p>
                 </div>
               )
             })}
@@ -133,8 +133,8 @@ export default async function ShengXiaoPage({ params }: { params: Promise<{ anim
         </div>
 
         {/* 流年运势入口 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-bold text-amber-800 mb-4">属{sx.name}流年运势（2024-2031）</h2>
+        <div className="paper-card rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-bold text-ink mb-4">属{sx.name}流年运势（2024-2031）</h2>
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {LIUNIAN_YEARS.map(y => {
               const ln = getLiunian(sx, y)
@@ -150,7 +150,7 @@ export default async function ShengXiaoPage({ params }: { params: Promise<{ anim
               )
             })}
           </div>
-          <p className="text-xs text-gray-400 mt-3">
+          <p className="text-xs text-ink-light/40 mt-3">
             绿色为合太岁吉年，红色为害/刑太岁需谨慎，橙色为冲太岁主动荡，灰色为平稳之年。
           </p>
         </div>
@@ -163,13 +163,13 @@ export default async function ShengXiaoPage({ params }: { params: Promise<{ anim
           </p>
           <Link
             href="/"
-            className="inline-block bg-white text-amber-700 px-8 py-3 rounded-md font-bold hover:bg-amber-50 transition-colors"
+            className="inline-block bg-white text-ink/70 px-8 py-3 rounded-md font-bold hover:bg-gold/5 transition-colors"
           >
             立即排八字 →
           </Link>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
+        <p className="text-center text-xs text-ink-light/40 mt-6">
           以上内容为传统命理民俗文化，仅供参考娱乐，不构成决策依据。
         </p>
       </div>
@@ -179,18 +179,18 @@ export default async function ShengXiaoPage({ params }: { params: Promise<{ anim
 
 function Section({ title, body }: { title: string; body: string }) {
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-4">
-      <h2 className="text-xl font-bold text-amber-800 mb-3">{title}</h2>
-      <p className="text-gray-700 leading-loose text-[15px]">{body}</p>
+    <div className="paper-card rounded-lg p-6 mb-4">
+      <h2 className="text-xl font-bold text-ink mb-3">{title}</h2>
+      <p className="text-ink/70 leading-loose text-[15px]">{body}</p>
     </div>
   )
 }
 
 function LuckyItem({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center gap-3 bg-amber-50/60 rounded p-3">
-      <span className="text-gray-500 shrink-0">{label}</span>
-      <span className="font-semibold text-amber-900">{value}</span>
+    <div className="flex items-center gap-3 bg-gold/5/60 rounded p-3">
+      <span className="text-ink-light/60 shrink-0">{label}</span>
+      <span className="font-semibold text-ink">{value}</span>
     </div>
   )
 }

@@ -35,19 +35,19 @@ export default async function DailyPage({
   const fellBack = !!rawZone && rawZone !== view.zone
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
+    <main className="min-h-screen ">
       <Nav />
 
       <div className="container mx-auto px-4 py-10 max-w-2xl">
-        <nav className="text-sm text-gray-500 mb-4">
-          <Link href="/" className="hover:text-amber-700">首页</Link>
+        <nav className="text-sm text-ink-light/60 mb-4">
+          <Link href="/" className="hover:text-ink/70">首页</Link>
           <span className="mx-2">›</span>
-          <span className="text-amber-900">每日日签</span>
+          <span className="text-ink">每日日签</span>
         </nav>
 
         <header className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-amber-900 mb-2">今日一省</h1>
-          <p className="text-gray-600 text-sm">
+          <h1 className="text-3xl font-bold text-ink mb-2">今日一省</h1>
+          <p className="text-ink-light text-sm">
             日签取当日干支的历法意象，是一面自省的小镜子，不是吉凶判决。
           </p>
         </header>
@@ -55,10 +55,10 @@ export default async function DailyPage({
         {/* 日签卡 */}
         <section className="bg-white rounded-2xl shadow-lg ring-1 ring-amber-100 p-8 sm:p-10">
           <div className="text-center">
-            <div className="text-amber-800 font-semibold text-lg">
+            <div className="text-ink font-semibold text-lg">
               {chineseDate(view.date)} · {view.liuRi}日
             </div>
-            <div className="text-xs text-gray-400 mt-1">六十甲子第 {view.jiaziIndex} 位</div>
+            <div className="text-xs text-ink-light/40 mt-1">六十甲子第 {view.jiaziIndex} 位</div>
 
             <div className="my-8 mx-auto w-16 h-px bg-amber-200" />
 
@@ -68,8 +68,8 @@ export default async function DailyPage({
 
             <div className="my-8 mx-auto w-16 h-px bg-amber-200" />
 
-            <p className="text-xs text-amber-700/80 mb-1.5">★ {DAILY_SIGN_DAY_BOUNDARY}</p>
-            <p className="text-xs text-gray-400">{view.disclaimer}</p>
+            <p className="text-xs text-ink/70/80 mb-1.5">★ {DAILY_SIGN_DAY_BOUNDARY}</p>
+            <p className="text-xs text-ink-light/40">{view.disclaimer}</p>
           </div>
 
           <DailyShareCard
@@ -87,7 +87,7 @@ export default async function DailyPage({
 
         {/* 时区切换 */}
         <form method="get" className="mt-6 bg-white rounded-xl shadow p-4">
-          <label htmlFor="zone" className="block text-sm font-semibold text-amber-900 mb-2">
+          <label htmlFor="zone" className="block text-sm font-semibold text-ink mb-2">
             按所在时区归日（IANA 时区名）
           </label>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -96,11 +96,11 @@ export default async function DailyPage({
               name="zone"
               list="zone-suggestions"
               defaultValue={view.zone}
-              className="flex-1 border border-amber-200 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+              className="flex-1 border border-gold/20 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
             />
             <button
               type="submit"
-              className="bg-amber-100 text-amber-800 px-4 py-2 rounded-md text-sm font-semibold hover:bg-amber-200 transition"
+              className="bg-gold/10 text-ink px-4 py-2 rounded-md text-sm font-semibold hover:bg-amber-200 transition"
             >
               切换时区
             </button>
@@ -108,7 +108,7 @@ export default async function DailyPage({
           <datalist id="zone-suggestions">
             {ZONE_SUGGESTIONS.map((z) => <option key={z} value={z} />)}
           </datalist>
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-xs text-ink-light/40 mt-2">
             当前按 {view.zone} 归日；{DAILY_SIGN_DAY_BOUNDARY}（与排盘的晚子时约定一致）。
           </p>
           {fellBack && (

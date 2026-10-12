@@ -24,7 +24,7 @@ export default function CheckoutButton({
 
   if (!available) {
     return (
-      <div className="block text-center py-2.5 rounded-md font-semibold bg-gray-100 text-gray-400 cursor-not-allowed">
+      <div className="block text-center py-2.5 rounded-md font-semibold bg-paper-dark/40 text-ink-light/40 cursor-not-allowed">
         即将推出
       </div>
     )
@@ -80,7 +80,7 @@ export default function CheckoutButton({
         className={`w-full block text-center py-2.5 rounded-md font-semibold transition disabled:opacity-60 ${
           highlight
             ? 'bg-amber-600 text-white hover:bg-amber-700'
-            : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+            : 'bg-gold/10 text-ink hover:bg-amber-200'
         }`}
       >
         {loading ? '正在跳转支付…' : children}

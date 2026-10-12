@@ -43,43 +43,43 @@ export default async function MonthPage({ params }: { params: Promise<{ year: st
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
+    <main className="min-h-screen ">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <nav className="text-sm text-gray-500 mb-4">
-          <Link href="/" className="hover:text-amber-700">首页</Link>
+        <nav className="text-sm text-ink-light/60 mb-4">
+          <Link href="/" className="hover:text-ink/70">首页</Link>
           <span className="mx-2">›</span>
-          <Link href="/bazi" className="hover:text-amber-700">八字算命</Link>
+          <Link href="/bazi" className="hover:text-ink/70">八字算命</Link>
           <span className="mx-2">›</span>
-          <Link href={`/bazi/${year}`} className="hover:text-amber-700">{year}年</Link>
+          <Link href={`/bazi/${year}`} className="hover:text-ink/70">{year}年</Link>
           <span className="mx-2">›</span>
-          <span className="text-amber-900">{monthNum}月</span>
+          <span className="text-ink">{monthNum}月</span>
         </nav>
 
-        <h1 className="text-3xl font-bold text-amber-900 mb-2">
+        <h1 className="text-3xl font-bold text-ink mb-2">
           {year}年{monthNum}月出生的人命运如何？
         </h1>
-        <p className="text-gray-600 mb-6">
+        <p className="text-ink-light mb-6">
           {year}年{ganZhi}年属{zodiac.name}，{monthNum}月出生。本月涵盖星座：{constellations.join('、')}。
         </p>
 
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-bold text-amber-800 mb-4">选择出生日期</h2>
+        <div className="paper-card rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-bold text-ink mb-4">选择出生日期</h2>
           <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-10 gap-2">
             {days.map(d => (
               <Link
                 key={d}
                 href={`/bazi/${year}/${month}/${String(d).padStart(2, '0')}`}
-                className="bg-amber-50 hover:bg-amber-100 border border-amber-200 rounded p-2 text-center transition-colors"
+                className="bg-gold/5 hover:bg-gold/10 border border-gold/20 rounded p-2 text-center transition-colors"
               >
-                <div className="font-bold text-amber-800">{d}</div>
-                <div className="text-xs text-gray-400">日</div>
+                <div className="font-bold text-ink">{d}</div>
+                <div className="text-xs text-ink-light/40">日</div>
               </Link>
             ))}
           </div>
         </div>
 
-        <div className="bg-amber-50 rounded-lg p-4 text-sm text-gray-700">
-          <p className="font-semibold text-amber-900 mb-2">{year}年{monthNum}月出生总览</p>
+        <div className="bg-gold/5 rounded-lg p-4 text-sm text-ink/70">
+          <p className="font-semibold text-ink mb-2">{year}年{monthNum}月出生总览</p>
           <p>
             {year}年{monthNum}月出生的人，生肖属{zodiac.name}。农历{monthNum}月为{['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊'][monthNum - 1]}月，
             此月出生之人{monthNum >= 3 && monthNum <= 5 ? '正值春季，木气旺盛，性格仁慈有活力' : monthNum >= 6 && monthNum <= 8 ? '正值夏季，火气旺盛，性格热情开朗' : monthNum >= 9 && monthNum <= 11 ? '正值秋季，金气旺盛，性格刚毅果断' : '正值冬季，水气旺盛，性格聪明内敛'}。
@@ -87,7 +87,7 @@ export default async function MonthPage({ params }: { params: Promise<{ year: st
         </div>
 
         <div className="mt-8">
-          <Link href={`/bazi/${year}`} className="text-amber-700 hover:text-amber-900">
+          <Link href={`/bazi/${year}`} className="text-ink/70 hover:text-ink">
             ← 返回{year}年
           </Link>
         </div>

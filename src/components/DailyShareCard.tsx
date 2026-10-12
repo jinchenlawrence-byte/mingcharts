@@ -130,7 +130,7 @@ export default function DailyShareCard(props: Props) {
           <a
             href={imgUrl}
             download={`日签-${props.liuRi}.png`}
-            className="inline-block mt-3 text-sm text-amber-700 underline underline-offset-2"
+            className="inline-block mt-3 text-sm text-ink/70 underline underline-offset-2"
           >
             下载图片
           </a>

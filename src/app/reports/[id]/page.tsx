@@ -23,8 +23,8 @@ interface ReportDetail {
 }
 
 const KIND_STYLE: Record<ReportKind, string> = {
-  hemun: 'bg-amber-100 text-amber-800',
-  ziwei: 'bg-purple-100 text-purple-800',
+  hemun: 'bg-gold/10 text-ink',
+  ziwei: 'bg-purple-100 text-ink',
   geo: 'bg-sky-100 text-sky-800',
   annual: 'bg-rose-100 text-rose-800',
 }
@@ -65,7 +65,7 @@ export default function ReportDetailPage() {
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white flex items-center justify-center">
+      <main className="min-h-screen flex items-center justify-center">
         加载中...
       </main>
     )
@@ -73,9 +73,9 @@ export default function ReportDetailPage() {
 
   if (notLogged) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white flex items-center justify-center">
+      <main className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">请先登录后查看报告</p>
+          <p className="text-ink-light mb-4">请先登录后查看报告</p>
           <button
             onClick={() => router.push('/auth')}
             className="bg-amber-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-amber-700 transition"
@@ -89,10 +89,10 @@ export default function ReportDetailPage() {
 
   if (notFound || !row) {
     return (
-      <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white flex items-center justify-center">
+      <main className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <p className="text-gray-600 mb-4">报告不存在或无权查看</p>
-          <Link href="/reports" className="text-amber-600 hover:text-amber-800">
+          <p className="text-ink-light mb-4">报告不存在或无权查看</p>
+          <Link href="/reports" className="text-amber-600 hover:text-ink">
             ← 返回我的报告
           </Link>
         </div>
@@ -101,21 +101,21 @@ export default function ReportDetailPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white py-8">
+    <main className="min-h-screen py-8">
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="flex items-center justify-between gap-4 mb-6">
           <div className="min-w-0">
             <div className="flex items-center gap-2 mb-1">
-              <span className={`text-xs px-2 py-0.5 rounded ${KIND_STYLE[row.kind] ?? 'bg-gray-100 text-gray-600'}`}>
+              <span className={`text-xs px-2 py-0.5 rounded ${KIND_STYLE[row.kind] ?? 'bg-paper-dark/40 text-ink-light'}`}>
                 {REPORT_KIND_LABELS[row.kind] ?? row.kind}
               </span>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-ink-light/40">
                 {new Date(row.created_at).toLocaleString('zh-CN')}
               </span>
             </div>
-            <h1 className="text-xl font-bold text-amber-900 truncate">{row.title}</h1>
+            <h1 className="text-xl font-bold text-ink truncate">{row.title}</h1>
           </div>
-          <Link href="/reports" className="text-amber-600 hover:text-amber-800 text-sm shrink-0">
+          <Link href="/reports" className="text-amber-600 hover:text-ink text-sm shrink-0">
             ← 我的报告
           </Link>
         </div>

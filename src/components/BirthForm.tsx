@@ -62,25 +62,25 @@ export default function BirthForm({ ctaText = '开始排盘', className = '' }: 
     <form onSubmit={handleSubmit} className={`space-y-4 ${className}`}>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">年</label>
+          <label className="block text-sm font-medium text-ink/70 mb-1">年</label>
           <input
             type="number"
             required
             placeholder="1990"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
             value={formData.year}
             onChange={(e) => setFormData({ ...formData, year: e.target.value })}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">月</label>
+          <label className="block text-sm font-medium text-ink/70 mb-1">月</label>
           <input
             type="number"
             required
             min="1"
             max="12"
             placeholder="5"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
             value={formData.month}
             onChange={(e) => setFormData({ ...formData, month: e.target.value })}
           />
@@ -89,27 +89,27 @@ export default function BirthForm({ ctaText = '开始排盘', className = '' }: 
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">日</label>
+          <label className="block text-sm font-medium text-ink/70 mb-1">日</label>
           <input
             type="number"
             required
             min="1"
             max="31"
             placeholder="8"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
             value={formData.day}
             onChange={(e) => setFormData({ ...formData, day: e.target.value })}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">时</label>
+          <label className="block text-sm font-medium text-ink/70 mb-1">时</label>
           <input
             type="number"
             required
             min="0"
             max="23"
             placeholder="16"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
             value={formData.hour}
             onChange={(e) => setFormData({ ...formData, hour: e.target.value })}
           />
@@ -118,21 +118,21 @@ export default function BirthForm({ ctaText = '开始排盘', className = '' }: 
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">分</label>
+          <label className="block text-sm font-medium text-ink/70 mb-1">分</label>
           <input
             type="number"
             min="0"
             max="59"
             placeholder="30"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
             value={formData.minute}
             onChange={(e) => setFormData({ ...formData, minute: e.target.value })}
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">性别</label>
+          <label className="block text-sm font-medium text-ink/70 mb-1">性别</label>
           <select
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+            className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
             value={formData.gender}
             onChange={(e) => setFormData({ ...formData, gender: parseInt(e.target.value) as 1 | 0 })}
           >
@@ -143,11 +143,11 @@ export default function BirthForm({ ctaText = '开始排盘', className = '' }: 
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">出生地（可选）</label>
+        <label className="block text-sm font-medium text-ink/70 mb-1">出生地（可选）</label>
         <input
           type="text"
           placeholder="如：杭州"
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
+          className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
           value={formData.birthPlace}
           onChange={(e) => setFormData({ ...formData, birthPlace: e.target.value })}
         />
@@ -165,7 +165,7 @@ export default function BirthForm({ ctaText = '开始排盘', className = '' }: 
         <p className="text-sm text-red-600 text-center">{error}</p>
       )}
 
-      <p className="text-xs text-gray-500 text-center">
+      <p className="text-xs text-ink-light/60 text-center">
         排盘结果仅供参考娱乐
       </p>
     </form>

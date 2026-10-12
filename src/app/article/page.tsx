@@ -8,16 +8,16 @@ export const metadata = {
 
 export default function ArticleIndex() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
+    <main className="min-h-screen ">
       <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <nav className="text-sm text-gray-500 mb-4">
-          <Link href="/" className="hover:text-amber-700">首页</Link>
+        <nav className="text-sm text-ink-light/60 mb-4">
+          <Link href="/" className="hover:text-ink/70">首页</Link>
           <span className="mx-2">›</span>
-          <span className="text-amber-900">命理知识</span>
+          <span className="text-ink">命理知识</span>
         </nav>
 
-        <h1 className="text-3xl font-bold text-amber-900 mb-2">八字命理知识大全</h1>
-        <p className="text-gray-600 mb-8">
+        <h1 className="text-3xl font-bold text-ink mb-2">八字命理知识大全</h1>
+        <p className="text-ink-light mb-8">
           共 {articles.length} 篇文章，基于《子平真诠》《滴天髓》《穷通宝鉴》《渊海子平》《三命通会》《千里命稿》六本经典整理。
         </p>
 
@@ -27,8 +27,8 @@ export default function ArticleIndex() {
           return (
             <section key={cat.slug} className="mb-10">
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-amber-800">{cat.name}</h2>
-                <Link href={`/article/${cat.slug}`} className="text-sm text-amber-600 hover:text-amber-800">
+                <h2 className="text-2xl font-bold text-ink">{cat.name}</h2>
+                <Link href={`/article/${cat.slug}`} className="text-sm text-amber-600 hover:text-ink">
                   查看全部 →
                 </Link>
               </div>
@@ -37,10 +37,10 @@ export default function ArticleIndex() {
                   <Link
                     key={a.slug}
                     href={`/article/${a.slug}`}
-                    className="bg-white rounded-lg shadow p-5 hover:shadow-md transition-shadow block"
+                    className="paper-card rounded-lg p-5 hover:shadow-md transition-shadow block"
                   >
-                    <h3 className="font-bold text-amber-900 mb-2 leading-snug">{a.title}</h3>
-                    <p className="text-sm text-gray-600 line-clamp-2">{a.description}</p>
+                    <h3 className="font-bold text-ink mb-2 leading-snug">{a.title}</h3>
+                    <p className="text-sm text-ink-light line-clamp-2">{a.description}</p>
                   </Link>
                 ))}
               </div>
@@ -48,9 +48,9 @@ export default function ArticleIndex() {
           )
         })}
 
-        <div className="bg-amber-50 rounded-lg p-6 mt-8">
-          <h2 className="text-xl font-bold text-amber-800 mb-2">想要亲自排盘验证？</h2>
-          <p className="text-sm text-gray-700 mb-4">
+        <div className="bg-gold/5 rounded-lg p-6 mt-8">
+          <h2 className="text-xl font-bold text-ink mb-2">想要亲自排盘验证？</h2>
+          <p className="text-sm text-ink/70 mb-4">
             学完理论知识，输入您的出生时辰，获取属于自己的八字命盘和完整命理分析。
           </p>
           <Link

@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: { params: Promise<{ name: str
 const SEASON_ACCENT = {
   '春': { bg: 'bg-green-600', light: 'bg-green-50 border-green-200 text-green-700' },
   '夏': { bg: 'bg-red-600', light: 'bg-red-50 border-red-200 text-red-700' },
-  '秋': { bg: 'bg-amber-600', light: 'bg-amber-50 border-amber-200 text-amber-700' },
+  '秋': { bg: 'bg-amber-600', light: 'bg-gold/5 border-gold/20 text-ink/70' },
   '冬': { bg: 'bg-blue-600', light: 'bg-blue-50 border-blue-200 text-blue-700' }
 } as const
 
@@ -35,18 +35,18 @@ export default async function JieQiPage({ params }: { params: Promise<{ name: st
   const accent = SEASON_ACCENT[jq.season]
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
+    <main className="min-h-screen ">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <nav className="text-sm text-gray-500 mb-4">
-          <Link href="/" className="hover:text-amber-700">首页</Link>
+        <nav className="text-sm text-ink-light/60 mb-4">
+          <Link href="/" className="hover:text-ink/70">首页</Link>
           <span className="mx-2">›</span>
-          <Link href="/jieqi" className="hover:text-amber-700">二十四节气</Link>
+          <Link href="/jieqi" className="hover:text-ink/70">二十四节气</Link>
           <span className="mx-2">›</span>
-          <span className="text-amber-900">{jq.name}</span>
+          <span className="text-ink">{jq.name}</span>
         </nav>
 
         {/* 头部 */}
-        <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
+        <div className="paper-card rounded-lg overflow-hidden mb-6">
           <div className={`${accent.bg} px-6 py-8 text-white`}>
             <div className="flex items-center gap-3 mb-2 text-sm opacity-90">
               <span>{jq.dateRange}</span>
@@ -60,15 +60,15 @@ export default async function JieQiPage({ params }: { params: Promise<{ name: st
           </div>
 
           {jq.type === '节' && jq.monthName && (
-            <div className="px-6 py-3 bg-amber-50 border-b border-amber-100 text-sm text-amber-800">
+            <div className="px-6 py-3 bg-gold/5 border-b border-amber-100 text-sm text-ink">
               <strong>命理提醒：</strong>{jq.name}起进入{jq.monthName}，此后出生者月柱为{jq.monthZhi}月。
             </div>
           )}
         </div>
 
         {/* 三候 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-4">
-          <h2 className="text-xl font-bold text-amber-800 mb-4">{jq.name}三候</h2>
+        <div className="paper-card rounded-lg p-6 mb-4">
+          <h2 className="text-xl font-bold text-ink mb-4">{jq.name}三候</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {jq.hou.map((h, i) => (
               <div key={i} className={`border rounded-lg p-4 text-center ${accent.light}`}>
@@ -78,29 +78,29 @@ export default async function JieQiPage({ params }: { params: Promise<{ name: st
               </div>
             ))}
           </div>
-          <p className="text-xs text-gray-400 mt-3">
+          <p className="text-xs text-ink-light/40 mt-3">
             "候"是古人以五日为一候观察到的物候现象，三候共十五日，构成一个节气。
           </p>
         </div>
 
         {/* 习俗 */}
         <Block title="传统习俗">
-          <p className="text-gray-700 leading-loose text-[15px]">{jq.custom}</p>
+          <p className="text-ink/70 leading-loose text-[15px]">{jq.custom}</p>
         </Block>
 
         {/* 养生 */}
         <Block title="节气养生">
-          <p className="text-gray-700 leading-loose text-[15px]">{jq.yangsheng}</p>
+          <p className="text-ink/70 leading-loose text-[15px]">{jq.yangsheng}</p>
         </Block>
 
         {/* 命理 */}
-        <div className="bg-amber-50 border border-amber-200 rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-bold text-amber-800 mb-3">🔮 {jq.name}与八字命理</h2>
-          <p className="text-gray-700 leading-loose text-[15px]">{jq.bazi}</p>
+        <div className="bg-gold/5 border border-gold/20 rounded-lg shadow p-6 mb-6">
+          <h2 className="text-xl font-bold text-ink mb-3">🔮 {jq.name}与八字命理</h2>
+          <p className="text-ink/70 leading-loose text-[15px]">{jq.bazi}</p>
           <div className="mt-4 p-4 bg-white rounded-lg">
-            <p className="text-sm text-gray-600 leading-relaxed">
+            <p className="text-sm text-ink-light leading-relaxed">
               想知道自己是否出生在{jq.name}前后、月令与调候用神是什么？
-              <Link href="/" className="text-amber-700 font-semibold hover:underline">输入出生时辰免费排盘 →</Link>
+              <Link href="/" className="text-ink/70 font-semibold hover:underline">输入出生时辰免费排盘 →</Link>
             </p>
           </div>
         </div>
@@ -108,12 +108,12 @@ export default async function JieQiPage({ params }: { params: Promise<{ name: st
         {/* 上一/下一节气 */}
         <div className="flex justify-between mb-8 text-sm">
           {prev ? (
-            <Link href={`/jieqi/${prev.slug}`} className="text-amber-700 hover:text-amber-900">
+            <Link href={`/jieqi/${prev.slug}`} className="text-ink/70 hover:text-ink">
               ← {prev.name}
             </Link>
           ) : <span />}
           {next ? (
-            <Link href={`/jieqi/${next.slug}`} className="text-amber-700 hover:text-amber-900">
+            <Link href={`/jieqi/${next.slug}`} className="text-ink/70 hover:text-ink">
               {next.name} →
             </Link>
           ) : <span />}
@@ -125,8 +125,8 @@ export default async function JieQiPage({ params }: { params: Promise<{ name: st
 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-4">
-      <h2 className="text-xl font-bold text-amber-800 mb-3">{title}</h2>
+    <div className="paper-card rounded-lg p-6 mb-4">
+      <h2 className="text-xl font-bold text-ink mb-3">{title}</h2>
       {children}
     </div>
   )

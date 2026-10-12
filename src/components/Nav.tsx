@@ -28,62 +28,63 @@ export default function Nav() {
   }
 
   return (
-    <nav className="bg-white/80 backdrop-blur border-b border-amber-100 sticky top-0 z-40">
+    <nav className="bg-paper/80 backdrop-blur-md border-b border-gold/15 sticky top-0 z-40">
       <div className="container mx-auto px-4 h-14 flex items-center justify-between">
-        <Link href="/" className="text-lg font-bold text-amber-900">
-          八字命理
+        <Link href="/" className="text-lg font-serif-sc font-bold text-ink flex items-center gap-2">
+          <span className="text-cinnabar text-2xl leading-none">命</span>
+          <span>理排盘</span>
         </Link>
         <div className="flex items-center gap-3 sm:gap-4 text-sm">
-          <Link href="/" className="text-gray-700 hover:text-amber-700">
+          <Link href="/" className="text-ink/70 hover:text-cinnabar transition-colors">
             排盘
           </Link>
-          <Link href="/daily" className="text-gray-700 hover:text-amber-700">
+          <Link href="/daily" className="text-ink/70 hover:text-cinnabar transition-colors">
             每日日签
           </Link>
-          <Link href="/hemun" className="text-gray-700 hover:text-amber-700">
+          <Link href="/hemun" className="text-ink/70 hover:text-cinnabar transition-colors">
             合婚配对
           </Link>
-          <Link href="/ziwei" className="text-gray-700 hover:text-amber-700">
+          <Link href="/ziwei" className="text-ink/70 hover:text-cinnabar transition-colors">
             紫微斗数
           </Link>
-          <Link href="/liunian" className="text-gray-700 hover:text-amber-700 hidden sm:inline">
+          <Link href="/liunian" className="text-ink/70 hover:text-cinnabar transition-colors hidden sm:inline">
             年运报告
           </Link>
-          <Link href="/geo" className="text-gray-700 hover:text-amber-700 hidden sm:inline">
+          <Link href="/geo" className="text-ink/70 hover:text-cinnabar transition-colors hidden sm:inline">
             方位城市
           </Link>
-          <Link href="/bazi" className="text-gray-700 hover:text-amber-700 hidden sm:inline">
+          <Link href="/bazi" className="text-ink/70 hover:text-cinnabar transition-colors hidden sm:inline">
             出生日期
           </Link>
-          <Link href="/shengxiao" className="text-gray-700 hover:text-amber-700 hidden sm:inline">
+          <Link href="/shengxiao" className="text-ink/70 hover:text-cinnabar transition-colors hidden sm:inline">
             生肖运势
           </Link>
-          <Link href="/article" className="text-gray-700 hover:text-amber-700">
+          <Link href="/article" className="text-ink/70 hover:text-cinnabar transition-colors">
             命理知识
           </Link>
-          <Link href="/pricing" className="text-gray-700 hover:text-amber-700">
+          <Link href="/pricing" className="text-ink/70 hover:text-cinnabar transition-colors">
             定价
           </Link>
           {email ? (
             <>
-              <Link href="/charts" className="text-gray-700 hover:text-amber-700">
+              <Link href="/charts" className="text-ink/70 hover:text-cinnabar transition-colors">
                 我的命盘
               </Link>
-              <Link href="/reports" className="text-gray-700 hover:text-amber-700">
+              <Link href="/reports" className="text-ink/70 hover:text-cinnabar transition-colors">
                 我的报告
               </Link>
-              <span className="text-gray-400 max-w-[160px] truncate hidden sm:inline">
+              <span className="text-ink/40 max-w-[160px] truncate hidden sm:inline">
                 {email}
               </span>
               <button
                 onClick={handleLogout}
-                className="text-gray-500 hover:text-amber-700"
+                className="text-ink/50 hover:text-cinnabar transition-colors"
               >
                 退出
               </button>
             </>
           ) : (
-            <Link href="/auth" className="bg-amber-600 text-white px-4 py-1.5 rounded-md hover:bg-amber-700 transition">
+            <Link href="/auth" className="seal-btn px-4 py-1.5 rounded-md text-white transition">
               登录 / 注册
             </Link>
           )}

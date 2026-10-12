@@ -18,9 +18,9 @@ export interface HemunData {
 // ───────── 依据徽章（四类视觉可分）─────────
 const BASIS_STYLE: Record<string, string> = {
   '典籍': 'bg-amber-700 text-white border border-amber-700',
-  '古法': 'bg-amber-100 text-amber-800 border border-amber-300',
-  '民俗': 'bg-white text-gray-600 border border-gray-300',
-  '产品设定': 'bg-white text-gray-400 border border-dashed border-gray-300',
+  '古法': 'bg-gold/10 text-ink border border-amber-300',
+  '民俗': 'bg-white text-ink-light border border-gold/20',
+  '产品设定': 'bg-white text-ink-light/40 border border-dashed border-gold/20',
 }
 
 // ───────── 命盘摘要 ─────────
@@ -31,22 +31,22 @@ function ChartBriefCard({ title, b, color, dstNotice }: {
   dstNotice?: string | null
 }) {
   return (
-    <div className="bg-white rounded-lg shadow p-4">
+    <div className="paper-card rounded-lg p-4">
       <h3 className={`font-semibold mb-2 ${color}`}>{title}</h3>
       <div className="grid grid-cols-4 gap-1 text-center text-sm mb-2">
         {(['year', 'month', 'day', 'hour'] as const).map((k, i) => (
-          <div key={k} className="bg-amber-50 rounded py-1.5">
-            <div className="text-[10px] text-gray-400">{['年柱','月柱','日柱','时柱'][i]}</div>
-            <div className="font-bold text-amber-800">{b.ganZhi[k]}</div>
+          <div key={k} className="bg-gold/5 rounded py-1.5">
+            <div className="text-[10px] text-ink-light/40">{['年柱','月柱','日柱','时柱'][i]}</div>
+            <div className="font-bold text-ink">{b.ganZhi[k]}</div>
           </div>
         ))}
       </div>
-      <div className="text-xs text-gray-600 space-y-0.5">
+      <div className="text-xs text-ink-light space-y-0.5">
         <div>日主：<span className="font-medium text-gray-800">{b.dayMaster}</span>　旺衰：{b.wangShuai}　格局：{b.geJu}</div>
         <div>年柱纳音：{b.yearNaYin}</div>
       </div>
       {dstNotice && (
-        <div className="mt-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-[11px] text-amber-800">
+        <div className="mt-2 rounded border border-gold/20 bg-gold/5 px-2 py-1.5 text-[11px] text-ink">
           ⚠ {dstNotice}
         </div>
       )}
@@ -69,8 +69,8 @@ export default function HemunResultView({ data }: { data: HemunData }) {
     <div className="space-y-6">
       {/* 总观感（主展示，非分数） */}
       <div className="bg-white rounded-xl shadow p-6 text-center">
-        <div className="text-xs text-gray-400 mb-1">合婚总观感</div>
-        <div className="text-2xl font-bold text-amber-900">{r.overall}</div>
+        <div className="text-xs text-ink-light/40 mb-1">合婚总观感</div>
+        <div className="text-2xl font-bold text-ink">{r.overall}</div>
         {r.keyTags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-3 justify-center">
             {r.keyTags.map(t => (
@@ -80,10 +80,10 @@ export default function HemunResultView({ data }: { data: HemunData }) {
             ))}
           </div>
         )}
-        <div className="text-xs text-gray-400 mt-3">
+        <div className="text-xs text-ink-light/40 mt-3">
           内部算法参考分 {r.totalScore}（非命理定论，仅供排序调试）
         </div>
-        <div className="text-xs text-gray-400 mt-1">
+        <div className="text-xs text-ink-light/40 mt-1">
           当前大运：男 {r.currentLuck.male} ／ 女 {r.currentLuck.female}
         </div>
       </div>
@@ -98,7 +98,7 @@ export default function HemunResultView({ data }: { data: HemunData }) {
 
       {/* 维度卡片（分项展示，依据分级） */}
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold text-amber-900">
+        <h2 className="text-lg font-semibold text-ink">
           分项维度（{r.dimensions.length} 项 · 依据分级如实标注）
         </h2>
         {r.dimensions.map(d => {
@@ -106,13 +106,13 @@ export default function HemunResultView({ data }: { data: HemunData }) {
             ? 'bg-green-50 border-green-200 text-green-700'
             : d.level === '忌'
               ? 'bg-red-50 border-red-200 text-red-700'
-              : 'bg-gray-50 border-gray-200 text-gray-500'
+              : 'bg-paper-dark/30 border-gold/15 text-ink-light/60'
           return (
-            <div key={d.key} className="bg-white rounded-lg shadow p-4">
+            <div key={d.key} className="paper-card rounded-lg p-4">
               <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
                 <span className="font-semibold text-gray-800">{d.name}</span>
                 {d.key === 'dayun' && (
-                  <span className="text-[11px] text-gray-400 font-normal">· 仅示当前节奏，不参与总评</span>
+                  <span className="text-[11px] text-ink-light/40 font-normal">· 仅示当前节奏，不参与总评</span>
                 )}
                 <div className="flex items-center gap-1.5">
                   <span className={`text-[11px] rounded px-2 py-0.5 ${BASIS_STYLE[d.basis] || ''}`}>
@@ -127,17 +127,17 @@ export default function HemunResultView({ data }: { data: HemunData }) {
               {d.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-2">
                   {d.tags.map(t => (
-                    <span key={t} className="text-[11px] bg-amber-50 text-amber-700 rounded px-1.5 py-0.5">
+                    <span key={t} className="text-[11px] bg-gold/5 text-ink/70 rounded px-1.5 py-0.5">
                       {t}
                     </span>
                   ))}
                 </div>
               )}
-              <ul className="text-xs text-gray-600 space-y-0.5 list-disc list-inside">
+              <ul className="text-xs text-ink-light space-y-0.5 list-disc list-inside">
                 {d.facts.map((f, i) => <li key={i}>{f}</li>)}
               </ul>
               {d.citations && d.citations.length > 0 && (
-                <p className="text-[11px] text-gray-400 mt-2">依据：{d.citations.join('；')}</p>
+                <p className="text-[11px] text-ink-light/40 mt-2">依据：{d.citations.join('；')}</p>
               )}
             </div>
           )
@@ -146,8 +146,8 @@ export default function HemunResultView({ data }: { data: HemunData }) {
 
       {/* AI 深度解读：未解锁时显示 preview 与解锁引导（§8.5.1 门禁消费） */}
       {data.locked && (
-        <div className="bg-gray-100 rounded-lg p-6 text-center">
-          <p className="text-sm text-gray-600 mb-4">{data.locked.preview}</p>
+        <div className="bg-paper-dark/40 rounded-lg p-6 text-center">
+          <p className="text-sm text-ink-light mb-4">{data.locked.preview}</p>
           {data.locked.skus.map((skuId) => {
             const sku = SKUS[skuId as keyof typeof SKUS]
             if (!sku) return null
@@ -163,13 +163,13 @@ export default function HemunResultView({ data }: { data: HemunData }) {
       {data.ai && (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-amber-900">合婚深度解读</h2>
-          <span className="text-xs text-gray-400">文字来源：{data.aiSource}</span>
+          <h2 className="text-lg font-semibold text-ink">合婚深度解读</h2>
+          <span className="text-xs text-ink-light/40">文字来源：{data.aiSource}</span>
         </div>
         {AI_SECTIONS.map(s => (
-          <div key={s.key} className="bg-white rounded-lg shadow p-4">
-            <h3 className="font-semibold text-amber-800 mb-2">{s.name}</h3>
-            <div className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">
+          <div key={s.key} className="paper-card rounded-lg p-4">
+            <h3 className="font-semibold text-ink mb-2">{s.name}</h3>
+            <div className="text-sm text-ink/70 leading-relaxed whitespace-pre-line">
               {data.ai![s.key]}
             </div>
           </div>
@@ -178,7 +178,7 @@ export default function HemunResultView({ data }: { data: HemunData }) {
       )}
 
       {/* 免责声明 */}
-      <p className="text-xs text-gray-400 text-center leading-relaxed border-t border-gray-100 pt-4">
+      <p className="text-xs text-ink-light/40 text-center leading-relaxed border-t border-gray-100 pt-4">
         合婚分析为传统命理参考，仅供了解双方性格与相处模式之用。<br />
         婚姻成败在于双方经营，与任何单一命理指标无关。
       </p>

@@ -51,22 +51,22 @@ export default function MingShuContent() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
+    <main className="min-h-screen ">
       <Nav />
 
       {/* Hero */}
       <section className="container mx-auto px-4 py-14 text-center">
         <div className="max-w-3xl mx-auto">
-          <span className="inline-block bg-amber-100 text-amber-800 text-xs font-semibold px-3 py-1 rounded-full mb-5">
+          <span className="inline-block bg-gold/10 text-ink text-xs font-semibold px-3 py-1 rounded-full mb-5">
             六书精要 · AI 深度解读
           </span>
-          <h1 className="text-4xl md:text-5xl font-bold text-amber-900 mb-4">
+          <h1 className="text-4xl md:text-5xl font-bold text-ink mb-4">
             命书报告
           </h1>
-          <p className="text-xl text-amber-800 font-medium mb-3">
+          <p className="text-xl text-ink font-medium mb-3">
             一份万字深度详批，看懂你的八字命盘
           </p>
-          <p className="text-gray-600 mb-8 leading-relaxed">
+          <p className="text-ink-light mb-8 leading-relaxed">
             先排盘、再解读。系统算出你的四柱、十神、旺衰与格局，AI 命理师把盘中的关系，
             以清晰、克制、现代化的语言讲清楚——从性格、事业到婚姻、健康，一次看清全局。
           </p>
@@ -79,17 +79,17 @@ export default function MingShuContent() {
             </button>
             <Link
               href="/"
-              className="bg-white text-amber-700 px-8 py-3 rounded-full font-semibold border border-amber-200 hover:bg-amber-50 transition"
+              className="bg-white text-ink/70 px-8 py-3 rounded-full font-semibold border border-gold/20 hover:bg-gold/5 transition"
             >
               先免费排盘
             </Link>
           </div>
           <div className="mt-4">
-            <Link href="/mingshu/demo" className="text-sm text-amber-700 hover:underline">
+            <Link href="/mingshu/demo" className="text-sm text-ink/70 hover:underline">
               先看公开示例命书（虚构资料 · 展示前约 30%）→
             </Link>
           </div>
-          <p className="text-xs text-gray-400 mt-3">
+          <p className="text-xs text-ink-light/40 mt-3">
             已生成命盘永久保存 · 30 秒左右出结果 · 可反复查看
           </p>
         </div>
@@ -97,17 +97,17 @@ export default function MingShuContent() {
 
       {/* 报告包含什么 */}
       <section className="container mx-auto px-4 py-10 max-w-5xl">
-        <h2 className="text-2xl font-bold text-amber-900 text-center mb-8">
+        <h2 className="text-2xl font-bold text-ink text-center mb-8">
           命书报告包含十大板块
         </h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {SECTIONS.map((s, i) => (
-            <div key={s.title} className="bg-white rounded-lg shadow p-5">
+            <div key={s.title} className="paper-card rounded-lg p-5">
               <div className="text-amber-600 font-bold text-sm mb-2">
                 {String(i + 1).padStart(2, '0')}
               </div>
-              <div className="font-bold text-amber-900 mb-1">{s.title}</div>
-              <p className="text-xs text-gray-600 leading-relaxed">{s.desc}</p>
+              <div className="font-bold text-ink mb-1">{s.title}</div>
+              <p className="text-xs text-ink-light leading-relaxed">{s.desc}</p>
             </div>
           ))}
         </div>
@@ -116,24 +116,24 @@ export default function MingShuContent() {
       {/* 为什么值得 / 信任点 */}
       <section className="container mx-auto px-4 py-10 max-w-5xl">
         <div className="grid md:grid-cols-3 gap-6">
-          <div className="bg-white rounded-lg shadow p-6 text-center">
+          <div className="paper-card rounded-lg p-6 text-center">
             <div className="text-3xl mb-3">📖</div>
-            <h3 className="font-bold text-amber-900 mb-2">六书为据</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
+            <h3 className="font-bold text-ink mb-2">六书为据</h3>
+            <p className="text-sm text-ink-light leading-relaxed">
               基于《子平真诠》《滴天髓》《穷通宝鉴》《渊海子平》《三命通会》《千里命稿》，解读有经典原文可循。
             </p>
           </div>
-          <div className="bg-white rounded-lg shadow p-6 text-center">
+          <div className="paper-card rounded-lg p-6 text-center">
             <div className="text-3xl mb-3">🧮</div>
-            <h3 className="font-bold text-amber-900 mb-2">先算后讲</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
+            <h3 className="font-bold text-ink mb-2">先算后讲</h3>
+            <p className="text-sm text-ink-light leading-relaxed">
               排盘、旺衰、格局均为确定性算法，AI 只做解读，不改盘面结论——结论有出处，不是「编」出来的。
             </p>
           </div>
-          <div className="bg-white rounded-lg shadow p-6 text-center">
+          <div className="paper-card rounded-lg p-6 text-center">
             <div className="text-3xl mb-3">🔒</div>
-            <h3 className="font-bold text-amber-900 mb-2">克制不吓唬</h3>
-            <p className="text-sm text-gray-600 leading-relaxed">
+            <h3 className="font-bold text-ink mb-2">克制不吓唬</h3>
+            <p className="text-sm text-ink-light leading-relaxed">
               吉凶判词分七档、只描述时段倾向并标注结构依据；不作确定性承诺，不给行动指令，拒绝恐吓式营销。
             </p>
           </div>
@@ -142,11 +142,11 @@ export default function MingShuContent() {
 
       {/* 排盘表单 */}
       <section id="paipan" className="container mx-auto px-4 py-10 scroll-mt-20">
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6">
-          <h2 className="text-xl font-semibold mb-1 text-center text-amber-800">
+        <div className="max-w-md mx-auto paper-card rounded-xl p-6">
+          <h2 className="text-xl font-semibold mb-1 text-center text-ink">
             输入出生信息，生成你的命书
           </h2>
-          <p className="text-sm text-gray-500 text-center mb-6">
+          <p className="text-sm text-ink-light/60 text-center mb-6">
             免费排盘 → 查看命盘骨架 → 解锁万字命书详批
           </p>
           <BirthForm ctaText="开始排盘（免费）" />
@@ -165,28 +165,28 @@ export default function MingShuContent() {
             </div>
             <button
               onClick={scrollToForm}
-              className="bg-white text-amber-600 px-8 py-3 rounded-full font-bold hover:bg-amber-50 transition whitespace-nowrap"
+              className="bg-white text-amber-600 px-8 py-3 rounded-full font-bold hover:bg-gold/5 transition whitespace-nowrap"
             >
               立即获取
             </button>
           </div>
         </div>
-        <p className="text-center text-sm text-gray-500 mt-4">
-          高频用户可选 <Link href="/pricing" className="text-amber-700 hover:underline">会员订阅 {MEMBER_MONTHLY_PRICE}/月</Link>（订阅权益见价目页）
+        <p className="text-center text-sm text-ink-light/60 mt-4">
+          高频用户可选 <Link href="/pricing" className="text-ink/70 hover:underline">会员订阅 {MEMBER_MONTHLY_PRICE}/月</Link>（订阅权益见价目页）
         </p>
       </section>
 
       {/* FAQ */}
       <section className="container mx-auto px-4 py-10 max-w-3xl">
-        <h2 className="text-2xl font-bold text-amber-900 text-center mb-6">常见问题</h2>
+        <h2 className="text-2xl font-bold text-ink text-center mb-6">常见问题</h2>
         <div className="space-y-3">
           {FAQS.map((f) => (
-            <details key={f.q} className="bg-white rounded-lg shadow p-5 group">
-              <summary className="font-semibold text-amber-900 cursor-pointer list-none flex justify-between items-center">
+            <details key={f.q} className="paper-card rounded-lg p-5 group">
+              <summary className="font-semibold text-ink cursor-pointer list-none flex justify-between items-center">
                 {f.q}
                 <span className="text-amber-500 group-open:rotate-45 transition-transform">＋</span>
               </summary>
-              <p className="mt-3 text-sm text-gray-600 leading-relaxed">{f.a}</p>
+              <p className="mt-3 text-sm text-ink-light leading-relaxed">{f.a}</p>
             </details>
           ))}
         </div>
@@ -194,13 +194,13 @@ export default function MingShuContent() {
 
       {/* 底部 */}
       <footer className="container mx-auto px-4 py-8 text-center">
-        <p className="text-xs text-gray-400">
+        <p className="text-xs text-ink-light/40">
           本站内容基于传统命理文化整理，仅供学习参考与娱乐，不构成任何人生、医疗、法律、财务决策建议。
         </p>
-        <p className="text-xs text-gray-400 mt-2">
-          <Link href="/pricing" className="hover:text-amber-700">价格方案</Link>
+        <p className="text-xs text-ink-light/40 mt-2">
+          <Link href="/pricing" className="hover:text-ink/70">价格方案</Link>
           <span className="mx-2">·</span>
-          <Link href="/article" className="hover:text-amber-700">命理知识</Link>
+          <Link href="/article" className="hover:text-ink/70">命理知识</Link>
         </p>
       </footer>
     </main>

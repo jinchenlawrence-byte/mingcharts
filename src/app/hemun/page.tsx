@@ -47,41 +47,41 @@ function PersonFields({
   accent: 'blue' | 'rose'
 }) {
   const set = (patch: Partial<BirthFormState>) => onChange({ ...value, ...patch })
-  const inputCls = 'w-full px-2.5 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-amber-500'
+  const inputCls = 'w-full px-2.5 py-1.5 border border-gold/20 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-amber-500'
   const titleCls = accent === 'blue' ? 'text-blue-700' : 'text-rose-700'
   return (
-    <div className="border border-gray-200 rounded-lg p-4 bg-white">
+    <div className="border border-gold/15 rounded-lg p-4 bg-white">
       <h3 className={`font-semibold mb-3 ${titleCls}`}>{title}</h3>
       <div className="grid grid-cols-3 gap-2 mb-2">
         <div>
-          <label className="block text-xs text-gray-500 mb-0.5">年</label>
+          <label className="block text-xs text-ink-light/60 mb-0.5">年</label>
           <input type="number" required placeholder="1990" className={inputCls}
             value={value.year} onChange={e => set({ year: e.target.value })} />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-0.5">月</label>
+          <label className="block text-xs text-ink-light/60 mb-0.5">月</label>
           <input type="number" required min={1} max={12} placeholder="5" className={inputCls}
             value={value.month} onChange={e => set({ month: e.target.value })} />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-0.5">日</label>
+          <label className="block text-xs text-ink-light/60 mb-0.5">日</label>
           <input type="number" required min={1} max={31} placeholder="8" className={inputCls}
             value={value.day} onChange={e => set({ day: e.target.value })} />
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div>
-          <label className="block text-xs text-gray-500 mb-0.5">时</label>
+          <label className="block text-xs text-ink-light/60 mb-0.5">时</label>
           <input type="number" required min={0} max={23} placeholder="16" className={inputCls}
             value={value.hour} onChange={e => set({ hour: e.target.value })} />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-0.5">分</label>
+          <label className="block text-xs text-ink-light/60 mb-0.5">分</label>
           <input type="number" min={0} max={59} placeholder="30" className={inputCls}
             value={value.minute} onChange={e => set({ minute: e.target.value })} />
         </div>
         <div>
-          <label className="block text-xs text-gray-500 mb-0.5">性别</label>
+          <label className="block text-xs text-ink-light/60 mb-0.5">性别</label>
           <select className={inputCls} value={value.gender}
             onChange={e => set({ gender: parseInt(e.target.value) as 1 | 0 })}>
             <option value={1}>男</option>
@@ -141,12 +141,12 @@ export default function HehunPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-amber-50/60 to-white">
+    <div className="min-h-screen ">
       <Nav />
       <main className="container mx-auto px-4 py-8 max-w-5xl">
         <header className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-amber-900 mb-2">八字合婚配对</h1>
-          <p className="text-gray-600 text-sm">
+          <h1 className="text-3xl font-bold text-ink mb-2">八字合婚配对</h1>
+          <p className="text-ink-light text-sm">
             输入双方出生信息，以「日柱夫妻宫」为核心，合参年柱生肖、配偶星、五行互补、十神互见与大运节奏
           </p>
         </header>
@@ -164,7 +164,7 @@ export default function HehunPage() {
             {loading ? '合婚分析中...' : '开始合婚配对'}
           </button>
           {error && <p className="text-sm text-red-600 text-center mt-3">{error}</p>}
-          <p className="text-xs text-gray-400 text-center mt-2">结果仅供参考娱乐，感情经营在人不在命</p>
+          <p className="text-xs text-ink-light/40 text-center mt-2">结果仅供参考娱乐，感情经营在人不在命</p>
         </form>
 
         {/* ── 结果区 ── */}
@@ -176,7 +176,7 @@ export default function HehunPage() {
                 ✓ 报告已保存到你的账户，可在「我的报告」中随时回看
               </p>
             ) : saved === false ? (
-              <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-3 py-2 mb-4">
+              <p className="text-xs text-ink-light/60 bg-paper-dark/30 border border-gold/15 rounded px-3 py-2 mb-4">
                 登录后生成结果可保存到「我的报告」，随时回看
               </p>
             ) : null}

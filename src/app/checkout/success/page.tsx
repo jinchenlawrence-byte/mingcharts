@@ -96,27 +96,27 @@ function SuccessInner() {
   }, [searchParams])
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white flex items-center justify-center px-4">
+    <main className="min-h-screen flex items-center justify-center px-4">
       <div className="bg-white rounded-xl shadow-lg p-8 max-w-md w-full text-center">
         {(phase === 'preparing' || phase === 'polling' || phase === 'verifying') && (
           <>
             <div className="animate-pulse text-4xl mb-4">⏳</div>
-            <h1 className="text-xl font-bold text-amber-900 mb-2">正在确认你的支付状态</h1>
-            <p className="text-sm text-gray-600">
+            <h1 className="text-xl font-bold text-ink mb-2">正在确认你的支付状态</h1>
+            <p className="text-sm text-ink-light">
               {phase === 'verifying'
                 ? '支付渠道同步中，正在做最后核对，请稍候…'
                 : '银行与支付渠道的通知可能需要几秒钟，请勿关闭此页面。'}
             </p>
-            <p className="text-xs text-gray-400 mt-3">已等待约 {seconds} 秒</p>
-            {ref && <p className="text-xs text-gray-400 mt-1">业务单号：{ref}</p>}
+            <p className="text-xs text-ink-light/40 mt-3">已等待约 {seconds} 秒</p>
+            {ref && <p className="text-xs text-ink-light/40 mt-1">业务单号：{ref}</p>}
           </>
         )}
 
         {phase === 'unlocked' && (
           <>
             <div className="text-4xl mb-4">✅</div>
-            <h1 className="text-xl font-bold text-amber-900 mb-2">支付成功，命书已解锁</h1>
-            <p className="text-sm text-gray-600 mb-6">
+            <h1 className="text-xl font-bold text-ink mb-2">支付成功，命书已解锁</h1>
+            <p className="text-sm text-ink-light mb-6">
               命书已永久保存到你的账号，可随时登录查看。
             </p>
             <div className="space-y-3">
@@ -126,7 +126,7 @@ function SuccessInner() {
               >
                 查看我的命书
               </Link>
-              <Link href="/" className="block text-sm text-amber-600 hover:text-amber-800">
+              <Link href="/" className="block text-sm text-amber-600 hover:text-ink">
                 返回首页
               </Link>
             </div>
@@ -136,28 +136,28 @@ function SuccessInner() {
         {phase === 'pending' && (
           <>
             <div className="text-4xl mb-4">🕒</div>
-            <h1 className="text-xl font-bold text-amber-900 mb-2">
+            <h1 className="text-xl font-bold text-ink mb-2">
               付款已完成，但解锁正在处理中
             </h1>
-            <p className="text-sm text-gray-600 mb-4">
+            <p className="text-sm text-ink-light mb-4">
               支付渠道与本站的状态同步有时会延迟。若 <strong>10 分钟后</strong>仍未解锁，
               请用你的<strong>注册邮箱</strong>联系{' '}
               <a
                 href="mailto:hello@mingcharts.com"
-                className="text-amber-600 hover:text-amber-800 underline"
+                className="text-amber-600 hover:text-ink underline"
               >
                 hello@mingcharts.com
               </a>
               ，并附上以下业务单号，我们会人工核对补单。
             </p>
-            <p className="text-xs text-gray-500 bg-amber-50 rounded p-2 mb-6 break-all">
+            <p className="text-xs text-ink-light/60 bg-gold/5 rounded p-2 mb-6 break-all">
               业务单号：{ref}
             </p>
             <div className="flex justify-center gap-6 text-sm">
-              <Link href="/" className="text-amber-600 hover:text-amber-800">
+              <Link href="/" className="text-amber-600 hover:text-ink">
                 返回首页
               </Link>
-              <Link href="/pricing" className="text-amber-600 hover:text-amber-800">
+              <Link href="/pricing" className="text-amber-600 hover:text-ink">
                 返回价格页
               </Link>
             </div>
@@ -167,8 +167,8 @@ function SuccessInner() {
         {phase === 'no_ref' && (
           <>
             <div className="text-4xl mb-4">🔍</div>
-            <h1 className="text-xl font-bold text-amber-900 mb-2">未找到本次支付单号</h1>
-            <p className="text-sm text-gray-600 mb-6">
+            <h1 className="text-xl font-bold text-ink mb-2">未找到本次支付单号</h1>
+            <p className="text-sm text-ink-light mb-6">
               如果你刚刚完成了付款，请稍候几分钟后到「我的命盘」查看；仍未解锁请联系{' '}
               <a href="mailto:hello@mingcharts.com" className="text-amber-600 underline">
                 hello@mingcharts.com
@@ -176,10 +176,10 @@ function SuccessInner() {
               。
             </p>
             <div className="flex justify-center gap-6 text-sm">
-              <Link href="/" className="text-amber-600 hover:text-amber-800">
+              <Link href="/" className="text-amber-600 hover:text-ink">
                 返回首页
               </Link>
-              <Link href="/pricing" className="text-amber-600 hover:text-amber-800">
+              <Link href="/pricing" className="text-amber-600 hover:text-ink">
                 返回价格页
               </Link>
             </div>
@@ -189,11 +189,11 @@ function SuccessInner() {
         {phase === 'no_login' && (
           <>
             <div className="text-4xl mb-4">🔑</div>
-            <h1 className="text-xl font-bold text-amber-900 mb-2">请先登录</h1>
-            <p className="text-sm text-gray-600 mb-6">
+            <h1 className="text-xl font-bold text-ink mb-2">请先登录</h1>
+            <p className="text-sm text-ink-light mb-6">
               请用付款时使用的账号登录，系统会自动确认解锁状态。
               {ref && (
-                <span className="block text-xs text-gray-400 mt-2 break-all">
+                <span className="block text-xs text-ink-light/40 mt-2 break-all">
                   业务单号：{ref}
                 </span>
               )}
@@ -216,7 +216,7 @@ export default function CheckoutSuccessPage() {
   return (
     <Suspense
       fallback={
-        <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white flex items-center justify-center text-gray-500">
+        <main className="min-h-screen flex items-center justify-center text-ink-light/60">
           加载中…
         </main>
       }

@@ -198,21 +198,21 @@ function compareCells(row: CompareRow): [boolean, boolean, boolean] {
 
 export default function PricingPage() {
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
+    <main className="min-h-screen ">
       <Nav />
 
       <div className="container mx-auto px-4 py-12 max-w-5xl">
         {/* 面包屑 */}
-        <nav className="text-sm text-gray-500 mb-4">
-          <Link href="/" className="hover:text-amber-700">首页</Link>
+        <nav className="text-sm text-ink-light/60 mb-4">
+          <Link href="/" className="hover:text-ink/70">首页</Link>
           <span className="mx-2">›</span>
-          <span className="text-amber-900">价格方案</span>
+          <span className="text-ink">价格方案</span>
         </nav>
 
         {/* 标题 */}
         <header className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-amber-900 mb-3">先排盘，再深入</h1>
-          <p className="text-gray-600 max-w-2xl mx-auto">
+          <h1 className="text-4xl font-bold text-ink mb-3">先排盘，再深入</h1>
+          <p className="text-ink-light max-w-2xl mx-auto">
             免费排盘看清命盘骨架，命书报告展开万字详批。基于六部经典命理著作，结合 AI 与规则引擎双重解读。
           </p>
         </header>
@@ -234,14 +234,14 @@ export default function PricingPage() {
                 </span>
               )}
 
-              <h2 className="text-lg font-bold text-amber-900">{card.name}</h2>
+              <h2 className="text-lg font-bold text-ink">{card.name}</h2>
               <div className="flex items-baseline gap-1 mt-3 mb-1">
-                <span className="text-4xl font-bold text-amber-800">{card.price}</span>
-                <span className="text-gray-500 text-sm">{card.unit}</span>
+                <span className="text-4xl font-bold text-ink">{card.price}</span>
+                <span className="text-ink-light/60 text-sm">{card.unit}</span>
               </div>
-              <p className="text-sm text-gray-600 mb-5">{card.desc}</p>
+              <p className="text-sm text-ink-light mb-5">{card.desc}</p>
 
-              <ul className="space-y-2 text-sm text-gray-700 flex-1 mb-6">
+              <ul className="space-y-2 text-sm text-ink/70 flex-1 mb-6">
                 {card.features.map((f) => (
                   <li key={f} className="flex gap-2">
                     <span className="text-amber-600 shrink-0">✓</span>
@@ -252,7 +252,7 @@ export default function PricingPage() {
 
               {card.membership ? (
                 // ★ 订阅权益（日运等）尚未上线，暂不开放购买（会员权益修复 §二）——本轮不动
-                <div className="block text-center py-2.5 rounded-md font-semibold bg-gray-100 text-gray-400 cursor-not-allowed">
+                <div className="block text-center py-2.5 rounded-md font-semibold bg-paper-dark/40 text-ink-light/40 cursor-not-allowed">
                   即将推出
                 </div>
               ) : card.buySku ? (
@@ -266,7 +266,7 @@ export default function PricingPage() {
                   </CheckoutButton>
                   <Link
                     href={card.cta.href}
-                    className="block text-center text-sm text-amber-600 hover:text-amber-800 mt-2"
+                    className="block text-center text-sm text-amber-600 hover:text-ink mt-2"
                   >
                     查看命书详情
                   </Link>
@@ -277,7 +277,7 @@ export default function PricingPage() {
                   className={`block text-center py-2.5 rounded-md font-semibold transition ${
                     card.highlight
                       ? 'bg-amber-600 text-white hover:bg-amber-700'
-                      : 'bg-amber-100 text-amber-800 hover:bg-amber-200'
+                      : 'bg-gold/10 text-ink hover:bg-amber-200'
                   }`}
                 >
                   {card.cta.text}
@@ -289,45 +289,45 @@ export default function PricingPage() {
 
         {/* ★ 单项报告价目：5 个非命书的单项 SKU（命书已有卡片，此处排除）*/}
         <section className="mb-14">
-          <h2 className="text-2xl font-bold text-amber-900 mb-2 text-center">单项报告</h2>
-          <p className="text-sm text-gray-600 text-center mb-6">
+          <h2 className="text-2xl font-bold text-ink mb-2 text-center">单项报告</h2>
+          <p className="text-sm text-ink-light text-center mb-6">
             除命书外的深度报告，均可单独购买；也可选三合一套餐更划算。
           </p>
           <div className="grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
             {ONE_TIME_SKUS.filter((s) => s.id !== 'fatebook').map((s) => (
               <div key={s.id} className="bg-white rounded-xl p-5 shadow-md flex items-start justify-between gap-4">
                 <div>
-                  <h3 className="font-bold text-amber-900">{s.name}</h3>
-                  <p className="text-sm text-gray-600 mt-1">{s.desc}</p>
+                  <h3 className="font-bold text-ink">{s.name}</h3>
+                  <p className="text-sm text-ink-light mt-1">{s.desc}</p>
                   {SKU_HREF[s.id] && (
                     <Link
                       href={SKU_HREF[s.id]!}
-                      className="inline-block text-sm text-amber-600 hover:text-amber-800 mt-2"
+                      className="inline-block text-sm text-amber-600 hover:text-ink mt-2"
                     >
                       去体验 →
                     </Link>
                   )}
                 </div>
                 <div className="text-right shrink-0">
-                  <div className="text-2xl font-bold text-amber-800">{formatPriceUSD(s.priceUSD)}</div>
-                  <div className="text-xs text-gray-500 mt-1">内测期免费体验</div>
+                  <div className="text-2xl font-bold text-ink">{formatPriceUSD(s.priceUSD)}</div>
+                  <div className="text-xs text-ink-light/60 mt-1">内测期免费体验</div>
                 </div>
               </div>
             ))}
           </div>
-          <p className="text-xs text-gray-500 text-center mt-4">
+          <p className="text-xs text-ink-light/60 text-center mt-4">
             内测期间以上模块免费开放体验；正式开放购买后，将按上述价格单独购买（会员不含报告）。
           </p>
         </section>
 
         {/* 命书报告包含的十大板块 */}
         <section className="mb-14">
-          <h2 className="text-2xl font-bold text-amber-900 text-center mb-6">命书报告包含什么</h2>
+          <h2 className="text-2xl font-bold text-ink text-center mb-6">命书报告包含什么</h2>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {SECTIONS.map((s, i) => (
-              <div key={s} className="bg-white rounded-lg shadow p-4 text-center">
+              <div key={s} className="paper-card rounded-lg p-4 text-center">
                 <div className="text-amber-600 font-bold text-sm mb-1">{String(i + 1).padStart(2, '0')}</div>
-                <div className="font-semibold text-amber-900 text-sm">{s}</div>
+                <div className="font-semibold text-ink text-sm">{s}</div>
               </div>
             ))}
           </div>
@@ -335,10 +335,10 @@ export default function PricingPage() {
 
         {/* 对比表 */}
         <section className="mb-14">
-          <h2 className="text-2xl font-bold text-amber-900 text-center mb-6">权益对比</h2>
+          <h2 className="text-2xl font-bold text-ink text-center mb-6">权益对比</h2>
           <div className="bg-white rounded-xl shadow overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-amber-50 text-amber-900">
+              <thead className="bg-gold/5 text-ink">
                 <tr>
                   <th className="py-3 px-4 text-left font-semibold">权益</th>
                   <th className="py-3 px-4 text-center font-semibold">免费</th>
@@ -346,7 +346,7 @@ export default function PricingPage() {
                   <th className="py-3 px-4 text-center font-semibold">会员</th>
                 </tr>
               </thead>
-              <tbody className="text-gray-700">
+              <tbody className="text-ink/70">
                 {COMPARE_ROWS.map((row) => {
                   const cells = compareCells(row)
                   return (
@@ -357,7 +357,7 @@ export default function PricingPage() {
                           <span className="ml-2 text-xs text-amber-600">即将推出</span>
                         )}
                         {row.note && (
-                          <span className="ml-2 text-xs text-gray-400">{row.note}</span>
+                          <span className="ml-2 text-xs text-ink-light/40">{row.note}</span>
                         )}
                       </td>
                       {cells.map((on, i) => (
@@ -375,22 +375,22 @@ export default function PricingPage() {
               </tbody>
             </table>
           </div>
-          <p className="text-xs text-gray-500 text-center mt-3">
+          <p className="text-xs text-ink-light/60 text-center mt-3">
             年运 / 合婚 / 紫微 / 地理为单项报告，按次单独购买（会员不含报告），价目见上方「单项报告」。
           </p>
         </section>
 
         {/* FAQ */}
         <section className="mb-14 max-w-3xl mx-auto">
-          <h2 className="text-2xl font-bold text-amber-900 text-center mb-6">常见问题</h2>
+          <h2 className="text-2xl font-bold text-ink text-center mb-6">常见问题</h2>
           <div className="space-y-3">
             {FAQS.map((f) => (
-              <details key={f.q} className="bg-white rounded-lg shadow p-5 group">
-                <summary className="font-semibold text-amber-900 cursor-pointer list-none flex justify-between items-center">
+              <details key={f.q} className="paper-card rounded-lg p-5 group">
+                <summary className="font-semibold text-ink cursor-pointer list-none flex justify-between items-center">
                   {f.q}
                   <span className="text-amber-500 group-open:rotate-45 transition-transform">＋</span>
                 </summary>
-                <p className="mt-3 text-sm text-gray-600 leading-relaxed">{f.a}</p>
+                <p className="mt-3 text-sm text-ink-light leading-relaxed">{f.a}</p>
               </details>
             ))}
           </div>
@@ -402,14 +402,14 @@ export default function PricingPage() {
           <p className="opacity-90 mb-6">输入出生信息，30 秒内生成你的专属命书报告</p>
           <Link
             href="/"
-            className="inline-block bg-white text-amber-600 px-8 py-3 rounded-full font-bold hover:bg-amber-50 transition"
+            className="inline-block bg-white text-amber-600 px-8 py-3 rounded-full font-bold hover:bg-gold/5 transition"
           >
             免费排盘 →
           </Link>
         </div>
 
         {/* 免责声明 */}
-        <p className="text-xs text-gray-400 text-center pb-8">
+        <p className="text-xs text-ink-light/40 text-center pb-8">
           本站内容基于传统命理文化整理，仅供学习参考与娱乐，不构成任何人生、医疗、法律、财务决策建议。
         </p>
       </div>

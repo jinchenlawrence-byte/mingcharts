@@ -29,7 +29,7 @@ const TONE_BADGE: Record<string, string> = {
   '吉': 'bg-green-100 text-green-700',
   '凶': 'bg-red-100 text-red-700',
   '动': 'bg-orange-100 text-orange-700',
-  '平': 'bg-gray-100 text-gray-600'
+  '平': 'bg-paper-dark/40 text-ink-light'
 }
 const TONE_WORD: Record<string, string> = { '吉': '吉运年', '凶': '谨慎年', '动': '变动年', '平': '平稳年' }
 
@@ -45,29 +45,29 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
   const isFanTaiSui = ['值', '冲', '害', '刑'].includes(ln.relation)
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white">
+    <main className="min-h-screen ">
       <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <nav className="text-sm text-gray-500 mb-4">
-          <Link href="/" className="hover:text-amber-700">首页</Link>
+        <nav className="text-sm text-ink-light/60 mb-4">
+          <Link href="/" className="hover:text-ink/70">首页</Link>
           <span className="mx-2">›</span>
-          <Link href="/shengxiao" className="hover:text-amber-700">十二生肖</Link>
+          <Link href="/shengxiao" className="hover:text-ink/70">十二生肖</Link>
           <span className="mx-2">›</span>
-          <Link href={`/shengxiao/${sx.slug}`} className="hover:text-amber-700">属{sx.name}</Link>
+          <Link href={`/shengxiao/${sx.slug}`} className="hover:text-ink/70">属{sx.name}</Link>
           <span className="mx-2">›</span>
-          <span className="text-amber-900">{year}年运势</span>
+          <span className="text-ink">{year}年运势</span>
         </nav>
 
         {/* 头部 */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
+        <div className="paper-card rounded-lg p-6 mb-6">
           <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
-            <h1 className="text-2xl md:text-3xl font-bold text-amber-900">
+            <h1 className="text-2xl md:text-3xl font-bold text-ink">
               {year}年属{sx.name}运势详解
             </h1>
             <span className={`text-sm px-3 py-1 rounded-full font-semibold ${TONE_BADGE[ln.tone]}`}>
               {TONE_WORD[ln.tone]} · {ln.relation}太岁
             </span>
           </div>
-          <p className="text-gray-600 leading-relaxed">{ln.relationText}</p>
+          <p className="text-ink-light leading-relaxed">{ln.relationText}</p>
           {isFanTaiSui && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
               {year}年属{sx.name}{ln.relation === '值' ? '正值本命年（值太岁）' : `${ln.relation}太岁`}，
@@ -84,32 +84,32 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
         <FortuneSection title="健康运势" body={ln.health} />
 
         {/* 开运建议 */}
-        <div className="bg-amber-50 border border-amber-200 rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-bold text-amber-800 mb-3">{year}年开运建议</h2>
-          <p className="text-gray-700 leading-loose text-[15px]">{ln.advice}</p>
+        <div className="bg-gold/5 border border-gold/20 rounded-lg shadow p-6 mb-6">
+          <h2 className="text-xl font-bold text-ink mb-3">{year}年开运建议</h2>
+          <p className="text-ink/70 leading-loose text-[15px]">{ln.advice}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 text-sm">
             <div className="bg-white rounded p-3 text-center">
-              <div className="text-xs text-gray-500">幸运颜色</div>
-              <div className="font-semibold text-amber-800 mt-1">{sx.luckyColor.split('、')[0]}</div>
+              <div className="text-xs text-ink-light/60">幸运颜色</div>
+              <div className="font-semibold text-ink mt-1">{sx.luckyColor.split('、')[0]}</div>
             </div>
             <div className="bg-white rounded p-3 text-center">
-              <div className="text-xs text-gray-500">幸运数字</div>
-              <div className="font-semibold text-amber-800 mt-1">{sx.luckyNumber}</div>
+              <div className="text-xs text-ink-light/60">幸运数字</div>
+              <div className="font-semibold text-ink mt-1">{sx.luckyNumber}</div>
             </div>
             <div className="bg-white rounded p-3 text-center col-span-2 sm:col-span-1">
-              <div className="text-xs text-gray-500">本命佛</div>
-              <div className="font-semibold text-amber-800 mt-1 text-xs">{sx.benmingfo}</div>
+              <div className="text-xs text-ink-light/60">本命佛</div>
+              <div className="font-semibold text-ink mt-1 text-xs">{sx.benmingfo}</div>
             </div>
           </div>
         </div>
 
         {/* 常见问题（SEO） */}
-        <div className="bg-white rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-bold text-amber-800 mb-4">{year}年属{sx.name}常见问题</h2>
+        <div className="paper-card rounded-lg p-6 mb-6">
+          <h2 className="text-xl font-bold text-ink mb-4">{year}年属{sx.name}常见问题</h2>
           <div className="space-y-4 text-sm">
             <div>
               <h3 className="font-semibold text-gray-800 mb-1">{year}年属{sx.name}犯太岁吗？</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-ink-light leading-relaxed">
                 {isFanTaiSui
                   ? `${year}${ln.ganZhi}年，属${sx.name}为${ln.relation}太岁，属于犯太岁的一种。犯太岁主变动、波动，建议年初拜太岁、全年谨慎行事，多行善积德，平稳度过。`
                   : `${year}${ln.ganZhi}年，属${sx.name}与太岁无刑冲${ln.relation === '合' ? '，且为合太岁，是得贵人相助的年份' : '害关系，整体运势平稳'}，不属于犯太岁。`}
@@ -117,11 +117,11 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
             </div>
             <div>
               <h3 className="font-semibold text-gray-800 mb-1">{year}年属{sx.name}财运怎么样？</h3>
-              <p className="text-gray-600 leading-relaxed">{ln.wealth}</p>
+              <p className="text-ink-light leading-relaxed">{ln.wealth}</p>
             </div>
             <div>
               <h3 className="font-semibold text-gray-800 mb-1">属{sx.name}{year}年适合结婚/跳槽/创业吗？</h3>
-              <p className="text-gray-600 leading-relaxed">
+              <p className="text-ink-light leading-relaxed">
                 {ln.tone === '吉'
                   ? `合太岁之年整体顺利、贵人相助，是适合推进婚恋、合作与事业布局的年份，可顺势而为、把握机遇。`
                   : ln.tone === '动'
@@ -135,12 +135,12 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
         {/* 年份切换 */}
         <div className="flex justify-between mb-6">
           {prevYear ? (
-            <Link href={`/shengxiao/${sx.slug}/${prevYear}`} className="text-amber-700 hover:text-amber-900 text-sm">
+            <Link href={`/shengxiao/${sx.slug}/${prevYear}`} className="text-ink/70 hover:text-ink text-sm">
               ← {prevYear}年属{sx.name}运势
             </Link>
           ) : <span />}
           {nextYear ? (
-            <Link href={`/shengxiao/${sx.slug}/${nextYear}`} className="text-amber-700 hover:text-amber-900 text-sm">
+            <Link href={`/shengxiao/${sx.slug}/${nextYear}`} className="text-ink/70 hover:text-ink text-sm">
               {nextYear}年属{sx.name}运势 →
             </Link>
           ) : <span />}
@@ -154,13 +154,13 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
           </p>
           <Link
             href="/"
-            className="inline-block bg-white text-amber-700 px-8 py-2.5 rounded-md font-bold hover:bg-amber-50 transition-colors"
+            className="inline-block bg-white text-ink/70 px-8 py-2.5 rounded-md font-bold hover:bg-gold/5 transition-colors"
           >
             输入时辰，排我的八字 →
           </Link>
         </div>
 
-        <p className="text-center text-xs text-gray-400 mt-6">
+        <p className="text-center text-xs text-ink-light/40 mt-6">
           本文为传统命理民俗内容，仅供参考娱乐，不构成任何决策建议。
         </p>
       </div>
@@ -170,9 +170,9 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
 
 function FortuneSection({ title, body }: { title: string; body: string }) {
   return (
-    <div className="bg-white rounded-lg shadow p-6 mb-4">
-      <h2 className="text-lg font-bold text-amber-800 mb-2">{title}</h2>
-      <p className="text-gray-700 leading-loose text-[15px]">{body}</p>
+    <div className="paper-card rounded-lg p-6 mb-4">
+      <h2 className="text-lg font-bold text-ink mb-2">{title}</h2>
+      <p className="text-ink/70 leading-loose text-[15px]">{body}</p>
     </div>
   )
 }

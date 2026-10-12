@@ -90,60 +90,60 @@ export default function LiunianPage() {
       <div className="container mx-auto px-4 py-8">
         <header className="text-center mb-10">
           <h1 className="text-4xl font-bold text-rose-900 mb-2">年运报告 · 流年详批</h1>
-          <p className="text-gray-600">流年干支十神与原局冲合，事业/财运/感情/健康分维度深度解读</p>
-          <p className="text-xs text-gray-400 mt-2">
+          <p className="text-ink-light">流年干支十神与原局冲合，事业/财运/感情/健康分维度深度解读</p>
+          <p className="text-xs text-ink-light/40 mt-2">
             说明：流年事实（干支、十神、冲合、倾向标签）由规则引擎确定性计算，AI 仅据事实撰写解读；倾向性参考，非确定性结论
           </p>
         </header>
 
         {/* 表单 */}
-        <div className="max-w-md mx-auto bg-white rounded-lg shadow-lg p-6 mb-10">
+        <div className="max-w-md mx-auto paper-card rounded-xl p-6 mb-10">
           <h2 className="text-xl font-semibold mb-6 text-center text-rose-800">填写出生信息</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">年</label>
+                <label className="block text-sm font-medium text-ink/70 mb-1">年</label>
                 <input type="number" required placeholder="1990"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
                   value={formData.year}
                   onChange={(e) => setFormData({ ...formData, year: e.target.value })} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">月</label>
+                <label className="block text-sm font-medium text-ink/70 mb-1">月</label>
                 <input type="number" required min="1" max="12" placeholder="5"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
                   value={formData.month}
                   onChange={(e) => setFormData({ ...formData, month: e.target.value })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">日</label>
+                <label className="block text-sm font-medium text-ink/70 mb-1">日</label>
                 <input type="number" required min="1" max="31" placeholder="8"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
                   value={formData.day}
                   onChange={(e) => setFormData({ ...formData, day: e.target.value })} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">时</label>
+                <label className="block text-sm font-medium text-ink/70 mb-1">时</label>
                 <input type="number" required min="0" max="23" placeholder="16"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
                   value={formData.hour}
                   onChange={(e) => setFormData({ ...formData, hour: e.target.value })} />
               </div>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">分</label>
+                <label className="block text-sm font-medium text-ink/70 mb-1">分</label>
                 <input type="number" min="0" max="59" placeholder="30"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
                   value={formData.minute}
                   onChange={(e) => setFormData({ ...formData, minute: e.target.value })} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">性别</label>
+                <label className="block text-sm font-medium text-ink/70 mb-1">性别</label>
                 <select
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
+                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
                   value={formData.gender}
                   onChange={(e) => setFormData({ ...formData, gender: parseInt(e.target.value) as 1 | 0 })}
                 >
@@ -154,7 +154,7 @@ export default function LiunianPage() {
             </div>
             <BirthPlacePicker value={birth} onChange={setBirth} accent="rose" />
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">目标流年</label>
+              <label className="block text-sm font-medium text-ink/70 mb-1">目标流年</label>
               <div className="grid grid-cols-3 gap-2">
                 {options.map(o => (
                   <button
@@ -164,11 +164,11 @@ export default function LiunianPage() {
                     className={`px-2 py-2 rounded-md border text-sm transition ${
                       targetYear === o.year
                         ? 'border-rose-600 bg-rose-600 text-white font-semibold'
-                        : 'border-gray-300 bg-white text-gray-700 hover:border-rose-400'
+                        : 'border-gold/20 bg-white text-ink/70 hover:border-rose-400'
                     }`}
                   >
                     <span className="block">{o.label}</span>
-                    <span className={`block text-[10px] mt-0.5 ${targetYear === o.year ? 'text-rose-100' : 'text-gray-400'}`}>
+                    <span className={`block text-[10px] mt-0.5 ${targetYear === o.year ? 'text-rose-100' : 'text-ink-light/40'}`}>
                       {o.note}
                     </span>
                   </button>
@@ -181,7 +181,7 @@ export default function LiunianPage() {
             </button>
             {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
           </form>
-          <p className="text-xs text-gray-500 text-center mt-4">
+          <p className="text-xs text-ink-light/60 text-center mt-4">
             内测期免费体验 · 正式开放后 {formatPriceUSD(SKUS.annual_report.priceUSD)}/次（会员不含报告）
           </p>
         </div>
@@ -195,7 +195,7 @@ export default function LiunianPage() {
                 ✓ 报告已保存到你的账户，可在「我的报告」中随时回看
               </p>
             ) : saved === false ? (
-              <p className="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-3 py-2 mb-4">
+              <p className="text-xs text-ink-light/60 bg-paper-dark/30 border border-gold/15 rounded px-3 py-2 mb-4">
                 登录后生成结果可保存到「我的报告」，随时回看
               </p>
             ) : null}

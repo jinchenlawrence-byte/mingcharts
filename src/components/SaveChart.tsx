@@ -55,7 +55,7 @@ export default function SaveChart() {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-4 mb-6 text-center">
+    <div className="paper-card rounded-lg p-4 mb-6 text-center">
       <button
         onClick={handleSave}
         disabled={status === 'saving' || status === 'saved'}
@@ -69,7 +69,7 @@ export default function SaveChart() {
         </p>
       )}
       {logged === false && (
-        <p className="text-xs text-gray-400 mt-1">登录后可保存命盘并随时查看</p>
+        <p className="text-xs text-ink-light/40 mt-1">登录后可保存命盘并随时查看</p>
       )}
     </div>
   )

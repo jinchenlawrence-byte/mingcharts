@@ -1,8 +1,26 @@
 @import "tailwindcss";
 
+/* ── 水墨现代色彩体系 ── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f3eb;
+  --foreground: #2c2c43;
+
+  /* 宣纸底 */
+  --color-paper: #f7f3eb;
+  --color-paper-dark: #efe9dc;
+  /* 墨色 */
+  --color-ink: #2c2c43;
+  --color-ink-light: #5a5a73;
+  /* 朱砂红（印章感） */
+  --color-cinnabar: #b94134;
+  --color-cinnabar-dark: #9a3528;
+  /* 古铜金（描边/分隔） */
+  --color-gold: #9a8c4a;
+  --color-gold-light: #c4b87e;
+  /* 翠玉绿（吉星/正面） */
+  --color-jade: #4a7c59;
+  /* 青灰（平运/中性） */
+  --color-slate: #6b7c8a;
 }
 
 @theme inline {
@@ -10,19 +28,76 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --font-serif-sc: var(--font-serif-sc);
+  /* Tailwind 工具色 */
+  --color-paper: var(--color-paper);
+  --color-paper-dark: var(--color-paper-dark);
+  --color-ink: var(--color-ink);
+  --color-ink-light: var(--color-ink-light);
+  --color-cinnabar: var(--color-cinnabar);
+  --color-cinnabar-dark: var(--color-cinnabar-dark);
+  --color-gold: var(--color-gold);
+  --color-gold-light: var(--color-gold-light);
+  --color-jade: var(--color-jade);
+  --color-slate: var(--color-slate);
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #1a1a2e;
+    --foreground: #d4d4e0;
+    --color-paper: #1a1a2e;
+    --color-paper-dark: #151523;
+    --color-ink: #d4d4e0;
+    --color-ink-light: #a0a0b8;
+    --color-gold: #c4b87e;
+    --color-gold-light: #d4c890;
   }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-geist-sans), "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
+  /* 宣纸纹理：极淡的噪点叠加 */
+  background-image:
+    radial-gradient(circle at 20% 30%, rgba(154, 140, 74, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 70%, rgba(185, 65, 52, 0.02) 0%, transparent 50%);
+  background-attachment: fixed;
+}
+
+/* 标题用思源宋体 */
+h1, h2, h3, .font-serif-sc {
+  font-family: var(--font-serif-sc), "Noto Serif SC", "STSong", "SimSun", serif;
+  letter-spacing: 0.02em;
+}
+
+/* 印章感按钮 */
+.seal-btn {
+  background: var(--color-cinnabar);
+  color: #fff;
+  border: 1px solid var(--color-cinnabar-dark);
+  box-shadow: 0 1px 3px rgba(185, 65, 52, 0.3);
+  transition: all 0.2s;
+}
+.seal-btn:hover {
+  background: var(--color-cinnabar-dark);
+  box-shadow: 0 2px 6px rgba(185, 65, 52, 0.4);
+}
+
+/* 宣纸卡片 */
+.paper-card {
+  background: rgba(255, 253, 248, 0.85);
+  border: 1px solid rgba(154, 140, 74, 0.15);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 4px 24px rgba(44, 44, 67, 0.06);
+}
+
+/* 金线分隔 */
+.gold-divider {
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--color-gold) 30%, var(--color-gold) 70%, transparent);
+  opacity: 0.4;
 }
 
 /* 法律页排版（marked 输出的 HTML） */

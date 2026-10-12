@@ -56,14 +56,14 @@ const FORTUNE_BADGE: Record<FortuneTier, string> = {
   '大吉': 'bg-emerald-100 text-emerald-800',
   '吉': 'bg-emerald-50 text-emerald-700',
   '小吉': 'bg-emerald-50 text-emerald-600',
-  '平': 'bg-amber-50 text-amber-600',
+  '平': 'bg-gold/5 text-amber-600',
   '小凶': 'bg-red-50 text-red-600',
   '凶': 'bg-red-100 text-red-700',
   '大凶': 'bg-red-200 text-red-800'
 }
 const FORTUNE_BORDER: Record<FortuneTier, string> = {
   '大吉': 'border-emerald-400', '吉': 'border-emerald-300', '小吉': 'border-emerald-200',
-  '平': 'border-amber-200',
+  '平': 'border-gold/20',
   '小凶': 'border-red-200', '凶': 'border-red-300', '大凶': 'border-red-400'
 }
 
@@ -72,19 +72,19 @@ const FORTUNE_BORDER: Record<FortuneTier, string> = {
 // ★ '大防' 死键已清（任务20步骤④）：产出者为零（7 档判词不含、流月内联三档不含、日运 DAILY_TAGS 排除），故类型放开为 Partial
 const TAG_BADGE: Partial<Record<LuckTag, string>> = {
   '较宜': 'bg-emerald-50 text-emerald-600',
-  '平顺': 'bg-gray-100 text-gray-500',
-  '一般': 'bg-amber-50 text-amber-600',
+  '平顺': 'bg-paper-dark/40 text-ink-light/60',
+  '一般': 'bg-gold/5 text-amber-600',
   '宜慎': 'bg-orange-100 text-orange-700'
 }
 const TAG_BORDER: Partial<Record<LuckTag, string>> = {
-  '较宜': 'border-emerald-200', '平顺': 'border-gray-200', '一般': 'border-amber-200',
+  '较宜': 'border-emerald-200', '平顺': 'border-gold/15', '一般': 'border-gold/20',
   '宜慎': 'border-orange-300'
 }
 
 // 分维度倾向徽章（大运四维度）
 const DOMAIN_BADGE: Record<'吉' | '平' | '滞', string> = {
   '吉': 'bg-emerald-50 text-emerald-600',
-  '平': 'bg-gray-100 text-gray-500',
+  '平': 'bg-paper-dark/40 text-ink-light/60',
   '滞': 'bg-orange-100 text-orange-700'
 }
 
@@ -95,29 +95,29 @@ function LuckCyclesView({ luck }: { luck: LuckCycles }) {
   return (
     <div className="space-y-4">
       {/* 大运 */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="font-semibold text-amber-800 mb-1">岁运时间轴 · 大运</h3>
-        <p className="text-xs text-gray-500 mb-3">大运十年一步，以节气换运；干支十神与吉凶由规则引擎推算</p>
+      <div className="paper-card rounded-lg p-4">
+        <h3 className="font-semibold text-ink mb-1">岁运时间轴 · 大运</h3>
+        <p className="text-xs text-ink-light/60 mb-3">大运十年一步，以节气换运；干支十神与吉凶由规则引擎推算</p>
         <div className="flex flex-wrap gap-2">
           {luck.daYun.map((d, i) => (
             <div
               key={i}
               className={`rounded px-3 py-2 text-center border min-w-[78px] ${
-                d.current ? 'bg-amber-50 border-amber-500 ring-1 ring-amber-400' : 'bg-gray-50 border-gray-200'
+                d.current ? 'bg-gold/5 border-amber-500 ring-1 ring-amber-400' : 'bg-paper-dark/30 border-gold/15'
               }`}
             >
-              <div className="font-bold text-amber-800">{d.ganZhi}</div>
-              <div className="text-xs text-gray-500">{d.startAge}-{d.startAge + 9}岁</div>
+              <div className="font-bold text-ink">{d.ganZhi}</div>
+              <div className="text-xs text-ink-light/60">{d.startAge}-{d.startAge + 9}岁</div>
               <span className={`inline-block text-[11px] px-1.5 rounded mt-1 ${FORTUNE_BADGE[d.tag]}`}>{d.tag}</span>
             </div>
           ))}
         </div>
         {curDY && (
-          <div className="mt-3 text-sm text-gray-700 border-t pt-3">
-            <span className="font-medium text-amber-800">当前 {curDY.ganZhi} 运（{curDY.shiShenGan}主事）：</span>
+          <div className="mt-3 text-sm text-ink/70 border-t pt-3">
+            <span className="font-medium text-ink">当前 {curDY.ganZhi} 运（{curDY.shiShenGan}主事）：</span>
             {curDY.note}
             {curDY.relations.length > 0 && (
-              <ul className="mt-1 text-xs text-gray-600 list-disc list-inside">
+              <ul className="mt-1 text-xs text-ink-light list-disc list-inside">
                 {curDY.relations.map((r, i) => <li key={i}>{r}</li>)}
               </ul>
             )}
@@ -125,34 +125,34 @@ function LuckCyclesView({ luck }: { luck: LuckCycles }) {
             {curDY.domains && (
               <div className="mt-2 grid grid-cols-2 gap-1.5 text-xs">
                 {([['事业', curDY.domains.career], ['财运', curDY.domains.wealth], ['健康', curDY.domains.health], ['六亲', curDY.domains.relation]] as [string, { tendency: '吉' | '平' | '滞'; note: string }][]).map(([name, d]) => (
-                  <div key={name} className="rounded bg-gray-50 p-1.5">
+                  <div key={name} className="rounded bg-paper-dark/30 p-1.5">
                     <span className={`inline-block text-[10px] px-1 rounded mr-1 ${DOMAIN_BADGE[d.tendency]}`}>{name}·{d.tendency}</span>
-                    <span className="text-gray-600">{d.note}</span>
+                    <span className="text-ink-light">{d.note}</span>
                   </div>
                 ))}
               </div>
             )}
-            <p className="mt-2 text-[11px] text-gray-400">岁运为倾向性参考，非确定性预言；重大决策（投资、迁居、婚嫁）请勿仅凭此断定。</p>
+            <p className="mt-2 text-[11px] text-ink-light/40">岁运为倾向性参考，非确定性预言；重大决策（投资、迁居、婚嫁）请勿仅凭此断定。</p>
           </div>
         )}
       </div>
 
       {/* 流年 */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="font-semibold text-amber-800 mb-3">流年 · 今年起三年</h3>
+      <div className="paper-card rounded-lg p-4">
+        <h3 className="font-semibold text-ink mb-3">流年 · 今年起三年</h3>
         <div className="grid md:grid-cols-3 gap-3">
           {luck.liuNian.map((y, i) => (
-            <div key={i} className={`rounded border-l-4 p-3 bg-gray-50 ${FORTUNE_BORDER[y.tag]}`}>
+            <div key={i} className={`rounded border-l-4 p-3 bg-paper-dark/30 ${FORTUNE_BORDER[y.tag]}`}>
               <div className="flex items-center justify-between gap-1">
-                <span className="font-bold text-amber-800">{y.year}年 {y.ganZhi}</span>
+                <span className="font-bold text-ink">{y.year}年 {y.ganZhi}</span>
                 <span className={`text-[11px] px-1.5 py-0.5 rounded whitespace-nowrap ${FORTUNE_BADGE[y.tag]}`}>{y.tag}</span>
               </div>
-              <div className="text-xs text-gray-500 mt-1">
+              <div className="text-xs text-ink-light/60 mt-1">
                 {y.shiShenGan}主事{y.daYunGanZhi ? ` · 行${y.daYunGanZhi}运` : ''}
               </div>
-              <p className="text-xs text-gray-700 mt-2 leading-relaxed">{y.note}</p>
+              <p className="text-xs text-ink/70 mt-2 leading-relaxed">{y.note}</p>
               {y.relations.length > 0 && (
-                <ul className="mt-2 text-[11px] text-gray-600 space-y-0.5">
+                <ul className="mt-2 text-[11px] text-ink-light space-y-0.5">
                   {y.relations.map((r, j) => <li key={j}>· {r}</li>)}
                 </ul>
               )}
@@ -162,27 +162,27 @@ function LuckCyclesView({ luck }: { luck: LuckCycles }) {
       </div>
 
       {/* 流月 */}
-      <div className="bg-white rounded-lg shadow p-4">
-        <h3 className="font-semibold text-amber-800 mb-1">流月 · 当年十二个节令月</h3>
-        <p className="text-xs text-gray-500 mb-3">命理以节气换月（非农历初一）：如寅月自立春起，丑月至次年小寒前</p>
+      <div className="paper-card rounded-lg p-4">
+        <h3 className="font-semibold text-ink mb-1">流月 · 当年十二个节令月</h3>
+        <p className="text-xs text-ink-light/60 mb-3">命理以节气换月（非农历初一）：如寅月自立春起，丑月至次年小寒前</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {luck.liuYue.map((m, i) => (
             <div
               key={i}
-              className={`rounded border-l-2 bg-gray-50 p-2 ${TAG_BORDER[m.tag]} ${
+              className={`rounded border-l-2 bg-paper-dark/30 p-2 ${TAG_BORDER[m.tag]} ${
                 m.month === nowMonth ? 'ring-1 ring-amber-400' : ''
               }`}
             >
               <div className="flex justify-between items-center gap-1">
-                <span className="text-xs font-medium text-gray-700">{m.month}月·{m.jieQi}</span>
+                <span className="text-xs font-medium text-ink/70">{m.month}月·{m.jieQi}</span>
                 <span className={`text-[10px] px-1 rounded ${TAG_BADGE[m.tag]}`}>{m.tag}</span>
               </div>
-              <div className="text-sm font-bold text-amber-800 mt-0.5">
-                {m.ganZhi} <span className="text-[10px] font-normal text-gray-500">{m.shiShenGan}</span>
+              <div className="text-sm font-bold text-ink mt-0.5">
+                {m.ganZhi} <span className="text-[10px] font-normal text-ink-light/60">{m.shiShenGan}</span>
               </div>
-              <div className="text-[10px] text-gray-400">{m.rangeLabel}</div>
+              <div className="text-[10px] text-ink-light/40">{m.rangeLabel}</div>
               {m.relations.length > 0 && (
-                <div className="text-[10px] text-gray-500 mt-0.5">{m.relations.join('；')}</div>
+                <div className="text-[10px] text-ink-light/60 mt-0.5">{m.relations.join('；')}</div>
               )}
             </div>
           ))}
@@ -240,13 +240,13 @@ export default function ChartPage() {
   const nowYearNum = new Date().getFullYear()
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-amber-50 to-white py-8">
+    <main className="min-h-screen py-8">
       <Nav />
       <div className="container mx-auto px-4 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-amber-900 mb-2">排盘结果</h1>
-          <p className="text-gray-600">
+          <h1 className="text-3xl font-serif-sc font-bold text-ink mb-2">排盘结果</h1>
+          <p className="text-ink-light">
             {chart.input.year}年{chart.input.month}月{chart.input.day}日 {chart.input.hour}时{chart.input.minute}分
             {chart.input.gender === 1 ? ' 男' : ' 女'} · 农历{chart.lunarDate}
           </p>
@@ -254,51 +254,51 @@ export default function ChartPage() {
 
         {/* 夏令时切换点提示：出生时刻本身在 gap/重复时刻上（旧命盘无此字段时不显示） */}
         {chart.trueSolar?.dstNotice && (
-          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <div className="mb-6 rounded-lg border border-gold/20 bg-gold/5 px-4 py-3 text-sm text-ink-light">
             ⚠ {chart.trueSolar.dstNotice}
           </div>
         )}
 
         {/* 四柱表 */}
-        <div className="bg-white rounded-lg shadow-lg overflow-hidden mb-6">
+        <div className="paper-card rounded-xl overflow-hidden mb-6">
           <table className="w-full">
-            <thead className="bg-amber-100">
+            <thead className="bg-gold/10">
               <tr>
-                <th className="py-3 px-4 text-left text-amber-900"></th>
+                <th className="py-3 px-4 text-left text-ink"></th>
                 {pillarNames.map((name, i) => (
-                  <th key={i} className="py-3 px-4 text-center text-amber-900 font-semibold">{name}</th>
+                  <th key={i} className="py-3 px-4 text-center text-ink font-serif-sc font-semibold">{name}</th>
                 ))}
               </tr>
             </thead>
             <tbody>
-              <tr className="border-b">
-                <td className="py-3 px-4 font-medium text-gray-700">天干</td>
+              <tr className="border-b border-gold/10">
+                <td className="py-3 px-4 font-medium text-ink-light">天干</td>
                 {pillars.map((p, i) => (
-                  <td key={i} className="py-3 px-4 text-center text-2xl font-bold text-amber-800">
+                  <td key={i} className="py-3 px-4 text-center text-2xl font-serif-sc font-bold text-cinnabar">
                     {p.ganZhi[0]}
                   </td>
                 ))}
               </tr>
-              <tr className="border-b">
-                <td className="py-3 px-4 font-medium text-gray-700">地支</td>
+              <tr className="border-b border-gold/10">
+                <td className="py-3 px-4 font-medium text-ink-light">地支</td>
                 {pillars.map((p, i) => (
-                  <td key={i} className="py-3 px-4 text-center text-2xl font-bold text-amber-800">
+                  <td key={i} className="py-3 px-4 text-center text-2xl font-serif-sc font-bold text-ink">
                     {p.ganZhi[1]}
                   </td>
                 ))}
               </tr>
-              <tr className="border-b">
-                <td className="py-3 px-4 font-medium text-gray-700">十神</td>
+              <tr className="border-b border-gold/10">
+                <td className="py-3 px-4 font-medium text-ink-light">十神</td>
                 {pillars.map((p, i) => (
-                  <td key={i} className="py-3 px-4 text-center text-sm text-gray-600">
+                  <td key={i} className="py-3 px-4 text-center text-sm text-ink-light">
                     {p.tenGodGan || '日主'}
                   </td>
                 ))}
               </tr>
               <tr>
-                <td className="py-3 px-4 font-medium text-gray-700">藏干</td>
+                <td className="py-3 px-4 font-medium text-ink-light">藏干</td>
                 {pillars.map((p, i) => (
-                  <td key={i} className="py-3 px-4 text-center text-sm text-gray-600">
+                  <td key={i} className="py-3 px-4 text-center text-sm text-ink-light">
                     {p.cangGan.join(' ')}
                   </td>
                 ))}
@@ -306,11 +306,11 @@ export default function ChartPage() {
               {/* 十二长生 / 神煞：新排盘才有此字段，旧命盘（localStorage 旧数据）不显示 */}
               {pillars.some(p => p.changSheng) && (
                 <tr className="border-b">
-                  <td className="py-3 px-4 font-medium text-gray-700">十二长生</td>
+                  <td className="py-3 px-4 font-medium text-ink/70">十二长生</td>
                   {pillars.map((p, i) => (
-                    <td key={i} className="py-3 px-4 text-center text-sm text-gray-600">
+                    <td key={i} className="py-3 px-4 text-center text-sm text-ink-light">
                       {p.changSheng
-                        ? <Link href={`/article/${CHANG_SHENG_SLUG}`} className="text-amber-700 hover:text-amber-900 hover:underline">{p.changSheng}</Link>
+                        ? <Link href={`/article/${CHANG_SHENG_SLUG}`} className="text-ink/70 hover:text-ink hover:underline">{p.changSheng}</Link>
                         : '—'}
                     </td>
                   ))}
@@ -318,9 +318,9 @@ export default function ChartPage() {
               )}
               {pillars.some(p => p.shenSha && p.shenSha.length > 0) && (
                 <tr className="border-b">
-                  <td className="py-3 px-4 font-medium text-gray-700">神煞</td>
+                  <td className="py-3 px-4 font-medium text-ink/70">神煞</td>
                   {pillars.map((p, i) => (
-                    <td key={i} className="py-3 px-4 text-center text-xs text-gray-600">
+                    <td key={i} className="py-3 px-4 text-center text-xs text-ink-light">
                       {p.shenSha && p.shenSha.length > 0
                         ? p.shenSha.map((name, j) => {
                             const href = shenshaHref(name)
@@ -328,7 +328,7 @@ export default function ChartPage() {
                               <span key={j}>
                                 {j > 0 && '、'}
                                 {href
-                                  ? <Link href={href} className="text-amber-700 hover:text-amber-900 hover:underline">{name}</Link>
+                                  ? <Link href={href} className="text-ink/70 hover:text-ink hover:underline">{name}</Link>
                                   : name}
                               </span>
                             )
@@ -340,11 +340,11 @@ export default function ChartPage() {
               )}
               {pillars.some(p => p.kongWang) && (
                 <tr>
-                  <td className="py-3 px-4 font-medium text-gray-700">空亡</td>
+                  <td className="py-3 px-4 font-medium text-ink/70">空亡</td>
                   {pillars.map((p, i) => (
-                    <td key={i} className="py-3 px-4 text-center text-sm text-gray-600">
+                    <td key={i} className="py-3 px-4 text-center text-sm text-ink-light">
                       {p.kongWang
-                        ? <Link href={`/article/${KONG_WANG_SLUG}`} className="text-amber-700 hover:text-amber-900 hover:underline">{p.kongWang}</Link>
+                        ? <Link href={`/article/${KONG_WANG_SLUG}`} className="text-ink/70 hover:text-ink hover:underline">{p.kongWang}</Link>
                         : '—'}
                     </td>
                   ))}
@@ -353,38 +353,38 @@ export default function ChartPage() {
             </tbody>
           </table>
           {/* 口径说明：文案与 src/lib/paipan.ts 的 SHEN_SHA_NOTE 同步（测试守护一致性） */}
-          <p className="px-4 py-3 text-[11px] text-gray-400 border-t border-gray-100">
+          <p className="px-4 py-3 text-[11px] text-ink-light/40 border-t border-gray-100">
             神煞取法依《渊海子平》《三命通会》通行口径：天乙贵人、文昌、禄神、羊刃、太极贵人、福星贵人、国印贵人、金舆、红艳煞自日干起（羊刃仅阳干）；桃花、驿马、华盖、将星、劫煞、灾煞、亡神自年支、日支起（三合局取支）；孤辰寡宿、红鸾、天喜自年支起；天德贵人、月德贵人、天医、天赦、四废自月支起（天赦、四废见于日柱）；魁罡、阴阳差错、十恶大败、孤鸾煞取自日柱干支，三奇贵人取年月日或月日时天干顺布；童子煞依月支季节（春秋寅子、冬夏卯未辰）或年柱纳音（金木命见午卯、水火命见酉戌、土命见辰巳）查日支、时支，德秀贵人自月支起见四柱天干（《三命通会》），金神取乙丑、己巳、癸酉见于日柱、时柱，飞刃自日干起（仅阳干、羊刃对冲），流霞自日干起，天罗地网依年柱纳音（火命见戌亥、水土命见辰巳，金木命不论）查日支、时支，六秀日、十灵日取自日柱干支；空亡为各柱干支所在旬空之二支。均为传统民俗论法（童子煞属民俗传说），流派间取法或有差异，仅供参考、非确定性，不构成任何决策建议。
           </p>
-          <p className="px-4 py-2 text-[11px] text-gray-400">
+          <p className="px-4 py-2 text-[11px] text-ink-light/40">
             点击神煞、十二长生、空亡名称可查看对应知识文章（命理知识 › 神煞查询）。
           </p>
         </div>
 
         {/* 基础信息 */}
         <div className="grid md:grid-cols-2 gap-4 mb-6">
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="font-semibold text-amber-800 mb-2">基础信息</h3>
+          <div className="paper-card rounded-lg p-4">
+            <h3 className="font-semibold text-ink mb-2">基础信息</h3>
             <div className="space-y-1 text-sm">
-              <p><span className="text-gray-600">日主：</span>{chart.dayMaster}</p>
-              <p><span className="text-gray-600">旺衰：</span>{chart.analysis.wangShuai}</p>
-              <p><span className="text-gray-600">格局：</span>{chart.analysis.geJu}</p>
-              <p><span className="text-gray-600">起运：</span>{chart.qiYun}</p>
+              <p><span className="text-ink-light">日主：</span>{chart.dayMaster}</p>
+              <p><span className="text-ink-light">旺衰：</span>{chart.analysis.wangShuai}</p>
+              <p><span className="text-ink-light">格局：</span>{chart.analysis.geJu}</p>
+              <p><span className="text-ink-light">起运：</span>{chart.qiYun}</p>
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow p-4">
-            <h3 className="font-semibold text-amber-800 mb-2">胎元命宫</h3>
+          <div className="paper-card rounded-lg p-4">
+            <h3 className="font-semibold text-ink mb-2">胎元命宫</h3>
             <div className="space-y-1 text-sm">
-              <p><span className="text-gray-600">胎元：</span>{chart.taiYuan}</p>
-              <p><span className="text-gray-600">命宫：</span>{chart.mingGong}</p>
-              <p><span className="text-gray-600">身宫：</span>{chart.shenGong}</p>
+              <p><span className="text-ink-light">胎元：</span>{chart.taiYuan}</p>
+              <p><span className="text-ink-light">命宫：</span>{chart.mingGong}</p>
+              <p><span className="text-ink-light">身宫：</span>{chart.shenGong}</p>
             </div>
           </div>
         </div>
 
         {/* 大运 */}
-        <div className="bg-white rounded-lg shadow p-4 mb-6">
-          <h3 className="font-semibold text-amber-800 mb-3">大运</h3>
+        <div className="paper-card rounded-lg p-4 mb-6">
+          <h3 className="font-semibold text-ink mb-3">大运</h3>
           <div className="flex flex-wrap gap-2">
             {chart.daYun.map((dy, i) => {
               const isCurrent = nowYearNum >= dy.startYear && nowYearNum <= dy.endYear
@@ -392,12 +392,12 @@ export default function ChartPage() {
                 <div
                   key={i}
                   className={`rounded px-3 py-2 text-center ${
-                    isCurrent ? 'bg-amber-200 ring-1 ring-amber-400' : 'bg-amber-50'
+                    isCurrent ? 'bg-amber-200 ring-1 ring-amber-400' : 'bg-gold/5'
                   }`}
                 >
-                  <div className="font-bold text-amber-800">{dy.ganZhi}</div>
-                  <div className="text-xs text-gray-600">{dy.startAge}-{dy.startAge + 9}岁</div>
-                  {isCurrent && <div className="text-[10px] text-amber-700 font-medium">当前</div>}
+                  <div className="font-bold text-ink">{dy.ganZhi}</div>
+                  <div className="text-xs text-ink-light">{dy.startAge}-{dy.startAge + 9}岁</div>
+                  {isCurrent && <div className="text-[10px] text-ink/70 font-medium">当前</div>}
                 </div>
               )
             })}
@@ -410,7 +410,7 @@ export default function ChartPage() {
         {/* 已解锁：完整命理分析 */}
         {chart.analysis.isPaid && chart.analysis.paid && (
           <div className="mb-6 space-y-4">
-            <h2 className="text-xl font-bold text-amber-900">完整命理分析 · 六书精要</h2>
+            <h2 className="text-xl font-bold text-ink">完整命理分析 · 六书精要</h2>
             {/* 结构化岁运时间轴（旧命盘无此数据时不显示，仅展示文字） */}
             {chart.analysis.paid.luckCycles && (
               <LuckCyclesView luck={chart.analysis.paid.luckCycles} />
@@ -427,54 +427,54 @@ export default function ChartPage() {
               ['子女六亲', chart.analysis.paid.children],
               ['健康提示', chart.analysis.paid.health]
             ] as [string, string][]).map(([title, text]) => (
-              <div key={title} className="bg-white rounded-lg shadow p-4">
-                <h3 className="font-semibold text-amber-800 mb-2">{title}</h3>
-                <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{text}</p>
+              <div key={title} className="paper-card rounded-lg p-4">
+                <h3 className="font-semibold text-ink mb-2">{title}</h3>
+                <p className="text-sm text-ink/70 leading-relaxed whitespace-pre-line">{text}</p>
               </div>
             ))}
 
             {/* 古籍相似命例（规则引擎检索，旧命盘无此数据时不显示） */}
             {chart.analysis.paid.similarCases && chart.analysis.paid.similarCases.length > 0 && (
-              <div className="bg-white rounded-lg shadow p-4">
-                <h3 className="font-semibold text-amber-800 mb-1">古籍相似命例</h3>
-                <p className="text-xs text-gray-500 mb-3">
+              <div className="paper-card rounded-lg p-4">
+                <h3 className="font-semibold text-ink mb-1">古籍相似命例</h3>
+                <p className="text-xs text-ink-light/60 mb-3">
                   从《子平真诠》《滴天髓》《三命通会》等典籍命例库中按四柱结构相似度检索，供参照印证（仅供学习参考）
                 </p>
                 <div className="space-y-3">
                   {chart.analysis.paid.similarCases.map((c, i) => (
-                    <div key={i} className={`rounded-lg border p-3 ${c.exact ? 'border-amber-400 bg-amber-50' : 'border-gray-200'}`}>
+                    <div key={i} className={`rounded-lg border p-3 ${c.exact ? 'border-amber-400 bg-gold/5' : 'border-gold/15'}`}>
                       <div className="flex flex-wrap items-baseline gap-2 mb-1">
-                        <span className="font-bold text-amber-900">
+                        <span className="font-bold text-ink">
                           {c.person || '未具名命造'}
                         </span>
-                        <span className="text-sm text-gray-700">
+                        <span className="text-sm text-ink/70">
                           {c.pillars.year} {c.pillars.month} {c.pillars.day} {c.pillars.hour}
                         </span>
                         {c.exact && (
                           <span className="text-xs bg-amber-600 text-white px-2 py-0.5 rounded">四柱全同</span>
                         )}
-                        <span className="text-xs text-gray-400 ml-auto">{c.source}</span>
+                        <span className="text-xs text-ink-light/40 ml-auto">{c.source}</span>
                       </div>
                       <div className="flex flex-wrap gap-1 mb-1">
                         {c.matches.map((m, j) => (
-                          <span key={j} className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">{m}</span>
+                          <span key={j} className="text-xs bg-gold/10 text-ink/70 px-1.5 py-0.5 rounded">{m}</span>
                         ))}
                       </div>
                       {c.readings && c.readings.length > 1 ? (
                         <div className="space-y-2 mt-2">
                           {c.readings.map((r, j) => (
-                            <div key={j} className="border-l-2 border-amber-200 pl-3">
+                            <div key={j} className="border-l-2 border-gold/20 pl-3">
                               <div className="text-xs text-amber-600 mb-0.5">
                                 {r.source.split(' ')[0]}{r.person ? ` · ${r.person}` : ''}
                               </div>
-                              <p className="text-sm text-gray-700 leading-relaxed">
+                              <p className="text-sm text-ink/70 leading-relaxed">
                                 {r.text.length > 220 ? r.text.slice(0, 220) + '…' : r.text}
                               </p>
                             </div>
                           ))}
                         </div>
                       ) : (
-                        <p className="text-sm text-gray-700 leading-relaxed">{c.text}</p>
+                        <p className="text-sm text-ink/70 leading-relaxed">{c.text}</p>
                       )}
                     </div>
                   ))}
@@ -509,7 +509,7 @@ export default function ChartPage() {
           <button
             onClick={handleUnlock}
             disabled={unlocking}
-            className="bg-white text-amber-600 px-8 py-3 rounded-full font-bold hover:bg-amber-50 transition disabled:opacity-60"
+            className="bg-white text-amber-600 px-8 py-3 rounded-full font-bold hover:bg-gold/5 transition disabled:opacity-60"
           >
             {unlocking ? 'AI命理师解读生成中（约30秒）...' : `解锁完整分析（内测期免费体验）`}
           </button>
@@ -525,7 +525,7 @@ export default function ChartPage() {
         <div className="text-center mt-6">
           <button
             onClick={() => router.push('/')}
-            className="text-amber-600 hover:text-amber-800"
+            className="text-amber-600 hover:text-ink"
           >
             ← 重新排盘
           </button>

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -10,6 +10,12 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const notoSerifSC = Noto_Serif_SC({
+  variable: "--font-serif-sc",
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -24,19 +30,19 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      lang="zh-CN"
+      className={`${geistSans.variable} ${geistMono.variable} ${notoSerifSC.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <body className="min-h-full flex flex-col bg-paper text-ink">
         {children}
         {/* GeoNames 署名（CC BY 4.0 要求）：全球城市数据来自 geonames.org */}
-        <footer className="mt-auto border-t border-gray-100 py-4 text-center text-[11px] text-gray-400">
+        <footer className="mt-auto border-t border-gold/20 py-4 text-center text-[11px] text-ink/40">
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-            <a href="/terms" className="underline hover:text-gray-600">Terms of Service</a>
+            <a href="/terms" className="underline hover:text-ink/60">Terms of Service</a>
             <span aria-hidden="true">·</span>
-            <a href="/privacy" className="underline hover:text-gray-600">Privacy Policy</a>
+            <a href="/privacy" className="underline hover:text-ink/60">Privacy Policy</a>
             <span aria-hidden="true">·</span>
-            <a href="mailto:hello@mingcharts.com" className="underline hover:text-gray-600">hello@mingcharts.com</a>
+            <a href="mailto:hello@mingcharts.com" className="underline hover:text-ink/60">hello@mingcharts.com</a>
             <span aria-hidden="true">·</span>
             <span>
               城市数据 ©{' '}
@@ -44,7 +50,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                 href="https://www.geonames.org/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="underline hover:text-gray-600"
+                className="underline hover:text-ink/60"
               >
                 GeoNames
               </a>{' '}

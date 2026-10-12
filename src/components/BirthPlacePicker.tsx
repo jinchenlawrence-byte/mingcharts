@@ -83,21 +83,21 @@ const FOCUS: Record<Accent, string> = {
   rose: 'focus:ring-rose-500'
 }
 const CHIP: Record<Accent, string> = {
-  amber: 'border-amber-300 bg-amber-50 text-amber-900',
-  purple: 'border-purple-300 bg-purple-50 text-purple-900',
+  amber: 'border-amber-300 bg-gold/5 text-ink',
+  purple: 'border-purple-300 bg-gold/5 text-ink',
   sky: 'border-sky-300 bg-sky-50 text-sky-900',
   blue: 'border-blue-300 bg-blue-50 text-blue-900',
   rose: 'border-rose-300 bg-rose-50 text-rose-900'
 }
 const LINK: Record<Accent, string> = {
-  amber: 'text-amber-700 hover:text-amber-900',
-  purple: 'text-purple-700 hover:text-purple-900',
+  amber: 'text-ink/70 hover:text-ink',
+  purple: 'text-ink/70 hover:text-ink',
   sky: 'text-sky-700 hover:text-sky-900',
   blue: 'text-blue-700 hover:text-blue-900',
   rose: 'text-rose-700 hover:text-rose-900'
 }
 
-const selectCls = 'w-full px-2 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2'
+const selectCls = 'w-full px-2 py-2 border border-gold/20 rounded-md text-sm focus:outline-none focus:ring-2'
 
 function cityLabel(c: GlobalCity): string {
   return `${c.name} · ${c.admin1Name} · ${c.countryName}`
@@ -185,7 +185,7 @@ export default function BirthPlacePicker({
       : '中央经线估算（±30 分钟）'
     return (
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+        <label className="block text-sm font-medium text-ink/70 mb-1">{label}</label>
         <div className={`flex items-center justify-between gap-2 rounded-md border px-3 py-2 text-sm ${CHIP[accent]}`}>
           <span className="truncate">
             ✓ {text}
@@ -203,7 +203,7 @@ export default function BirthPlacePicker({
   // ───────── 选择器 ─────────
   return (
     <div onFocus={ensureData}>
-      <label className="block text-sm font-medium text-gray-700 mb-1">{label}</label>
+      <label className="block text-sm font-medium text-ink/70 mb-1">{label}</label>
 
       {/* 三级级联 */}
       <div className="grid grid-cols-3 gap-2">
@@ -252,23 +252,23 @@ export default function BirthPlacePicker({
           ref={searchBoxRef}
           type="text"
           placeholder="🔍 输入城市名搜索…"
-          className={`w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 ${FOCUS[accent]}`}
+          className={`w-full px-3 py-2 border border-gold/20 rounded-md text-sm focus:outline-none focus:ring-2 ${FOCUS[accent]}`}
           value={q}
           onChange={e => { setQ(e.target.value); setFocusHit(true) }}
           onFocus={() => setFocusHit(true)}
           onBlur={() => setTimeout(() => setFocusHit(false), 150)}
         />
         {focusHit && q.trim() && (
-          <div className="absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-md border border-gray-200 bg-white shadow-lg">
+          <div className="absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-md border border-gold/15 bg-white shadow-lg">
             {hits.length === 0
-              ? <div className="px-3 py-2 text-xs text-gray-400">无匹配城市（外国城市请输入英文名）</div>
+              ? <div className="px-3 py-2 text-xs text-ink-light/40">无匹配城市（外国城市请输入英文名）</div>
               : hits.map(h => (
                   <button key={h.city.id} type="button"
-                    className="block w-full px-3 py-2 text-left text-sm hover:bg-gray-50"
+                    className="block w-full px-3 py-2 text-left text-sm hover:bg-paper-dark/30"
                     onMouseDown={e => { e.preventDefault(); commitCity(h.city.id) }}
                   >
                     <span className="font-medium text-gray-800">{h.city.name}</span>
-                    <span className="ml-2 text-xs text-gray-400">
+                    <span className="ml-2 text-xs text-ink-light/40">
                       {h.city.countryName} · {h.city.admin1Name}
                     </span>
                   </button>
@@ -278,10 +278,10 @@ export default function BirthPlacePicker({
       </div>
 
       {/* 其它：仅时区 */}
-      <div className="mt-3 flex items-center gap-2 text-[11px] text-gray-400">
-        <span className="h-px flex-1 bg-gray-200" />
+      <div className="mt-3 flex items-center gap-2 text-[11px] text-ink-light/40">
+        <span className="h-px flex-1 bg-paper-dark/50" />
         找不到出生城市？
-        <span className="h-px flex-1 bg-gray-200" />
+        <span className="h-px flex-1 bg-paper-dark/50" />
       </div>
       <div className="mt-2">
         <input
@@ -290,7 +290,7 @@ export default function BirthPlacePicker({
           className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 ${
             value.mode === 'zone'
               ? `border-gray-500 ring-1 ring-gray-200 ${FOCUS[accent]}`
-              : `border-gray-300 ${FOCUS[accent]}`
+              : `border-gold/20 ${FOCUS[accent]}`
           }`}
           value={value.mode === 'zone' ? value.zone : ''}
           onChange={e => onZoneChange(e.target.value)}
@@ -300,16 +300,16 @@ export default function BirthPlacePicker({
         </datalist>
 
         {/* 进阶经度（折叠，可选） */}
-        <details className="mt-1.5 text-xs text-gray-600">
-          <summary className="cursor-pointer select-none text-gray-500">进阶：填写经度（可选）</summary>
+        <details className="mt-1.5 text-xs text-ink-light">
+          <summary className="cursor-pointer select-none text-ink-light/60">进阶：填写经度（可选）</summary>
           <input type="number" step="0.01" placeholder="经度，如 -74.0"
-            className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2"
+            className="mt-1 w-full px-3 py-2 border border-gold/20 rounded-md text-sm focus:outline-none focus:ring-2"
             value={value.mode === 'zone' && value.lng !== undefined ? value.lng : ''}
             onChange={e => onLngChange(e.target.value)}
           />
-          <p className="mt-1 text-[11px] text-gray-400">知道出生地确切经度时填写可提高精度；留空按中央经线估算。</p>
+          <p className="mt-1 text-[11px] text-ink-light/40">知道出生地确切经度时填写可提高精度；留空按中央经线估算。</p>
         </details>
-        <p className="mt-1 text-[11px] text-gray-400">
+        <p className="mt-1 text-[11px] text-ink-light/40">
           未填经度时按所选时区的中央经线估算，误差约 ±30 分钟；夏令时按出生日期自动判定。
         </p>
       </div>

@@ -48,7 +48,7 @@ export default function PersonalDailySection({ zone }: { zone: string }) {
 
   if (loading) {
     return (
-      <div className="mt-6 text-center text-sm text-gray-400">读取个性化日运…</div>
+      <div className="mt-6 text-center text-sm text-ink-light/40">读取个性化日运…</div>
     )
   }
   if (!data) return null
@@ -56,14 +56,14 @@ export default function PersonalDailySection({ zone }: { zone: string }) {
   // 未登录
   if (data.authState === 'guest') {
     return (
-      <div className="mt-8 rounded-xl bg-amber-50/60 ring-1 ring-amber-100 p-6 text-center">
-        <p className="text-amber-900 font-semibold mb-1">对【你】而言的日运</p>
-        <p className="text-sm text-gray-600 mb-4">
+      <div className="mt-8 rounded-xl bg-gold/5/60 ring-1 ring-amber-100 p-6 text-center">
+        <p className="text-ink font-semibold mb-1">对【你】而言的日运</p>
+        <p className="text-sm text-ink-light mb-4">
           登录并保存命盘后，日运会结合你的日主与日支给出专属一省。
         </p>
         <div className="flex justify-center gap-3">
           <Link href="/auth" className="bg-amber-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-amber-700 transition">去登录</Link>
-          <Link href="/" className="bg-white text-amber-700 ring-1 ring-amber-200 px-5 py-2 rounded-full text-sm font-semibold hover:bg-amber-50 transition">去排盘</Link>
+          <Link href="/" className="bg-white text-ink/70 ring-1 ring-amber-200 px-5 py-2 rounded-full text-sm font-semibold hover:bg-gold/5 transition">去排盘</Link>
         </div>
       </div>
     )
@@ -72,9 +72,9 @@ export default function PersonalDailySection({ zone }: { zone: string }) {
   // 已登录无命盘
   if (data.authState === 'noChart') {
     return (
-      <div className="mt-8 rounded-xl bg-amber-50/60 ring-1 ring-amber-100 p-6 text-center">
-        <p className="text-amber-900 font-semibold mb-1">对【你】而言的日运</p>
-        <p className="text-sm text-gray-600 mb-4">保存一个命盘后即可解锁个性化日运。</p>
+      <div className="mt-8 rounded-xl bg-gold/5/60 ring-1 ring-amber-100 p-6 text-center">
+        <p className="text-ink font-semibold mb-1">对【你】而言的日运</p>
+        <p className="text-sm text-ink-light mb-4">保存一个命盘后即可解锁个性化日运。</p>
         <Link href="/" className="inline-block bg-amber-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-amber-700 transition">去排盘</Link>
       </div>
     )
@@ -83,9 +83,9 @@ export default function PersonalDailySection({ zone }: { zone: string }) {
   // 已登录有命盘（locked 时 ENFORCE 已开，提示订阅；内测期 locked=false）
   if (data.locked) {
     return (
-      <div className="mt-8 rounded-xl bg-amber-50/60 ring-1 ring-amber-100 p-6 text-center">
-        <p className="text-amber-900 font-semibold mb-1">对【你】而言的日运</p>
-        <p className="text-sm text-gray-600 mb-4">个性化日运为会员权益，开通后查看。</p>
+      <div className="mt-8 rounded-xl bg-gold/5/60 ring-1 ring-amber-100 p-6 text-center">
+        <p className="text-ink font-semibold mb-1">对【你】而言的日运</p>
+        <p className="text-sm text-ink-light mb-4">个性化日运为会员权益，开通后查看。</p>
         <Link href="/pricing" className="inline-block bg-amber-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-amber-700 transition">了解会员</Link>
       </div>
     )
@@ -97,21 +97,21 @@ export default function PersonalDailySection({ zone }: { zone: string }) {
   return (
     <section className="mt-8 bg-white rounded-2xl shadow-lg ring-1 ring-amber-100 p-8 sm:p-10">
       <div className="text-center">
-        <div className="text-amber-700 font-semibold text-base mb-1">对【你】而言</div>
+        <div className="text-ink/70 font-semibold text-base mb-1">对【你】而言</div>
         <p className="text-2xl leading-relaxed text-stone-800 font-serif tracking-wide">
           「{p.sign}」
         </p>
 
         <div className="my-6 mx-auto w-16 h-px bg-amber-200" />
 
-        <div className="text-sm text-gray-600 space-y-1.5 text-left sm:text-center">
-          <p>你的日主 <span className="text-amber-900 font-semibold">{p.dayMaster}</span> · 今日 <span className="text-amber-900 font-semibold">{p.todayGan}{p.todayZhi}</span></p>
+        <div className="text-sm text-ink-light space-y-1.5 text-left sm:text-center">
+          <p>你的日主 <span className="text-ink font-semibold">{p.dayMaster}</span> · 今日 <span className="text-ink font-semibold">{p.todayGan}{p.todayZhi}</span></p>
           <p>今日{p.todayGan}对你是【{p.shiShen}】（{p.shiShenBasis}）</p>
           <p>{p.relationBasis}</p>
-          <p className="text-xs text-gray-400 mt-1">依据层级：{p.basisLevel}</p>
+          <p className="text-xs text-ink-light/40 mt-1">依据层级：{p.basisLevel}</p>
         </div>
 
-        <p className="mt-4 text-xs text-amber-700/80">会员权益 · 内测期免费开放</p>
+        <p className="mt-4 text-xs text-ink/70/80">会员权益 · 内测期免费开放</p>
       </div>
     </section>
   )
