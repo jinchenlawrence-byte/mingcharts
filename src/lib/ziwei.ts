@@ -355,6 +355,21 @@ function detectPatterns(chart: ZwChart): PatternTag[] {
   if (ming.earthlyBranch === '午' && hasYang) add('马头带箭格', '平', '擎羊守午宫，主威权立功，亦主奔波辛苦', { required: ['擎羊守命宫', '命宫在午'], source: '《紫微斗数全集·卷三》', basisLevel: '古籍' })
   if (has('地空') || has('地劫')) add('空劫守命', '忌', '地空地劫守命宫，主理想高、钱财起伏大，宜技术立身、忌投机', { required: ['地空或地劫守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
 
+  // 夹命类六条：命宫前后两宫（±1）分居指定星对
+  const prevIdx = (mingIndex + 12 - 1) % 12
+  const nextIdx = (mingIndex + 1) % 12
+  const prevStars = new Set(palaceStarNames(palaces[prevIdx]))
+  const nextStars = new Set(palaceStarNames(palaces[nextIdx]))
+  const isFlankedBy = (a: string, b: string) =>
+    (prevStars.has(a) && nextStars.has(b)) || (prevStars.has(b) && nextStars.has(a))
+
+  if (isFlankedBy('太阳', '太阴')) add('日月夹命格', '吉', '太阳太阴分居命宫前后，主阴阳调和、贵气相扶，主得长辈提携', { required: ['太阳与太阴分居命宫前后两宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  if (isFlankedBy('左辅', '右弼')) add('辅弼夹命格', '吉', '左辅右弼分居命宫前后，主助力多、众人扶持', { required: ['左辅与右弼分居命宫前后两宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  if (isFlankedBy('文昌', '文曲')) add('昌曲夹命格', '吉', '文昌文曲分居命宫前后，主聪明好学、才华出众', { required: ['文昌与文曲分居命宫前后两宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  if (isFlankedBy('天魁', '天钺')) add('魁钺夹命格', '吉', '天魁天钺分居命宫前后，主贵人扶持、逢凶化吉', { required: ['天魁与天钺分居命宫前后两宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  if (isFlankedBy('火星', '铃星')) add('火铃夹命格', '平', '火星铃星分居命宫前后，主刚烈有冲劲，亦防急躁生波', { required: ['火星与铃星分居命宫前后两宫'], breaking: ['命宫主星落陷则煞气加重'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  if (isFlankedBy('地空', '地劫')) add('空劫夹命格', '忌', '地空地劫分居命宫前后，主理想高远但钱财波动大，宜踏实经营', { required: ['地空与地劫分居命宫前后两宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+
   // 命宫单星（未被组合格局覆盖者）补一条星性论断
   const hasPattern = (name: string) => out.some((p) => p.name === name)
   const comboCovered = ['紫微', '天府', '七杀', '贪狼', '破军', '天相', '武曲', '天机', '巨门',

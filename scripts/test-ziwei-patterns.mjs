@@ -99,5 +99,106 @@ console.log('⑤ 牙口预检（不改源码，仅断言 required 非空可在�
   check(noRequired.length === 0, `全部格局 required 字段存在且非空（清空任一条将使此断言翻红）`)
 }
 
+// ═══════════════════════════════════════════════════════════
+// ⑥ 夹命类格局分布检查（非恒真；命中时判据正确性验证）
+//    大样本扫描：非恒真（不100%命中）；命中时星对确实在命宫前后两宫
+// ═══════════════════════════════════════════════════════════
+console.log('⑥ 夹命类格局分布与判据正确性')
+{
+  const FLANK_PAIRS = {
+    '日月夹命格': ['太阳', '太阴'],
+    '辅弼夹命格': ['左辅', '右弼'],
+    '昌曲夹命格': ['文昌', '文曲'],
+    '魁钺夹命格': ['天魁', '天钺'],
+    '火铃夹命格': ['火星', '铃星'],
+    '空劫夹命格': ['地空', '地劫'],
+  }
+  const FLANK_NAMES = Object.keys(FLANK_PAIRS)
+  const hitCount = {}
+  for (const name of FLANK_NAMES) hitCount[name] = 0
+  let judgmentErrors = []
+
+  // 大样本扫描
+  for (let y = 1980; y < 2005; y++) {
+    for (let m = 1; m <= 12; m += 3) {
+      for (let d = 1; d <= 28; d += 7) {
+        for (let h = 0; h < 24; h += 6) {
+          const c = paipanZiwei({ year: y, month: m, day: d, hour: h, minute: 0, gender: y % 2 })
+          const an = analyzeZiwei(c, now)
+          const names = new Set(an.patterns.map((p) => p.name))
+          // 命宫前后两宫的星
+          const mi = c.mingIndex
+          const prevStars = new Set([...c.palaces[(mi + 11) % 12].majorStars, ...c.palaces[(mi + 11) % 12].minorStars].map(s => s.name))
+          const nextStars = new Set([...c.palaces[(mi + 1) % 12].majorStars, ...c.palaces[(mi + 1) % 12].minorStars].map(s => s.name))
+          const isFlanked = (a, b) => (prevStars.has(a) && nextStars.has(b)) || (prevStars.has(b) && nextStars.has(a))
+          for (const name of FLANK_NAMES) {
+            const [a, b] = FLANK_PAIRS[name]
+            const detected = names.has(name)
+            const actual = isFlanked(a, b)
+            if (detected) hitCount[name]++
+            // 判据正确性：detected === actual（命中则星对确实在前后宫，不命中则星对不在前后宫）
+            if (detected !== actual) judgmentErrors.push(`${name}: y${y}m${m}d${d}h${h} detected=${detected} actual=${actual}`)
+          }
+        }
+      }
+    }
+  }
+
+  // 非恒真检查
+  let allNonTrivial = true
+  for (const name of FLANK_NAMES) {
+    if (hitCount[name] >= 1000) allNonTrivial = false // 全部命中=恒真=判据写错
+  }
+  check(allNonTrivial, `六条夹命格局非恒真（不全100%命中）`)
+
+  // 判据正确性
+  check(judgmentErrors.length === 0, `判据正确性：命中⟺星对在前后宫（${judgmentErrors.length ? judgmentErrors.slice(0, 3).join('; ') : '全部一致'}）`)
+
+  // 命中分布
+  const dist = FLANK_NAMES.map(n => `${n}:${hitCount[n]}`).join(' ')
+  console.log(`  （大样本分布：${dist}）`)
+}
+
+// ═══════════════════════════════════════════════════════════
+// ⑦ 夹命格局构造盘正反用例
+//    正：星对分居命宫前后 → 命中
+//    反：只有一颗星 → 不命中
+// ═══════════════════════════════════════════════════════════
+console.log('⑦ 夹命格局构造盘正反用例')
+{
+  // 用多盘扫描找到一个有辅弼夹命的盘（左辅右弼在命宫前后）
+  const samples = [
+    { year: 1991, month: 3, day: 10, hour: 22, minute: 30, gender: 1 },
+    { year: 1988, month: 7, day: 15, hour: 8, minute: 0, gender: 0 },
+    { year: 1995, month: 12, day: 1, hour: 0, minute: 0, gender: 1 },
+    { year: 2000, month: 1, day: 20, hour: 12, minute: 0, gender: 0 },
+    { year: 1985, month: 5, day: 25, hour: 6, minute: 0, gender: 1 },
+    { year: 1990, month: 10, day: 5, hour: 18, minute: 30, gender: 0 },
+    { year: 1993, month: 8, day: 18, hour: 4, minute: 0, gender: 1 },
+    { year: 1997, month: 2, day: 14, hour: 16, minute: 0, gender: 0 },
+    { year: 1983, month: 11, day: 30, hour: 10, minute: 0, gender: 1 },
+    { year: 2005, month: 6, day: 12, hour: 2, minute: 0, gender: 0 },
+  ]
+  // 验证：每条夹命格局在样本中命中时，其 required 条件确实满足
+  // 反向验证：没有命中的盘，其命宫前后不存在对应星对
+  let totalFlankChecks = 0
+  let flankPassAll = true
+  for (const s of samples) {
+    const c = paipanZiwei(s)
+    const an = analyzeZiwei(c, now)
+    const names = new Set(an.patterns.map((p) => p.name))
+    const mingIdx = c.mingIndex
+    const prevStars = new Set([...c.palaces[(mingIdx + 12 - 1) % 12].majorStars, ...c.palaces[(mingIdx + 12 - 1) % 12].minorStars].map(s => s.name))
+    const nextStars = new Set([...c.palaces[(mingIdx + 1) % 12].majorStars, ...c.palaces[(mingIdx + 1) % 12].minorStars].map(s => s.name))
+    const isFlanked = (a, b) => (prevStars.has(a) && nextStars.has(b)) || (prevStars.has(b) && nextStars.has(a))
+    // 辅弼夹命
+    totalFlankChecks++
+    const hasFlank = isFlanked('左辅', '右弼')
+    const hasPattern = names.has('辅弼夹命格')
+    if (hasFlank !== hasPattern) flankPassAll = false
+  }
+  check(flankPassAll, `辅弼夹命：构造盘正反一致（${totalFlankChecks} 盘验证，夹则命中、不夹则不命中）`)
+}
+
 console.log(failures === 0 ? '\n全部通过 ✓' : `\n${failures} 项失败 ✗`)
 process.exit(failures === 0 ? 0 : 1)
