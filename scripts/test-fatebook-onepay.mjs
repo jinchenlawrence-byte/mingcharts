@@ -395,6 +395,14 @@ assert(
   'paipan 同八字行查重键与 unlock 一致（含时辰，§4.3）',
 )
 assert(paipanSrc.indexOf(".eq('birth_year'") < paipanSrc.indexOf('canViewFatebookForChart('), 'paipan 顺序：先查同八字行 → 再判权益')
+{
+  // ★ 匿名排盘零 Supabase 依赖：admin 只能在 if (token) 内创建
+  //   （否则 entry-consistency 无 Supabase env 的匿名用例直接 500——实测回归）
+  const n = (paipanSrc.match(/createServerSupabase\(\)/g) || []).length
+  const iTok = paipanSrc.indexOf('if (token)')
+  const iAdmin = paipanSrc.indexOf('createServerSupabase()')
+  assert(n === 1 && iTok >= 0 && iAdmin > iTok, `paipan admin 延迟创建：仅 ${n} 处且在 if (token) 内（匿名排盘零 Supabase 依赖）`)
+}
 
 const entRouteSrc = stripComments(read('../src/app/api/entitlements/route.ts'))
 assert(/body\?\.chartId/.test(entRouteSrc), 'entitlements route 收可选 chartId（§4.2）')

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { paipan, getWangShuai, getGeJu } from '@/lib/paipan'
 import { buildLuckCycles, type AnalyzableChart } from '@/lib/analysis'
 import { checkDSTTransition } from '@/lib/solarTime'
@@ -85,11 +86,14 @@ export async function POST(request: NextRequest) {
     //   双层判定在 ENFORCE=false 下恒放行、ENFORCE=true 下不放行——与旧
     //   canView(EMPTY_ENTITLEMENTS) 语义完全一致，单一代码路径覆盖两种登录态。
     // annual_report 真门禁在 api/liunian（年运报告已独立成模块），此处不再占位
-    const admin = createServerSupabase()
+    // ★ admin 延迟创建：只在带 token 时建（匿名排盘不依赖 Supabase 配置——
+    //   entry-consistency 测试环境无 Supabase env，匿名路径必须零 Supabase 调用）
     const token = typeof body.token === 'string' ? body.token : ''
-    let userId = ''
+    let admin: SupabaseClient | null = null
     let chartId: string | null = null
+    let userId = ''
     if (token) {
+      admin = createServerSupabase()
       const { data: { user } } = await admin.auth.getUser(token)
       if (user) {
         userId = user.id

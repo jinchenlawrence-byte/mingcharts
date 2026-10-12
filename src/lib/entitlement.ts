@@ -166,13 +166,14 @@ export async function latestChartIdOf(
  *     · 删掉 .eq('chart_id', chartId) → 断言③翻红
  */
 export async function canViewFatebookForChart(
-  admin: SupabaseClient,
+  admin: SupabaseClient | null,
   userId: string,
   chartId: string | null | undefined,
   opts?: { enforce?: boolean }
 ): Promise<boolean> {
   const enforce = opts?.enforce ?? ENTITLEMENT_ENFORCE
   if (!enforce) return true // ★ 内测期：与现状完全一致，不查库
+  if (!admin) return false // ★ 无客户端＝无凭据可查（paipan 匿名请求不建 Supabase 客户端，排盘不因此强依赖 Supabase 配置）
   if (!chartId) return false // ★ 无命盘归属 → 不放行（先于任何查询）
   const { data } = await admin
     .from('payments')
