@@ -7,6 +7,7 @@ import Nav from '@/components/Nav'
 import SaveChart from '@/components/SaveChart'
 import { getSupabase } from '@/lib/supabase'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
+import { shenshaHref, KONG_WANG_SLUG, CHANG_SHENG_SLUG } from '@/lib/shenshaArticles'
 import type { PaidAnalysis, LuckCycles, LuckTag, FortuneTier } from '@/lib/analysis'
 
 // 价格一律取自 SKUS（单一事实源），本文件不得硬编码价格
@@ -308,7 +309,9 @@ export default function ChartPage() {
                   <td className="py-3 px-4 font-medium text-gray-700">十二长生</td>
                   {pillars.map((p, i) => (
                     <td key={i} className="py-3 px-4 text-center text-sm text-gray-600">
-                      {p.changSheng || '—'}
+                      {p.changSheng
+                        ? <Link href={`/article/${CHANG_SHENG_SLUG}`} className="text-amber-700 hover:text-amber-900 hover:underline">{p.changSheng}</Link>
+                        : '—'}
                     </td>
                   ))}
                 </tr>
@@ -318,7 +321,19 @@ export default function ChartPage() {
                   <td className="py-3 px-4 font-medium text-gray-700">神煞</td>
                   {pillars.map((p, i) => (
                     <td key={i} className="py-3 px-4 text-center text-xs text-gray-600">
-                      {p.shenSha && p.shenSha.length > 0 ? p.shenSha.join('、') : '—'}
+                      {p.shenSha && p.shenSha.length > 0
+                        ? p.shenSha.map((name, j) => {
+                            const href = shenshaHref(name)
+                            return (
+                              <span key={j}>
+                                {j > 0 && '、'}
+                                {href
+                                  ? <Link href={href} className="text-amber-700 hover:text-amber-900 hover:underline">{name}</Link>
+                                  : name}
+                              </span>
+                            )
+                          })
+                        : '—'}
                     </td>
                   ))}
                 </tr>
@@ -328,7 +343,9 @@ export default function ChartPage() {
                   <td className="py-3 px-4 font-medium text-gray-700">空亡</td>
                   {pillars.map((p, i) => (
                     <td key={i} className="py-3 px-4 text-center text-sm text-gray-600">
-                      {p.kongWang || '—'}
+                      {p.kongWang
+                        ? <Link href={`/article/${KONG_WANG_SLUG}`} className="text-amber-700 hover:text-amber-900 hover:underline">{p.kongWang}</Link>
+                        : '—'}
                     </td>
                   ))}
                 </tr>
@@ -337,7 +354,10 @@ export default function ChartPage() {
           </table>
           {/* 口径说明：文案与 src/lib/paipan.ts 的 SHEN_SHA_NOTE 同步（测试守护一致性） */}
           <p className="px-4 py-3 text-[11px] text-gray-400 border-t border-gray-100">
-            神煞取法依《渊海子平》《三命通会》通行口径：天乙贵人、文昌、禄神、羊刃、太极贵人、福星贵人、国印贵人、金舆、红艳煞自日干起（羊刃仅阳干）；桃花、驿马、华盖、将星、劫煞、灾煞、亡神自年支、日支起（三合局取支）；孤辰寡宿、红鸾、天喜自年支起；天德贵人、月德贵人、天医、天赦、四废自月支起（天赦、四废见于日柱）；魁罡、阴阳差错、十恶大败、孤鸾煞取自日柱干支，三奇贵人取年月日或月日时天干顺布；空亡为各柱干支所在旬空之二支。均为传统民俗论法，流派间取法或有差异，仅供参考、非确定性，不构成任何决策建议。
+            神煞取法依《渊海子平》《三命通会》通行口径：天乙贵人、文昌、禄神、羊刃、太极贵人、福星贵人、国印贵人、金舆、红艳煞自日干起（羊刃仅阳干）；桃花、驿马、华盖、将星、劫煞、灾煞、亡神自年支、日支起（三合局取支）；孤辰寡宿、红鸾、天喜自年支起；天德贵人、月德贵人、天医、天赦、四废自月支起（天赦、四废见于日柱）；魁罡、阴阳差错、十恶大败、孤鸾煞取自日柱干支，三奇贵人取年月日或月日时天干顺布；童子煞依月支季节（春秋寅子、冬夏卯未辰）或年柱纳音（金木命见午卯、水火命见酉戌、土命见辰巳）查日支、时支，德秀贵人自月支起见四柱天干（《三命通会》），金神取乙丑、己巳、癸酉见于日柱、时柱，飞刃自日干起（仅阳干、羊刃对冲），流霞自日干起，天罗地网依年柱纳音（火命见戌亥、水土命见辰巳，金木命不论）查日支、时支，六秀日、十灵日取自日柱干支；空亡为各柱干支所在旬空之二支。均为传统民俗论法（童子煞属民俗传说），流派间取法或有差异，仅供参考、非确定性，不构成任何决策建议。
+          </p>
+          <p className="px-4 py-2 text-[11px] text-gray-400">
+            点击神煞、十二长生、空亡名称可查看对应知识文章（命理知识 › 神煞查询）。
           </p>
         </div>
 
