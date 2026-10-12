@@ -45,6 +45,11 @@ export default function LiunianPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    await runGenerate(false)
+  }
+
+  // 生成/重新生成共用同一入口：force=true 绕过缓存重新调 AI，结果覆盖写同一报告（HANDOFF §四）
+  const runGenerate = async (force: boolean) => {
     setLoading(true)
     setError('')
     setSaved(null)
@@ -61,6 +66,7 @@ export default function LiunianPage() {
           minute: formData.minute === '' ? 0 : parseInt(formData.minute),
           gender: formData.gender,
           targetYear,
+          ...(force ? { force: true } : {}),
           // 出生地：城市 → birthCityId；其它 → birthZone（进阶经度 birthLng）
           ...(birth.mode === 'city'
             ? { birthCityId: birth.cityId }
@@ -199,6 +205,18 @@ export default function LiunianPage() {
                 登录后生成结果可保存到「我的报告」，随时回看
               </p>
             ) : null}
+            {/* 重新生成入口（HANDOFF §四）：force=true 绕过缓存重调 AI，覆盖写同一报告不堆积 */}
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <button
+                type="button"
+                onClick={() => runGenerate(true)}
+                disabled={loading}
+                className="px-5 py-2 rounded-md border border-rose-300 text-rose-700 text-sm font-medium hover:bg-rose-50 transition disabled:opacity-50"
+              >
+                重新生成本报告
+              </button>
+              <span className="text-xs text-ink-light/50">对解读不满意？AI 将重写全文并覆盖原报告</span>
+            </div>
             <LiunianResultView data={data} />
           </div>
         )}

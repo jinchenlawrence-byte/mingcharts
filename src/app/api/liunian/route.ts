@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import type { SupabaseClient } from '@supabase/supabase-js'
 import { paipan, getWangShuai, getGeJu } from '@/lib/paipan'
 import { buildLuckCycles, getFavorSets } from '@/lib/analysis'
 import type { AnalyzableChart } from '@/lib/analysis'
@@ -8,6 +9,11 @@ import { resolveBirthFromBody } from '@/lib/birthRequest'
 import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
 import { createServerSupabase } from '@/lib/supabase'
 import { saveReport, deriveReportTitle } from '@/lib/reportSave'
+import {
+  annualCacheKey, stripEntitlementState, recomputeEntitlementFields,
+  isCacheContentUsable, cachedTargetOf, readReportCache,
+  type AnnualCacheInput
+} from '@/lib/reportCache'
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,6 +30,9 @@ export async function POST(request: NextRequest) {
     const hour = toInt(body.hour)
     const minute = toInt(body.minute)
     const gender: 1 | 0 = body.gender === 1 || body.gender === '1' ? 1 : 0
+    // ★ 重新生成入口（HANDOFF §四）：force=true 绕过缓存重新调 AI，结果覆盖写同一 cache_key。
+    //   限流：暂不做（成本敞口在回执写明）；覆盖写保证不堆积重复行。
+    const force = body.force === true
 
     if (year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) {
       return NextResponse.json(
@@ -55,6 +64,51 @@ export async function POST(request: NextRequest) {
     }
     const { ref } = birth.data!
 
+    // ★ 报告缓存键（HANDOFF §三原则②）：kind + v{版本} + targetYear + 八字时间参数【全量】——
+    //   分钟 / 时区 / 经度（真太阳时）/ nowYear 全部入键；缺时区经度会在补填出生地后命中错误缓存。
+    const reportInput: AnnualCacheInput = {
+      year, month, day, hour, minute, gender, targetYear,
+      birthZone: ref?.zone ?? null,
+      birthLng: typeof ref?.lng === 'number' ? ref.lng : null,
+      nowYear
+    }
+    const cacheKey = annualCacheKey(reportInput)
+
+    // ★ 门禁判定统一走 entitlement（§8.5.1），不得在本路由另写判断
+    // ENFORCE=false → unlocked 恒 true → 内测期行为与现在完全一致 ✓
+    // userId 供缓存读写使用（与 ent 同一次 auth.getUser 取得）
+    const token = typeof body.token === 'string' ? body.token : ''
+    let ent = EMPTY_ENTITLEMENTS
+    let userId: string | null = null
+    let admin: SupabaseClient | null = null
+    if (token) {
+      admin = createServerSupabase()
+      const { data: { user } } = await admin.auth.getUser(token)
+      if (user) {
+        userId = user.id
+        ent = await getEntitlements(admin, user.id)
+      }
+    }
+    const unlocked = canView(ent, 'annual_report')
+
+    // ★ 缓存读取（HANDOFF §3.4 流程②）：命中 → 直接用缓存内容（不调 AI），
+    //   locked/ai/aiSource 按当前权益重算（原则①）；ai 为空的缓存视为未命中（缓存自愈）。
+    //   force=true（重新生成）与未登录用户跳过读取。
+    if (!force && userId && admin) {
+      const hit = await readReportCache(admin, userId, 'annual', cacheKey)
+      if (hit && isCacheContentUsable(hit.content)) {
+        const cachedItem = cachedTargetOf(hit.content, targetYear)
+        // ★ 权益字段永远重算，绝不复用缓存中的 locked/ai（原则①）。
+        //   牙口注入点：此处改回直接下发 hit.content（把 locked 也存也发）→ 断言②精确翻红。
+        const data = recomputeEntitlementFields(hit.content, {
+          unlocked,
+          skus: ['annual_report'],
+          lockedPreview: `${targetYear}年（${cachedItem?.ganZhi ?? ''}年）流年详批：事业/财运/感情/健康分维度深度解读解锁后可见。`
+        })
+        return NextResponse.json({ success: true, data, reportId: hit.reportId, cached: true })
+      }
+    }
+
     // 排盘 → 旺衰/格局 → 规则引擎结构化岁运（大运/流年/流月，确定性计算）
     const chart = paipan({
       year, month, day, hour, minute, gender,
@@ -82,16 +136,6 @@ export async function POST(request: NextRequest) {
     const favorSets = getFavorSets(analyzable)
     const aiReport = await generateAILiunian(analyzable, luck, targetYear)
 
-    // ★ 门禁判定统一走 entitlement（§8.5.1），不得在本路由另写判断
-    // ENFORCE=false → unlocked 恒 true → 内测期行为与现在完全一致 ✓
-    const token = typeof body.token === 'string' ? body.token : ''
-    let ent = EMPTY_ENTITLEMENTS
-    if (token) {
-      const admin = createServerSupabase()
-      const { data: { user } } = await admin.auth.getUser(token)
-      if (user) ent = await getEntitlements(admin, user.id)
-    }
-    const unlocked = canView(ent, 'annual_report')
     // ★ free 层保留结构化岁运事实（试吃本意）；ai 在未解锁时为 null
     const ai = unlocked ? (aiReport || fallbackLiunianText(targetYear, target, liuYue, favorSets)) : null
     const aiSource = !unlocked ? '未解锁'
@@ -126,16 +170,18 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 登录用户：报告作为账户资产自动保存（静默降级，不阻断主流程）
-    const reportInput = { year, month, day, hour, gender, targetYear }
+    // 登录用户：报告作为账户资产自动保存（静默降级，不阻断主流程）。
+    // ★ 缓存覆盖写（原则③）：cacheKey 提供后同一 (user_id, kind, cache_key) 只保留一行；
+    //   写入内容剥掉 locked（原则①：只存内容，不存权益状态）。
     const reportId = await saveReport(token || undefined, {
       kind: 'annual',
       title: deriveReportTitle('annual', reportInput),
       input: reportInput,
-      result: data
+      result: stripEntitlementState(data),
+      cacheKey
     })
 
-    return NextResponse.json({ success: true, data, reportId })
+    return NextResponse.json({ success: true, data, reportId, cached: false })
   } catch (error) {
     console.error('年运报告错误:', error)
     const msg = error instanceof Error ? error.message : String(error)

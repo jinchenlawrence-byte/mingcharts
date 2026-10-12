@@ -1,0 +1,127 @@
+// 报告缓存（HANDOFF-年运披露与报告缓存 §三）—— 可复用模块，下一轮接命书/合婚/紫微/地理时不重写
+//
+// 三原则（§〇-3/4/5，验收红线）：
+//   ① 【只存内容，不存权益状态】：写入前剥掉 locked（stripEntitlementState）；
+//      读取后 locked / ai / aiSource 一律按当前权益重算（recomputeEntitlementFields）。
+//      —— 这样「先试吃、后付费」才正确：试吃期写入的空内容（ai=null）读取时视为未命中，
+//         下次请求重新生成并覆盖，缓存自愈，绝不会把锁定版发给已解锁用户（反之亦然）。
+//   ② 【缓存键显式含算法版本】：改 AI prompt / 判据 / 排盘算法任一时必须手动 +1，
+//      否则旧缓存会与新规则矛盾。
+//   ③ 【覆盖写，不新增行】：同一 (user_id, kind, cache_key) 只保留一行——
+//      落库走 reportSave.saveReport 的 cacheKey 分支（查到同键行则 update，否则 insert），
+//      顺带修掉「重复点击堆积重复行」的现存问题。
+//
+// 缓存键构成（§3.2）：kind + v{版本} + targetYear + 八字时间参数全量 的稳定摘要。
+// ★ 八字参数不止年月日时——还有 分钟 / 时区 / 经度（真太阳时）：
+//   用户补填出生地后四柱可能变化，键若不变会命中错误缓存，故全量入键；
+//   nowYear 也入键：流年窗口（-8..+2）随年份滚动，跨年后旧缓存自然失效。
+import { createHash } from 'node:crypto'
+import type { SupabaseClient } from '@supabase/supabase-js'
+
+/**
+ * ★★ 改动【AI prompt / 判据 / 排盘算法】任一时必须 +1（否则旧缓存与新规则矛盾）。
+ * 本任务书 §〇-4 明文要求；下一轮接其它报告模块时各起各的版本常量。
+ */
+export const ANNUAL_CACHE_VERSION = 1
+
+/** 年运缓存的入键参数全量（route 的 reportInput 与此同源） */
+export interface AnnualCacheInput {
+  year: number
+  month: number
+  day: number
+  hour: number
+  minute: number
+  gender: number
+  targetYear: number
+  /** 出生地时区（无出生地为 null）——真太阳时入键，防补填出生地后命中错误缓存 */
+  birthZone: string | null
+  /** 出生地经度（无出生地为 null） */
+  birthLng: number | null
+  /** 请求当年——流年窗口随年份滚动，入键使跨年旧缓存自然失效 */
+  nowYear: number
+}
+
+/** 稳定序列化：键排序后拼接（对象字段顺序不影响摘要） */
+function stableStringify(v: unknown): string {
+  if (v === null || typeof v !== 'object') return JSON.stringify(v) ?? 'null'
+  if (Array.isArray(v)) return '[' + v.map(stableStringify).join(',') + ']'
+  const obj = v as Record<string, unknown>
+  return '{' + Object.keys(obj).sort()
+    .map(k => JSON.stringify(k) + ':' + stableStringify(obj[k])).join(',') + '}'
+}
+
+/** 年运缓存键：annual:v{版本}:y{目标年}:{参数全量摘要}（摘要取 sha1 前 16 位） */
+export function annualCacheKey(input: AnnualCacheInput): string {
+  const digest = createHash('sha1').update(stableStringify(input)).digest('hex').slice(0, 16)
+  return `annual:v${ANNUAL_CACHE_VERSION}:y${input.targetYear}:${digest}`
+}
+
+/** 写缓存前剥掉权益状态（locked 是派生字段，入缓存即违反原则①） */
+export function stripEntitlementState<T extends object>(data: T): Omit<T, 'locked'> {
+  const content = { ...data } as Record<string, unknown>
+  delete content.locked
+  return content as Omit<T, 'locked'>
+}
+
+/**
+ * 缓存内容是否可用：ai 为 null 的缓存 = 试吃期写入的空内容（原则①的推论），
+ * 视为未命中 → 重新生成并覆盖（缓存自愈），确保已解锁请求永远拿得到全文。
+ */
+export function isCacheContentUsable(content: unknown): boolean {
+  return !!content && typeof content === 'object'
+    && (content as { ai?: unknown }).ai != null
+}
+
+/**
+ * 缓存命中后按【当前权益】重算派生字段，绝不复用缓存中的 locked/ai/aiSource：
+ *   · 未解锁 → ai 置空、locked 给 preview（即使缓存里带了全文也不外泄）
+ *   · 已解锁 → locked 置 null、ai 用缓存全文
+ */
+export function recomputeEntitlementFields<C extends Record<string, unknown>>(
+  cached: C,
+  opts: { unlocked: boolean; skus: string[]; lockedPreview: string }
+): C & { locked: { skus: string[]; preview: string } | null } {
+  return {
+    ...cached,
+    locked: opts.unlocked ? null : { skus: opts.skus, preview: opts.lockedPreview },
+    ai: opts.unlocked ? cached.ai : null,
+    aiSource: opts.unlocked ? (cached.aiSource ?? null) : '未解锁'
+  }
+}
+
+/** 从缓存内容取目标流年项（locked preview 需要流年干支） */
+export function cachedTargetOf(
+  content: Record<string, unknown>,
+  targetYear: number
+): { ganZhi?: string } | null {
+  const arr = content.liuNian
+  if (!Array.isArray(arr)) return null
+  return (arr as Array<{ year?: number; ganZhi?: string }>).find(y => y.year === targetYear) ?? null
+}
+
+/** 缓存命中行（reports 表复用：结果即缓存，方案 A） */
+export interface ReportCacheHit {
+  reportId: string
+  content: Record<string, unknown>
+}
+
+/** 读取缓存（service_role 客户端由调用方传入；查不到/出错一律返回 null，不阻断主流程） */
+export async function readReportCache(
+  admin: SupabaseClient,
+  userId: string,
+  kind: string,
+  cacheKey: string
+): Promise<ReportCacheHit | null> {
+  const { data, error } = await admin
+    .from('reports')
+    .select('id, result')
+    .eq('user_id', userId)
+    .eq('kind', kind)
+    .eq('cache_key', cacheKey)
+    .maybeSingle()
+  if (error || !data) return null
+  return {
+    reportId: data.id as string,
+    content: (data.result ?? {}) as Record<string, unknown>
+  }
+}

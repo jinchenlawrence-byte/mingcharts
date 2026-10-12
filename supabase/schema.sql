@@ -136,6 +136,13 @@ CREATE POLICY "Users can delete own reports" ON reports
 CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id);
 CREATE INDEX IF NOT EXISTS idx_reports_created_at ON reports(created_at DESC);
 
+-- 报告缓存（HANDOFF-年运披露与报告缓存 §3.3 方案 A：报告与缓存同一份数据，不重复存）
+-- cache_key = annual:v{版本}:y{目标年}:{参数摘要}（见 src/lib/reportCache.ts）；
+-- 同一 (user_id, kind, cache_key) 覆盖写只保留一行（saveReport cacheKey 分支）。
+-- ★ 已有数据库需在 SQL Editor 补跑这两句。
+ALTER TABLE reports ADD COLUMN IF NOT EXISTS cache_key TEXT;
+CREATE INDEX IF NOT EXISTS idx_reports_cache ON reports(user_id, kind, cache_key);
+
 -- ─────────────────────────────────────────────────────────────
 -- Waffo 支付集成迁移（HANDOFF-Waffo支付集成 §5.8）
 -- 新建库跑上方 CREATE TABLE 即已就位；【已有数据库】需在 SQL Editor 补跑本段。

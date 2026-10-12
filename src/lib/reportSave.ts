@@ -56,6 +56,12 @@ export interface SaveReportPayload {
   input: unknown
   /** 页面渲染所需的完整结果（即 route 返回的 data） */
   result: unknown
+  /**
+   * ★ 报告缓存键（HANDOFF-年运披露与报告缓存 原则③）：提供时按 (user_id, kind, cache_key)
+   *   覆盖写——查到同键行则 update（created_at 取最新），否则 insert，绝不新增第二行。
+   *   不提供（其余模块暂未接缓存）保持原纯 insert 行为不变。
+   */
+  cacheKey?: string
 }
 
 /**
@@ -76,6 +82,31 @@ export async function saveReport(
       console.warn('[report-save] token 无效，跳过保存')
       return null
     }
+    // ★ 覆盖写（原则③）：同一 (user_id, kind, cache_key) 只保留一行——
+    //   重复点击/重新生成更新该行并刷新 created_at（列表按 created_at 倒序，重生成的报告置顶），
+    //   不再 insert 新行堆积重复条目。
+    if (payload.cacheKey) {
+      const { data: existing } = await admin
+        .from('reports')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('kind', payload.kind)
+        .eq('cache_key', payload.cacheKey)
+        .maybeSingle()
+      if (existing?.id) {
+        const { error } = await admin
+          .from('reports')
+          .update({
+            title: payload.title,
+            input: payload.input as never,
+            result: payload.result as never,
+            created_at: new Date().toISOString()
+          })
+          .eq('id', existing.id)
+        if (error) throw error
+        return existing.id
+      }
+    }
     const { data, error } = await admin
       .from('reports')
       .insert({
@@ -83,7 +114,8 @@ export async function saveReport(
         kind: payload.kind,
         title: payload.title,
         input: payload.input as never,
-        result: payload.result as never
+        result: payload.result as never,
+        ...(payload.cacheKey ? { cache_key: payload.cacheKey } : {})
       })
       .select('id')
       .single()

@@ -1,7 +1,15 @@
 import { createClient } from '@supabase/supabase-js'
+import type { SupabaseClient } from '@supabase/supabase-js'
 
 // 客户端组件使用的Supabase客户端（懒加载）
 let supabaseClient: ReturnType<typeof createClient> | null = null
+
+// ★ 测试注入点（HANDOFF-年运披露与报告缓存 §3.5）：断言脚本注入内存 admin 客户端，
+//   使「真调 route」的验收可密封运行（不依赖真实 Supabase/网络/代理）。生产代码永不调用。
+let serverAdminForTest: SupabaseClient | null = null
+export function setServerSupabaseForTest(client: SupabaseClient | null): void {
+  serverAdminForTest = client
+}
 
 export function getSupabase() {
   if (!supabaseClient) {
@@ -19,6 +27,7 @@ export function getSupabase() {
 
 // 服务端组件使用的Supabase客户端（需走本地代理，因网络环境限制）
 export function createServerSupabase() {
+  if (serverAdminForTest) return serverAdminForTest
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
