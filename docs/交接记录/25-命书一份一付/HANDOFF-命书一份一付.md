@@ -25,7 +25,8 @@
 
 3. **★★★★★ ③ 的影响面（我方实测 ✗ 不是推测 ✓）**：
    ```
-   canView(ent, 'fatebook') 【被 4 处调用**✗：
+   ★ 命书的权益判定【共 4 个判定点**✗
+     （★ 其中【3 处调 canView**✗【1 处看 ownedSkus**✓ —— 别按"canView 出现次数"去数 ✓）：
      src/app/api/entitlements/route.ts:28   → canViewFatebook（成功页用）
      src/app/api/paipan/route.ts:89         → unlocked（★ 排盘结果页的付费内容 ✓）
      src/app/api/unlock/route.ts:25         → allowed（★ 命书生成本身 ✓）
