@@ -2,11 +2,18 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
+import { latestChartIdOf } from '@/lib/entitlement'
 import type { SkuId } from '@/lib/pricing'
 
-// 购买按钮：登录 → POST /api/checkout → 跳转 Waffo 托管收银台。
+// 购买按钮：登录 → 预检命盘 → POST /api/checkout → 跳转 Waffo 托管收银台。
 // productId 未登记（available=false）时渲染灰色「即将推出」，绝不跳到坏页面。
+//
+// ★ 购买前置校验（HANDOFF-命书一份一付 §二，2026-10-13）：
+//   发起支付前先查 charts 表（★ 服务端那份，不查 localStorage——换设备/清缓存就没了）
+//   确认当前用户已有命盘；没有则【不发起支付】，页内给出可点的下一步（不弹 alert）。
+//   服务端 /api/checkout 仍不拦（直调可达）——这里是前端引导，不是服务端强制。
 export default function CheckoutButton({
   sku,
   available,
@@ -21,6 +28,7 @@ export default function CheckoutButton({
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [noChart, setNoChart] = useState(false)
 
   if (!available) {
     return (
@@ -33,6 +41,7 @@ export default function CheckoutButton({
   const handleClick = async () => {
     if (loading) return
     setError('')
+    setNoChart(false)
     setLoading(true)
     try {
       const supabase = getSupabase()
@@ -41,6 +50,14 @@ export default function CheckoutButton({
       } = await supabase.auth.getSession()
       if (!session) {
         router.push('/auth')
+        return
+      }
+
+      // ★ 前置校验：查 charts 表有没有命盘（与 latestChartIdOf 同一单一事实源）
+      const chartId = await latestChartIdOf(supabase, session.user.id)
+      if (!chartId) {
+        setNoChart(true)
+        setLoading(false)
         return
       }
 
@@ -86,6 +103,18 @@ export default function CheckoutButton({
         {loading ? '正在跳转支付…' : children}
       </button>
       {error && <p className="text-xs text-red-600 mt-2 text-center">{error}</p>}
+      {noChart && (
+        // ★ 无命盘：不弹 alert，页内给出可点的下一步（HANDOFF-命书一份一付 §2.3）
+        <div className="mt-2 text-xs text-ink/70 bg-gold/5 border border-gold/20 rounded-md p-3 text-center">
+          <p className="mb-2">命书会围绕你排好的命盘撰写——先免费排盘，再回来看命书详批。</p>
+          <Link
+            href="/?returnTo=/pricing"
+            className="inline-block bg-amber-600 text-white px-4 py-1.5 rounded-md font-semibold hover:bg-amber-700 transition"
+          >
+            去免费排盘
+          </Link>
+        </div>
+      )}
     </div>
   )
 }

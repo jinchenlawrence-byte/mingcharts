@@ -128,3 +128,23 @@ export async function getEntitlements(
 
   return entitlementsFromRows(pays as PaymentRow[] | null, profile as ProfileRow | null)
 }
+
+/**
+ * ★「用户最近一份命盘」的 id（HANDOFF-命书一份一付 §二，2026-10-13）。
+ * 判定"有没有命盘"必须查 charts 表（§〇-6：localStorage 换设备/清缓存就没了）。
+ * 「最近一份」= created_at DESC 第一条 —— charts 表只有 created_at（无 updated_at），
+ * 且 schema 已有 idx_charts_created_at DESC 索引支撑此排序。
+ * ★ 只查 id 列，供购买关联（步骤②）与门禁判定复用 —— 单一事实源，调用方不得散写同型查询。
+ */
+export async function latestChartIdOf(
+  admin: SupabaseClient,
+  userId: string
+): Promise<string | null> {
+  const { data } = await admin
+    .from('charts')
+    .select('id')
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+  return data?.[0]?.id ?? null
+}
