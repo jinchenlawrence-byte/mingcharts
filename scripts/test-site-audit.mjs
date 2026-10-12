@@ -108,7 +108,9 @@ for (const file of allFiles) {
   let m
   HREF_RE.lastIndex = 0
   while ((m = HREF_RE.exec(content))) {
-    hrefs.add('/' + m[1])
+    // ★ 剥掉查询串再对照路由：/?returnTo=/pricing 这类「路径+参数」链接，
+    //   路由归属只由路径决定，参数不影响可达性（命书一份一付①的引导链接形态）
+    hrefs.add('/' + m[1].split('?')[0])
   }
   if (file.endsWith('page.tsx')) {
     const rel = relOf(file)

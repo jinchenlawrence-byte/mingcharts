@@ -132,8 +132,12 @@ else {
   if (!upBody.includes('canView')) {
     unlockWriteFail++; fail('unlock POST 未调用 canView')
   }
-  if (!upBody.includes('getEntitlements')) {
-    unlockWriteFail++; fail('unlock POST 未调用 getEntitlements')
+  // ★ 断言意图（§8.5.1）：unlock 门禁必须走 entitlement 模块单一判定函数，不得路由内自判。
+  //   HANDOFF-命书一份一付 §四后，unlock 已由 getEntitlements+canView 粗判升级为
+  //   canViewFatebookForChart 按盘判定（同在 entitlement.ts，单一判定意图不变），
+  //   按 §8.6.2 期望值跟随事实更新：两者任一在即视为接线。
+  if (!(upBody.includes('canViewFatebookForChart') || upBody.includes('getEntitlements'))) {
+    unlockWriteFail++; fail('unlock POST 未接线 entitlement 门禁（canViewFatebookForChart/getEntitlements）')
   }
   if (!upBody.includes('402')) {
     unlockWriteFail++; fail('unlock POST 拒绝时未返回 402')
