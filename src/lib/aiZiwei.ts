@@ -46,7 +46,14 @@ C. 庙旺落陷引用算法标注，不得翻转。`
 function buildUserPrompt(chart: ZwChart, analysis: ZiweiAnalysis): string {
   const a = analysis
   const patternLines = a.patterns
-    .map((p) => `【${p.level}】${p.name}：${p.note}`)
+    .map((p) => {
+      let line = `【${p.level}】${p.name}：${p.note}`
+      if (p.required) line += `（成立要件：${p.required.join('、')}）`
+      if (p.breaking) line += `（破格项：${p.breaking.join('、')}）`
+      if (p.source) line += `（出处：${p.source}）`
+      else if (p.basisLevel) line += `（依据：${p.basisLevel}）`
+      return line
+    })
     .join('\n')
   const transformLines = a.transforms
     .map((t) => `${t.star}化${t.type}于${t.palace}宫（${t.note}）`)

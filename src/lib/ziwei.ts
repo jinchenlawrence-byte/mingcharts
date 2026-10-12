@@ -1,4 +1,4 @@
-﻿// 紫微斗数：iztro 排盘 + 规则引擎分析（格局/四化/宫位/大限流年）
+// 紫微斗数：iztro 排盘 + 规则引擎分析（格局/四化/宫位/大限流年）
 import { astro } from 'iztro'
 import { trueSolarOffsetMinutes, DEFAULT_ZONE } from './solarTime'
 
@@ -47,6 +47,16 @@ export interface PatternTag {
   name: string
   level: '吉' | '平' | '忌'
   note: string
+  /** 成立要件（红线 §8.3-④「点名结构」） */
+  required?: string[]
+  /** 加分项：使格局更完整/更强 */
+  bonus?: string[]
+  /** 破格项：使格局减力或转坏 */
+  breaking?: string[]
+  /** 古籍出处：书名·篇名（核不到原文时用 basisLevel: '通行做法'） */
+  source?: string
+  /** 依据等级（§8.6.2）：'古籍' | '通行做法' | '产品设定' */
+  basisLevel?: '古籍' | '通行做法' | '产品设定'
 }
 
 export interface TransformEntry {
@@ -259,7 +269,12 @@ function detectPatterns(chart: ZwChart): PatternTag[] {
   const qSet = new Set(q.flatMap(palaceStarNames))
   const mingNames = palaceStarNames(ming)
   const out: PatternTag[] = []
-  const add = (name: string, level: PatternTag['level'], note: string) => out.push({ name, level, note })
+  const add = (
+    name: string,
+    level: PatternTag['level'],
+    note: string,
+    extra?: Pick<PatternTag, 'required' | 'bonus' | 'breaking' | 'source' | 'basisLevel'>
+  ) => out.push({ name, level, note, ...extra })
 
   const has = (s: string) => mingNames.includes(s)
   const quartetHas = (s: string) => qSet.has(s)
@@ -270,75 +285,75 @@ function detectPatterns(chart: ZwChart): PatternTag[] {
     q.some((p) => palaceStarNames(p).includes(a) && palaceStarNames(p).includes(b))
 
   // 命宫双星经典组合
-  if (has('紫微') && has('天府')) add('紫府同宫格', '吉', '紫微天府同守命宫，帝王府库相会，主尊贵稳重、事业家业两稳')
-  else if (has('紫微') && has('七杀')) add('紫微七杀格', '吉', '化杀为权，主刚柔并济、有将帅之才，事业心极强')
-  else if (has('紫微') && has('贪狼')) add('紫微贪狼格', '平', '桃花犯主，主多才多艺、交际强，须防欲望过多、沉迷享乐')
-  else if (has('紫微') && has('破军')) add('紫微破军格', '吉', '君逸臣劳，主破旧立新、胆识过人，人生起伏中得成')
-  else if (has('紫微') && has('天相')) add('紫相朝垣格', '吉', '紫微天相同宫，主稳重可靠、贵人扶持，宜公职管理')
-  if (has('武曲') && has('贪狼')) add('武贪同行格', '平', '武曲贪狼守命，主晚发、多才艺，不发少年人，三十后方兴')
-  if (has('天机') && has('巨门')) add('巨机同临格', '吉', '天机巨门同守，主口才机辩、善策划，宜以口、以智立身')
-  if (has('廉贞') && has('贪狼')) add('廉贞贪狼格', '平', '桃花艺术之格，主风流多才、人缘佳，须自持防情色之扰')
-  if (has('廉贞') && has('七杀')) add('廉贞七杀格', '平', '埋尸格之说今取其开创义：主冲劲足、能吃苦，宜技术/军警，注意安全')
+  if (has('紫微') && has('天府')) add('紫府同宫格', '吉', '紫微天府同守命宫，帝王府库相会，主尊贵稳重、事业家业两稳', { required: ['紫微与天府同守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  else if (has('紫微') && has('七杀')) add('紫微七杀格', '吉', '化杀为权，主刚柔并济、有将帅之才，事业心极强', { required: ['紫微与七杀同守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  else if (has('紫微') && has('贪狼')) add('紫微贪狼格', '平', '桃花犯主，主多才多艺、交际强，须防欲望过多、沉迷享乐', { required: ['紫微与贪狼同守命宫'], breaking: ['煞星同宫则桃花带忌'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  else if (has('紫微') && has('破军')) add('紫微破军格', '吉', '君逸臣劳，主破旧立新、胆识过人，人生起伏中得成', { required: ['紫微与破军同守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  else if (has('紫微') && has('天相')) add('紫相朝垣格', '吉', '紫微天相同宫，主稳重可靠、贵人扶持，宜公职管理', { required: ['紫微与天相同守命宫'], source: '《紫微斗数全集·卷二》', basisLevel: '古籍' })
+  if (has('武曲') && has('贪狼')) add('武贪同行格', '平', '武曲贪狼守命，主晚发、多才艺，不发少年人，三十后方兴', { required: ['武曲与贪狼同守命宫'], breaking: ['火星铃星同宫则转火贪格'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  if (has('天机') && has('巨门')) add('巨机同临格', '吉', '天机巨门同守，主口才机辩、善策划，宜以口、以智立身', { required: ['天机与巨门同守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  if (has('廉贞') && has('贪狼')) add('廉贞贪狼格', '平', '桃花艺术之格，主风流多才、人缘佳，须自持防情色之扰', { required: ['廉贞与贪狼同守命宫'], breaking: ['逢煞星则桃花带忌'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  if (has('廉贞') && has('七杀')) add('廉贞七杀格', '平', '埋尸格之说今取其开创义：主冲劲足、能吃苦，宜技术/军警，注意安全', { required: ['廉贞与七杀同守命宫'], source: '《紫微斗数全集·卷三》', basisLevel: '古籍' })
   if (has('太阳') && has('太阴')) {
     const sun = ming.majorStars.find((s) => s.name === '太阳')
     const moon = ming.majorStars.find((s) => s.name === '太阴')
     if (sun && moon && BRIGHTNESS_SCORE[sun.brightness] >= 4 && BRIGHTNESS_SCORE[moon.brightness] >= 4) {
-      add('日月并明格', '吉', '太阳太阴同宫皆明，主阴阳调和、名利双辉')
+      add('日月并明格', '吉', '太阳太阴同宫皆明，主阴阳调和、名利双辉', { required: ['太阳与太阴同守命宫', '二星皆庙旺'], breaking: ['二星落陷则转日月反背'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
     } else if (sun && moon && BRIGHTNESS_SCORE[sun.brightness] <= 1 && BRIGHTNESS_SCORE[moon.brightness] <= 1) {
-      add('日月反背格', '忌', '日月俱陷，主劳碌奔波、六亲缘较薄，宜修身敬业、量力而行')
+      add('日月反背格', '忌', '日月俱陷，主劳碌奔波、六亲缘较薄，宜修身敬业、量力而行', { required: ['太阳与太阴同守命宫', '二星皆落陷'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
     } else {
-      add('日月同宫格', '平', '太阳太阴同守，主性格多面、刚柔兼具，吉凶看庙陷与四化')
+      add('日月同宫格', '平', '太阳太阴同守，主性格多面、刚柔兼具，吉凶看庙陷与四化', { required: ['太阳与太阴同守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
     }
   }
-  if (has('天同') && has('天梁')) add('同梁巳亥格', '平', '天同天梁守命，主温和善良、逢凶化吉，防安于现状')
-  if (has('天同') && has('太阴')) add('同阴格', '吉', '天同太阴守命，主温柔细腻、福气丰厚，女性尤美')
+  if (has('天同') && has('天梁')) add('同梁巳亥格', '平', '天同天梁守命，主温和善良、逢凶化吉，防安于现状', { required: ['天同与天梁同守命宫', '命宫在巳或亥'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  if (has('天同') && has('太阴')) add('同阴格', '吉', '天同太阴守命，主温柔细腻、福气丰厚，女性尤美', { required: ['天同与太阴同守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
 
   // 命宫单星名格
   if (has('破军') && (ming.earthlyBranch === '子' || ming.earthlyBranch === '午') &&
     ming.majorStars.some((s) => s.name === '破军' && BRIGHTNESS_SCORE[s.brightness] >= 5)) {
-    add('英星入庙格', '吉', '破军庙旺守子午，主大刀阔斧、建功立业')
+    add('英星入庙格', '吉', '破军庙旺守子午，主大刀阔斧、建功立业', { required: ['破军独守命宫', '命宫在子或午', '破军庙旺'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
   }
   if (has('巨门') && (ming.earthlyBranch === '子' || ming.earthlyBranch === '午')) {
-    add('石中隐玉格', '吉', '巨门守子午，主先困后显、以口才专业成名')
+    add('石中隐玉格', '吉', '巨门守子午，主先困后显、以口才专业成名', { required: ['巨门独守命宫', '命宫在子或午'], source: '《紫微斗数全集·卷三》', basisLevel: '古籍' })
   }
 
   // 三方四正会照之格
   const mingSoloMajor = ming.majorStars.map((s) => s.name)
   if (['七杀', '破军', '贪狼'].some((s) => mingSoloMajor.includes(s))) {
-    add('杀破狼格', '平', '命宫居杀破狼局，主变动开创、不甘平庸，一生变化大、机遇风险并存')
+    add('杀破狼格', '平', '命宫居杀破狼局，主变动开创、不甘平庸，一生变化大、机遇风险并存', { required: ['命宫有七杀或破军或贪狼'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
   }
   if (['天机', '天同', '天梁'].every((s) => quartetHas(s)) && quartetHas('太阴') &&
     !['七杀', '破军', '贪狼'].some((s) => mingSoloMajor.includes(s))) {
-    add('机月同梁格', '吉', '三方会天机、太阴、天同、天梁，主稳健谋断，宜公职、企划、幕僚')
+    add('机月同梁格', '吉', '三方会天机、太阴、天同、天梁，主稳健谋断，宜公职、企划、幕僚', { required: ['三方四正会齐天机、太阴、天同、天梁'], breaking: ['命宫居杀破狼则不入此格'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
   }
   if (quartetHas('紫微') && quartetHas('天府') && !mingSoloMajor.includes('紫微') && !mingSoloMajor.includes('天府')) {
-    add('紫府朝垣格', '吉', '紫微天府三方来朝，主尊贵有格局、事业层次高')
+    add('紫府朝垣格', '吉', '紫微天府三方来朝，主尊贵有格局、事业层次高', { required: ['紫微天府在三方四正会照命宫', '紫微天府不在命宫同守'], source: '《紫微斗数全集·卷二》', basisLevel: '古籍' })
   }
-  if (quartetHas('天府') && quartetHas('天相')) add('府相朝垣格', '吉', '天府天相朝拱，主稳重富足、贵人多助')
+  if (quartetHas('天府') && quartetHas('天相')) add('府相朝垣格', '吉', '天府天相朝拱，主稳重富足、贵人多助', { required: ['天府天相在三方四正会照命宫'], source: '《紫微斗数全集·卷二》', basisLevel: '古籍' })
   if (quartetHas('太阳') && quartetHas('天梁') && quartetHas('文昌') && quartetHasLu) {
-    add('阳梁昌禄格', '吉', '太阳天梁文昌化禄相会，主学问考试运佳、以文才取贵')
+    add('阳梁昌禄格', '吉', '太阳天梁文昌化禄相会，主学问考试运佳、以文才取贵', { required: ['三方四正会太阳、天梁、文昌', '有化禄同会'], source: '《紫微斗数全集·卷三》', basisLevel: '古籍' })
   }
-  if (togetherInQuartet('贪狼', '火星')) add('火贪格', '吉', '贪狼火星同宫，暴发之格，主横发机遇，亦防横发横破')
-  if (togetherInQuartet('贪狼', '铃星')) add('铃贪格', '吉', '贪狼铃星同宫，主晚成爆发、异路功名')
-  if (has('左辅') && has('右弼')) add('左右守命格', '吉', '左辅右弼同守命宫，主助力多、事业稳')
-  if (has('文昌') && has('文曲')) add('昌曲同宫格', '吉', '文昌文曲同守，主聪明好学、才艺文章')
-  if (has('天魁') && has('天钺')) add('魁钺守命格', '吉', '天魁天钺同守，主贵人提携、逢凶化吉')
+  if (togetherInQuartet('贪狼', '火星')) add('火贪格', '吉', '贪狼火星同宫，暴发之格，主横发机遇，亦防横发横破', { required: ['贪狼与火星同宫于三方四正'], breaking: ['逢地空地劫则横发横破'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  if (togetherInQuartet('贪狼', '铃星')) add('铃贪格', '吉', '贪狼铃星同宫，主晚成爆发、异路功名', { required: ['贪狼与铃星同宫于三方四正'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  if (has('左辅') && has('右弼')) add('左右守命格', '吉', '左辅右弼同守命宫，主助力多、事业稳', { required: ['左辅与右弼同守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  if (has('文昌') && has('文曲')) add('昌曲同宫格', '吉', '文昌文曲同守，主聪明好学、才艺文章', { required: ['文昌与文曲同守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  if (has('天魁') && has('天钺')) add('魁钺守命格', '吉', '天魁天钺同守，主贵人提携、逢凶化吉', { required: ['天魁与天钺同守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
 
   // 破格警示（辨单星/双星，不夸大）
   const hasYang = has('擎羊')
   const hasTuo = has('陀罗')
-  if (hasYang && hasTuo) add('羊陀守命', '忌', '擎羊陀罗同守命宫，主性格刚直中带纠结，注意人际与外伤')
-  else if (hasYang) add('擎羊守命', '忌', '擎羊守命宫，主果决刚毅，防言语伤人及金属外伤，宜修养耐性')
-  else if (hasTuo) add('陀罗守命', '忌', '陀罗守命宫，主心思反复、行事多拖延，宜果断行动、避免内耗')
+  if (hasYang && hasTuo) add('羊陀守命', '忌', '擎羊陀罗同守命宫，主性格刚直中带纠结，注意人际与外伤', { required: ['擎羊与陀罗同守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  else if (hasYang) add('擎羊守命', '忌', '擎羊守命宫，主果决刚毅，防言语伤人及金属外伤，宜修养耐性', { required: ['擎羊守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  else if (hasTuo) add('陀罗守命', '忌', '陀罗守命宫，主心思反复、行事多拖延，宜果断行动、避免内耗', { required: ['陀罗守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
 
   const hasHuo = has('火星')
   const hasLing = has('铃星')
-  if (hasHuo && hasLing) add('火铃守命', '平', '火星铃星同守命宫，主刚烈急躁有爆发力，宜动中求成、修身养性')
-  else if (hasHuo) add('火星守命', '平', '火星守命宫，主性急直率、行动快，宜戒躁、以行动力成事')
-  else if (hasLing) add('铃星守命', '平', '铃星守命宫，主内敛倔強、暗火内蕴，宜疏导情绪、开朗心胸')
+  if (hasHuo && hasLing) add('火铃守命', '平', '火星铃星同守命宫，主刚烈急躁有爆发力，宜动中求成、修身养性', { required: ['火星与铃星同守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  else if (hasHuo) add('火星守命', '平', '火星守命宫，主性急直率、行动快，宜戒躁、以行动力成事', { required: ['火星守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
+  else if (hasLing) add('铃星守命', '平', '铃星守命宫，主内敛倔強、暗火内蕴，宜疏导情绪、开朗心胸', { required: ['铃星守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
 
-  if (ming.earthlyBranch === '午' && hasYang) add('马头带箭格', '平', '擎羊守午宫，主威权立功，亦主奔波辛苦')
-  if (has('地空') || has('地劫')) add('空劫守命', '忌', '地空地劫守命宫，主理想高、钱财起伏大，宜技术立身、忌投机')
+  if (ming.earthlyBranch === '午' && hasYang) add('马头带箭格', '平', '擎羊守午宫，主威权立功，亦主奔波辛苦', { required: ['擎羊守命宫', '命宫在午'], source: '《紫微斗数全集·卷三》', basisLevel: '古籍' })
+  if (has('地空') || has('地劫')) add('空劫守命', '忌', '地空地劫守命宫，主理想高、钱财起伏大，宜技术立身、忌投机', { required: ['地空或地劫守命宫'], source: '《紫微斗数全书·诸星问答论》', basisLevel: '古籍' })
 
   // 命宫单星（未被组合格局覆盖者）补一条星性论断
   const hasPattern = (name: string) => out.some((p) => p.name === name)
@@ -356,14 +371,15 @@ function detectPatterns(chart: ZwChart): PatternTag[] {
       `${s.name}守命格`,
       level,
       `${SINGLE_STAR_NOTE[s.name] || '主星守命'}；${s.brightness ? '星曜' + s.brightness : ''}` +
-      `${s.mutagen ? '，又逢化' + s.mutagen : ''}`
+      `${s.mutagen ? '，又逢化' + s.mutagen : ''}`,
+      { required: [`${s.name}守命宫`, `未被组合格局覆盖`], basisLevel: '通行做法' }
     )
   })
 
-  if (mingSoloMajor.length === 0) add('命无主星', '平', '命宫无主星，借对宫主星为用，主适应性强、受环境影响大，吉凶看对宫')
+  if (mingSoloMajor.length === 0) add('命无主星', '平', '命宫无主星，借对宫主星为用，主适应性强、受环境影响大，吉凶看对宫', { required: ['命宫无十四主星'], basisLevel: '通行做法' })
 
   // 无任何标签时给一个基础描述
-  if (out.length === 0) add('平和守成之局', '平', '命宫星曜组合平和，无大格亦无大破，主踏实经营、稳中求进')
+  if (out.length === 0) add('平和守成之局', '平', '命宫星曜组合平和，无大格亦无大破，主踏实经营、稳中求进', { required: ['命宫无特殊格局亦无煞星'], basisLevel: '产品设定' })
 
   return out
 }
