@@ -28,7 +28,11 @@ export function parseMerchantOrderId(ref: string): { userId: string; ts: number 
 // ── payments 写入行（列名与 supabase/schema.sql 的 payments 表一致）─────────
 export interface PaidPaymentRow {
   user_id: string
-  chart_id: null // ★ 固定 NULL：本轮不做「按 userId 关联最近命盘」的推断（任务书 §5.3）
+  // ★ 命盘关联（HANDOFF-命书一份一付 §三，2026-10-13）：
+  //   来自 orderMetadata.chartId，经【形态校验】（本文件 normalizeChartIdMeta）＋
+  //   【归属校验】（handleWaffoEvent / reconcilePayment 落账前查 charts 表），
+  //   任一不过即 null —— 绝不写 NULL 之外的猜测值；null=未关联（天然不匹配任何按盘判定，§〇-8）。
+  chart_id: string | null
   amount: number // ★ Number(chargedAmount)，废弃的 amount/total 等字段一律不用
   payment_type: 'single'
   payment_method: 'card'
@@ -49,6 +53,10 @@ export interface WaffoPaymentRepository {
   insertPaidPayment(row: PaidPaymentRow): Promise<boolean>
   // verify-payment 快路径：按业务单号查已落账支付。
   findPaidByExternalId(externalId: string): Promise<PaidPaymentRow | null>
+  // ★ 命盘归属校验（HANDOFF-命书一份一付 §3.2）：查 charts 表返回该命盘的 user_id。
+  //   命盘不存在 → null。落账前用它确认 metadata.chartId 确实属于该买家，
+  //   否则恶意构造的 metadata 可把付款关联到【别人的命盘】。
+  findChartUserId(chartId: string): Promise<string | null>
 }
 
 // GraphQL 反查得到的标准化支付节点（字段由 route 层从原始响应映射进来）
@@ -60,6 +68,9 @@ export interface RemotePaymentNode {
   orderMerchantExternalId: string
   userId: string
   sku: string
+  // ★ 远端 orderMetadata 里的 chartId（HANDOFF-命书一份一付 §3.2）：
+  //   同样【不可信】—— 补写前必须经 normalizeChartIdMeta 形态校验 ＋ 归属校验
+  chartId?: string
 }
 
 export interface RemotePaymentLookup {
@@ -73,6 +84,31 @@ export type HandleEventResult =
   | { kind: 'ignored_missing_user' } // metadata 与单号都拿不到 userId：记日志、返 200
   | { kind: 'ignored_invalid_payload'; reason: string } // 金额/单号异常：记日志、返 200
   | { kind: 'ignored_event'; eventType: string } // 订阅/退款/未知事件：本轮只记日志
+
+// ★ chartId 形态校验（HANDOFF-命书一份一付 §3.2，§8.6.2 依据分级：不直接信任 metadata）：
+//   是 string · 非空 · 长度合理（≤64，UUID 36 字符绰绰有余）→ 原样返回；否则 null。
+//   buildPaidPaymentRow（webhook）与 normalizeGraphqlPayment（对账反查）共用此单一事实源。
+export function normalizeChartIdMeta(raw: unknown): string | null {
+  if (typeof raw !== 'string') return null
+  const v = raw.trim()
+  if (v.length === 0 || v.length > 64) return null
+  return v
+}
+
+// ★ chartId 归属校验（§3.2 安全点单一事实源）：metadata 里的 chartId 必须查 charts 表
+//   确认 user_id 等于该买家，否则【恶意构造的 metadata 可把付款关联到别人的命盘】。
+//   非法/不属于该用户 → 返回 null（写 NULL、不报错——只是失去关联，§3.2 明文）。
+//   ★ 牙口锚点：去掉这里的归属校验 → test-fatebook-onepay ②断言② 精确翻红。
+export async function resolveChartIdForUser(
+  repo: WaffoPaymentRepository,
+  rawChartId: unknown,
+  userId: string,
+): Promise<string | null> {
+  const chartId = normalizeChartIdMeta(rawChartId)
+  if (!chartId) return null
+  const owner = await repo.findChartUserId(chartId)
+  return owner === userId ? chartId : null
+}
 
 // 把 order.completed 事件映射成 payments 行；无法得到合法行时返回 null（调用方记日志）。
 export function buildPaidPaymentRow(
@@ -94,9 +130,12 @@ export function buildPaidPaymentRow(
 
   const paidAt = data.paymentDate || nowIso
 
+  // chartId：此处只做形态校验；归属校验在落账前统一走 resolveChartIdForUser（查库，纯函数做不了）
+  const rawChartId = (data.orderMetadata as Record<string, unknown> | undefined)?.chartId
+
   return {
     user_id: userId,
-    chart_id: null,
+    chart_id: normalizeChartIdMeta(rawChartId),
     amount,
     payment_type: 'single',
     payment_method: 'card',
@@ -143,8 +182,13 @@ export async function handleWaffoEvent(
       : { kind: 'ignored_missing_user' }
   }
 
+  // ★ 命盘归属校验（HANDOFF-命书一份一付 §3.2 安全点）：metadata.chartId 必须属于该买家，
+  //   否则写 NULL 不报错（单一事实源 resolveChartIdForUser；断言②有牙口守护）。
+  const chartId = await resolveChartIdForUser(repo, event.data.orderMetadata?.chartId, row.user_id)
+  const rowOwned: PaidPaymentRow = { ...row, chart_id: chartId }
+
   // 幂等闸口 (b)：transaction_id UNIQUE，冲突即已授过权益。
-  const inserted = await repo.insertPaidPayment(row)
+  const inserted = await repo.insertPaidPayment(rowOwned)
   return inserted ? { kind: 'inserted' } : { kind: 'payment_conflict' }
 }
 
@@ -174,9 +218,12 @@ export async function reconcilePayment(deps: {
   const node = await remote.findSucceededPayment(ref)
   if (!node || node.status !== 'succeeded') return { status: 'pending' }
 
+  // ★ 补写行同样做命盘归属校验（§3.2）：远端 metadata 的 chartId 同样不可信
+  const chartId = await resolveChartIdForUser(repo, node.chartId, userId)
+
   const row: PaidPaymentRow = {
     user_id: userId, // 以登录态为准，不信远端 metadata 里的 userId
-    chart_id: null,
+    chart_id: chartId,
     amount: Number(node.chargedAmount),
     payment_type: 'single',
     payment_method: 'card',
@@ -221,6 +268,8 @@ export function normalizeGraphqlPayment(raw: unknown): RemotePaymentNode | null 
   const meta = (pick(node, 'orderMetadata', 'metadata') ?? {}) as AnyRec
   const userId = String(meta.userId ?? '')
   const sku = String(meta.sku ?? 'fatebook')
+  // ★ chartId 只做形态归一（RemotePaymentNode.chartId?: string）；归属校验在补写前统一做（§3.2）
+  const chartIdRaw = normalizeChartIdMeta(meta.chartId)
   if (!paymentId || !chargedAmount || !orderMerchantExternalId) return null
 
   return {
@@ -231,5 +280,6 @@ export function normalizeGraphqlPayment(raw: unknown): RemotePaymentNode | null 
     orderMerchantExternalId,
     userId,
     sku,
+    ...(chartIdRaw ? { chartId: chartIdRaw } : {}),
   }
 }

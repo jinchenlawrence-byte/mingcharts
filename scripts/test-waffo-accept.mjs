@@ -22,7 +22,7 @@
 //   B buildPaidPaymentRow 删掉 order_merchant_external_id 字段
 //     → ③「order_merchant_external_id 已写入」断言翻红
 //       （verify-payment 的补写行在另一代码路径，由 ⑤ 独立断言守护）
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { generateKeyPairSync, createSign, createPrivateKey } from 'node:crypto'
 import { verifyWebhook } from '@waffo/pancake-ts'
 import {
@@ -71,12 +71,15 @@ const UID_A = '11111111-2222-3333-4444-555555555555'
 const UID_B = 'aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee'
 
 // —— 内存仓储：镜像生产 DB 的两个唯一约束（processed_webhooks PK / payments.transaction_id UNIQUE）——
+// ★ charts：命盘归属数据（HANDOFF-命书一份一付 §3.2），findChartUserId 按它校验。
 function createMemRepo() {
   const eventKeys = new Set()
   const payments = []
+  const charts = []
   return {
     _payments: payments,
     _eventKeys: eventKeys,
+    _charts: charts,
     async markEventProcessed(eventType, eventId) {
       const key = eventType + '|' + eventId
       if (eventKeys.has(key)) return false
@@ -90,6 +93,9 @@ function createMemRepo() {
     },
     async findPaidByExternalId(externalId) {
       return payments.find((p) => p.order_merchant_external_id === externalId) ?? null
+    },
+    async findChartUserId(chartId) {
+      return charts.find((c) => c.id === chartId)?.user_id ?? null
     },
   }
 }
@@ -142,7 +148,29 @@ assert(!/NEXT_PUBLIC_WAFFO/.test(waffoSrc), 'WAFFO 密钥不带 NEXT_PUBLIC_ 前
 assert(!/BEGIN (RSA )?PRIVATE KEY/.test(waffoSrc), 'waffo.ts 中无硬编码私钥')
 
 const productsSrc = stripComments(read('../src/lib/waffo-products.ts'))
-assert(!/['"]PROD_[A-Za-z0-9]+['"]/.test(productsSrc), 'productId 映射中无硬编码 PROD_ 单号')
+// ★ 登记规则（waffo-products.ts 注释明文）：PROD_ 单号【只在映射这一处登记】——
+//   全 src 扫描：waffo-products.ts 之外（去注释后）不得出现 PROD_ 字面量，防散落硬编码。
+//   （原断言「映射中无 PROD_」写于 fatebook 未登记时期；d8d436c 登记真实单号后前提失效，
+//     按 §8.6.2 期望值跟随事实更新，防散落的意图保留。）
+{
+  const PROD_LIT = /['"]PROD_[A-Za-z0-9]+['"]/
+  let scanned = 0
+  const walk = (dirUrl, rel) => {
+    for (const e of readdirSync(new URL(dirUrl, import.meta.url), { withFileTypes: true })) {
+      if (e.isDirectory()) { walk(dirUrl + e.name + '/', rel + e.name + '/'); continue }
+      if (e.isFile() && /\.(ts|tsx)$/.test(e.name)) {
+        const relPath = rel + e.name
+        if (relPath === 'lib/waffo-products.ts') continue
+        scanned++
+        if (PROD_LIT.test(stripComments(read('../src/' + relPath)))) {
+          fail(`PROD_ 单号散落在映射之外的 src/${relPath}（登记规则：只在 waffo-products.ts 一处）`)
+        }
+      }
+    }
+  }
+  walk('../src/', '')
+  assert(scanned > 0, `全 src 扫描执行有效（扫描 ${scanned} 个 .ts/.tsx 文件）`)
+}
 
 const schema = read('../supabase/schema.sql')
 assert(
@@ -169,7 +197,10 @@ assert(webhookRoute.includes("'x-waffo-signature'"), 'webhook 路由读 x-waffo-
 assert(webhookRoute.includes('verifyWaffoEvent'), 'webhook 路由走统一验签函数')
 
 const eventsSrc = read('../src/lib/waffo-events.ts')
-assert(eventsSrc.includes('chart_id: null'), '支付行 chart_id 固定 NULL（不做命盘关联推断）')
+// chart_id 链路（HANDOFF-命书一份一付 §三）：metadata.chartId → 形态校验 → 落账前归属校验
+assert(eventsSrc.includes('normalizeChartIdMeta'), 'chartId 形态校验单一事实源 normalizeChartIdMeta 存在')
+assert(eventsSrc.includes('resolveChartIdForUser'), 'chartId 归属校验单一事实源 resolveChartIdForUser 存在')
+assert(eventsSrc.includes('findChartUserId'), '仓储接口含 findChartUserId（归属校验查 charts 表）')
 assert(eventsSrc.includes("data.paymentId"), 'transaction_id 取 data.paymentId（PAY_ 单号）')
 assert(eventsSrc.includes('Number(data.chargedAmount)'), 'amount 取 Number(chargedAmount)')
 assert(!/data\.amount\b|data\.total\b|data\.subtotal\b/.test(eventsSrc), '不使用废弃的 amount/total/subtotal 字段')
@@ -295,7 +326,8 @@ console.log('—— ③ 事件处理幂等 + payments 行字段 ——')
   assert(row.status === 'paid', "status = 'paid'")
   assert(row.transaction_id === 'PAY_1' && row.transaction_id.startsWith('PAY_'), 'transaction_id = PAY_ 真实单号')
   assert(row.order_merchant_external_id === `MC-${UID_A}-1760000000000`, 'order_merchant_external_id 已写入')
-  assert(row.chart_id === null, 'chart_id 固定 NULL')
+  // 默认事件 metadata 无 chartId → 落 NULL（HANDOFF-命书一份一付 §3.3 断言③同型）
+  assert(row.chart_id === null, 'metadata 无 chartId → chart_id 落 NULL（不报错）')
   assert(row.paid_at === '2026-10-10T08:00:00.000Z', 'paid_at 取 paymentDate')
 
   // 不同事件、同一支付单号（另一条链路重投）→ transaction_id UNIQUE 兜底
@@ -488,8 +520,10 @@ console.log('—— ⑥ 单号规则 / buildCheckoutParams / SKU 映射 ——')
   } catch { rejectedHttp = true }
   assert(rejectedHttp, '非环回的 http 地址拒绝（successUrl 必须 https）')
 
-  assert(waffoProductId('fatebook') === null, '当前 fatebook 未登记 productId → null（购买入口显示即将推出）')
-  assert(waffoProductId('hemun') === null, '未登记 SKU → null')
+  // fatebook 已登记真实 productId（d8d436c）→ 购买按钮可用；未登记 SKU 仍返回 null
+  assert(typeof waffoProductId('fatebook') === 'string' && waffoProductId('fatebook').startsWith('PROD_'),
+    'fatebook 已登记 productId（PROD_ 前缀，购买入口可用）')
+  assert(waffoProductId('annual_report') === null, '未登记 SKU → null（购买入口显示即将推出）')
 }
 
 // ════════════════ 收尾 ════════════════

@@ -56,7 +56,9 @@ export function createWaffoRepo(admin: SupabaseClient): WaffoPaymentRepository {
       if (!data) return null
       return {
         user_id: data.user_id as string,
-        chart_id: null,
+        // ★ 返回库里的真实关联值（HANDOFF-命书一份一付 §三）：写死 null 会让快路径
+        //   查回的行丢失命盘关联，按盘判定（§四）就无从谈起。
+        chart_id: (data.chart_id as string | null) ?? null,
         amount: Number(data.amount),
         payment_type: data.payment_type as PaidPaymentRow['payment_type'],
         payment_method: data.payment_method as PaidPaymentRow['payment_method'],
@@ -65,6 +67,19 @@ export function createWaffoRepo(admin: SupabaseClient): WaffoPaymentRepository {
         order_merchant_external_id: data.order_merchant_external_id as string,
         paid_at: data.paid_at as string,
       }
+    },
+
+    // ★ 命盘归属校验（HANDOFF-命书一份一付 §3.2）：查 charts 表该行的 user_id；不存在 → null
+    async findChartUserId(chartId: string): Promise<string | null> {
+      const { data, error } = await admin
+        .from('charts')
+        .select('user_id')
+        .eq('id', chartId)
+        .maybeSingle()
+      if (error) {
+        throw new Error(`charts 查询失败: ${error.code} ${error.message}`)
+      }
+      return (data?.user_id as string | undefined) ?? null
     },
   }
 }

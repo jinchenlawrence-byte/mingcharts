@@ -118,6 +118,10 @@ export interface CheckoutParamsInput {
   buyerEmail: string
   userId: string
   sku: string
+  // ★ 命盘关联（HANDOFF-命书一份一付 §3.1）：随 metadata 透传给 webhook 落账写 payments.chart_id。
+  //   走 metadata 不改单号格式（MC-<userId>-<ts> 已实测 54 字符，塞 UUID 36 字符会逼近 128 上限）。
+  //   webhook 落账前会校验归属（§3.2），此处只透传不信任。
+  chartId?: string
   appUrl: string
   storeId: string
 }
@@ -151,6 +155,8 @@ export function buildCheckoutParams(input: CheckoutParamsInput): WaffoCheckoutPa
       // metadata 值必须是字符串（SDK 类型 Record<string,string>）
       userId: input.userId,
       sku: input.sku,
+      // ★ 命盘关联（HANDOFF-命书一份一付 §3.1）：空串=未关联（webhook 落账时写 NULL）
+      chartId: input.chartId ?? '',
     },
     successUrl,
   }
