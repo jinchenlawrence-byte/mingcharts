@@ -22,6 +22,10 @@ export interface ZwPalace {
   changsheng12: string
   decadalRange: [number, number]
   ages: number[]
+  /** 宫干自化（iztro 原生 palace.selfMutaged）：命中的四化类型列表 */
+  selfMutaged?: string[]
+  /** 来因宫（iztro 原生 palace.isOriginalPalace）：生年干同干之宫，库口径只标一个 */
+  isOriginalPalace?: boolean
 }
 
 export interface ZwChart {
@@ -94,6 +98,10 @@ export interface ZiweiAnalysis {
   decadal: PeriodRead
   yearly: PeriodRead
   xiaoxian: { nominalAge: number; basePalace: string; ganZhi: string }
+  /** 自化信息：每个有自化的宫位 → 命中的四化类型列表 */
+  selfMutations?: { palace: string; ganZhi: string; mutagens: string[] }[]
+  /** 来因宫（生年干同干之宫，库口径只标一个） */
+  laiYinPalace?: string
 }
 
 // ---------- 常量 ----------
@@ -210,9 +218,12 @@ export function paipanZiwei(
       changsheng12: string
       decadal: { range: [number, number] }
       ages: number[]
+      selfMutaged: (m: string) => boolean
+      isOriginalPalace: boolean
     }>
   }
 
+  const MUTAGEN_TYPES = ['禄', '权', '科', '忌']
   const palaces: ZwPalace[] = astrolabe.palaces.map((p) => ({
     index: p.index,
     name: p.name,
@@ -227,7 +238,9 @@ export function paipanZiwei(
       .filter((n) => KEY_ADJECTIVE.includes(n)),
     changsheng12: p.changsheng12,
     decadalRange: p.decadal.range,
-    ages: p.ages
+    ages: p.ages,
+    selfMutaged: MUTAGEN_TYPES.filter((m) => p.selfMutaged(m)),
+    isOriginalPalace: p.isOriginalPalace
   }))
 
   return {
@@ -582,6 +595,12 @@ export function analyzeZiwei(chart: ZwChart, now: Date): ZiweiAnalysis {
   )
   const xxIdx = branchToIndex(h.age.earthlyBranch)
 
+  // 自化与来因宫（从 chart 读取，chart 在 paipanZiwei 中已映射）
+  const selfMutations = chart.palaces
+    .filter((p) => p.selfMutaged && p.selfMutaged.length > 0)
+    .map((p) => ({ palace: p.name, ganZhi: p.ganZhi, mutagens: p.selfMutaged! }))
+  const laiYinPalace = chart.palaces.find((p) => p.isOriginalPalace)?.name
+
   return {
     patterns,
     transforms,
@@ -594,6 +613,8 @@ export function analyzeZiwei(chart: ZwChart, now: Date): ZiweiAnalysis {
       nominalAge: h.age.nominalAge,
       basePalace: chart.palaces[xxIdx].name,
       ganZhi: h.age.heavenlyStem + h.age.earthlyBranch
-    }
+    },
+    selfMutations: selfMutations.length > 0 ? selfMutations : undefined,
+    laiYinPalace
   }
 }

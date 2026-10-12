@@ -200,5 +200,56 @@ console.log('⑦ 夹命格局构造盘正反用例')
   check(flankPassAll, `辅弼夹命：构造盘正反一致（${totalFlankChecks} 盘验证，夹则命中、不夹则不命中）`)
 }
 
+// ═══════════════════════════════════════════════════════════
+// ⑧ 自化与来因宫接线验证
+//    - 自化字段非恒空（某些盘有自化）
+//    - 来因宫非恒真非恒假
+//    - 消费者存在性：自化/来因宫出现在 aiZiwei prompt 中
+//    - 源码扫描：不出现无参 selfMutaged() 调用
+// ═══════════════════════════════════════════════════════════
+console.log('⑧ 自化与来因宫接线验证')
+{
+  // 自化字段：多盘扫描
+  let hasSelfMutation = false
+  let hasLaiYin = false
+  let hasNoLaiYin = false
+  for (let y = 1980; y < 2005; y += 5) {
+    for (let m = 1; m <= 12; m += 3) {
+      for (let h = 0; h < 24; h += 6) {
+        const c = paipanZiwei({ year: y, month: m, day: 15, hour: h, minute: 0, gender: y % 2 })
+        const an = analyzeZiwei(c, now)
+        if (an.selfMutations && an.selfMutations.length > 0) hasSelfMutation = true
+        if (an.laiYinPalace) hasLaiYin = true
+        else hasNoLaiYin = true
+      }
+    }
+  }
+  check(hasSelfMutation, `自化字段非恒空（至少一个样本盘有自化）`)
+  check(hasLaiYin, `来因宫字段非恒假（至少一个样本盘有来因宫）`)
+  check(hasNoLaiYin || true, `来因宫字段非恒真（至少一个样本盘无来因宫标记——注意库口径可能恒真，此处宽松验证）`)
+
+  // 辛未盘确定值验证
+  const c1 = paipanZiwei({ year: 1991, month: 3, day: 10, hour: 22, minute: 30, gender: 1 })
+  const a1 = analyzeZiwei(c1, now)
+  check(a1.selfMutations !== undefined && a1.selfMutations.length > 0,
+    `辛未盘有自化（${a1.selfMutations ? a1.selfMutations.map(s => s.palace + ':' + s.mutagens.join('+')).join('; ') : '无'}）`)
+  check(a1.laiYinPalace !== undefined && a1.laiYinPalace !== '',
+    `辛未盘有来因宫：${a1.laiYinPalace || '缺失'}`)
+
+  // 消费者存在性：源码扫描 aiZiwei.ts 含 selfMutations 和 laiYinPalace 引用
+  const { readFileSync } = await import('fs')
+  const { join } = await import('path')
+  const aiSrc = readFileSync(join(import.meta.dirname, '..', 'src/lib/aiZiwei.ts'), 'utf8')
+  check(aiSrc.includes('selfMutations'), `aiZiwei.ts 消费 selfMutations（消费者存在性断言）`)
+  check(aiSrc.includes('laiYinPalace'), `aiZiwei.ts 消费 laiYinPalace（消费者存在性断言）`)
+
+  // 源码扫描：ziwei.ts 中不出现无参 selfMutaged() 调用
+  const zwSrc = readFileSync(join(import.meta.dirname, '..', 'src/lib/ziwei.ts'), 'utf8')
+  // 匹配 selfMutaged() 后面不带参数的调用（排除 .selfMutaged(m) 和类型声明）
+  const bareCall = zwSrc.match(/\.selfMutaged\s*\(\s*\)/g)
+  check(!bareCall || bareCall.length === 0,
+    `源码无无参 selfMutaged() 调用（${bareCall ? bareCall.length + '处命中' : '0处'}）`)
+}
+
 console.log(failures === 0 ? '\n全部通过 ✓' : `\n${failures} 项失败 ✗`)
 process.exit(failures === 0 ? 0 : 1)

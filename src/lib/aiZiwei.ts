@@ -100,6 +100,12 @@ ${patternLines}
 ${periodBlock(a.decadal)}
 ${periodBlock(a.yearly)}
 小限：${a.xiaoxian.nominalAge}岁，宫位在原局${a.xiaoxian.basePalace}（${a.xiaoxian.ganZhi}）
+${a.selfMutations && a.selfMutations.length
+  ? '\n【宫干自化（iztro 原生，不得更改）】\n' + a.selfMutations.map((s) => `${s.palace}（${s.ganZhi}）自化${s.mutagens.join('、')}`).join('\n')
+  : ''}
+${a.laiYinPalace
+  ? `\n【来因宫（iztro 原生，不得更改）】\n${a.laiYinPalace}`
+  : ''}
 
 请严格按以下结构输出 JSON（共6个键，值为该板块正文，可用 \\n\\n 分段）：
 ${sections}`
