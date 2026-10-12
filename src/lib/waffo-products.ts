@@ -10,15 +10,14 @@ export const WAFFO_PORTAL_URL = 'https://pancake.waffo.ai/consumer/portal/login'
 // Waffo 商品映射（productId 由 Dashboard「一次性商品」创建后得到，形态如 PROD_xxx）
 //
 // ★ 本文件【不含任何密钥】，可被服务端组件与客户端安全引用。
-// ★ productId 一个都不许硬编码写死（任务书 §10.4）：
-//   待用户在 Dashboard 建好商品、把 productId 填进 .env.local 后，
-//   优先在下方映射中登记（正式形态）；映射为空的 SKU 购买入口显示「即将推出」。
-//
-// 登记示例（拿到 productId 后取消注释）：
-//   fatebook: 'PROD_xxxxxxxxxxxxxxxx',
+// ★★ 登记规则：productId 【只在本映射这一处登记】——
+//    映射可静态分析（SSR 即知是否开放购买），且【客户端组件读得到】；
+//    env 方案做不到这两点，故不采用 env（见任务书待拍板①）。
+// ★ 映射为空的 SKU，购买入口显示「即将推出」（见 waffoProductId 与 pricing 页）。
 // ─────────────────────────────────────────────────────────────
 export const WAFFO_PRODUCTS: Partial<Record<SkuId, string>> = {
-  // fatebook: '',
+  // 命书报告（29.99 USD 一次性）—— Dashboard 商品 ID
+  fatebook: 'PROD_1H2rQWsIKwlqkHG3xMR01v',
 }
 
 // 返回某 SKU 对应的 Waffo productId；未登记则返回 null（购买入口据此显示「即将推出」）
