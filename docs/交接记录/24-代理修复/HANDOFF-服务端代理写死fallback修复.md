@@ -8,11 +8,14 @@
 
 # 〇、先读六条
 
-1. **★★★★★ 问题**：两处代码【写死了本地代理 fallback**✗：
-   `src/lib/supabase.ts:31` 与 `src/lib/waffo.ts:70`（一字不差 ✓）：
+1. **★★★★★ 问题**：两处代码【写死了本地代理 fallback**✗（一字不差 ✓）：
    ```ts
    const proxyUrl = process.env.HTTPS_PROXY || process.env.HTTP_PROXY || 'http://127.0.0.1:7897'
    ```
+   **★★ 定位方式**：请【按上面这行代码内容搜**✗ 不要按行号 ✓ ——
+   因为你有其它在制品（如 `setServerSupabaseInsertForTest` 注入点 ✓）会让行号漂移 ✓
+   （我方核实时：`supabase.ts` 已从 31 行漂到 **40** 行 ✗ `waffo.ts` 仍在 **70** 行 ✓）
+   两处所在函数：`createServerSupabase()` 与 `getWaffo()` ✓
 2. **★★★★★ 我方实测确认的后果**：
    ```
    ① 不设代理 → HTTP 200 ✓
@@ -35,7 +38,7 @@
 
 # 一、改法（两处 ✓ 各三行 ✓）
 
-## ①-a `src/lib/supabase.ts`（第 29-38 行）
+## ①-a `src/lib/supabase.ts`（`createServerSupabase()` 内 ✗ 按内容搜 ✗ 行号会漂 ✓）
 
 ```ts
 // ✅ 新
@@ -55,7 +58,7 @@ if (typeof window === 'undefined' && proxyUrl) {
 }
 ```
 
-## ①-b `src/lib/waffo.ts`（第 68-78 行）—— **同样三行改动** ✗
+## ①-b `src/lib/waffo.ts`（`getWaffo()` 内 ✓）—— **同样三行改动** ✗
 
 ```ts
 // ✅ 新（日志前缀保留 [waffo] ✗ 并保留既有的 eslint-disable 注释 ✓）
