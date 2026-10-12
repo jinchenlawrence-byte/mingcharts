@@ -249,6 +249,16 @@ console.log('⑧ 自化与来因宫接线验证')
   const bareCall = zwSrc.match(/\.selfMutaged\s*\(\s*\)/g)
   check(!bareCall || bareCall.length === 0,
     `源码无无参 selfMutaged() 调用（${bareCall ? bareCall.length + '处命中' : '0处'}）`)
+
+  // 流月四化消费者存在性
+  check(a1.monthly !== undefined, `辛未盘有流月四化（${a1.monthly ? a1.monthly.ganZhi + ':' + a1.monthly.transforms.join(';') : '缺失'}）`)
+  check(aiSrc.includes('a.monthly'), `aiZiwei.ts 消费 a.monthly（流月四化消费者存在性断言）`)
+
+  // 流月三档红线未破坏：流月标签不含4档措辞
+  const monthlyTags = a1.monthly?.tags || []
+  const forbiddenTiers = ['大吉', '大防', '大凶']
+  const tierViolations = monthlyTags.filter(t => forbiddenTiers.some(ft => t.includes(ft)))
+  check(tierViolations.length === 0, `流月三档红线未破坏（标签无4档措辞：${tierViolations.length ? tierViolations.join(';') : '合规'}）`)
 }
 
 console.log(failures === 0 ? '\n全部通过 ✓' : `\n${failures} 项失败 ✗`)

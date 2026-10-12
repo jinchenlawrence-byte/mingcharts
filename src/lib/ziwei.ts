@@ -102,6 +102,8 @@ export interface ZiweiAnalysis {
   selfMutations?: { palace: string; ganZhi: string; mutagens: string[] }[]
   /** 来因宫（生年干同干之宫，库口径只标一个） */
   laiYinPalace?: string
+  /** 流月四化（iztro horoscope().monthly，只追加不改变三档红线） */
+  monthly?: PeriodRead
 }
 
 // ---------- 常量 ----------
@@ -581,6 +583,7 @@ export function analyzeZiwei(chart: ZwChart, now: Date): ZiweiAnalysis {
     horoscope: (d: Date) => {
       decadal: { index: number; heavenlyStem: string; earthlyBranch: string; mutagen: string[] }
       yearly: { index: number; heavenlyStem: string; earthlyBranch: string; mutagen: string[] }
+      monthly: { index: number; heavenlyStem: string; earthlyBranch: string; mutagen: string[] }
       age: { index: number; nominalAge: number; heavenlyStem: string; earthlyBranch: string }
     }
   }
@@ -592,6 +595,11 @@ export function analyzeZiwei(chart: ZwChart, now: Date): ZiweiAnalysis {
     chart,
     { ...h.yearly },
     `${now.getFullYear()}年流年`
+  )
+  const monthly = buildPeriod(
+    chart,
+    { ...h.monthly },
+    `${now.getFullYear()}年${now.getMonth() + 1}月流月`
   )
   const xxIdx = branchToIndex(h.age.earthlyBranch)
 
@@ -615,6 +623,7 @@ export function analyzeZiwei(chart: ZwChart, now: Date): ZiweiAnalysis {
       ganZhi: h.age.heavenlyStem + h.age.earthlyBranch
     },
     selfMutations: selfMutations.length > 0 ? selfMutations : undefined,
-    laiYinPalace
+    laiYinPalace,
+    monthly
   }
 }
