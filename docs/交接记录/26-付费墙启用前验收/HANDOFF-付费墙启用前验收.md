@@ -57,27 +57,36 @@
        【且【不【因为【本次请求【而产生【AI 调用**✓
    ```
 
-6. **★★★★★ 怎么"开付费墙"才安全（★ 两条路 ✗ 本任务要你选一条 ✓）**：
+6. **★★★★★ 怎么"开付费墙"才安全 —— ★★ 已拍板：方案 B（env 可控 ✓）**：
    ```
-   ★ 方案 A（保守 ✗ 【不改机制**✓）：
-      【在【一个【临时【分支上【把常量改成 true ✗ 【推【出【Preview 验 ✗ 【验完【不合并 ✓
-      —— 【优点：【零生产风险 ✓ 【缺点：【将来【正式【开 ENFORCE 【还要【再【改一次代码 ✓
-      —— ★★ 【而且【每次【验【都要【改【常量 ✗ 【有【忘【改回【的【风险 ✓
+   ★ 用户（2026-10-13）已确认采用【方案 B】**✗ 本任务按 B 实施 ✓
 
-   ★★★ 方案 B（我方推荐 ✗ 【但【需【你【拍板**✓）：
-      把常量改成【可由 env 覆盖 ✗ 【生产【默认【仍为 false】**：
+   ★★★ 方案 B：把常量改成【可由 env 覆盖 ✗ 生产【默认【仍为 false**✓：
       ```ts
-      // ★ 生产：【绝不设置】ENTITLEMENT_ENFORCE ⇒ 恒为 false
-      // ★★ 仅【Preview / 本地测试】设成 'true' 才开启
-      export const ENTITLEMENT_ENFORCE =
-        process.env.NEXT_PUBLIC_…  // ✗ 不要用 NEXT_PUBLIC 前缀（别进客户端）
+      // ★★★★★ 付费墙总开关。
+      //   生产环境【绝不设置】ENTITLEMENT_ENFORCE ⇒ 恒为 false（内测期行为不变）。
+      //   仅 Preview / 本地验证时设 ENTITLEMENT_ENFORCE=true 才开启。
+      //   ★★ 必须【服务端】环境变量：不加 NEXT_PUBLIC_ 前缀（否则会进客户端 bundle）。
+      //   ★★★ 不需担心客户端读到：客户端读不到非 NEXT_PUBLIC_ 的 env ⇒ 评估为 false，
+      //       而客户端本来就不该自己判付费墙（它只调 API）✓
+      export const ENTITLEMENT_ENFORCE = process.env.ENTITLEMENT_ENFORCE === 'true'
       ```
-      —— ★★★ 【即：用【服务端【环境变量（★ 如 `ENTITLEMENT_ENFORCE` ✓）
-      —— 【优点：【开关【不【依赖【改代码【＋ 【重新部署 ✗ 【生产【默认【不变 ✓✓
-      —— 【缺点：【引入【一个【环境变量【控制【的【安全【开关【✗ 要【防【误设 ✓
-      —— ★★★★ 【必须【配套：断言守护「生产环境【若【未显式设置 ⇒ false】」✓
-   → ★★★★★ 【我方倾向 B ✗ 【但【这【改【的【是【安全【开关【的【机制 ✗ 【必须【你【拍板 ✓✓
-     —— 【若【你【选 A ✗ 【本任务【就【按 A 写 ✗ 【不【引入【env ✓
+
+   ★★★★ 我方【已核实】【这个改法是安全的**✓（★ 不是推测 ✓）：
+      · `entitlement.ts` 【12 处被 import】✗ 其中【11 处是服务端 route】✓
+      · ★★ 【唯一【客户端引用】是 `components/CheckoutButton.tsx:7`
+        —— 它【只要 `latestChartIdOf`**✗ 但【ES 模块【会【打包【整个文件 ✓
+        —— ★★★ 【所以常量【会【进【客户端 ✗ 【但【其值【为 false ✗ 【无害且更安全 ✓
+      · ★★★★ 【另发现：`app/api/membership/route.ts:60` 【也【读这个常量**✗
+        （`if (ENTITLEMENT_ENFORCE) { … }`）⇒ 开付费墙【也会【改变【会员路由【行为 ✓
+        —— 【本任务【必须【顺带【验它**✗ 【否则【会漏 ✓（★ 见 §三-4 ✓）
+
+   ★★★★★ 【必须配套的三条守护**✗（★ 否则【这个开关【本身就是风险 ✓）：
+      ① 源码里【不得】出现 `NEXT_PUBLIC_ENTITLEMENT_ENFORCE` 字样
+         （★ 防有人"顺手"加前缀 ✗ 那会让开关进客户端 bundle ✓）
+      ② 在【不设任何 env】的情况下评估该表达式 ⇒ 【必须为 false】
+         （★ 即：【生产【恒定【关闭 ✓）
+      ③ `.env.example` 里【注释掉】这一项 ✗ 并写明「生产【不设】」✓
    ```
 
 7. **★★★★ 第 ① 条【本地就能验**✗ 不需要支付**✓**：
@@ -85,7 +94,7 @@
    ★ "未解锁用户拿不到 ai 全文 ＋ 不触发 AI 调用" 【只需要**：
      · 【一个【已登录用户**（★ 本地 dev 可注册 ✓）
      · 【一份【未被付款【解锁的命盘**（★ 本地排一次盘即可 ✓）
-     · ENFORCE=true（★ 方案 A 改常量 / 方案 B 设 env ✓）
+     · `ENTITLEMENT_ENFORCE=true`（★ 本地 `.env.local` 加一行 ✓）
    → ★★ 【不需要【Waffo 密钥 ✗ 【不需要【真实付款 ✓✓
    ```
 
@@ -135,9 +144,7 @@
 
 ---
 
-# 二、步骤 1：让 `ENTITLEMENT_ENFORCE` 可安全开启（★ 按 §〇-6 你选的方案 ✓）
-
-## 2.1 若选方案 B（★ 我方推荐 ✓）
+# 二、步骤 1：让 `ENTITLEMENT_ENFORCE` 可安全开启（★ 方案 B ✗ 已拍板 ✓）
 
 ```ts
 // src/lib/entitlement.ts
@@ -145,26 +152,38 @@
  * ★★★★★ 付费墙总开关。
  *   生产环境【绝不设置】ENTITLEMENT_ENFORCE ⇒ 恒为 false（内测期行为不变）。
  *   仅 Preview / 本地验证时设 ENTITLEMENT_ENFORCE=true 才开启。
- *   ★★ 必须【服务端】环境变量（不加 NEXT_PUBLIC_ 前缀 ✗ 否则会进客户端 bundle）。
+ *   ★★ 必须【服务端】环境变量：不加 NEXT_PUBLIC_ 前缀（否则会进客户端 bundle）。
+ *   ★★★ 客户端读到的是 undefined ⇒ 评估为 false ✗ 无害（客户端只调 API ✗ 不自判付费墙）。
  */
 export const ENTITLEMENT_ENFORCE = process.env.ENTITLEMENT_ENFORCE === 'true'
 ```
 
-**★★★ 必须配套的守护（★ 否则这个开关本身就是风险 ✓）**：
-```
-★ 断言 ①：源码里【没有】NEXT_PUBLIC_ENTITLEMENT_ENFORCE 字样（★ 防有人"顺手"加前缀 ✓）
-★★ 断言 ②：断言【生产构建【默认【为 false】**✗
-   —— 【怎么测：在【不设任何 env】的情况下【评估该表达式 ⇒ false ✓
-★★★ 断言 ③：`.env.example` 里【注释掉】这一项 ✗ 并写明「生产【不设】」✓
-```
-
-## 2.2 若选方案 A（★ 保守 ✓）
+## 2.1 ★★★★★ 三条守护断言（★ 缺一不可 ✗）
 
 ```
-★ 不做任何机制改动**✗
-★★ 在【一个【临时分支】把常量改 true ✗ 推出去出 Preview ✗ 验完【不合并 ✓
-★★★ 【本任务书【后续步骤【完全一致 ✗ 只是【"怎么开"【换成【改常量 ✓
+① 源码【不得】出现 `NEXT_PUBLIC_ENTITLEMENT_ENFORCE`
+   —— ★ 扫全 src ✗ 命中数必须为 0 ✓
+   —— 牙口：把常量那行临时改成 NEXT_PUBLIC_ 前缀 ⇒ 该断言精确翻红 ✓
+
+② 【不设任何 env】时评估 ⇒ 必须为 false
+   —— ★ 做法：在【同一进程内】先删掉该 env（或用一个不设它的子进程）再 import 常量 ✓
+   —— ★★ 或【结构断言 + 运行时断言并行：
+      · 结构：源文件里【是 `process.env.ENTITLEMENT_ENFORCE === 'true'`】✓
+      · 运行时：`delete process.env.ENTITLEMENT_ENFORCE` 后重新加载模块 ⇒ false ✓
+   —— 牙口：把判定改成 `!== 'false'`（★ 默认变 true ✗ 危险 ✓）⇒ 精确翻红 ✓✓
+
+③ `.env.example` 里【注释掉】该项 ✗ 并注明「生产【不设】」
+   —— ★ 断言：该文件【含】这一行且【以 # 开头】✓
 ```
+
+## 2.2 `.env.local`（★ 本地验证时才加 ✗ 提交前删掉 ✓）
+
+```
+ENTITLEMENT_ENFORCE=true
+```
+
+**★★ 生产 / Preview 的设置位置**：Vercel → Settings → Environment Variables ✓
+**—— ★★★ 生产环境【不设】✗ Preview 环境【设 true】✓**
 
 ---
 
@@ -209,6 +228,21 @@ export const ENTITLEMENT_ENFORCE = process.env.ENTITLEMENT_ENFORCE === 'true'
    —— 【做法：手动【往 payments 插一行 (user_id, chart_id, status='paid')**✗
      【然后【重跑上表 1-4 ✗ 【应【全部【翻成【放行 ✓
    —— ★★ 【这【条【很【重要**✗：它【区分【"付费墙正确"】与【"付费墙把【所有人【都【挡了"】✓✓
+```
+
+## 3.4 ★★★★ 顺带要验 `membership` 路由（★ 我方核查时发现 ✗ 容易漏 ✓）
+
+```
+★ `app/api/membership/route.ts:60`  【也【读 `ENTITLEMENT_ENFORCE`】**✗：
+     if (ENTITLEMENT_ENFORCE) { … }
+★★ ⇒ 【开付费墙【也会【改变【会员路由【行为】✗ 【而【它【不在【25 号【那 4 个判定点里 ✓
+★★★ 要验**✗：
+   · ENFORCE=false（现状）⇒ 会员路由【照旧【可用（★ 内测期免费开通 ✓）
+   · ★★ ENFORCE=true ⇒ 【它【应【给出【明确的【"未购买/未开放"【响应**✗
+     【而不是【崩溃 / 500 ✓
+   · 【请【在【回执里【写明【你【观察到的【实际【行为**✗ 【并【判断【是否【合理 ✓
+→ ★★★★ 【若【你【认为【它的【行为【需要【调整 ✗ 【请【单独【说明**✗
+   【不要【在本任务里【顺手【改（★ 本任务【只验 ✗ 不改 ✓）
 ```
 
 ---
@@ -270,20 +304,22 @@ export const ENTITLEMENT_ENFORCE = process.env.ENTITLEMENT_ENFORCE === 'true'
 
 | # | 步 | 项 | 期望 |
 |---|---|---|---|
-| 1 | 1 | 按你选的方案（A 或 B）实现开关 ✗ 并【说明选了哪个 ＋ 理由】 | ✓ |
-| 2 | 1 | 方案 B 时：三条守护断言（无 NEXT_PUBLIC_ / 默认 false / .env.example 注明） | ✓ **贴注入前后** |
+| 1 | 1 | 常量改为 `process.env.ENTITLEMENT_ENFORCE === 'true'`（★ 含注释 ✓） | ✓ |
+| 2 | 1 | ★★★ 三条守护断言（无 NEXT_PUBLIC_ / 不设 env 时为 false / .env.example 注释掉） | ✓ **贴注入前后** |
 | 3 | 2 | 判定点 1：`entitlements` 带 chartId ⇒ `canViewFatebook: false` | ✓ **贴实际响应** |
 | 4 | 2 | 判定点 2：`entitlements` 不带 chartId ⇒ `false` | ✓ |
-| 5 | 2 | 判定点 3：`paipan` ⇒ `locked` 非 null ✗ 且不含 ai 全文 / `paid.*` | ✓ **贴 locked 的实际结构（可脱敏）** |
+| 5 | 2 | 判定点 3：`paipan` ⇒ `locked` 非 null ✗ 且不含 ai 全文 / `paid.*` | ✓ **贴 locked 实际结构（可脱敏）** |
 | 6 | 2 | 判定点 4：`unlock` ⇒ **402** ＋ `locked: true` | ✓ |
-| 7 | 2 | ★★★★ **「不触发 AI 调用」的可观测证明**（★ 按 §三-2 选至少两条 ✓） | ✓ **贴你选的方式 ＋ 证据** |
-| 8 | 2 | ★★★ **反向验证**：手动插 paid 行 ⇒ 四个判定点【全部【翻成【放行**✓ | ✓ **贴前后对比** |
-| 9 | 3 | 真实支付 → 删 payments 行 → ★【确认权益【真的消失**✗ | ✓ **贴 `canViewFatebook` 前后值** |
-| 10 | 3 | 成功页 35-40 秒后 ⇒ payments 行【被补回】✗ 页面显示解锁 | ✓ |
-| 11 | 3 | 若失败 ⇒ 贴 `[verify-payment]` 日志原文 ＋ 你的校正（改了哪个字段名） | ✓ |
-| 12 | — | `ENTITLEMENT_ENFORCE` 【在 master 上【仍为 false**✗ | ✓ |
-| 13 | — | `npm run verify` 全绿 ＋ `tsc --noEmit` 0 错误 | ✓ |
-| 14 | — | 回执里【明确【说明：本次【是否【真的【在【ENFORCE=true 下【跑过】 | ✓ |
+| 7 | 2 | ★★★★ **「不触发 AI 调用」的可观测证明**（★ 按 §三-2 至少两条 ✓） | ✓ **贴方式 ＋ 证据** |
+| 8 | 2 | ★★★ **反向验证**：手动插 paid 行 ⇒ 四个判定点【全部翻成放行】 | ✓ **贴前后对比** |
+| 9 | 2 | ★★★★ **`membership` 路由在 ENFORCE=true 下的行为**（★ §3.4 ✗ 附你的判断 ✓） | ✓ **贴实际响应** |
+| 10 | 3 | 真实支付 → 删 payments 行 → ★【确认权益【真的消失】**✗ | ✓ **贴 `canViewFatebook` 前后值** |
+| 11 | 3 | 成功页 35-40 秒后 ⇒ payments 行【被补回】✗ 页面显示解锁 | ✓ |
+| 12 | 3 | 若失败 ⇒ 贴 `[verify-payment]` 日志原文 ＋ 你的校正（改了哪个字段名） | ✓ |
+| 13 | — | `ENTITLEMENT_ENFORCE` 【在生产环境【仍为 false**✗（★ 不设该 env ✓） | ✓ |
+| 14 | — | `.env.local` 【没有【被提交】✗ 源码里【没有【硬编码 true】✓ | ✓ |
+| 15 | — | `npm run verify` 全绿 ＋ `tsc --noEmit` 0 错误 | ✓ |
+| 16 | — | 回执里【明确说明：本次【是否【真的【在 ENFORCE=true 下【跑过】✗ 以及【在哪个环境】 | ✓ |
 
 ---
 
