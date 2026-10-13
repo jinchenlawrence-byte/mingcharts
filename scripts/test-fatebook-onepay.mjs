@@ -360,7 +360,10 @@ function createEntAdmin({ payments = [] } = {}) {
 
 // ── 4 判定点接线断言（§8.5.1 消费者接线；§4.2 逐点改法）──
 const entSrc = stripComments(read('../src/lib/entitlement.ts'))
-assert(/export const ENTITLEMENT_ENFORCE = false/.test(entSrc), 'ENTITLEMENT_ENFORCE 仍为 false（§六：不得改值）')
+assert(
+  /export const ENTITLEMENT_ENFORCE = process\.env\.ENTITLEMENT_ENFORCE === 'true'/.test(entSrc),
+  'ENTITLEMENT_ENFORCE 为 env 可控开关（26号方案 B：生产不设 ⇒ false；三条守护见 test-enforce-guard.mjs）',
+)
 assert(/if \(!enforce\) return true/.test(entSrc), '双层第一层守卫在（ENFORCE 短路——牙口①锚点）')
 assert(/if \(!chartId\) return false/.test(entSrc), '双层第二层守卫在（无 chartId 不放行——牙口④锚点）')
 assert(/\.eq\('chart_id', chartId\)/.test(entSrc), '按盘查询带 chart_id 条件（牙口③锚点；§五：NULL 行天然不匹配）')
@@ -378,6 +381,9 @@ assert(
   const iGate = unlockSrc.indexOf('canViewFatebookForChart(')
   const i402 = unlockSrc.indexOf('尚未购买命书报告')
   assert(iChart >= 0 && iChart < iGate && iGate < i402, `unlock 顺序：先查 chart（${iChart}）→ 判权益（${iGate}）→ 402（${i402}）（§4.2 ★★★★）`)
+  // ★ 26号 §三-2②：AI 调用必须在 402 之后（402 时不触发任何 AI 调用的结构保证）
+  const iAI = unlockSrc.indexOf('generateAIAnalysis(')
+  assert(i402 >= 0 && iAI > i402, `unlock 结构：AI 调用在 402 之后（402@${i402} < AI@${iAI}，26号 §三-2②）`)
   assert(
     /is_paid: false/.test(unlockSrc) && unlockSrc.indexOf('is_paid: false') < unlockSrc.indexOf('is_paid: true'),
     '402 路径落库 is_paid=false；is_paid=true 只在真实解锁分支（语义不混）',

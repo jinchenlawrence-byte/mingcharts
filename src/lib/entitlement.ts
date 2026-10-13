@@ -5,18 +5,21 @@ import type { SkuId, GrantId } from './pricing'
 import { SKUS } from './pricing'
 
 /**
- * ★ 是否真正执行拦截（§1.1 不变量）。
- * 支付接入是第 6–7 步，本轮没做 —— 必须为 false，
- * 否则紫微/合婚/地理的用户永远拿不到内容，等于功能不可用。
- * 第 7 步（接 MoR/Stripe）完成后才改为 true。
+ * ★★★★★ 付费墙总开关（26号任务书 §二 方案 B，2026-10-13：由写死 false 改为 env 可控）。
+ *   生产环境【绝不设置】ENTITLEMENT_ENFORCE ⇒ 恒为 false（内测期行为不变）。
+ *   仅 Preview / 本地验证时设 ENTITLEMENT_ENFORCE=true 才开启。
+ *   ★★ 必须是【服务端】环境变量：不加 NEXT_PUBLIC_ 前缀（否则会进客户端 bundle）。
+ *   ★★★ 客户端读到的是 undefined ⇒ 评估为 false，无害（客户端只调 API，不自判付费墙）。
+ *   三条守护断言见 scripts/test-enforce-guard.mjs（无 NEXT_PUBLIC_ 前缀 / 不设 env 时为 false /
+ *   .env.example 注释掉），缺一不可（任务书 §2.1）。
  *
- * ★★ REPLY-23 复核 §五根因待办：ENFORCE=false 期间 canView 恒 true，
- *   「未解锁分支」在各 route 完全不可达——其正确性只能靠纯函数层断言守护
+ * ★ REPLY-23 复核 §五根因待办：ENFORCE=false 期间 canView 恒 true，
+ *   「未解锁分支」在各 route 完全不可达——其正确性靠纯函数层断言守护
  *   （reportCache.resolveCachedHit 断言⑦：未解锁命中带全文缓存 → ai=null）。
- *   【开 ENFORCE 前必须补端到端未解锁验证】：实测「未解锁请求拿不到 ai 全文、
- *   不触发 AI 调用（route 的 unlocked 三元守卫）」，不得只信纯函数层。
+ *   【开 ENFORCE 前必须补端到端未解锁验证】→ 已在 26号验收执行：
+ *   四判定点 + AI 未调用可观测证明 + 反向验证（docs/交接记录/26-付费墙启用前验收/）。
  */
-export const ENTITLEMENT_ENFORCE = false
+export const ENTITLEMENT_ENFORCE = process.env.ENTITLEMENT_ENFORCE === 'true'
 
 export interface Entitlements {
   /**
@@ -52,7 +55,7 @@ export function canView(ent: Entitlements, grant: GrantId): boolean {
  *   · profiles 的会员状态（由支付回调维护）
  *   · payments 的【真实】已支付流水（transaction_id 非 MOCK_ 前缀）
  *   ✗ 绝不接受"内测期临时开通"写入的数据 —— 内测期的免费由
- *     ENTITLEMENT_ENFORCE = false 表达（见该常量注释）
+ *     ENTITLEMENT_ENFORCE 开关表达（生产不设该 env ⇒ false，见该常量注释）
  *
  * 现状：payments 表无 sku 列（见 supabase/schema.sql），
  *   payment_type='single' 的已支付流水＝旧版单次解锁命书 → 映射 fatebook；
@@ -159,7 +162,7 @@ export async function latestChartIdOf(
  * ★ chartId 为 null/undefined → 不放行（§五：NULL 行天然不匹配任何「已付某盘」，
  *   且有守卫兜底——不带 chartId 的调用绝不放行，防旧数据 chart_id=NULL 被误判）。
  * ★ opts.enforce 仅供断言注入双层判定的 ENFORCE=true 分支（默认读全局开关），
- *   生产调用一律不传 —— ENFORCE 仍须为 false（§六：不得改它的值）。
+ *   生产调用一律不传 —— 生产不设该 env ⇒ 开关为 false（26号方案 B，守护断言把关）。
  *   ★ 牙口锚点（三条，见 scripts/test-fatebook-onepay.mjs ③段）：
  *     · 去掉 `if (!enforce) return true` → 断言①（恒真＋零查询）翻红
  *     · 去掉 `if (!chartId) return false` → 断言④翻红
