@@ -73,6 +73,9 @@ export default function Nav() {
               <Link href="/reports" className="text-ink/70 hover:text-cinnabar transition-colors">
                 我的报告
               </Link>
+              <Link href="/account" className="text-ink/70 hover:text-cinnabar transition-colors">
+                账号设置
+              </Link>
               <span className="text-ink/40 max-w-[160px] truncate hidden sm:inline">
                 {email}
               </span>
