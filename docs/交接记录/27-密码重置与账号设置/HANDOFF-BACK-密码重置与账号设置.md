@@ -2,12 +2,13 @@
 
 > **对应任务书**：`HANDOFF-密码重置与账号设置.md`（2026-10-13）
 > **纪律基准**：`docs/验收标准与红线.md` §8.5.1 / §8.6.2 / §8.6.7 已读并执行
+> **★★ 人工验收：已通过（用户实测，2026-10-13）——真发邮件→收信→点链接→设新密码→新密码登录，全链闭环 ✓
 
 ---
 
 ## 一、结论
 
-**四个步骤全部完成，验收表 12 条中 11 条自动验证通过，1 条（人工验收）未做——如实标注，见 §四。**
+**四个步骤全部完成，验收表 12 条全部通过（含人工验收）。**
 
 - `npm run verify` 28 段全绿（含 tsc --noEmit 0 错误，新增尾段 `test-account-auth.mjs` 24 条断言）
 - 牙口：按任务书验收 9 注释 `resetPasswordForEmail(` 调用行 → **仅「接线」断言精确翻红**（其余 23 条仍绿）→ 还原复绿
@@ -26,7 +27,7 @@
 | 7 | Nav 有 /account 入口且移动端可点 | ✓ | 已登录区「我的报告」之后新增平铺链接「账号设置」（与「我的命盘/我的报告」同款样式，贴近现有风格）。**不带 `hidden` 类**（断言守护），窄屏同排可点；未做下拉（现有 Nav 为平铺风格，下拉反而突兀） |
 | 8 | 断言覆盖路由存在＋接线（非仅文案） | ✓ | 新建 `scripts/test-account-auth.mjs` 24 条断言，纳入 verify 第 28 段。核心：①两 page.tsx 存在且真调 API（非空壳）；②`resetPasswordForEmail(` 必须在 `handleForgot` 函数体内；③`updateUser({ password` 必须在 `handleChange` 函数体内；④reset-password 两态分支齐备（`no-session`＋`/auth` 回跳入口＋`form`）；⑤Nav `href="/account"` ≥1 且不带 hidden |
 | 9 | 牙口：注释 resetPasswordForEmail( → 精确翻红 | ✓ | 见 §三-3 原始日志：注入后仅「✗ resetPasswordForEmail( 在 handleForgot 提交处理函数体内」一条翻红，**统一提示文案断言仍绿**（证明断言抓的是接线而非文案），还原后 24 条复绿 |
-| 10 | 人工验收（真发邮件→收信→点链接→设新密码→新密码登录） | **未做** | 如实说明：邮件发送/收信需要真实邮箱收件，我的环境无法完成收件环节。已就绪可直接人工验收（见 §五待拍板） |
+| 10 | 人工验收（真发邮件→收信→点链接→设新密码→新密码登录） | ✓ **已通过** | 用户实测（2026-10-13）：发重置邮件→收信→点链接→设新密码→新密码登录，全链闭环 |
 | 11 | verify 全绿 + tsc 0 错误 | ✓ | 28 段全 PASS（清单见 §三-4），tsc --noEmit 为 verify 首段 0 错误 |
 | 12 | 未越界 | ✓ | 未改支付/权益相关代码；未加改邮箱/删账号/订阅管理（断言④守护：三个页面 `updateUserById` 0 命中、`updateUser` 非 password 字段 0 命中、0 处引用 SERVICE_ROLE） |
 
@@ -103,13 +104,13 @@ ENFORCE_GUARD_PASS / ACCOUNT_AUTH_PASS
 
 ## 四、缺项（如实承认）
 
-1. **人工验收未做**（验收表 #10）：无法在本地完成「收信」环节。代码侧已就绪：本地 dev server 起后（`.env.local` 已含 `NEXT_PUBLIC_APP_URL=http://localhost:3000`，Redirect URLs 已登记 `http://localhost:3000/reset-password`），走一遍即可闭环。
+1. ~~人工验收未做~~ → **已补：用户实测通过（2026-10-13）**，见验收表 #10。
 2. **`.env.local` 曾缺失 `NEXT_PUBLIC_APP_URL`**（本轮发现并已补回）：25 号联调时加过该键，其后 .env.local 恢复事故中丢失（不在恢复快照内）。本次按 `.env.example:39` 口径补回 `NEXT_PUBLIC_APP_URL=http://localhost:3000`。**该键缺失时 `redirectTo` 会拼成 `undefined/reset-password`，被 Supabase allowlist 拒绝**——生产 Vercel 已设不受影响，但本地人工验收前必须保留此键。**修改 .env.local 后需重启 dev server 生效。**
 
 ## 五、待拍板
 
-1. **人工验收执行方式**：① 用户自行在本地走一遍（起 dev server → /auth → 忘记密码 → 填邮箱 → 收信 → 点链接 → 设新密码 → 退出后用新密码登录）；或 ② 提供一个测试邮箱，由我用浏览器代理驱动页面流程、由用户只做收件与点击。**注意 Supabase 内置邮件服务限额约 2 封/小时，人工验收 1 封足够。**
-2. **commit 时机**：8 个文件改动已完成未 commit，等人工验收后一并提交（或拍板先提交代码、验收后补记）。
+1. ~~人工验收执行方式~~ → **已完成**：用户实测通过（2026-10-13）。
+2. ~~commit 时机~~ → **已完成**：人工验收通过后已提交（见 commit 记录）。
 
 ## 六、文件清单
 
