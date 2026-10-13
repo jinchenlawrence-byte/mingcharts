@@ -118,11 +118,14 @@ console.log('⑥ 夹命类格局分布与判据正确性')
   for (const name of FLANK_NAMES) hitCount[name] = 0
   let judgmentErrors = []
 
-  // 大样本扫描
+  // 大样本扫描（HANDOFF-积压旧账清理 §一-1.1：h 步长 6→1）
+  // ★ 空劫/昌曲/火铃的布局由时辰决定（getKongJieIndex(timeIndex)），
+  //   步长 6 只覆盖 4 个时辰、漏一半布局——曾因此误断言「三条夹命格局数学上不可能成立」；
+  //   步长 1 遍历 24 小时 = 全 12 时辰全覆盖，防同类误判的常驻护栏。
   for (let y = 1980; y < 2005; y++) {
     for (let m = 1; m <= 12; m += 3) {
       for (let d = 1; d <= 28; d += 7) {
-        for (let h = 0; h < 24; h += 6) {
+        for (let h = 0; h < 24; h += 1) {
           const c = paipanZiwei({ year: y, month: m, day: d, hour: h, minute: 0, gender: y % 2 })
           const an = analyzeZiwei(c, now)
           const names = new Set(an.patterns.map((p) => p.name))
@@ -153,6 +156,13 @@ console.log('⑥ 夹命类格局分布与判据正确性')
 
   // 判据正确性
   check(judgmentErrors.length === 0, `判据正确性：命中⟺星对在前后宫（${judgmentErrors.length ? judgmentErrors.slice(0, 3).join('; ') : '全部一致'}）`)
+
+  // ★ 常驻断言（HANDOFF-积压旧账清理 §一-1.1）：三条时辰依赖型夹命格局命中数必须 > 0
+  //   空劫/昌曲/火铃的成立由时辰布局决定，若某条为 0，说明布局覆盖或判据出了问题
+  //   —— 防「数学上不可能成立」类误判复发（曾用步长 6 的粗样本误断言过一次）
+  const zeroHits = ['空劫夹命格', '昌曲夹命格', '火铃夹命格'].filter((n) => hitCount[n] === 0)
+  check(zeroHits.length === 0,
+    `空劫/昌曲/火铃夹命命中数均 > 0（空劫:${hitCount['空劫夹命格']} 昌曲:${hitCount['昌曲夹命格']} 火铃:${hitCount['火铃夹命格']}${zeroHits.length ? '；为0：' + zeroHits.join('、') : ''}）`)
 
   // 命中分布
   const dist = FLANK_NAMES.map(n => `${n}:${hitCount[n]}`).join(' ')
@@ -203,7 +213,7 @@ console.log('⑦ 夹命格局构造盘正反用例')
 // ═══════════════════════════════════════════════════════════
 // ⑧ 自化与来因宫接线验证
 //    - 自化字段非恒空（某些盘有自化）
-//    - 来因宫非恒真非恒假
+//    - 来因宫逐盘恰好一个（事实核实：iztro 对每盘恒标 1 宫）
 //    - 消费者存在性：自化/来因宫出现在 aiZiwei prompt 中
 //    - 源码扫描：不出现无参 selfMutaged() 调用
 // ═══════════════════════════════════════════════════════════
@@ -211,22 +221,32 @@ console.log('⑧ 自化与来因宫接线验证')
 {
   // 自化字段：多盘扫描
   let hasSelfMutation = false
-  let hasLaiYin = false
-  let hasNoLaiYin = false
-  for (let y = 1980; y < 2005; y += 5) {
+  let laiYinTotal = 0
+  let laiYinBad = 0
+  // y 步长 5→1（HANDOFF-积压旧账清理 §一-1.2）：原抽样 y=1980,1985,…只覆盖庚/乙两个生年干；
+  //   来因宫断言改为逐盘「恰好一个」后扩为全 25 年（覆盖全部 10 生年干），防年干相关退化漏检
+  for (let y = 1980; y < 2005; y += 1) {
     for (let m = 1; m <= 12; m += 3) {
       for (let h = 0; h < 24; h += 6) {
         const c = paipanZiwei({ year: y, month: m, day: 15, hour: h, minute: 0, gender: y % 2 })
         const an = analyzeZiwei(c, now)
         if (an.selfMutations && an.selfMutations.length > 0) hasSelfMutation = true
-        if (an.laiYinPalace) hasLaiYin = true
-        else hasNoLaiYin = true
+        // ★ 来因宫逐盘「恰好一个」断言（HANDOFF-积压旧账清理 §一-1.2）
+        //   事实核实（temp/laiyin-count.mjs，80盘覆盖全10生年干）：isOriginalPalace 每盘恰好标记 1 宫。
+        //   原断言 check(hasNoLaiYin || true, …) 恒真——其前提「至少一盘无来因宫」与事实矛盾，
+        //   属断言语义错误而非缺牙，故按事实改语义，不是「补牙」。
+        laiYinTotal++
+        const n = c.palaces.filter((p) => p.isOriginalPalace === true).length
+        if (n !== 1) {
+          laiYinBad++
+          if (laiYinBad <= 3) console.log(`    来因宫异常盘 y${y}m${m}h${h}: isOriginalPalace×${n}`)
+        }
       }
     }
   }
   check(hasSelfMutation, `自化字段非恒空（至少一个样本盘有自化）`)
-  check(hasLaiYin, `来因宫字段非恒假（至少一个样本盘有来因宫）`)
-  check(hasNoLaiYin || true, `来因宫字段非恒真（至少一个样本盘无来因宫标记——注意库口径可能恒真，此处宽松验证）`)
+  check(laiYinTotal > 0 && laiYinBad === 0,
+    `来因宫标记恰好一个（${laiYinTotal} 盘逐盘校验，异常 ${laiYinBad} 盘；库口径：生年干同干之宫，iztro 实证恒标 1 个）`)
 
   // 辛未盘确定值验证
   const c1 = paipanZiwei({ year: 1991, month: 3, day: 10, hour: 22, minute: 30, gender: 1 })
