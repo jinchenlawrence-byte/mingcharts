@@ -1,0 +1,6 @@
+# 字体文件不提交（第三方 ✗ 体积大 ✗ 且脚本可随时从官方 zip 重新提取）
+# 需要时跑：python brand\gen_from_outline.py
+_fonts/
+*.otf
+*.ttf
+*.zip
