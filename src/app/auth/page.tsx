@@ -50,8 +50,9 @@ export default function AuthPage() {
         const { error } = await supabase.auth.signInWithPassword({
           email,
           password,
-          // Supabase JS v2：登录/注册的 captcha 参数是 gotrue_meta_security.captcha_token（条件展开，未启用时不带该字段）
-          ...(captchaToken ? { gotrue_meta_security: { captcha_token: captchaToken } } : {})
+          // Supabase JS v2：captcha token 必须走 options.captchaToken——客户端只从这里读并自行组装请求体；
+          // 顶层直接传 gotrue_meta_security 会被静默丢弃（条件展开还会绕过 TS 多余属性检查，tsc 抓不到）
+          options: { captchaToken: captchaToken ?? undefined }
         })
         if (error) throw error
         router.push('/')
@@ -59,7 +60,7 @@ export default function AuthPage() {
         const { error } = await supabase.auth.signUp({
           email,
           password,
-          ...(captchaToken ? { gotrue_meta_security: { captcha_token: captchaToken } } : {})
+          options: { captchaToken: captchaToken ?? undefined }
         })
         if (error) throw error
         setMessage('注册成功！请查收验证邮件')

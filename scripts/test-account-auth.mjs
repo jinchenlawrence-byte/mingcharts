@@ -183,9 +183,11 @@ console.log('—— ⑤ Turnstile 人机验证接线 ——')
 
   const authHandler = extractHandler(authTouched, 'handleAuth')
   assert(authHandler !== null, '/auth 页存在 handleAuth')
-  // Supabase JS v2：登录/注册的 captcha 参数是 gotrue_meta_security.captcha_token（写错参数名 tsc 会红，此处锚定存在）
-  const authN = authHandler ? authHandler.split('gotrue_meta_security').length - 1 : 0
-  assert(authN >= 2, `handleAuth 内 signInWithPassword/signUp 均带 gotrue_meta_security.captcha_token（命中 ${authN}，要求 ≥2）`)
+  // Supabase JS v2：登录/注册的 captcha token 必须走 options.captchaToken——客户端只从这里读并自行组装
+  // gotrue_meta_security 请求体；顶层直接传 gotrue_meta_security 会被静默丢弃（★ 条件展开还会绕过 TS
+  // 多余属性检查，tsc 抓不到——2026-10-14 实网注册 400 no captcha_token found 的根因）
+  const authN = authHandler ? authHandler.split('options: { captchaToken').length - 1 : 0
+  assert(authN >= 2, `handleAuth 内 signInWithPassword/signUp 均走 options.captchaToken（命中 ${authN}，要求 ≥2）`)
   const forgotHandler = extractHandler(authTouched, 'handleForgot')
   const forgotN = forgotHandler ? forgotHandler.split('captchaToken').length - 1 : 0
   assert(forgotN >= 1, `handleForgot 内 resetPasswordForEmail 传 captchaToken（命中 ${forgotN}，要求 ≥1——该端点参数名就是 captchaToken）`)
