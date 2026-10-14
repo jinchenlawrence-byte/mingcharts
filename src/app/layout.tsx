@@ -20,8 +20,8 @@ const notoSerifSC = Noto_Serif_SC({
 
 export const metadata: Metadata = {
   title: {
-    default: "八字命理 - 免费八字排盘与命书详批",
-    template: "%s | 八字命理",
+    default: "明理 - 免费八字排盘与命书详批",
+    template: "%s | 明理",
   },
   description:
     "专业八字命理平台：免费四柱排盘、十神格局分析，命书报告万字详批（八字总览、性格、用神、格局、调候、大运、事业、婚姻、子女、健康），生肖运势与命理知识大全。",

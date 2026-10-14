@@ -31,8 +31,8 @@ export default function Nav() {
     <nav className="bg-paper/80 backdrop-blur-md border-b border-gold/15 sticky top-0 z-40">
       <div className="container mx-auto px-4 h-14 flex items-center justify-between">
         <Link href="/" className="text-lg font-serif-sc font-bold text-ink flex items-center gap-2">
-          <span className="text-cinnabar text-2xl leading-none">命</span>
-          <span>理排盘</span>
+          <span className="text-cinnabar text-2xl leading-none">明</span>
+          <span>理</span>
         </Link>
         <div className="flex items-center gap-3 sm:gap-4 text-sm">
           <Link href="/" className="text-ink/70 hover:text-cinnabar transition-colors">

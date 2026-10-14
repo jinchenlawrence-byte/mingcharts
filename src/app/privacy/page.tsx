@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Privacy Policy',
-  description: 'MingCharts Privacy Policy — 数据收集、存储、跨境传输与用户权利',
+  description: '明理隐私政策 — 数据收集、存储、跨境传输与用户权利',
 }
 
 export default function PrivacyPage() {

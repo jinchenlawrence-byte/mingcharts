@@ -3,7 +3,7 @@ import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'Terms of Service',
-  description: 'MingCharts Terms of Service — 会员订阅、退款政策、AIGC 合规条款',
+  description: '明理服务条款 — 会员订阅、退款政策、AIGC 合规条款',
 }
 
 export default function TermsPage() {

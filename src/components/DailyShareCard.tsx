@@ -59,8 +59,8 @@ export default function DailyShareCard(props: Props) {
       // 顶部产品标识
       ctx.textAlign = 'center'
       ctx.fillStyle = '#92400e'
-      ctx.font = '600 30px Georgia, "Times New Roman", serif'
-      ctx.fillText('MingCharts', center, 92)
+      ctx.font = '600 34px "Songti SC", "SimSun", serif'
+      ctx.fillText('明理', center, 92)
       ctx.fillStyle = '#a16207'
       ctx.font = '22px "PingFang SC", "Microsoft YaHei", sans-serif'
       ctx.fillText('八字命理 · 每日日签', center, 132)
@@ -100,8 +100,8 @@ export default function DailyShareCard(props: Props) {
 
       // 底部标识
       ctx.fillStyle = '#92400e'
-      ctx.font = '600 24px Georgia, "Times New Roman", serif'
-      ctx.fillText('MingCharts · 免费排盘 bazi.*', center, H - 64)
+      ctx.font = '600 24px "Songti SC", "SimSun", serif'
+      ctx.fillText('明理 mingcharts.com · 免费排盘', center, H - 64)
 
       setImgUrl(canvas.toDataURL('image/png'))
     } finally {
