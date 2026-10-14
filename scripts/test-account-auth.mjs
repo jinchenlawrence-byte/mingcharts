@@ -194,6 +194,12 @@ console.log('—— ⑤ Turnstile 人机验证接线 ——')
   assert((authTouched.match(/TURNSTILE_ENABLED && !captchaToken/g) ?? []).length === 2,
     '启用时提交按钮须过验证才可点（TURNSTILE_ENABLED && !captchaToken 守卫命中 2 处）')
 
+  // 邮箱确认引导（2026-10-14：注册完直接登录会被 Supabase 拒，需两层中文提醒）
+  assert(authTouched.includes('注册成功！验证邮件已发送'),
+    '注册成功提示讲清「查邮件→点链接验证→再登录」流程（注册成功≠可直接登录）')
+  assert(/not confirmed/i.test(authTouched) && authTouched.includes('邮箱尚未验证'),
+    '未验证邮箱登录时把英文 Email not confirmed 映射为中文引导（兜底）')
+
   // secret 绝不进前端代码（只填 Supabase 后台 Captcha protection 设置）
   const tsRaw = read('../src/components/Turnstile.tsx')
   assert(!authTouched.includes('TURNSTILE_SECRET_KEY') && !tsRaw.includes('TURNSTILE_SECRET_KEY'),

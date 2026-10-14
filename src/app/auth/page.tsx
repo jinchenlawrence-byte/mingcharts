@@ -63,10 +63,13 @@ export default function AuthPage() {
           options: { captchaToken: captchaToken ?? undefined }
         })
         if (error) throw error
-        setMessage('注册成功！请查收验证邮件')
+        // 注册成功 ≠ 可直接登录：邮箱验证通过前 Supabase 会拒绝登录，提示里直接讲清楚流程
+        setMessage('注册成功！验证邮件已发送，请查收（含垃圾邮件）并点击邮件里的链接完成验证，再回来登录')
       }
     } catch (error: any) {
-      setMessage(error.message || '操作失败')
+      const msg: string = error.message || '操作失败'
+      // 兜底：未验证邮箱就登录时 Supabase 返回英文 "Email not confirmed"，映射成中文引导
+      setMessage(/not confirmed/i.test(msg) ? '邮箱尚未验证：请先查收确认邮件（含垃圾邮件）并点击链接完成验证，再回来登录' : msg)
     } finally {
       setLoading(false)
       setTsResetKey((k) => k + 1)
