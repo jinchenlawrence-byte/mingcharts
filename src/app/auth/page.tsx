@@ -3,6 +3,13 @@
 import { useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
+import Turnstile from '@/components/Turnstile'
+
+// B 层防恶意注册：Cloudflare Turnstile（配合 Supabase Captcha protection）
+//  - 未配置 NEXT_PUBLIC_TURNSTILE_SITE_KEY 时验证码整体关闭，行为与从前一致
+//  - Supabase 后台开启 Captcha protection 后，三处 auth 调用都必须带 captchaToken
+//  - token 一次性：每次提交完成后 resetKey++ 让 widget 取新 token
+const TURNSTILE_ENABLED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
 export default function AuthPage() {
   const router = useRouter()
@@ -12,6 +19,8 @@ export default function AuthPage() {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null)
+  const [tsResetKey, setTsResetKey] = useState(0)
 
   // 忘记密码（HANDOFF-密码重置与账号设置 §一）：
   // 走 Supabase 原生 resetPasswordForEmail，邮件链接回跳 /reset-password 设新密码。
@@ -23,9 +32,10 @@ export default function AuthPage() {
     setLoading(true)
     setMessage('')
     const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password`
-    await getSupabase().auth.resetPasswordForEmail(email, { redirectTo })
-    setMessage('重置邮件已发送，请查收（含垃圾邮件）')
+    await getSupabase().auth.resetPasswordForEmail(email, { redirectTo, captchaToken: captchaToken ?? undefined })
+    setMessage('重置邮件已发送，请查收（含垃圾邮件）；若在垃圾箱请标记「非垃圾邮件」')
     setLoading(false)
+    setTsResetKey((k) => k + 1)
   }
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -39,14 +49,17 @@ export default function AuthPage() {
       if (isLogin) {
         const { error } = await supabase.auth.signInWithPassword({
           email,
-          password
+          password,
+          // Supabase JS v2：登录/注册的 captcha 参数是 gotrue_meta_security.captcha_token（条件展开，未启用时不带该字段）
+          ...(captchaToken ? { gotrue_meta_security: { captcha_token: captchaToken } } : {})
         })
         if (error) throw error
         router.push('/')
       } else {
         const { error } = await supabase.auth.signUp({
           email,
-          password
+          password,
+          ...(captchaToken ? { gotrue_meta_security: { captcha_token: captchaToken } } : {})
         })
         if (error) throw error
         setMessage('注册成功！请查收验证邮件')
@@ -55,6 +68,7 @@ export default function AuthPage() {
       setMessage(error.message || '操作失败')
     } finally {
       setLoading(false)
+      setTsResetKey((k) => k + 1)
     }
   }
 
@@ -84,9 +98,11 @@ export default function AuthPage() {
               </p>
             )}
 
+            <Turnstile onToken={setCaptchaToken} resetKey={tsResetKey} />
+
             <button
               type="submit"
-              disabled={loading}
+              disabled={loading || (TURNSTILE_ENABLED && !captchaToken)}
               className="w-full bg-amber-600 text-white py-2 rounded-md font-semibold hover:bg-amber-700 transition disabled:opacity-50"
             >
               {loading ? '发送中...' : '发送重置邮件'}
@@ -123,9 +139,11 @@ export default function AuthPage() {
             </p>
           )}
 
+          <Turnstile onToken={setCaptchaToken} resetKey={tsResetKey} />
+
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (TURNSTILE_ENABLED && !captchaToken)}
             className="w-full bg-amber-600 text-white py-2 rounded-md font-semibold hover:bg-amber-700 transition disabled:opacity-50"
           >
             {loading ? '处理中...' : (isLogin ? '登录' : '注册')}

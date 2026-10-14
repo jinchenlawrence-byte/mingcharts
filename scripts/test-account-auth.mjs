@@ -158,5 +158,45 @@ console.log('—— ④ 未越界 ——')
     '三个文件均不引用 SERVICE_ROLE（客户端只用 anon key）')
 }
 
+// ═══════════════════════════════════════════════════════════
+// ⑤ Turnstile 人机验证接线（B 层防恶意注册）
+//    Supabase 后台开启 Captcha protection 后，所有 auth 调用必须带 captchaToken；
+//    未配置 NEXT_PUBLIC_TURNSTILE_SITE_KEY 时整体关闭、行为与从前一致。
+// ═══════════════════════════════════════════════════════════
+console.log('—— ⑤ Turnstile 人机验证接线 ——')
+
+{
+  const tsPath = new URL('../src/components/Turnstile.tsx', import.meta.url)
+  assert(existsSync(tsPath), 'Turnstile 组件存在：src/components/Turnstile.tsx')
+  const ts = stripComments(read('../src/components/Turnstile.tsx'))
+  assert(ts.includes('challenges.cloudflare.com/turnstile/v0/api.js') && ts.includes('render=explicit'),
+    'Turnstile 脚本来源为 Cloudflare 官方（render=explicit 显式渲染）')
+  assert(ts.includes('NEXT_PUBLIC_TURNSTILE_SITE_KEY') && /if\s*\(!SITE_KEY\)\s*return\s*null/.test(ts),
+    'site key 未配置 → 组件渲染 null（验证码整体关闭，未配置环境行为不变）')
+  assert(ts.includes("'expired-callback'") && ts.includes("'error-callback'"),
+    'Turnstile 过期/出错回调清 token（不残留一次性 token）')
+
+  const authTouched = stripComments(read('../src/app/auth/page.tsx'))
+  assert(authTouched.includes('<Turnstile'), '/auth 页渲染 Turnstile 组件')
+  assert(/TURNSTILE_ENABLED\s*=\s*!!process\.env\.NEXT_PUBLIC_TURNSTILE_SITE_KEY/.test(authTouched),
+    'auth 页 TURNSTILE_ENABLED 守卫（未配 key 时按钮不禁用、调用不传 token）')
+
+  const authHandler = extractHandler(authTouched, 'handleAuth')
+  assert(authHandler !== null, '/auth 页存在 handleAuth')
+  // Supabase JS v2：登录/注册的 captcha 参数是 gotrue_meta_security.captcha_token（写错参数名 tsc 会红，此处锚定存在）
+  const authN = authHandler ? authHandler.split('gotrue_meta_security').length - 1 : 0
+  assert(authN >= 2, `handleAuth 内 signInWithPassword/signUp 均带 gotrue_meta_security.captcha_token（命中 ${authN}，要求 ≥2）`)
+  const forgotHandler = extractHandler(authTouched, 'handleForgot')
+  const forgotN = forgotHandler ? forgotHandler.split('captchaToken').length - 1 : 0
+  assert(forgotN >= 1, `handleForgot 内 resetPasswordForEmail 传 captchaToken（命中 ${forgotN}，要求 ≥1——该端点参数名就是 captchaToken）`)
+  assert((authTouched.match(/TURNSTILE_ENABLED && !captchaToken/g) ?? []).length === 2,
+    '启用时提交按钮须过验证才可点（TURNSTILE_ENABLED && !captchaToken 守卫命中 2 处）')
+
+  // secret 绝不进前端代码（只填 Supabase 后台 Captcha protection 设置）
+  const tsRaw = read('../src/components/Turnstile.tsx')
+  assert(!authTouched.includes('TURNSTILE_SECRET_KEY') && !tsRaw.includes('TURNSTILE_SECRET_KEY'),
+    'TURNSTILE_SECRET_KEY 不得出现在前端代码（只填 Supabase 后台）')
+}
+
 console.log('\n' + (allPass ? 'ACCOUNT_AUTH_PASS' : 'ACCOUNT_AUTH_FAIL'))
 if (!allPass) process.exit(1)
