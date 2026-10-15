@@ -1,6 +1,6 @@
 # Terms of Service — MingCharts
 
-> **状态**：v0.2 定稿（2026-10-09），**待发布**
+> **状态**：v0.2 定稿，**已发布**（2026-10-09 上线；2026-10-15 删 §7 内部同步注记——Waffo 网络自查指出）
 > **基座**：Waffo Pancake 官方 [ToS 模板](https://docs.waffo.ai/mor/account-reviews/tos)（V1 Subscription）
 > **本次修订依据**：Waffo 三份官方清单（我方已取全文并逐条对照）
 > · [Account Reviews 总清单](https://docs.waffo.ai/mor/account-reviews)
@@ -200,9 +200,6 @@ You may cancel your subscription at any time by sending a cancellation request *
 - Account data is retained as described in our Privacy Policy.
 
 ## 7. Refund Policy
-
-> **★ 同步要求**：本退款政策须**同时存进 Waffo 后台的退款政策设置**（结账页会自动读取），
-> 这是 ToS 清单 🔴「Refund policy filled in **and shown at checkout**」的要求。
 
 ### 7.1 General Policy
 
