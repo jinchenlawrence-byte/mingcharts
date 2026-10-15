@@ -296,28 +296,36 @@ export default function PricingPage() {
           </p>
           <div className="grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
             {ONE_TIME_SKUS.filter((s) => s.id !== 'fatebook').map((s) => (
-              <div key={s.id} className="bg-white rounded-xl p-5 shadow-md flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="font-bold text-ink">{s.name}</h3>
-                  <p className="text-sm text-ink-light mt-1">{s.desc}</p>
-                  {SKU_HREF[s.id] && (
-                    <Link
-                      href={SKU_HREF[s.id]!}
-                      className="inline-block text-sm text-amber-600 hover:text-ink mt-2"
-                    >
-                      去体验 →
-                    </Link>
-                  )}
+              <div key={s.id} className="bg-white rounded-xl p-5 shadow-md flex flex-col gap-4">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h3 className="font-bold text-ink">{s.name}</h3>
+                    <p className="text-sm text-ink-light mt-1">{s.desc}</p>
+                    {SKU_HREF[s.id] && (
+                      <Link
+                        href={SKU_HREF[s.id]!}
+                        className="inline-block text-sm text-amber-600 hover:text-ink mt-2"
+                      >
+                        去体验 →
+                      </Link>
+                    )}
+                  </div>
+                  <div className="text-right shrink-0">
+                    <div className="text-2xl font-bold text-ink">{formatPriceUSD(s.priceUSD)}</div>
+                    <div className="text-xs text-ink-light/60 mt-1">/ 次</div>
+                  </div>
                 </div>
-                <div className="text-right shrink-0">
-                  <div className="text-2xl font-bold text-ink">{formatPriceUSD(s.priceUSD)}</div>
-                  <div className="text-xs text-ink-light/60 mt-1">内测期免费体验</div>
-                </div>
+                {/* ★ 2026-10-15：五个单次商品 productId 已登记（waffo-products.ts），
+                    购买入口与命书卡同模式（未登记时 CheckoutButton 自动显示「即将推出」）。
+                    bundle3 无模块页，这里的按钮是它唯一的购买入口。 */}
+                <CheckoutButton sku={s.id} available={waffoProductId(s.id) !== null}>
+                  立即购买
+                </CheckoutButton>
               </div>
             ))}
           </div>
           <p className="text-xs text-ink-light/60 text-center mt-4">
-            内测期间以上模块免费开放体验；正式开放购买后，将按上述价格单独购买（会员不含报告）。
+            购买后报告永久保存，可随时反复查看（会员订阅不含单项报告）。
           </p>
         </section>
 
