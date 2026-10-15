@@ -520,10 +520,16 @@ console.log('—— ⑥ 单号规则 / buildCheckoutParams / SKU 映射 ——')
   } catch { rejectedHttp = true }
   assert(rejectedHttp, '非环回的 http 地址拒绝（successUrl 必须 https）')
 
-  // fatebook 已登记真实 productId（d8d436c）→ 购买按钮可用；未登记 SKU 仍返回 null
-  assert(typeof waffoProductId('fatebook') === 'string' && waffoProductId('fatebook').startsWith('PROD_'),
-    'fatebook 已登记 productId（PROD_ 前缀，购买入口可用）')
-  assert(waffoProductId('annual_report') === null, '未登记 SKU → null（购买入口显示即将推出）')
+  // 六个单次 SKU 已全部登记真实 productId（fatebook=d8d436c；其余五个=2026-10-15 KYB 前建齐）
+  // → 购买按钮全部可用；订阅/额度类 SKU 未登记，仍应返回 null（购买入口显示「即将推出」）
+  const ONE_TIME_IDS = ['fatebook', 'annual_report', 'hemun', 'ziwei_deep', 'geo', 'bundle3']
+  for (const sku of ONE_TIME_IDS) {
+    const id = waffoProductId(sku)
+    assert(typeof id === 'string' && id.startsWith('PROD_'),
+      `${sku} 已登记 productId（PROD_ 前缀，购买入口可用）`)
+  }
+  assert(waffoProductId('member_yearly') === null, '未登记 SKU（订阅类）→ null（购买入口显示即将推出）')
+  assert(waffoProductId('ask_pack') === null, '未登记 SKU（额度类）→ null（购买入口显示即将推出）')
 }
 
 // ════════════════ 收尾 ════════════════

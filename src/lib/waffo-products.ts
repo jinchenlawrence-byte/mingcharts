@@ -18,6 +18,13 @@ export const WAFFO_PORTAL_URL = 'https://pancake.waffo.ai/consumer/portal/login'
 export const WAFFO_PRODUCTS: Partial<Record<SkuId, string>> = {
   // 命书报告（29.99 USD 一次性）—— Dashboard 商品 ID
   fatebook: 'PROD_1H2rQWsIKwlqkHG3xMR01v',
+  // ★ 2026-10-15 KYB 前建齐的 5 个单次商品（一次性 · USD）：
+  //   清掉定价页「即将推出」占位（Waffo 驳回原因之一），同时铺开收费 SKU
+  annual_report: 'PROD_20CtFwrNYJQhg8MzIlSjW7',   // 年运报告 19.99
+  hemun: 'PROD_5kh2QzFYoJe5yT5d1otzNf',           // 合婚详批 29.99
+  ziwei_deep: 'PROD_7GDUSvdGALlj7Qcs14sa4Z',      // 紫微深度 24.99
+  geo: 'PROD_6q01k9z1RWAL6WtmNvTpgp',             // 地理财富之城 19.99
+  bundle3: 'PROD_28gtfik2BVN7O3m6KX2PVG',         // 三合一套餐 59.99
 }
 
 // 返回某 SKU 对应的 Waffo productId；未登记则返回 null（购买入口据此显示「即将推出」）
