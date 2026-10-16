@@ -27,6 +27,10 @@ function friendlyAuthError(raw: string): string {
   if (/Failed to fetch|NetworkError|fetch failed|Load failed|Network request failed/i.test(raw)) {
     return '网络连接失败：请检查网络后重试；若持续失败请更换网络（如切换 Wi‑Fi／流量）'
   }
+  // 登录失败最常见英文报错（账号不存在或密码错）——中文引导注册/找回，避免用户看不懂
+  if (/Invalid login credentials/i.test(raw)) {
+    return '邮箱或密码不正确。新用户请先注册并到邮箱点击确认链接（含垃圾邮件）；已注册请核对密码或用「忘记密码」重置'
+  }
   return raw
 }
 
