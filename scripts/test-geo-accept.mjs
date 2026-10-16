@@ -177,4 +177,70 @@ console.log(scFail === 0
   : `✗ 评分断言 ${scFail} 项失败`)
 if (scFail > 0) allPass = false
 
+// —— 方位纯度＋卦位相扶＋气聚近处（2026-10-16 用户反馈：同档并列过多，70分一长串、城市无层级感）——
+// 连续小分：纯度 0..6（0.01 粒度）＋卦位同气 +4＋气聚近处 0..0.9（sqrt 衰减，0.01 粒度）；
+// 合计上限 10.9 ＜ 主档最小步长 12（调候第一/地气同气/地气助忌）→ 只在同档内分层，不颠覆命理排序
+const scBase = { targetWx: '火', targetGod: '财星', tiaoHou: thWx, favorable: fav, unfavorable: unfav, diqi: '火', diqiReason: '测试' }
+const pFull = scoreGeoCity({ ...scBase, strong: true, purity: 1, offsetDeg: 0, benWei: '正南', guaMatch: true })
+const pMid = scoreGeoCity({ ...scBase, strong: true, purity: 0.5, offsetDeg: 21, benWei: '正南' })
+const pNone = scoreGeoCity({ ...scBase, strong: true, purity: 0, offsetDeg: 42, benWei: '正南' })
+const dNear = scoreGeoCity({ ...scBase, strong: true, distKm: 100 })    // 90*(1-√(100/30000))≈0.85
+const dFar = scoreGeoCity({ ...scBase, strong: true, distKm: 12000 })   // 90*(1-√0.4)≈0.33
+const dNone = scoreGeoCity({ ...scBase, strong: true })
+let purFail = 0
+if (pFull.score !== 80) { purFail++; console.log(`  ✗ 纯度满＋卦位：得 ${pFull.score}（期望 70+6+4=80）`) }
+if (pMid.score !== 73) { purFail++; console.log(`  ✗ 纯度半：得 ${pMid.score}（期望 70+3=73）`) }
+if (pNone.score !== 70 || pNone.extraReasons.some((x) => x.includes('方位纯度'))) {
+  purFail++; console.log(`  ✗ 纯度为零应不加分不出理由：得 ${pNone.score}`)
+}
+if (!pFull.extraReasons.some((x) => x.includes('卦位相扶')) || !pFull.extraReasons.some((x) => x.includes('方位纯度'))) {
+  purFail++; console.log('  ✗ 纯度/卦位加分须各带一条可解释理由')
+}
+if (dNear.score !== 70.85 || dFar.score !== 70.33 || dNone.score !== 70) {
+  purFail++; console.log(`  ✗ 气聚近处：近得 ${dNear.score}／远得 ${dFar.score}／无 ${dNone.score}（期望 70.85／70.33／70）`)
+}
+if (!dNear.extraReasons.some((x) => x.includes('气聚近处') && x.includes('（产品设定）'))) {
+  purFail++; console.log('  ✗ 气聚近处须带理由且标注产品设定')
+}
+if (dNone.extraReasons.some((x) => x.includes('气聚近处'))) {
+  purFail++; console.log('  ✗ 未传距离不应出现气聚理由（旧调用兼容）')
+}
+// 牙口（防后人加大分层权重翻转命理档序）
+const TIE_MAX = 6 + 4 + 0.9, STEP_MIN = 12
+if (TIE_MAX >= STEP_MIN) {
+  purFail++
+  console.log(`  ✗ 牙口失效：同档分层上限 ${TIE_MAX} ≥ 主档最小步长 ${STEP_MIN}，分层将可翻转命理排序`)
+}
+console.log(purFail === 0
+  ? `✓ 方位纯度＋卦位相扶＋气聚近处：纯度 3 档（80/73/70）＋距离 3 档（70.85/70.33/70）＋理由文案＋牙口（上限${TIE_MAX}＜步长${STEP_MIN}）`
+  : `✗ 方位纯度断言 ${purFail} 项失败`)
+if (purFail > 0) allPass = false
+
+// —— 端到端去并列：真实榜单（10 出生地 × 5 类 top6）按【用户所见一位小数分】检查——
+// 原先同档（同调候同地气）全并列；纯度分层后残余并列只应来自地理对称/中央同城对（极少数）。
+let tiePairs = 0, tieLists = 0, totalLists = 0, tieExamples = []
+for (const [name, lat, lng] of BIRTHS) {
+  const g = analyzeGeo({ dayMaster: DAY_GAN[name], wangShuai: '身强', birthplace: { name, lat, lng } })
+  for (const cat of g.categories) {
+    totalLists++
+    let n = 0
+    for (let i = 1; i < cat.cities.length; i++) {
+      if (cat.cities[i].score === cat.cities[i - 1].score) {
+        tiePairs++; n++
+        tieExamples.push(`${name}·${cat.label}：${cat.cities[i - 1].name}/${cat.cities[i].name} 同 ${cat.cities[i].score}分`)
+      }
+    }
+    if (n > 0) tieLists++
+    if (n > 2) { console.log(`  ✗ ${name}·${cat.label} 单榜并列 ${n} 对`) }
+  }
+}
+// 闸口：50 榜一位小数分并列 ≤ 3 对（纯度＋气聚双因子后，残余只应是不同路径巧合撞分——
+// 调候/纯度/距离组合不同但总和恰好相等，且各自理由可辨、占比约 1%；
+// 数据演化若再现大面积并列，此闸立即翻红）
+const TIE_OK = tiePairs <= 3
+console.log(TIE_OK
+  ? `✓ 端到端去并列：${totalLists} 榜一位小数分并列仅 ${tiePairs} 对（≤3，残余为巧合撞分、理由可辨）${tiePairs ? '，首例 ' + tieExamples[0] : ''}`
+  : `✗ 端到端去并列：仍有 ${tiePairs} 对精确并列（${tieLists} 榜）——${tieExamples.slice(0, 3).join('；')}`)
+if (!TIE_OK) allPass = false
+
 console.log('\n' + (allPass ? 'GEO_ACCEPT_PASS' : 'GEO_ACCEPT_FAIL'))

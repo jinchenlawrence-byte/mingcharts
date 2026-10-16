@@ -183,18 +183,38 @@ function menWxOfBearing(b: number): WX {
 }
 
 // 城市相对出生地的方位（25km 以内按中央土论）；
-// menWx＝五行门控（宽泛84°扇区），fangWx/fangLabel＝精确卦位（展示标签）
+// menWx＝五行门控（宽泛84°扇区），fangWx/fangLabel＝精确卦位（展示标签）；
+// bearing＝展示用取整角，bearingRaw＝未取整角（方位纯度须用原始角，取整会造成同偏角并列）
 function fangOf(birth: BirthplaceRef, city: { lat: number; lng: number }) {
   const dist = haversineKm(birth, city)
   if (dist <= 25) {
-    return { menWx: '土' as WX, fangWx: '土' as WX, fangLabel: '中央', bearing: 0, center: true, dist }
+    return { menWx: '土' as WX, fangWx: '土' as WX, fangLabel: '中央', bearing: 0, bearingRaw: 0, center: true, dist }
   }
-  const bearing = bearingDeg(birth, city)
-  const dir = dirFromAngle(bearing)
+  const bearingRaw = bearingDeg(birth, city)
+  const dir = dirFromAngle(bearingRaw)
   return {
-    menWx: menWxOfBearing(bearing),
-    fangWx: dir.wx, fangLabel: dir.full, bearing: Math.round(bearing), center: false, dist
+    menWx: menWxOfBearing(bearingRaw),
+    fangWx: dir.wx, fangLabel: dir.full, bearing: Math.round(bearingRaw), bearingRaw, center: false, dist
   }
+}
+
+// ---------- 方位纯度（同档分层用） ----------
+// 与 menWxOfBearing 同一划分的扇区几何：木火金水以四正为心各展 84°（半宽 42°），土取四维间隙各 6°（半宽 3°）
+const SECTOR_CENTER: Record<'木' | '火' | '金' | '水', number> = { 木: 90, 火: 180, 金: 270, 水: 0 }
+const SECTOR_HALF: Record<WX, number> = { 木: 42, 火: 42, 土: 3, 金: 42, 水: 42 }
+const TU_CENTERS = [45, 135, 225, 315]
+const BENWEI_LABEL: Record<WX, string> = { 木: '正东', 火: '正南', 土: '四维', 金: '正西', 水: '正北' }
+
+// 距本位偏角：四正五行＝与扇心夹角；土＝与最近四维中心夹角；中央（同城近距）＝0（土之正位）
+function sectorOffsetDeg(bearing: number, wx: WX, center: boolean): number {
+  if (center) return 0
+  const centers: number[] = wx === '土' ? TU_CENTERS : [SECTOR_CENTER[wx as '木' | '火' | '金' | '水']]
+  let best = 180
+  for (const c of centers) {
+    const d = Math.abs(((bearing - c + 540) % 360) - 180)
+    if (d < best) best = d
+  }
+  return best
 }
 
 // ---------- 评分 ----------
@@ -223,6 +243,12 @@ export interface GeoCityScoreInput {
   unfavorable: WX[]
   diqi: WX | null
   diqiReason: string
+  // ── 方位纯度（2026-10-16 同档分层）：以下皆为可选，缺省不参与（旧调用/断言兼容）──
+  purity?: number      // 0..1：1＝正落本位扇心；用于打破同调候同地气的并列
+  offsetDeg?: number   // 距本位偏角（仅用于文案）
+  benWei?: string      // 本位名（正南/正东/中央…仅用于文案）
+  guaMatch?: boolean   // 精确卦位亦正落目标本位卦（宽狭同气）
+  distKm?: number      // 距出生地公里数（气聚近处因子；产品设定）
 }
 export function scoreGeoCity(s: GeoCityScoreInput): { score: number; extraReasons: string[] } {
   let score = 55
@@ -269,6 +295,42 @@ export function scoreGeoCity(s: GeoCityScoreInput): { score: number; extraReason
     } else {
       score -= 8
       extraReasons.push(`地气：${d}（${s.diqiReason}），为命局所忌，地气助忌故减分（产品设定）`)
+    }
+  }
+
+  // ③ 方位纯度（连续小分 0..6，0.01 粒度）：扇区内愈近本位其气愈专——
+  //    用于打破同档并列（同调候同地气的城市原先必同分，如 70 分一长串）。
+  //    ★ 0.01 粒度是必须的：同向城市带偏角高度聚集（如从三亚看全中国挤在正北±3°），
+  //      0.1 粒度下同簇仍成片并列。量级受控：纯度＋卦位合计 ≤10 ＜ 主档最小步长 12
+  //      （调候第一/地气同气/助忌），只在同档内分层，绝不颠覆调候/地气的命理排序。
+  if (typeof s.purity === 'number') {
+    const add = Math.round(Math.max(0, Math.min(1, s.purity)) * 600) / 100
+    if (add > 0) {
+      score += add
+      extraReasons.push(
+        s.offsetDeg === 0 && s.benWei === '中央'
+          ? `方位纯度：同城近距按中央论，中央即土之正位，其气最专（+${add}）`
+          : `方位纯度：方位角距${s.benWei ?? '本位'}偏约${Math.round(s.offsetDeg ?? 0)}°，愈近本位其气愈专（+${add}）`
+      )
+    }
+  }
+  // ④ 卦位相扶（+4）：宽泛门控之外，精确卦位亦正落目标本位卦（如火扇区内的正南·离卦），
+  //    宽狭同气，其气愈专
+  if (s.guaMatch) {
+    score += 4
+    extraReasons.push(`卦位相扶：精确卦位亦正落${s.targetWx}之本位卦，宽狭同气其气愈专（+4）`)
+  }
+  // ⑤ 气聚近处（0..0.9，0.01 粒度；产品设定，非古籍依据）：同气同向之中，近者气聚。
+  //    sqrt 衰减（近处分辨细、远处分辨粗）——球形地理下同向城市带「偏角差小、距离差大」
+  //    （如从三亚看全中国挤在正北±3°；镜像对称城市偏角完全相等），本因子与方位纯度互补，
+  //    兜底消除中央同城对/镜像对称对等结构性并列。
+  if (typeof s.distKm === 'number' && s.distKm >= 0) {
+    const add = Math.round(90 * (1 - Math.sqrt(Math.min(s.distKm, 30000) / 30000))) / 100
+    if (add > 0) {
+      score += add
+      extraReasons.push(
+        `气聚近处：距出生地约${Math.round(s.distKm)}公里，同气同向之中近者气聚（+${add.toFixed(2)}）（产品设定）`
+      )
     }
   }
 
@@ -345,7 +407,9 @@ function buildCategory(
         `（方位相对命主，属传统方位五行之说）`
       )
 
-      // 调候＋地气评分（纯函数；无调候输入时其加分项自动落空）
+      // 调候＋地气评分（纯函数；无调候输入时其加分项自动落空）＋方位纯度（同档分层）
+      const offsetDeg = sectorOffsetDeg(fang.bearingRaw, meta.targetWx, fang.center)
+      const purity = Math.max(0, Math.min(1, 1 - offsetDeg / SECTOR_HALF[meta.targetWx]))
       const scored = scoreGeoCity({
         strong,
         targetWx: meta.targetWx,
@@ -354,7 +418,12 @@ function buildCategory(
         favorable,
         unfavorable,
         diqi: city.diqi,
-        diqiReason: city.diqiReason
+        diqiReason: city.diqiReason,
+        purity,
+        offsetDeg,
+        benWei: fang.center ? '中央' : BENWEI_LABEL[meta.targetWx],
+        guaMatch: !fang.center && fang.fangWx === meta.targetWx,
+        distKm: fang.dist
       })
       const score = scored.score
       reasons.push(...scored.extraReasons)
@@ -386,10 +455,12 @@ function buildCategory(
       return {
         city, fang,
         score: Math.max(0, Math.min(100, score)),
+        offsetDeg,
         reasons
       }
     })
-    .sort((a, b) => b.score - a.score)
+    // 主序按总分；同分时按距本位偏角、再按城市名（纯度并列已极罕见，保底确定性）
+    .sort((a, b) => b.score - a.score || a.offsetDeg - b.offsetDeg || a.city.name.localeCompare(b.city.name, 'zh'))
 
   const TOP_N = 6
   const citiesOut = picks.slice(0, TOP_N).map((p) => ({

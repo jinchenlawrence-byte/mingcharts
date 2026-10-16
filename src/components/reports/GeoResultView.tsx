@@ -62,7 +62,7 @@ function PopupCard({ p, onClose }: { p: PopupState; onClose: () => void }) {
         {c.diqi ? <>　地气{c.diqi}（产品设定）</> : ''}
       </div>
       <div className="font-semibold mt-1">
-        影响指数 {c.score}（{c.impact}）
+        影响指数 {c.score.toFixed(1)}（{c.impact}）
       </div>
       <div className="text-ink-light mt-1.5 leading-relaxed">{c.reasons[0]}</div>
     </div>
@@ -187,7 +187,7 @@ function CategorySection({ cat }: { cat: CategoryResult }) {
               <span className="text-xs text-ink-light/40">{c.region}</span>
               <span className="text-xs px-2 py-0.5 rounded-full text-white ml-auto"
                 style={{ background: cat.color }}>
-                {c.score}分 · {c.impact}
+                {c.score.toFixed(1)}分 · {c.impact}
               </span>
             </div>
             <div className="text-xs text-ink-light/60 mt-1">
