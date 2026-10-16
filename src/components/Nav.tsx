@@ -34,7 +34,7 @@ export default function Nav() {
           <span className="text-cinnabar text-2xl leading-none">明</span>
           <span>理</span>
         </Link>
-        <div className="flex items-center gap-3 sm:gap-4 text-sm">
+        <div className="flex items-center gap-3 sm:gap-4 text-sm md:text-[15px] xl:text-base">
           <Link href="/" className="text-ink/70 hover:text-cinnabar transition-colors">
             排盘
           </Link>
