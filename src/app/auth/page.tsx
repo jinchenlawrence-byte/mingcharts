@@ -11,6 +11,25 @@ import Turnstile from '@/components/Turnstile'
 //  - token 一次性：每次提交完成后 resetKey++ 让 widget 取新 token
 const TURNSTILE_ENABLED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY
 
+// 网络异常兜底（大陆可达性 P0 伴生）：fetch 挂起会让按钮永远「处理中」，
+// 请求超时强制中断并给中文指引；Failed to fetch 类错误映射成可操作的提示。
+const FETCH_TIMEOUT_MS = 20000
+function withTimeout<T>(p: PromiseLike<T>): Promise<T> {
+  return Promise.race([
+    Promise.resolve(p),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error('请求超时')), FETCH_TIMEOUT_MS)
+    ),
+  ])
+}
+function friendlyAuthError(raw: string): string {
+  if (/timeout|超时/i.test(raw)) return '请求超时：请检查网络后重试；若持续失败请更换网络（如切换 Wi‑Fi／流量）'
+  if (/Failed to fetch|NetworkError|fetch failed|Load failed|Network request failed/i.test(raw)) {
+    return '网络连接失败：请检查网络后重试；若持续失败请更换网络（如切换 Wi‑Fi／流量）'
+  }
+  return raw
+}
+
 export default function AuthPage() {
   const router = useRouter()
   const [isLogin, setIsLogin] = useState(true)
@@ -32,10 +51,18 @@ export default function AuthPage() {
     setLoading(true)
     setMessage('')
     const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password`
-    await getSupabase().auth.resetPasswordForEmail(email, { redirectTo, captchaToken: captchaToken ?? undefined })
-    setMessage('重置邮件已发送，请查收（含垃圾邮件）；若在垃圾箱请标记「非垃圾邮件」')
-    setLoading(false)
-    setTsResetKey((k) => k + 1)
+    // ★ 防账号枚举纪律（§一-1.1 ②）：无 catch——成败都不读 error、不改变提示文案。
+    //   try/finally 保证请求挂起被 withTimeout 打断（或正常结束）后按钮必然复位，
+    //   治「一直显示处理中」卡死；失败时提示留空由用户自行重试，与原行为一致。
+    try {
+      await withTimeout(
+        getSupabase().auth.resetPasswordForEmail(email, { redirectTo, captchaToken: captchaToken ?? undefined })
+      )
+      setMessage('重置邮件已发送，请查收（含垃圾邮件）；若在垃圾箱请标记「非垃圾邮件」')
+    } finally {
+      setLoading(false)
+      setTsResetKey((k) => k + 1)
+    }
   }
 
   const handleAuth = async (e: React.FormEvent) => {
@@ -47,21 +74,21 @@ export default function AuthPage() {
       const supabase = getSupabase()
       
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { error } = await withTimeout(supabase.auth.signInWithPassword({
           email,
           password,
           // Supabase JS v2：captcha token 必须走 options.captchaToken——客户端只从这里读并自行组装请求体；
           // 顶层直接传 gotrue_meta_security 会被静默丢弃（条件展开还会绕过 TS 多余属性检查，tsc 抓不到）
           options: { captchaToken: captchaToken ?? undefined }
-        })
+        }))
         if (error) throw error
         router.push('/')
       } else {
-        const { error } = await supabase.auth.signUp({
+        const { error } = await withTimeout(supabase.auth.signUp({
           email,
           password,
           options: { captchaToken: captchaToken ?? undefined }
-        })
+        }))
         if (error) throw error
         // 注册成功 ≠ 可直接登录：邮箱验证通过前 Supabase 会拒绝登录，提示里直接讲清楚流程
         setMessage('注册成功！验证邮件已发送，请查收（含垃圾邮件）并点击邮件里的链接完成验证，再回来登录')
@@ -69,7 +96,7 @@ export default function AuthPage() {
     } catch (error: any) {
       const msg: string = error.message || '操作失败'
       // 兜底：未验证邮箱就登录时 Supabase 返回英文 "Email not confirmed"，映射成中文引导
-      setMessage(/not confirmed/i.test(msg) ? '邮箱尚未验证：请先查收确认邮件（含垃圾邮件）并点击链接完成验证，再回来登录' : msg)
+      setMessage(/not confirmed/i.test(msg) ? '邮箱尚未验证：请先查收确认邮件（含垃圾邮件）并点击链接完成验证，再回来登录' : friendlyAuthError(msg))
     } finally {
       setLoading(false)
       setTsResetKey((k) => k + 1)

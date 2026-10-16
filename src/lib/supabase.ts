@@ -28,7 +28,11 @@ export function getSupabase() {
 // 服务端组件使用的Supabase客户端（需走本地代理，因网络环境限制）
 export function createServerSupabase() {
   if (serverAdminForTest) return serverAdminForTest
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  // ★ 大陆可达性 P0（2026-10-16）：浏览器直连 supabase.co 被 SNI 干扰（Failed to fetch），
+  //   NEXT_PUBLIC_SUPABASE_URL 已改为自有域名代理路径 /supabase-api。
+  //   服务端（Vercel→Supabase）本就直连可达，绝不能跟着走公网回环——优先取内网直连地址。
+  const supabaseUrl =
+    process.env.SUPABASE_URL_INTERNAL || process.env.NEXT_PUBLIC_SUPABASE_URL
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
   if (!supabaseUrl || !serviceRoleKey) {

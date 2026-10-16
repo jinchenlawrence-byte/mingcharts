@@ -97,6 +97,35 @@ assert(existsSync(rpPath) && existsSync(acPath),
     'account/layout.tsx 提供 metadata')
 }
 
+// ★★ 大陆可达性 P0（2026-10-16）：token_hash 回调页 + 自有域名代理 + 服务端直连分轨
+// ═══════════════════════════════════════════════════════════
+console.log('—— ①b 大陆可达性 P0：auth/callback 代理链路 ——')
+
+{
+  const cbPath = '../src/app/auth/callback/page.tsx'
+  assert(existsSync(new URL(cbPath, import.meta.url)), '路由存在：src/app/auth/callback/page.tsx')
+  const code = stripComments(read(cbPath))
+  assert(code.includes("'use client'"), 'auth/callback 为客户端组件（非空壳）')
+  assert(/verifyOtp\(\s*\{\s*token_hash/.test(code),
+    'auth/callback 调 verifyOtp({ token_hash })（token_hash 显式验证真接线）')
+  assert(code.includes("'recovery'") && code.includes("'/reset-password'"),
+    'auth/callback recovery 分支跳转 /reset-password（衔接设新密码）')
+  assert(code.includes("Suspense"), 'auth/callback 含 Suspense 边界（useSearchParams 静态渲染要求）')
+}
+
+{
+  const vercelJson = JSON.parse(read('../vercel.json'))
+  const rw = (vercelJson.rewrites || []).find(r => String(r.source).includes('/supabase-api/'))
+  assert(!!rw, 'vercel.json 含 /supabase-api/* 反向代理 rewrite')
+  assert(/supabase\.co/.test(rw.destination || ''), 'rewrite destination 指向 supabase.co')
+}
+
+{
+  const code = stripComments(read('../src/lib/supabase.ts'))
+  assert(code.includes('SUPABASE_URL_INTERNAL'),
+    'supabase.ts 服务端工厂优先取 SUPABASE_URL_INTERNAL（服务端不走公网回环）')
+}
+
 // ═══════════════════════════════════════════════════════════
 // ② /auth 忘记密码入口接线（§四-1 ★★：resetPasswordForEmail 必须在提交处理内）
 // ═══════════════════════════════════════════════════════════
