@@ -220,8 +220,19 @@ console.log('—— ⑤ Turnstile 人机验证接线 ——')
   const forgotHandler = extractHandler(authTouched, 'handleForgot')
   const forgotN = forgotHandler ? forgotHandler.split('captchaToken').length - 1 : 0
   assert(forgotN >= 1, `handleForgot 内 resetPasswordForEmail 传 captchaToken（命中 ${forgotN}，要求 ≥1——该端点参数名就是 captchaToken）`)
-  assert((authTouched.match(/TURNSTILE_ENABLED && !captchaToken/g) ?? []).length === 2,
-    '启用时提交按钮须过验证才可点（TURNSTILE_ENABLED && !captchaToken 守卫命中 2 处）')
+  const guardN = (authTouched.match(/disabled=\{loading \|\| \(TURNSTILE_ENABLED && !captchaToken\)/g) ?? []).length
+  assert(guardN === 2,
+    `启用时提交按钮须过验证才可点（disabled 守卫精确命中 ${guardN}，要求 2——登录与找回两处）`)
+
+  // 加载失败可感知（2026-10-16 手机端静默锁死修复）：脚本被浏览器拦截时给中文指引＋重试，不再无声禁用
+  assert(ts.includes('scriptLoading = null') && ts.includes('onError'),
+    'Turnstile 脚本加载失败回调 onError 并清除失败缓存（重试可重新加载）')
+  assert(ts.includes('[resetKey]'),
+    'Turnstile 以 resetKey 重建 widget（重试不只是 reset 旧实例，含脚本重载）')
+  assert(authTouched.includes('人机验证加载失败') && authTouched.includes('重试验证'),
+    'Turnstile 加载失败显示中文指引与重试入口（防静默禁用按钮锁死）')
+  assert(authTouched.includes('正在加载人机验证'),
+    'Turnstile 加载中显示占位提示（禁用按钮必有解释）')
 
   // 邮箱确认引导（2026-10-14：注册完直接登录会被 Supabase 拒，需两层中文提醒）
   assert(authTouched.includes('注册成功！验证邮件已发送'),

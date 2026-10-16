@@ -44,6 +44,19 @@ export default function AuthPage() {
   const [message, setMessage] = useState('')
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [tsResetKey, setTsResetKey] = useState(0)
+  // 人机验证加载失败可感知（2026-10-16 手机端静默锁死修复）：脚本被浏览器拦截时
+  // 按钮会因无 token 一直禁用——必须给出解释＋重试入口，不能无声锁死
+  const [tsFailed, setTsFailed] = useState(false)
+  const handleTsToken = (t: string | null) => {
+    setCaptchaToken(t)
+    if (t) setTsFailed(false)
+  }
+  const retryTurnstile = () => {
+    setTsFailed(false)
+    setTsResetKey((k) => k + 1)
+  }
+  // 加载中占位：启用验证但尚无 token 且未失败——禁用按钮必须有解释，不能无声
+  const tsPending = TURNSTILE_ENABLED && !captchaToken && !tsFailed
 
   // 忘记密码（HANDOFF-密码重置与账号设置 §一）：
   // 走 Supabase 原生 resetPasswordForEmail，邮件链接回跳 /reset-password 设新密码。
@@ -133,7 +146,24 @@ export default function AuthPage() {
               </p>
             )}
 
-            <Turnstile onToken={setCaptchaToken} resetKey={tsResetKey} />
+            <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)} />
+            {tsPending && (
+              <p className="text-xs text-ink/40 text-center">正在加载人机验证…</p>
+            )}
+            {tsFailed && (
+              <div className="text-center space-y-2">
+                <p className="text-sm text-red-600">
+                  人机验证加载失败：请关闭浏览器的广告/拦截功能，或更换浏览器（Chrome／Edge／Safari）后重试
+                </p>
+                <button
+                  type="button"
+                  onClick={retryTurnstile}
+                  className="text-sm text-amber-600 hover:text-ink"
+                >
+                  重试验证
+                </button>
+              </div>
+            )}
 
             <button
               type="submit"
@@ -174,7 +204,24 @@ export default function AuthPage() {
             </p>
           )}
 
-          <Turnstile onToken={setCaptchaToken} resetKey={tsResetKey} />
+          <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)} />
+          {tsPending && (
+            <p className="text-xs text-ink/40 text-center">正在加载人机验证…</p>
+          )}
+          {tsFailed && (
+            <div className="text-center space-y-2">
+              <p className="text-sm text-red-600">
+                人机验证加载失败：请关闭浏览器的广告/拦截功能，或更换浏览器（Chrome／Edge／Safari）后重试
+              </p>
+              <button
+                type="button"
+                onClick={retryTurnstile}
+                className="text-sm text-amber-600 hover:text-ink"
+              >
+                重试验证
+              </button>
+            </div>
+          )}
 
           <button
             type="submit"
