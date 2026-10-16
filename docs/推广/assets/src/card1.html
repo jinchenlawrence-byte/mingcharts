@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;900&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  html,body { width:1242px; height:1660px; overflow:hidden; }
+  body {
+    font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;
+    color:#2c2c43; position:relative;
+  }
+  .serif { font-family:"Noto Serif SC","STSong","SimSun",serif; }
+
+  /* 纸张噪点 */
+  .grain { position:absolute; inset:0; opacity:.5; pointer-events:none;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='240'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.17 0 0 0 0 0.17 0 0 0 0 0.26 0 0 0 0.035 0'/%3E%3C/filter%3E%3Crect width='240' height='240' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+  /* ── 上部：分屏世界 ── */
+  .split { position:absolute; top:0; left:0; right:0; height:1020px; display:flex; }
+  .world { position:relative; overflow:hidden; }
+  .world.fin { width:44%; background:linear-gradient(160deg,#232338 0%,#2c2c43 60%,#34344f 100%); }
+  .world.ming { width:56%; background:linear-gradient(160deg,#f7f3eb 0%,#f2ecdf 100%); }
+
+  .world .tag { position:absolute; top:64px; left:56px; writing-mode:vertical-rl;
+    font-size:26px; letter-spacing:.35em; color:rgba(244,240,228,.55); }
+  .world.ming .tag { color:rgba(44,44,67,.45); left:auto; right:56px; }
+
+  .fin-inner { position:absolute; inset:0; padding:150px 50px 0 140px; }
+  .fin-label { color:#c4b87e; font-size:30px; letter-spacing:.2em; font-weight:500; }
+  .fin-title { color:#f4f0e4; font-size:64px; font-weight:900; margin-top:18px; line-height:1.25; }
+  .fin-chips { margin-top:36px; display:flex; gap:16px; flex-wrap:wrap; }
+  .chip { border:1px solid rgba(196,184,126,.5); color:#c4b87e; font-size:24px;
+    padding:10px 22px; border-radius:4px; letter-spacing:.08em; }
+
+  .ming-inner { position:absolute; inset:0; padding:150px 56px 0 50px; }
+  .ming-label { color:#9a8c4a; font-size:30px; letter-spacing:.2em; font-weight:500; }
+  .pillars { display:flex; gap:34px; margin-top:44px; justify-content:flex-start; }
+  .pillar { width:120px; height:420px; background:rgba(255,253,248,.9);
+    border:1px solid rgba(154,140,74,.4); border-radius:6px;
+    box-shadow:0 6px 24px rgba(44,44,67,.08);
+    display:flex; flex-direction:column; align-items:center; padding-top:26px; }
+  .pillar .zh { writing-mode:vertical-rl; font-size:52px; font-weight:900; letter-spacing:.18em; color:#2c2c43; }
+  .pillar .en { margin-top:auto; margin-bottom:20px; font-size:20px; color:#9a8c4a; letter-spacing:.3em; }
+  .ming-quote { margin-top:48px; font-size:30px; color:#5a5a73; letter-spacing:.12em; }
+  .ming-quote b { color:#b94134; font-weight:600; }
+
+  /* 中缝金线 */
+  .seam { position:absolute; top:0; left:44%; width:4px; height:1020px; margin-left:-2px;
+    background:linear-gradient(to bottom, transparent, #c4b87e 18%, #9a8c4a 82%, transparent); z-index:3; }
+
+  /* ── 下部：标题带 ── */
+  .band { position:absolute; left:0; right:0; top:1020px; bottom:0;
+    background:linear-gradient(180deg,#f7f3eb 0%,#efe9dc 100%); padding:88px 90px 0; }
+  .kicker { display:flex; align-items:center; gap:22px; }
+  .kicker .line { height:1px; flex:1; background:linear-gradient(to right, rgba(154,140,74,.6), transparent); }
+  .kicker .txt { font-size:26px; letter-spacing:.5em; color:#9a8c4a; font-weight:500; }
+  .kicker .line.l { background:linear-gradient(to left, rgba(154,140,74,.6), transparent); }
+  h1 { font-size:118px; font-weight:900; line-height:1.22; letter-spacing:.04em; margin-top:44px; }
+  h1 .accent { color:#b94134; }
+  .sub { margin-top:30px; font-size:38px; color:#5a5a73; letter-spacing:.14em; }
+  .foot { position:absolute; left:90px; right:90px; bottom:64px; display:flex; align-items:flex-end; justify-content:space-between; }
+  .foot .who { font-size:30px; color:#5a5a73; letter-spacing:.1em; }
+  .foot .who b { color:#2c2c43; font-weight:700; }
+  .seal { width:150px; height:150px; background:#b94134; border-radius:10px; transform:rotate(-4deg);
+    display:flex; align-items:center; justify-content:center; flex-direction:column;
+    box-shadow:0 10px 30px rgba(185,65,52,.35); border:3px solid #9a3528; }
+  .seal span { color:#f7f3eb; font-size:52px; font-weight:900; line-height:1.15; letter-spacing:.1em; }
+  .candles { position:absolute; right:40px; bottom:190px; opacity:.85; }
+</style>
+</head>
+<body>
+  <div class="split">
+    <!-- 左：金融世界 -->
+    <div class="world fin">
+      <div class="tag">陆 家 嘴 · 五 年</div>
+      <div class="fin-inner">
+        <div class="fin-label">证券行业 · 分析师</div>
+        <div class="fin-title serif">K线与研报<br>构成的日子</div>
+        <div class="fin-chips">
+          <span class="chip">CFA 一级</span><span class="chip">证券从业</span><span class="chip">投顾资格</span>
+        </div>
+        <svg class="candles" width="360" height="240" viewBox="0 0 360 240">
+          <g stroke="#c4b87e" stroke-width="2" opacity=".8">
+            <line x1="30" y1="30" x2="30" y2="120"/><rect x="18" y="52" width="24" height="44" fill="#4a7c59" opacity=".9"/>
+            <line x1="90" y1="18" x2="90" y2="96"/><rect x="78" y="34" width="24" height="40" fill="#b94134" opacity=".9"/>
+            <line x1="150" y1="40" x2="150" y2="130"/><rect x="138" y="64" width="24" height="46" fill="#4a7c59" opacity=".9"/>
+            <line x1="210" y1="26" x2="210" y2="110"/><rect x="198" y="44" width="24" height="42" fill="#4a7c59" opacity=".9"/>
+            <line x1="270" y1="52" x2="270" y2="150"/><rect x="258" y="72" width="24" height="52" fill="#b94134" opacity=".9"/>
+            <line x1="330" y1="36" x2="330" y2="126"/><rect x="318" y="56" width="24" height="48" fill="#4a7c59" opacity=".9"/>
+          </g>
+          <polyline points="30,140 90,120 150,150 210,132 270,168 330,150" fill="none" stroke="#c4b87e" stroke-width="2.5" opacity=".55"/>
+        </svg>
+      </div>
+    </div>
+    <!-- 右：命理世界 -->
+    <div class="world ming">
+      <div class="tag">书 房 · 此 刻</div>
+      <div class="ming-inner">
+        <div class="ming-label">命理研究 · 独立开发</div>
+        <div class="pillars serif">
+          <div class="pillar"><div class="zh">庚午</div><div class="en">年</div></div>
+          <div class="pillar"><div class="zh">辛巳</div><div class="en">月</div></div>
+          <div class="pillar"><div class="zh">壬申</div><div class="en">日</div></div>
+          <div class="pillar"><div class="zh">戊申</div><div class="en">时</div></div>
+        </div>
+        <div class="ming-quote serif">典籍为锚 · <b>出处分层</b> · 引擎可验</div>
+      </div>
+    </div>
+  </div>
+  <div class="seam"></div>
+
+  <div class="band">
+    <div class="kicker"><div class="line l"></div><div class="txt serif">转 行 自 白</div><div class="line"></div></div>
+    <h1 class="serif">从陆家嘴<br>到<span class="accent">命理引擎</span></h1>
+    <div class="sub serif">一个金融硕士，用工程方法重做传统命理</div>
+    <div class="foot">
+      <div class="who"><b>金晨</b> · MingCharts 明理</div>
+      <div class="seal serif"><span>明理</span></div>
+    </div>
+  </div>
+  <div class="grain"></div>
+</body>
+</html>
