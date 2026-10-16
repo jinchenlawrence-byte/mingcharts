@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+:root{--bg:#F1F0FA;--ink:#1B1838;--mute:#625F8A;--wood:#3CC796;--fire:#FF6B5B;--earth:#F6C24F;--metal:#D6DBE6;--water:#3A66FF}
+*{box-sizing:border-box;margin:0}
+body{width:1200px;height:630px;overflow:hidden;background:var(--bg);color:var(--ink);font-family:"Noto Serif SC","Songti SC",serif;position:relative;display:flex;flex-direction:column;justify-content:center;padding:0 90px}
+body::before{content:"";position:absolute;inset:0;background:
+radial-gradient(420px 260px at 12% 18%,rgb(58 102 255 / .10),transparent 70%),
+radial-gradient(420px 260px at 88% 12%,rgb(255 107 91 / .10),transparent 70%),
+radial-gradient(380px 280px at 78% 88%,rgb(60 199 150 / .10),transparent 70%)}
+.brand{position:absolute;top:44px;left:90px;display:flex;align-items:center;gap:14px;font-weight:900;font-size:30px}
+.dots{display:flex;gap:5px}
+.dots i{width:11px;height:11px;border-radius:50%}
+h1{font-size:88px;font-weight:900;line-height:1.18;letter-spacing:-.01em;position:relative}
+h1 .u8{background:linear-gradient(transparent 62%,rgb(58 102 255 / .20) 0)}
+.sub{margin-top:22px;font-size:26px;color:var(--mute);font-family:"Noto Sans SC","PingFang SC","Microsoft YaHei",sans-serif;position:relative}
+.pillars{position:absolute;right:90px;bottom:70px;display:flex;gap:14px}
+.pillar{width:104px;border-radius:20px;overflow:hidden;background:#fff;box-shadow:0 0 0 2px #DEDCF0;display:flex;flex-direction:column}
+.pillar .t{font-size:14px;text-align:center;padding:8px 0 4px;color:var(--mute);font-family:"Noto Sans SC",sans-serif}
+.pillar .g{display:grid;place-items:center;height:88px;font-size:44px;font-weight:900}
+.site{position:absolute;left:90px;bottom:64px;font-family:"Noto Sans SC",sans-serif;font-size:24px;font-weight:700;color:var(--mute)}
+.seal{position:absolute;top:44px;right:90px;width:64px;height:64px;border-radius:14px;background:#B94134;color:#fff;display:grid;place-items:center;font-size:36px;font-weight:900;box-shadow:0 6px 18px -6px rgb(185 65 52 / .5)}
+</style>
+</head>
+<body>
+  <div class="brand">明理
+    <span class="dots" style="font-size:0"><i style="background:var(--wood)"></i><i style="background:var(--fire)"></i><i style="background:var(--earth)"></i><i style="background:var(--metal)"></i><i style="background:var(--water)"></i></span>
+  </div>
+  <div class="seal">明</div>
+  <h1>你的<span class="u8">八字</span>，<br>一眼就看懂</h1>
+  <p class="sub">免费排盘 · 万字命书 · 合婚 · 紫微 · 方位城市</p>
+  <div class="site">mingcharts.com</div>
+  <div class="pillars">
+    <div class="pillar"><div class="t">年柱</div><div class="g" style="background:var(--wood);color:#07281C">甲</div><div class="g" style="background:var(--earth);color:#3A2800">辰</div></div>
+    <div class="pillar"><div class="t">月柱</div><div class="g" style="background:var(--fire);color:#3A0A05">丙</div><div class="g" style="background:var(--wood);color:#07281C">寅</div></div>
+    <div class="pillar"><div class="t">日柱</div><div class="g" style="background:var(--water);color:#fff">壬</div><div class="g" style="background:var(--water);color:#fff">子</div></div>
+  </div>
+</body>
+</html>

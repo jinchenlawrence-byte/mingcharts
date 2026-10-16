@@ -19,12 +19,25 @@ const notoSerifSC = Noto_Serif_SC({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "https://www.mingcharts.com"),
   title: {
     default: "明理 - 免费八字排盘与命书详批",
     template: "%s | 明理",
   },
   description:
     "专业八字命理平台：免费四柱排盘、十神格局分析，命书报告万字详批（八字总览、性格、用神、格局、调候、大运、事业、婚姻、子女、健康），生肖运势与命理知识大全。",
+  openGraph: {
+    title: "明理 · 免费八字排盘，一眼就看懂",
+    description:
+      "免费生成四柱命盘，十神、藏干、起运一次看全。想再深一步，万字命书引经据典，也说人话。",
+    siteName: "明理 mingcharts.com",
+    type: "website",
+    images: [{ url: "/og.png", width: 1200, height: 630, alt: "明理 · 免费八字排盘" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/og.png"],
+  },
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

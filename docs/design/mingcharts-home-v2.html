@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>明理 · 免费八字排盘</title>
+<meta name="description" content="明理 mingcharts.com —— 免费八字排盘：四柱、十神、藏干、真太阳时校正一次看全；更有万字命书详批、合婚配对、紫微斗数、方位城市等深度解读。">
+<meta name="theme-color" media="(prefers-color-scheme:light)" content="#F1F0FA">
+<meta name="theme-color" media="(prefers-color-scheme:dark)" content="#100F1D">
+<meta property="og:title" content="明理 · 免费八字排盘，一眼就看懂">
+<meta property="og:description" content="免费生成四柱命盘，十神、藏干、起运一次看全。想再深一步，万字命书引经据典，也说人话。">
+<meta property="og:type" content="website">
+<!-- TODO(上线前)：补 og:image 分享卡（微信/小红书外链预览用），托管到站点静态资源 -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23B94134'/%3E%3Ctext x='32' y='45' font-size='36' text-anchor='middle' fill='%23fff' font-family='serif' font-weight='900'%3E明%3C/text%3E%3C/svg%3E">
+<!-- ★ 生产实现注意：大陆访问 Google Fonts 不稳定，上线时应自托管字体子集化文件，
+     或直接退化到系统字体栈（下方 --sans/--serif 已带完整回退，断网也不难看） -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F1F0FA;--surface:#fff;--ink:#1B1838;--mute:#625F8A;--line:#DEDCF0;
+--wood:#3CC796;--fire:#FF6B5B;--earth:#F6C24F;--metal:#D6DBE6;--water:#3A66FF;
+--sans:"Noto Sans SC","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+--serif:"Noto Serif SC","Songti SC","STSong",serif;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#100F1D;--surface:#1B1930;--ink:#F1EFFF;--mute:#A5A2CC;--line:#2E2B4B;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#100F1D;--surface:#1B1930;--ink:#F1EFFF;--mute:#A5A2CC;--line:#2E2B4B;color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.7 var(--sans);-webkit-font-smoothing:antialiased}
+a{color:inherit;text-decoration:none}
+:focus-visible{outline:3px solid var(--water);outline-offset:3px}
+.wrap{max-width:1120px;margin:0 auto;padding:0 20px}
+nav{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:16px auto 0;padding:10px 12px 10px 20px;max-width:1080px;background:var(--surface);border-radius:999px;border:1px solid var(--line);position:sticky;top:12px;z-index:50;box-shadow:0 8px 28px -18px rgb(27 24 56 / .35)}
+.logo{font:900 24px/1 var(--serif);display:flex;align-items:center;gap:10px}
+.dots{display:flex;gap:3px}.dots i{width:7px;height:7px;border-radius:50%}
+.links{display:flex;gap:22px;font-size:14px;color:var(--mute)}
+.links a:hover{color:var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;border:0;cursor:pointer;font:700 15px/1 var(--sans);padding:13px 22px;border-radius:999px;background:var(--ink);color:var(--bg)}
+.btn.big{padding:18px 28px;font-size:17px;width:100%;background:var(--water);color:#fff}
+.btn:hover{filter:brightness(1.1)}
+.btn:active{transform:scale(.98)}
+@media(max-width:820px){.links{display:none}}
+
+.hero{display:grid;gap:40px;padding:48px 0 40px}
+@media(min-width:920px){.hero{grid-template-columns:1.05fr 1fr;align-items:start;gap:56px;padding-top:72px}}
+h1{font:900 clamp(38px,7vw,64px)/1.15 var(--serif);margin:0 0 16px;letter-spacing:-.01em}
+.u8{background:linear-gradient(transparent 62%,rgb(58 102 255 / .18) 0)}
+.lede{color:var(--mute);margin:0 0 28px;max-width:30em;font-size:17px}
+
+.form{background:var(--surface);border:1px solid var(--line);border-radius:28px;padding:22px}
+.row{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:14px}
+label.f{display:block;font-size:13px;color:var(--mute);margin-bottom:4px}
+select,input[type=text]{width:100%;font:500 16px var(--sans);color:var(--ink);background:var(--bg);border:1.5px solid transparent;border-radius:14px;padding:12px 8px;appearance:none;-webkit-appearance:none;text-align:center}
+input[type=text]{text-align:left;padding:12px 14px}
+select:focus,input[type=text]:focus{border-color:var(--water);outline:0}
+.seg{display:flex;gap:8px;margin-bottom:14px}
+.seg label{flex:1;position:relative}
+.seg input{position:absolute;opacity:0}
+.seg span{display:block;text-align:center;padding:12px;border-radius:14px;background:var(--bg);font-weight:500;cursor:pointer;border:1.5px solid transparent}
+.seg input:checked+span{background:var(--ink);color:var(--bg)}
+.seg input:focus-visible+span{outline:3px solid var(--water);outline-offset:2px}
+.note{font-size:13px;color:var(--mute);margin:12px 0 0}
+
+/* 信任条：回应命理用户第一焦虑（隐私/免费/娱乐口径） */
+.trust{display:flex;flex-wrap:wrap;gap:10px;padding:0 0 34px}
+.trust span{display:flex;align-items:center;gap:7px;font-size:13px;color:var(--mute);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:7px 14px}
+.trust i{width:8px;height:8px;border-radius:50%;flex:none}
+
+.stage{position:relative}
+.stage::before{content:"";position:absolute;inset:-40px -20px auto;height:220px;background:
+radial-gradient(220px 120px at 18% 30%,rgb(58 102 255 / .10),transparent 70%),
+radial-gradient(220px 120px at 82% 18%,rgb(255 107 91 / .10),transparent 70%),
+radial-gradient(200px 130px at 55% 80%,rgb(60 199 150 / .10),transparent 70%);pointer-events:none}
+.cap-t{font-size:14px;color:var(--mute);margin:0 0 14px}
+.pillars{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;padding-top:16px;position:relative}
+.pillar{font:inherit;color:inherit;border:0;padding:0;cursor:pointer;background:var(--surface);border-radius:26px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 0 0 1.5px var(--line);animation:drop .8s cubic-bezier(.2,.8,.2,1) backwards;animation-delay:calc(var(--i)*120ms);transition:box-shadow .2s,transform .2s}
+.pillar:hover{transform:translateY(-4px)}
+.pillar[aria-pressed=true]{box-shadow:0 0 0 3px var(--ink)}
+.pillar.day{transform:translateY(-16px)}
+.pillar.day:hover{transform:translateY(-20px)}
+.pillar .t{font-size:13px;padding:9px 0 7px;color:var(--mute)}
+.pillar .g{display:grid;place-items:center;aspect-ratio:1/.95;font:900 clamp(34px,7vw,66px)/1 var(--serif)}
+.wood{background:var(--wood);color:#07281C}.fire{background:var(--fire);color:#3A0A05}
+.earth{background:var(--earth);color:#3A2800}.metal{background:var(--metal);color:#1B1838}
+.water{background:var(--water);color:#fff}
+@keyframes drop{from{opacity:0;transform:translateY(30px) rotate(-5deg)}}
+.panel{margin-top:6px;background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:18px 20px;position:relative}
+.panel b{font:900 20px var(--serif)}
+.panel p{margin:4px 0 0;color:var(--mute);font-size:15px}
+.legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;position:relative}
+.legend span{display:flex;align-items:center;gap:7px;font-size:13px;padding:5px 12px 5px 6px;background:var(--surface);border:1px solid var(--line);border-radius:999px}
+.legend i{width:18px;height:18px;border-radius:50%}
+
+h2{font:900 clamp(28px,4.5vw,40px)/1.2 var(--serif);margin:0 0 24px}
+.bento{display:grid;gap:14px;grid-template-columns:1fr}
+@media(min-width:760px){.bento{grid-template-columns:repeat(6,1fr)}.b1{grid-column:span 4;grid-row:span 2}.b2,.b3,.b4{grid-column:span 2}.b5{grid-column:span 6}}
+.card{display:flex;flex-direction:column;justify-content:space-between;gap:28px;padding:26px;border-radius:30px;min-height:190px;transition:transform .2s}
+.card:hover{transform:translateY(-4px)}
+.card .z{font:900 56px/1 var(--serif);display:inline-block;transition:transform .25s}
+.card:hover .z{transform:rotate(-4deg) scale(1.05)}
+.b1 .z{font-size:clamp(80px,14vw,140px)}
+.card h3{margin:0;font-size:20px}
+.card p{margin:4px 0 0;font-size:15px;opacity:.85;max-width:26em}
+.b5{flex-direction:row;align-items:center;min-height:0;gap:20px}.b5 .z{font-size:44px}
+
+/* 样例命书：付费转化最强的元素——让用户先「尝到」报告的语气与出处感 */
+.sample{background:var(--surface);border:1px solid var(--line);border-radius:30px;padding:clamp(22px,4vw,36px);margin:8px 0 20px}
+.sample .hd{display:flex;flex-wrap:wrap;align-items:baseline;gap:8px 14px;margin-bottom:18px}
+.sample .hd b{font:900 22px var(--serif)}
+.sample .hd span{font-size:13px;color:var(--mute)}
+.quote{border-left:3px solid var(--fire);padding:2px 0 2px 16px;margin:0 0 16px}
+.quote p{margin:0;font-family:var(--serif);font-size:16.5px;line-height:1.85}
+.quote small{display:block;margin-top:4px;color:var(--mute);font:400 13px var(--sans)}
+.sample .cta{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin-top:20px}
+.sample .cta .btn{background:var(--ink)}
+.sample .cta em{font-style:normal;font-size:13px;color:var(--mute)}
+
+.more{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.more a{background:var(--surface);border:1px solid var(--line);border-radius:22px;padding:18px 20px;display:block}
+.more a:hover{border-color:var(--ink)}
+.more b{display:block}.more span{font-size:14px;color:var(--mute)}
+
+/* FAQ：补足付费前最后疑虑（隐私/免费边界/口径/支付） */
+.faq{display:grid;gap:10px}
+.faq details{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:0 20px}
+.faq summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:12px;padding:16px 0;font-weight:700;font-size:15.5px}
+.faq summary::-webkit-details-marker{display:none}
+.faq summary::after{content:"+";font:400 22px/1 var(--sans);color:var(--mute);transition:transform .2s;flex:none}
+.faq details[open] summary::after{transform:rotate(45deg)}
+.faq details p{margin:0 0 16px;color:var(--mute);font-size:14.5px}
+.faq details p b{color:var(--ink)}
+
+section{padding:24px 0 48px}
+footer{border-top:1px solid var(--line);padding:28px 0 40px;font-size:13px;color:var(--mute);display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center}
+footer .disc{flex-basis:100%;margin-top:6px;line-height:1.8}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,30px);opacity:0;background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:999px;font-size:14px;transition:.3s;pointer-events:none;max-width:90vw;text-align:center}
+.toast.on{opacity:1;transform:translate(-50%,0)}
+/* 滚动显现（尊重 reduced-motion：全局关闭动画的规则已覆盖 transition） */
+.rv{opacity:0;transform:translateY(18px);transition:opacity .7s cubic-bezier(.2,.8,.2,1),transform .7s cubic-bezier(.2,.8,.2,1)}
+.rv.on{opacity:1;transform:none}
+@media(max-width:520px){.row{grid-template-columns:repeat(3,1fr)}.pillars{gap:8px}.pillar{border-radius:20px}}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}.rv{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<nav aria-label="主导航">
+  <a class="logo" href="#"><span>明理</span><span class="dots" aria-hidden="true"><i style="background:var(--wood)"></i><i style="background:var(--fire)"></i><i style="background:var(--earth)"></i><i style="background:var(--metal)"></i><i style="background:var(--water)"></i></span></a>
+  <div class="links"><a href="#chart">排盘</a><a href="https://www.mingcharts.com/daily">每日日签</a><a href="https://www.mingcharts.com/hemun">合婚配对</a><a href="https://www.mingcharts.com/ziwei">紫微斗数</a><a href="https://www.mingcharts.com/article">命理知识</a><a href="https://www.mingcharts.com/pricing">定价</a></div>
+  <a class="btn" href="https://www.mingcharts.com/auth">登录 / 注册</a>
+</nav>
+
+<main class="wrap">
+<div class="hero" id="chart">
+  <div>
+    <h1>你的<span class="u8">八字</span>，<br>一眼就看懂</h1>
+    <p class="lede">免费生成四柱命盘，十神、藏干、起运一次看全。想再深一步，万字命书引经据典，也说人话。</p>
+    <form class="form" id="f" autocomplete="off">
+      <div class="row">
+        <div><label class="f" for="y">年</label><select id="y"></select></div>
+        <div><label class="f" for="m">月</label><select id="m"></select></div>
+        <div><label class="f" for="d">日</label><select id="d"></select></div>
+        <div><label class="f" for="h">时</label><select id="h"></select></div>
+        <div><label class="f" for="mi">分</label><select id="mi"></select></div>
+      </div>
+      <div class="seg" role="radiogroup" aria-label="性别">
+        <label><input type="radio" name="g" checked><span>男</span></label>
+        <label><input type="radio" name="g"><span>女</span></label>
+      </div>
+      <label class="f" for="city">出生地</label>
+      <input type="text" id="city" placeholder="输入城市，自动按真太阳时校正" style="margin-bottom:16px">
+      <button class="btn big" type="submit">开始排盘</button>
+      <p class="note">排盘结果仅供参考娱乐。不知道出生城市？可手动选择时区。</p>
+    </form>
+  </div>
+
+  <div class="stage">
+    <p class="cap-t">示例命盘 · 点一点，看每一柱管什么</p>
+    <div class="pillars" id="pillars"></div>
+    <div class="panel" aria-live="polite"><b id="pt"></b><p id="pd"></p></div>
+    <div class="legend" aria-label="五行配色"><span><i style="background:var(--wood)"></i>木</span><span><i style="background:var(--fire)"></i>火</span><span><i style="background:var(--earth)"></i>土</span><span><i style="background:var(--metal)"></i>金</span><span><i style="background:var(--water)"></i>水</span></div>
+  </div>
+</div>
+
+<div class="trust rv" aria-label="平台承诺">
+  <span><i style="background:var(--wood)"></i>排盘永久免费</span>
+  <span><i style="background:var(--water)"></i>真太阳时校正</span>
+  <span><i style="background:var(--earth)"></i>生辰加密传输·不对外公开</span>
+  <span><i style="background:var(--fire)"></i>传统文化视角·仅供参考娱乐</span>
+</div>
+
+<section>
+  <h2>排完盘，接着玩</h2>
+  <div class="bento">
+    <a class="card b1 water" href="https://www.mingcharts.com/pricing"><span class="z">命</span><div><h3>命书详批</h3><p>格局、调候、用神、大运，再到事业、婚姻、子女、健康，万字命书逐条引用经典原文。</p></div></a>
+    <a class="card b2 fire" href="https://www.mingcharts.com/hemun"><span class="z">合</span><div><h3>合婚配对</h3><p>双方命局怎么互动，缘分有多深。</p></div></a>
+    <a class="card b3 earth" href="https://www.mingcharts.com/ziwei"><span class="z">紫</span><div><h3>紫微斗数</h3><p>十四主星四化，十二宫深度分析。</p></div></a>
+    <a class="card b4 wood" href="https://www.mingcharts.com/daily"><span class="z">签</span><div><h3>每日日签</h3><p>每天抽一张，看看今天的运势。</p></div></a>
+    <a class="card b5 metal" href="https://www.mingcharts.com/geo"><span class="z">方</span><div><h3>方位城市</h3><p>财富之城、事业之城，按五行地气看你适合去哪。</p></div></a>
+  </div>
+</section>
+
+<section>
+  <div class="sample rv">
+    <div class="hd"><b>万字命书，长什么样？</b><span>以下为示例节选 · 实际报告因人而异</span></div>
+    <div class="quote">
+      <p>「日主壬水，生于孟春寅月，木旺泄气，喜金发源。」——庚金为尊，丙火为佐，二者得宜，格局自清。</p>
+      <small>—— 节选自「格局总论」章节 · 参《穷通宝鉴》论正月壬水</small>
+    </div>
+    <div class="quote">
+      <p>「身旺能任财，求财可顺势而为，宜向东方、南方发展；忌孤注一掷，忌高杠杆。」</p>
+      <small>—— 节选自「求财方向」章节 · 与方位城市五行地气同一口径</small>
+    </div>
+    <div class="quote">
+      <p>「现行大运天干透出合神，十年之内事业重心由转岗转向立业，稳扎稳打为上。」</p>
+      <small>—— 节选自「大运流年」章节</small>
+    </div>
+    <div class="cta">
+      <a class="btn" href="https://www.mingcharts.com/pricing">查看完整报告</a>
+      <em>先免费排盘，再决定要不要深读</em>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>更多命理查询</h2>
+  <div class="more">
+    <a href="https://www.mingcharts.com/bazi"><b>按出生日期算命</b><span>1950–2010 每日八字</span></a>
+    <a href="https://www.mingcharts.com/shengxiao"><b>十二生肖运势</b><span>属相配对 · 流年运势</span></a>
+    <a href="https://www.mingcharts.com/jieqi"><b>二十四节气</b><span>月令更替 · 节气养生</span></a>
+    <a href="https://www.mingcharts.com/article"><b>命理知识大全</b><span>入门 · 十神 · 格局</span></a>
+  </div>
+</section>
+
+<section>
+  <h2>常见疑问</h2>
+  <div class="faq rv">
+    <details>
+      <summary>我的生辰数据安全吗？</summary>
+      <p><b>只用于计算。</b>生辰信息全程加密传输，仅用于生成你的命盘与报告，不对外公开、不作他用。</p>
+    </details>
+    <details>
+      <summary>免费排盘和付费报告差在哪？</summary>
+      <p><b>排盘与基础解读永久免费。</b>付费报告（命书、年运、合婚、紫微）在此之上做万字级深度解读：格局、调候、用神、大运逐项展开，并逐条注明所引经典出处。</p>
+    </details>
+    <details>
+      <summary>报告是怎么生成的？准确吗？</summary>
+      <p>排盘部分按传统历法规则<b>精确计算</b>（含真太阳时校正）；解读部分是传统文化视角下的人机结合分析，<b>仅供参考娱乐</b>，不构成医疗、投资或其他专业建议。</p>
+    </details>
+    <details>
+      <summary>支持什么支付方式？</summary>
+      <p>目前支持<b>国际信用卡</b>（Visa / Mastercard 等）安全收款，更多支付方式接入中。</p>
+    </details>
+  </div>
+</section>
+</main>
+
+<div class="wrap"><footer>
+  <a href="https://www.mingcharts.com/terms">服务条款</a><a href="https://www.mingcharts.com/privacy">隐私政策</a><a href="mailto:hello@mingcharts.com">hello@mingcharts.com</a><span>城市数据 © GeoNames（CC BY 4.0）</span>
+  <span class="disc">© 2026 mingcharts.com · 本站内容为传统文化研究与人机结合解读，仅供参考娱乐，不构成医疗、投资或法律建议。</span>
+</footer></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+var P=[
+{t:"年柱",g:"甲",b:"辰",e:["wood","earth"],d:"代表祖辈和早年的家庭环境，是你命盘的起点。"},
+{t:"月柱",g:"丙",b:"寅",e:["fire","wood"],d:"代表父母和青年阶段，也是判断格局最重要的一柱。"},
+{t:"日柱",g:"壬",b:"子",e:["water","water"],d:"日柱的天干叫「日主」，就是你自己；地支代表你的伴侣。",day:1},
+{t:"时柱",g:"辛",b:"亥",e:["metal","water"],d:"代表子女和晚年，也藏着你不常示人的一面。"}];
+var box=document.getElementById("pillars");
+P.forEach(function(p,i){
+  var b=document.createElement("button");b.type="button";b.className="pillar"+(p.day?" day":"");b.style.setProperty("--i",i);b.setAttribute("aria-pressed",i==2);
+  b.innerHTML='<span class="t">'+p.t+'</span><span class="g '+p.e[0]+'">'+p.g+'</span><span class="g '+p.e[1]+'">'+p.b+'</span>';
+  b.onclick=function(){show(i)};box.appendChild(b);
+});
+function show(i){
+  [].forEach.call(box.children,function(c,j){c.setAttribute("aria-pressed",j==i)});
+  document.getElementById("pt").textContent=P[i].t;document.getElementById("pd").textContent=P[i].d;
+}
+show(2);
+function fill(id,a,b,suf){var s=document.getElementById(id),h="";for(var i=a;i<=b;i++)h+='<option value="'+i+'">'+i+(suf||"")+'</option>';s.innerHTML=h}
+fill("y",1930,2026);fill("m",1,12);fill("d",1,31);fill("h",0,23);fill("mi",0,59);
+document.getElementById("y").value=2000;
+var tt;
+document.getElementById("f").onsubmit=function(e){
+  e.preventDefault();var t=document.getElementById("toast");
+  t.textContent="这是设计稿：这里接入你现有的排盘逻辑即可";t.classList.add("on");
+  clearTimeout(tt);tt=setTimeout(function(){t.classList.remove("on")},2800);
+};
+// 滚动显现
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add("on");io.unobserve(e.target)}})},{threshold:.15});
+[].forEach.call(document.querySelectorAll(".rv"),function(el){io.observe(el)});
+</script>
+</body>
+</html>
