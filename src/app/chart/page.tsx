@@ -12,7 +12,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import SaveChart from '@/components/SaveChart'
-import { getSupabase } from '@/lib/supabase'
+import CheckoutButton from '@/components/CheckoutButton'
+import { waffoProductId } from '@/lib/waffo-products'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import { shenshaHref, KONG_WANG_SLUG, CHANG_SHENG_SLUG } from '@/lib/shenshaArticles'
 import type { PaidAnalysis, LuckCycles, LuckTag, FortuneTier } from '@/lib/analysis'
@@ -227,34 +228,6 @@ function LuckCyclesView({ luck }: { luck: LuckCycles }) {
 export default function ChartPage() {
   const router = useRouter()
   const [chart, setChart] = useState<ChartData | null>(null)
-  const [unlocking, setUnlocking] = useState(false)
-  const [payError, setPayError] = useState('')
-
-  const handleUnlock = async () => {
-    const supabase = getSupabase()
-    const { data: { session } } = await supabase.auth.getSession()
-    if (!session) {
-      router.push('/auth')
-      return
-    }
-    setUnlocking(true)
-    setPayError('')
-    try {
-      const res = await fetch('/api/unlock', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: session.access_token, chart })
-      })
-      const data = await res.json()
-      if (!res.ok || !data.success) throw new Error(data.error || '解锁失败')
-      localStorage.setItem('currentChart', JSON.stringify(data.data.chartData))
-      setChart(data.data.chartData)
-    } catch (e) {
-      setPayError(e instanceof Error ? e.message : '解锁失败，请稍后重试')
-    } finally {
-      setUnlocking(false)
-    }
-  }
 
   useEffect(() => {
     const stored = localStorage.getItem('currentChart')
@@ -537,16 +510,17 @@ export default function ChartPage() {
           ))}
         </div>
 
-        {/* 付费解锁区（内测期免费解锁；正式开放后走 SKUS 价格） */}
+        {/* 付费解锁区（正式收费：Waffo 托管收银台按次购买，价格取自 SKUS 单一事实源） */}
         {!chart.analysis.isPaid && (
           <div className="hw-c-cta">
             {chart.locked?.preview && <p className="hw-c-dx">{chart.locked.preview}</p>}
-            <button onClick={handleUnlock} disabled={unlocking} className="hw-c-btnBig">
-              {unlocking ? 'AI命理师解读生成中（约30秒）...' : '解锁完整命书（内测期免费体验）'}
-            </button>
-            {payError && <p className="hw-c-err">{payError}</p>}
+            <div style={{ maxWidth: 380, margin: '0 auto' }}>
+              <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null}>
+                解锁完整命书 · {FATEBOOK_PRICE}
+              </CheckoutButton>
+            </div>
             <p className="hw-note" style={{ marginTop: 14 }}>
-              正式开放后 {FATEBOOK_PRICE}/次（会员不含报告）· <Link href="/mingshu" className="hw-c-link">查看命书详情</Link>
+              按次购买，永久回看（会员不含报告）· <Link href="/mingshu" className="hw-c-link">查看命书详情</Link>
             </p>
           </div>
         )}

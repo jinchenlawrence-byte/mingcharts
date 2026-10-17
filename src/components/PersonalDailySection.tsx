@@ -80,12 +80,12 @@ export default function PersonalDailySection({ zone }: { zone: string }) {
     )
   }
 
-  // 已登录有命盘（locked 时 ENFORCE 已开，提示订阅；内测期 locked=false）
+  // 已登录有命盘（locked 时 ENFORCE 已开，提示会员；ENFORCE 关闭期 locked=false）
   if (data.locked) {
     return (
       <div className="mt-8 rounded-xl bg-gold/5/60 ring-1 ring-amber-100 p-6 text-center">
         <p className="text-ink font-semibold mb-1">对【你】而言的日运</p>
-        <p className="text-sm text-ink-light mb-4">个性化日运为会员权益，开通后查看。</p>
+        <p className="text-sm text-ink-light mb-4">个性化日运为会员权益，会员上线后开放查看。</p>
         <Link href="/pricing" className="inline-block bg-amber-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-amber-700 transition">了解会员</Link>
       </div>
     )
@@ -111,7 +111,7 @@ export default function PersonalDailySection({ zone }: { zone: string }) {
           <p className="text-xs text-ink-light/40 mt-1">依据层级：{p.basisLevel}</p>
         </div>
 
-        <p className="mt-4 text-xs text-ink/70/80">会员权益 · 内测期免费开放</p>
+        <p className="mt-4 text-xs text-ink/70/80">会员权益</p>
       </div>
     </section>
   )

@@ -182,7 +182,7 @@ export default function LiunianPage() {
             {error && <p className="hw-c-err text-center">{error}</p>}
           </div>
           <p className="hw-note text-center">
-            内测期免费体验 · 正式开放后 {formatPriceUSD(SKUS.annual_report.priceUSD)}/次（会员不含报告）
+            {formatPriceUSD(SKUS.annual_report.priceUSD)}/次 · 会员不含报告 · 解锁后永久回看
           </p>
         </form>
 

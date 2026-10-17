@@ -128,16 +128,16 @@ console.log(bareFail === 0
   ? '✓ 裸数字金额：src 全量扫描 amount:/price: 字面量 0 命中（价格须取自 SKUS）'
   : `✗ 裸数字金额 ${bareFail} 处残留`)
 
-// ---------- ⑦ ★ CTA 文案守卫（HANDOFF-四问题修复 §A/§B：会员不得与报告同框误导）----------
-// chart 页：删除「会员免费解锁/开通会员」误导分支，按钮为「内测期免费体验」
+// ---------- ⑦ ★ CTA 文案守卫（正式收费模式，2026-10-17：按钮走 Waffo 购买，价格取自 SKUS）----------
+// chart 页：删除「会员免费解锁/开通会员/内测期免费体验」误导分支，按钮为 CheckoutButton sku="fatebook"＋SKUS 价格
 const chartSrc = readFileSync(new URL('../src/app/chart/page.tsx', import.meta.url), 'utf8')
 let ctaFail = 0
-const CTA_MISS = ['会员免费解锁', '开通会员']
+const CTA_MISS = ['会员免费解锁', '开通会员', '内测期免费体验']
 for (const w of CTA_MISS) {
   const n = chartSrc.split(w).length - 1
   if (n > 0) { ctaFail++; fail(`chart 页残留误导文案「${w}」${n} 处（模式：字符串计数，会员不含报告）`) }
 }
-const CTA_HIT = ['内测期免费体验', '会员不含报告']
+const CTA_HIT = ['解锁完整命书', 'CheckoutButton sku="fatebook"', '会员不含报告']
 for (const w of CTA_HIT) {
   const n = chartSrc.split(w).length - 1
   if (n === 0) { ctaFail++; fail(`chart 页缺披露「${w}」（模式：字符串计数）`) }
