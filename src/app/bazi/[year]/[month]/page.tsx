@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Nav from '@/components/Nav'
 import { getYearGanZhi, getZodiac, getConstellation } from '@/lib/baziData'
 
 export function generateStaticParams() {
@@ -43,27 +44,28 @@ export default async function MonthPage({ params }: { params: Promise<{ year: st
   }
 
   return (
-    <main className="min-h-screen ">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <nav className="text-sm text-ink-light/60 mb-4">
-          <Link href="/" className="hover:text-ink/70">首页</Link>
+    <main className="hw-page">
+      <Nav />
+      <div className="hw-wrap hw-c-pg">
+        <nav className="hw-c-back">
+          <Link href="/">首页</Link>
           <span className="mx-2">›</span>
-          <Link href="/bazi" className="hover:text-ink/70">八字算命</Link>
+          <Link href="/bazi">八字算命</Link>
           <span className="mx-2">›</span>
-          <Link href={`/bazi/${year}`} className="hover:text-ink/70">{year}年</Link>
+          <Link href={`/bazi/${year}`}>{year}年</Link>
           <span className="mx-2">›</span>
-          <span className="text-ink">{monthNum}月</span>
+          <span>{monthNum}月</span>
         </nav>
 
-        <h1 className="text-3xl font-bold text-ink mb-2">
+        <h1 className="hw-c-h1">
           {year}年{monthNum}月出生的人命运如何？
         </h1>
-        <p className="text-ink-light mb-6">
+        <p className="hw-lede">
           {year}年{ganZhi}年属{zodiac.name}，{monthNum}月出生。本月涵盖星座：{constellations.join('、')}。
         </p>
 
-        <div className="paper-card rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-bold text-ink mb-4">选择出生日期</h2>
+        <div className="hw-c-box mb-6">
+          <h2 className="hw-c-secTitle">选择出生日期</h2>
           <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-10 gap-2">
             {days.map(d => (
               <Link
@@ -78,16 +80,16 @@ export default async function MonthPage({ params }: { params: Promise<{ year: st
           </div>
         </div>
 
-        <div className="bg-gold/5 rounded-lg p-4 text-sm text-ink/70">
+        <div className="hw-c-box bg-gold/5! text-sm">
           <p className="font-semibold text-ink mb-2">{year}年{monthNum}月出生总览</p>
-          <p>
+          <p className="text-ink/70">
             {year}年{monthNum}月出生的人，生肖属{zodiac.name}。农历{monthNum}月为{['正', '二', '三', '四', '五', '六', '七', '八', '九', '十', '冬', '腊'][monthNum - 1]}月，
             此月出生之人{monthNum >= 3 && monthNum <= 5 ? '正值春季，木气旺盛，性格仁慈有活力' : monthNum >= 6 && monthNum <= 8 ? '正值夏季，火气旺盛，性格热情开朗' : monthNum >= 9 && monthNum <= 11 ? '正值秋季，金气旺盛，性格刚毅果断' : '正值冬季，水气旺盛，性格聪明内敛'}。
           </p>
         </div>
 
         <div className="mt-8">
-          <Link href={`/bazi/${year}`} className="text-ink/70 hover:text-ink">
+          <Link href={`/bazi/${year}`} className="hw-c-back">
             ← 返回{year}年
           </Link>
         </div>

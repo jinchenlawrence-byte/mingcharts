@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Nav from '@/components/Nav'
 
 export const metadata = {
   title: '八字算命 · 出生日期查询：1950-2010 每日八字命理分析',
@@ -6,7 +7,6 @@ export const metadata = {
 }
 
 export default function BaziIndex() {
-  const years = Array.from({ length: 11 }, (_, i) => 2000 + i) // 2000-2010
   const decades = [
     { label: '1950年代', start: 1950 },
     { label: '1960年代', start: 1960 },
@@ -17,21 +17,22 @@ export default function BaziIndex() {
   ]
 
   return (
-    <main className="min-h-screen ">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <nav className="text-sm text-ink-light/60 mb-4">
-          <Link href="/" className="hover:text-ink/70">首页</Link>
+    <main className="hw-page">
+      <Nav />
+      <div className="hw-wrap hw-c-pg">
+        <nav className="hw-c-back">
+          <Link href="/">首页</Link>
           <span className="mx-2">›</span>
-          <span className="text-ink">八字算命</span>
+          <span>八字算命</span>
         </nav>
 
-        <h1 className="text-3xl font-bold text-ink mb-2">八字算命 · 出生日期查询</h1>
-        <p className="text-ink-light mb-8">
+        <h1 className="hw-c-h1">八字算命 · 出生日期查询</h1>
+        <p className="hw-lede">
           选择您的出生年份，查看该年出生的人的生辰八字、命理分析、生肖运势等信息。
         </p>
 
-        <div className="paper-card rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-bold text-ink mb-4">选择出生年代</h2>
+        <div className="hw-c-box mb-6">
+          <h2 className="hw-c-secTitle">选择出生年代</h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
             {decades.map(d => (
               <div key={d.start}>
@@ -52,25 +53,22 @@ export default function BaziIndex() {
           </div>
         </div>
 
-        <div className="bg-gold/5 rounded-lg p-6">
-          <h2 className="text-xl font-bold text-ink mb-3">关于八字算命</h2>
-          <p className="text-sm text-ink/70 leading-relaxed mb-3">
+        <div className="hw-c-box bg-gold/5!">
+          <h2 className="hw-c-secTitle">关于八字算命</h2>
+          <p className="hw-c-body mb-3">
             八字算命，又称四柱命理，是中国传统命理学的核心。根据出生的年、月、日、时四个时间点，
             每个点对应一个天干和一个地支，共八个字，故称"八字"。通过分析八字的五行生克、十神配置、
             格局成败、调候用神等，可以推断一个人的性格、事业、财运、婚姻、健康等方面的趋势。
           </p>
-          <p className="text-sm text-ink/70 leading-relaxed">
+          <p className="hw-c-body">
             本站基于《子平真诠》《滴天髓》《穷通宝鉴》等六本经典命理著作，
             结合现代编程技术，为您提供专业的八字排盘和命理分析服务。
           </p>
-          <div className="mt-4">
-            <Link
-              href="/"
-              className="inline-block bg-amber-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-amber-700 transition-colors"
-            >
+          <p className="mt-4">
+            <Link href="/" className="hw-c-btnBig">
               输入精确出生时辰 → 获取完整八字排盘
             </Link>
-          </div>
+          </p>
         </div>
       </div>
     </main>

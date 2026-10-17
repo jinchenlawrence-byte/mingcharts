@@ -21,24 +21,25 @@ const TAG_BADGE: Record<string, string> = {
 export default function DemoFatebookPage() {
   const fullKeys: readonly string[] = demo.fullSections
   return (
-    <main className="min-h-screen ">
+    <main className="hw-page">
       <Nav />
-
+      <div className="hw-wrap hw-c-pg">
+        <div className="max-w-3xl mx-auto">
       {/* 顶部标注：示例 · 虚构出生资料 · 展示前约 30% */}
-      <section className="container mx-auto px-4 pt-10 pb-4 max-w-3xl text-center">
+      <section className="pt-10 pb-4 text-center">
         <span className="inline-block bg-gold/10 text-ink text-xs font-semibold px-3 py-1 rounded-full mb-4">
           示例 · 虚构出生资料 · 展示前约 30%
         </span>
-        <h1 className="text-3xl md:text-4xl font-bold text-ink mb-3">公开示例命书</h1>
-        <p className="text-sm text-ink-light leading-relaxed">
+        <h1 className="hw-c-h1 text-3xl! md:text-4xl!">公开示例命书</h1>
+        <p className="hw-lede text-sm! mx-auto!">
           这是一份用虚构出生资料真实生成的命书节选：前三个板块完整展示，其余七个板块为摘要，
           岁运与命例亦有裁剪。个人命书含完整十大板块、九步大运、三年流年与当年流月。
         </p>
       </section>
 
       {/* 基本命盘 */}
-      <section className="container mx-auto px-4 py-4 max-w-3xl">
-        <div className="paper-card rounded-lg p-5">
+      <section className="py-4">
+        <div className="hw-c-box">
           <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-4">
             <span className="font-bold text-ink">{demo.meta.name}</span>
             <span className="text-sm text-ink-light">{demo.meta.gender}</span>
@@ -76,9 +77,9 @@ export default function DemoFatebookPage() {
       </section>
 
       {/* 岁运时间轴（节选：前 2 步大运 + 当年流年） */}
-      <section className="container mx-auto px-4 py-4 max-w-3xl">
-        <div className="paper-card rounded-lg p-5">
-          <h2 className="font-semibold text-ink mb-1">岁运时间轴（节选）</h2>
+      <section className="py-4">
+        <div className="hw-c-box">
+          <h2 className="hw-c-secTitle">岁运时间轴（节选）</h2>
           <p className="text-xs text-ink-light/60 mb-3">
             示例只展示前 {demo.luckCycles.daYun.length} 步大运与当年流年；完整命书含九步大运、三年流年与当年十二个节令月。
           </p>
@@ -105,12 +106,12 @@ export default function DemoFatebookPage() {
       </section>
 
       {/* 十大板块：前 3 完整，后 7 摘要 */}
-      <section className="container mx-auto px-4 py-4 max-w-3xl space-y-4">
+      <section className="py-4 space-y-4">
         {demo.sectionList.map((spec) => {
           const isFull = fullKeys.includes(spec.key)
           const text = demo.sections[spec.key as keyof typeof demo.sections]
           return (
-            <div key={spec.key} className="paper-card rounded-lg p-5">
+            <div key={spec.key} className="hw-c-box">
               <div className="flex items-center gap-2 mb-2">
                 <h2 className="font-semibold text-ink">{spec.name}</h2>
                 <span className={`text-[11px] px-2 py-0.5 rounded ${isFull ? 'bg-amber-600 text-white' : 'bg-paper-dark/40 text-ink-light/60'}`}>
@@ -125,9 +126,9 @@ export default function DemoFatebookPage() {
 
       {/* 古籍相似命例（1 条） */}
       {demo.similarCases.length > 0 && (
-        <section className="container mx-auto px-4 py-4 max-w-3xl">
-          <div className="paper-card rounded-lg p-5">
-            <h2 className="font-semibold text-ink mb-1">古籍相似命例（节选 1 条）</h2>
+        <section className="py-4">
+          <div className="hw-c-box">
+            <h2 className="hw-c-secTitle">古籍相似命例（节选 1 条）</h2>
             <p className="text-xs text-ink-light/60 mb-3">完整命书按四柱结构相似度检索多条典籍命例，供参照印证（仅供学习参考）</p>
             {demo.similarCases.map((c, i) => (
               <div key={i} className={`rounded-lg border p-3 ${c.exact ? 'border-amber-400 bg-gold/5' : 'border-gold/15'}`}>
@@ -149,14 +150,11 @@ export default function DemoFatebookPage() {
       )}
 
       {/* CTA */}
-      <section className="container mx-auto px-4 py-8 max-w-3xl">
-        <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl shadow-lg p-8 text-white text-center">
-          <h2 className="text-2xl font-bold mb-2">想看自己的完整命书？</h2>
-          <p className="opacity-90 text-sm mb-5">十大板块完整解读 · 九步大运逐年点评 · 三年流年与当年流月 · 多条古籍命例参照</p>
-          <Link
-            href="/mingshu"
-            className="inline-block bg-white text-amber-600 px-8 py-3 rounded-full font-bold hover:bg-gold/5 transition"
-          >
+      <section className="py-8">
+        <div className="hw-c-cta">
+          <h2 className="hw-c-secTitle">想看自己的完整命书？</h2>
+          <p className="hw-c-dx">十大板块完整解读 · 九步大运逐年点评 · 三年流年与当年流月 · 多条古籍命例参照</p>
+          <Link href="/mingshu" className="hw-c-btnBig">
             生成我的命书
           </Link>
         </div>
@@ -165,6 +163,8 @@ export default function DemoFatebookPage() {
           本站内容基于传统命理文化整理，仅供学习参考与娱乐，不构成任何人生、医疗、法律、财务决策建议。
         </p>
       </section>
+        </div>
+      </div>
     </main>
   )
 }

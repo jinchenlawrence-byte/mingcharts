@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Nav from '@/components/Nav'
 import { notFound } from 'next/navigation'
 import { JIEQI, getJieqi } from '@/lib/jieqiData'
 
@@ -35,18 +36,20 @@ export default async function JieQiPage({ params }: { params: Promise<{ name: st
   const accent = SEASON_ACCENT[jq.season]
 
   return (
-    <main className="min-h-screen ">
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <nav className="text-sm text-ink-light/60 mb-4">
-          <Link href="/" className="hover:text-ink/70">首页</Link>
+    <main className="hw-page">
+      <Nav />
+      <div className="hw-wrap hw-c-pg">
+        <div className="max-w-3xl mx-auto">
+        <nav className="hw-c-back">
+          <Link href="/">首页</Link>
           <span className="mx-2">›</span>
-          <Link href="/jieqi" className="hover:text-ink/70">二十四节气</Link>
+          <Link href="/jieqi">二十四节气</Link>
           <span className="mx-2">›</span>
-          <span className="text-ink">{jq.name}</span>
+          <span>{jq.name}</span>
         </nav>
 
         {/* 头部 */}
-        <div className="paper-card rounded-lg overflow-hidden mb-6">
+        <div className="hw-c-box overflow-hidden mb-6 p-0!">
           <div className={`${accent.bg} px-6 py-8 text-white`}>
             <div className="flex items-center gap-3 mb-2 text-sm opacity-90">
               <span>{jq.dateRange}</span>
@@ -67,8 +70,8 @@ export default async function JieQiPage({ params }: { params: Promise<{ name: st
         </div>
 
         {/* 三候 */}
-        <div className="paper-card rounded-lg p-6 mb-4">
-          <h2 className="text-xl font-bold text-ink mb-4">{jq.name}三候</h2>
+        <div className="hw-c-box mb-4">
+          <h2 className="hw-c-secTitle">{jq.name}三候</h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {jq.hou.map((h, i) => (
               <div key={i} className={`border rounded-lg p-4 text-center ${accent.light}`}>
@@ -85,22 +88,22 @@ export default async function JieQiPage({ params }: { params: Promise<{ name: st
 
         {/* 习俗 */}
         <Block title="传统习俗">
-          <p className="text-ink/70 leading-loose text-[15px]">{jq.custom}</p>
+          <p className="hw-c-body">{jq.custom}</p>
         </Block>
 
         {/* 养生 */}
         <Block title="节气养生">
-          <p className="text-ink/70 leading-loose text-[15px]">{jq.yangsheng}</p>
+          <p className="hw-c-body">{jq.yangsheng}</p>
         </Block>
 
         {/* 命理 */}
-        <div className="bg-gold/5 border border-gold/20 rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-bold text-ink mb-3">🔮 {jq.name}与八字命理</h2>
-          <p className="text-ink/70 leading-loose text-[15px]">{jq.bazi}</p>
+        <div className="hw-c-box bg-gold/5! mb-6">
+          <h2 className="hw-c-secTitle">🔮 {jq.name}与八字命理</h2>
+          <p className="hw-c-body">{jq.bazi}</p>
           <div className="mt-4 p-4 bg-white rounded-lg">
             <p className="text-sm text-ink-light leading-relaxed">
               想知道自己是否出生在{jq.name}前后、月令与调候用神是什么？
-              <Link href="/" className="text-ink/70 font-semibold hover:underline">输入出生时辰免费排盘 →</Link>
+              <Link href="/" className="hw-c-link">输入出生时辰免费排盘 →</Link>
             </p>
           </div>
         </div>
@@ -108,15 +111,16 @@ export default async function JieQiPage({ params }: { params: Promise<{ name: st
         {/* 上一/下一节气 */}
         <div className="flex justify-between mb-8 text-sm">
           {prev ? (
-            <Link href={`/jieqi/${prev.slug}`} className="text-ink/70 hover:text-ink">
+            <Link href={`/jieqi/${prev.slug}`} className="hw-c-back">
               ← {prev.name}
             </Link>
           ) : <span />}
           {next ? (
-            <Link href={`/jieqi/${next.slug}`} className="text-ink/70 hover:text-ink">
+            <Link href={`/jieqi/${next.slug}`} className="hw-c-back">
               {next.name} →
             </Link>
           ) : <span />}
+        </div>
         </div>
       </div>
     </main>
@@ -125,8 +129,8 @@ export default async function JieQiPage({ params }: { params: Promise<{ name: st
 
 function Block({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="paper-card rounded-lg p-6 mb-4">
-      <h2 className="text-xl font-bold text-ink mb-3">{title}</h2>
+    <div className="hw-c-box mb-4">
+      <h2 className="hw-c-secTitle">{title}</h2>
       {children}
     </div>
   )

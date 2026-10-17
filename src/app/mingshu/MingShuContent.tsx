@@ -45,47 +45,48 @@ const FAQS = [
   },
 ]
 
+// 2026-10-17 风格统一：接入 hw- 设计语言（同定价页营销壳），全部文案与 BirthForm 不动
 export default function MingShuContent() {
   const scrollToForm = () => {
     document.getElementById('paipan')?.scrollIntoView({ behavior: 'smooth' })
   }
 
   return (
-    <main className="min-h-screen ">
+    <main className="hw-page">
       <Nav />
 
       {/* Hero */}
-      <section className="container mx-auto px-4 py-14 text-center">
+      <section className="hw-wrap pt-14 pb-8 text-center">
         <div className="max-w-3xl mx-auto">
           <span className="inline-block bg-gold/10 text-ink text-xs font-semibold px-3 py-1 rounded-full mb-5">
             六书精要 · AI 深度解读
           </span>
-          <h1 className="text-4xl md:text-5xl font-bold text-ink mb-4">
+          <h1 className="hw-c-h1">
             命书报告
           </h1>
           <p className="text-xl text-ink font-medium mb-3">
             一份万字深度详批，看懂你的八字命盘
           </p>
-          <p className="text-ink-light mb-8 leading-relaxed">
+          <p className="hw-lede mx-auto!">
             先排盘、再解读。系统算出你的四柱、十神、旺衰与格局，AI 命理师把盘中的关系，
             以清晰、克制、现代化的语言讲清楚——从性格、事业到婚姻、健康，一次看清全局。
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center">
             <button
               onClick={scrollToForm}
-              className="bg-amber-600 text-white px-8 py-3 rounded-full font-bold hover:bg-amber-700 transition shadow-lg"
+              className="bg-ink text-white px-8 py-3 rounded-full font-bold hover:opacity-85 transition"
             >
               立即生成我的命书 {FATEBOOK_PRICE}
             </button>
             <Link
               href="/"
-              className="bg-white text-ink/70 px-8 py-3 rounded-full font-semibold border border-gold/20 hover:bg-gold/5 transition"
+              className="bg-white text-ink px-8 py-3 rounded-full font-semibold border border-gold/20 hover:bg-gold/5 transition"
             >
               先免费排盘
             </Link>
           </div>
           <div className="mt-4">
-            <Link href="/mingshu/demo" className="text-sm text-ink/70 hover:underline">
+            <Link href="/mingshu/demo" className="hw-c-link text-sm">
               先看公开示例命书（虚构资料 · 展示前约 30%）→
             </Link>
           </div>
@@ -96,13 +97,13 @@ export default function MingShuContent() {
       </section>
 
       {/* 报告包含什么 */}
-      <section className="container mx-auto px-4 py-10 max-w-5xl">
-        <h2 className="text-2xl font-bold text-ink text-center mb-8">
+      <section className="hw-wrap py-10">
+        <h2 className="hw-c-secTitle hw-c-h2C mb-8">
           命书报告包含十大板块
         </h2>
         <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4">
           {SECTIONS.map((s, i) => (
-            <div key={s.title} className="paper-card rounded-lg p-5">
+            <div key={s.title} className="hw-c-box p-5!">
               <div className="text-amber-600 font-bold text-sm mb-2">
                 {String(i + 1).padStart(2, '0')}
               </div>
@@ -114,23 +115,23 @@ export default function MingShuContent() {
       </section>
 
       {/* 为什么值得 / 信任点 */}
-      <section className="container mx-auto px-4 py-10 max-w-5xl">
+      <section className="hw-wrap py-10">
         <div className="grid md:grid-cols-3 gap-6">
-          <div className="paper-card rounded-lg p-6 text-center">
+          <div className="hw-c-box text-center">
             <div className="text-3xl mb-3">📖</div>
             <h3 className="font-bold text-ink mb-2">六书为据</h3>
             <p className="text-sm text-ink-light leading-relaxed">
               基于《子平真诠》《滴天髓》《穷通宝鉴》《渊海子平》《三命通会》《千里命稿》，解读有经典原文可循。
             </p>
           </div>
-          <div className="paper-card rounded-lg p-6 text-center">
+          <div className="hw-c-box text-center">
             <div className="text-3xl mb-3">🧮</div>
             <h3 className="font-bold text-ink mb-2">先算后讲</h3>
             <p className="text-sm text-ink-light leading-relaxed">
               排盘、旺衰、格局均为确定性算法，AI 只做解读，不改盘面结论——结论有出处，不是「编」出来的。
             </p>
           </div>
-          <div className="paper-card rounded-lg p-6 text-center">
+          <div className="hw-c-box text-center">
             <div className="text-3xl mb-3">🔒</div>
             <h3 className="font-bold text-ink mb-2">克制不吓唬</h3>
             <p className="text-sm text-ink-light leading-relaxed">
@@ -141,59 +142,65 @@ export default function MingShuContent() {
       </section>
 
       {/* 排盘表单 */}
-      <section id="paipan" className="container mx-auto px-4 py-10 scroll-mt-20">
-        <div className="max-w-md mx-auto paper-card rounded-xl p-6">
-          <h2 className="text-xl font-semibold mb-1 text-center text-ink">
-            输入出生信息，生成你的命书
-          </h2>
-          <p className="text-sm text-ink-light/60 text-center mb-6">
-            免费排盘 → 查看命盘骨架 → 解锁万字命书详批
-          </p>
-          <BirthForm ctaText="开始排盘（免费）" />
+      <section id="paipan" className="hw-wrap py-10 scroll-mt-20">
+        <div className="hw-narrow">
+          <div className="hw-c-box">
+            <h2 className="hw-c-secTitle hw-c-h2C">
+              输入出生信息，生成你的命书
+            </h2>
+            <p className="text-sm text-ink-light/60 text-center mb-6">
+              免费排盘 → 查看命盘骨架 → 解锁万字命书详批
+            </p>
+            <BirthForm ctaText="开始排盘（免费）" />
+          </div>
         </div>
       </section>
 
       {/* 价格 */}
-      <section className="container mx-auto px-4 py-10 max-w-3xl">
-        <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl shadow-lg p-8 text-white">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <h2 className="text-2xl font-bold mb-1">命书报告 {FATEBOOK_PRICE} / 次</h2>
-              <p className="opacity-90 text-sm">
-                十大板块万字详批 · 永久保存 · AI 深度解读
-              </p>
+      <section className="hw-wrap py-10">
+        <div className="max-w-3xl mx-auto">
+          <div className="bg-ink text-white rounded-xl p-8">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div>
+                <h2 className="text-2xl font-bold mb-1">命书报告 {FATEBOOK_PRICE} / 次</h2>
+                <p className="opacity-90 text-sm">
+                  十大板块万字详批 · 永久保存 · AI 深度解读
+                </p>
+              </div>
+              <button
+                onClick={scrollToForm}
+                className="bg-white text-ink px-8 py-3 rounded-full font-bold hover:bg-gold/5 transition whitespace-nowrap"
+              >
+                立即获取
+              </button>
             </div>
-            <button
-              onClick={scrollToForm}
-              className="bg-white text-amber-600 px-8 py-3 rounded-full font-bold hover:bg-gold/5 transition whitespace-nowrap"
-            >
-              立即获取
-            </button>
           </div>
+          <p className="text-center text-sm text-ink-light/60 mt-4">
+            高频用户可选 <Link href="/pricing" className="hw-c-link">会员订阅 {MEMBER_MONTHLY_PRICE}/月</Link>（订阅权益见价目页）
+          </p>
         </div>
-        <p className="text-center text-sm text-ink-light/60 mt-4">
-          高频用户可选 <Link href="/pricing" className="text-ink/70 hover:underline">会员订阅 {MEMBER_MONTHLY_PRICE}/月</Link>（订阅权益见价目页）
-        </p>
       </section>
 
       {/* FAQ */}
-      <section className="container mx-auto px-4 py-10 max-w-3xl">
-        <h2 className="text-2xl font-bold text-ink text-center mb-6">常见问题</h2>
-        <div className="space-y-3">
-          {FAQS.map((f) => (
-            <details key={f.q} className="paper-card rounded-lg p-5 group">
-              <summary className="font-semibold text-ink cursor-pointer list-none flex justify-between items-center">
-                {f.q}
-                <span className="text-amber-500 group-open:rotate-45 transition-transform">＋</span>
-              </summary>
-              <p className="mt-3 text-sm text-ink-light leading-relaxed">{f.a}</p>
-            </details>
-          ))}
+      <section className="hw-wrap py-10">
+        <div className="max-w-3xl mx-auto">
+          <h2 className="hw-c-secTitle hw-c-h2C mb-6">常见问题</h2>
+          <div className="space-y-3">
+            {FAQS.map((f) => (
+              <details key={f.q} className="hw-c-box p-5! group">
+                <summary className="font-semibold text-ink cursor-pointer list-none flex justify-between items-center">
+                  {f.q}
+                  <span className="text-amber-500 group-open:rotate-45 transition-transform">＋</span>
+                </summary>
+                <p className="mt-3 text-sm text-ink-light leading-relaxed">{f.a}</p>
+              </details>
+            ))}
+          </div>
         </div>
       </section>
 
       {/* 底部 */}
-      <footer className="container mx-auto px-4 py-8 text-center">
+      <footer className="hw-wrap pb-10 text-center">
         <p className="text-xs text-ink-light/40">
           本站内容基于传统命理文化整理，仅供学习参考与娱乐，不构成任何人生、医疗、法律、财务决策建议。
         </p>

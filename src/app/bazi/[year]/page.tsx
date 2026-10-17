@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Nav from '@/components/Nav'
 import { getYearGanZhi, getZodiac, getNaYin } from '@/lib/baziData'
 
 export function generateStaticParams() {
@@ -32,25 +33,26 @@ export default async function YearPage({ params }: { params: Promise<{ year: str
   const months = Array.from({ length: 12 }, (_, i) => i + 1)
 
   return (
-    <main className="min-h-screen ">
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
-        <nav className="text-sm text-ink-light/60 mb-4">
-          <Link href="/" className="hover:text-ink/70">首页</Link>
+    <main className="hw-page">
+      <Nav />
+      <div className="hw-wrap hw-c-pg">
+        <nav className="hw-c-back">
+          <Link href="/">首页</Link>
           <span className="mx-2">›</span>
-          <Link href="/bazi" className="hover:text-ink/70">八字算命</Link>
+          <Link href="/bazi">八字算命</Link>
           <span className="mx-2">›</span>
-          <span className="text-ink">{year}年</span>
+          <span>{year}年</span>
         </nav>
 
-        <h1 className="text-3xl font-bold text-ink mb-2">
+        <h1 className="hw-c-h1">
           {year}年出生的人命运如何？
         </h1>
-        <p className="text-ink-light mb-6">
+        <p className="hw-lede">
           {year}年为{ganZhi}年，生肖属{zodiac.name}，纳音{naYin}。本命佛：{zodiac.benmingfo}。
         </p>
 
-        <div className="paper-card rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-bold text-ink mb-4">选择出生月份</h2>
+        <div className="hw-c-box mb-6">
+          <h2 className="hw-c-secTitle">选择出生月份</h2>
           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
             {months.map(m => (
               <Link
@@ -65,9 +67,9 @@ export default async function YearPage({ params }: { params: Promise<{ year: str
           </div>
         </div>
 
-        <div className="bg-gold/5 rounded-lg p-4 text-sm text-ink/70">
+        <div className="hw-c-box bg-gold/5! text-sm">
           <p className="font-semibold text-ink mb-2">{year}年属{zodiac.name}人总览</p>
-          <p>
+          <p className="text-ink/70">
             {year}年出生的人生肖属{zodiac.name}，五行属{zodiac.element}，纳音为{naYin}。
             本命佛为{zodiac.benmingfo}，常佩戴或供奉可保平安。
             属{zodiac.name}的人性格{zodiac.element === '金' ? '刚毅果断，重义气' : zodiac.element === '木' ? '仁慈宽厚，有上进心' : zodiac.element === '水' ? '聪明机灵，善于应变' : zodiac.element === '火' ? '热情奔放，光明磊落' : '忠厚稳重，值得信赖'}。
@@ -75,7 +77,7 @@ export default async function YearPage({ params }: { params: Promise<{ year: str
         </div>
 
         <div className="mt-8">
-          <Link href="/" className="text-ink/70 hover:text-ink">
+          <Link href="/" className="hw-c-back">
             ← 返回首页，输入精确出生时辰查看详细八字排盘
           </Link>
         </div>
