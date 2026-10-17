@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 // 我的报告列表（2026-10-17 风格统一）：接入 hw- 设计语言，逻辑零改动
 import { useEffect, useState } from 'react'
@@ -13,6 +13,7 @@ interface ReportRow {
   kind: ReportKind
   title: string
   created_at: string
+  input: { chart_id?: string } | null
 }
 
 // 报告类型徽标配色（与各模块页主色一致）
@@ -21,6 +22,7 @@ const KIND_STYLE: Record<ReportKind, string> = {
   ziwei: 'bg-purple-100 text-ink',
   geo: 'bg-sky-100 text-sky-800',
   annual: 'bg-rose-100 text-rose-800',
+  fatebook: 'bg-emerald-100 text-emerald-800',
 }
 
 export default function MyReports() {
@@ -29,6 +31,7 @@ export default function MyReports() {
   const [loading, setLoading] = useState(true)
   const [notLogged, setNotLogged] = useState(false)
   const [error, setError] = useState('')
+  const [openingId, setOpeningId] = useState<string | null>(null)
 
   useEffect(() => {
     ;(async () => {
@@ -41,12 +44,38 @@ export default function MyReports() {
       }
       const { data, error } = await supabase
         .from('reports')
-        .select('id,kind,title,created_at')
+        .select('id,kind,title,created_at,input')
         .order('created_at', { ascending: false })
       if (!error && data) setRows(data as ReportRow[])
       setLoading(false)
     })()
   }, [])
+
+  // ★ 命书行「查看」（2026-10-18）：fatebook 报告的正文在命盘体系——按 input.chart_id
+  //   拉 charts.chart_data 写入 localStorage 后跳 /chart 重放（未生成全文时命盘页
+  //   会经 /api/unlock 自动补全文）。非 fatebook 行仍走 /reports/[id] 详情页。
+  const handleViewFatebook = async (row: ReportRow) => {
+    const chartId = row.input?.chart_id
+    if (!chartId) {
+      setError('这份命书缺少命盘关联，请从「我的命盘」进入')
+      return
+    }
+    setOpeningId(row.id)
+    const { data: chartRow, error: chartErr } = await getSupabase()
+      .from('charts')
+      .select('chart_data')
+      .eq('id', chartId)
+      .maybeSingle()
+    setOpeningId(null)
+    // supabase 类型未收录 charts 表时推断为 never，运行时按任意 JSON 处理
+    const chartData = (chartRow as { chart_data?: unknown } | null)?.chart_data
+    if (chartErr || !chartData) {
+      setError('命盘数据读取失败，请从「我的命盘」进入')
+      return
+    }
+    localStorage.setItem('currentChart', JSON.stringify(chartData))
+    router.push('/chart')
+  }
 
   const handleDelete = async (id: string) => {
     if (!confirm('确定删除这份报告吗？删除后无法恢复。')) return
@@ -94,6 +123,9 @@ export default function MyReports() {
       <div className="hw-wrap hw-c-pg">
         <div className="hw-narrow">
           {error && <p className="hw-c-err">{error}</p>}
+          <nav className="hw-c-back mb-3">
+            <Link href="/">← 返回首页</Link>
+          </nav>
           <div className="flex items-center justify-between mb-2">
             <h1 className="hw-c-h1">我的报告</h1>
             <Link href="/pricing" className="hw-c-blue text-sm">
@@ -101,7 +133,7 @@ export default function MyReports() {
             </Link>
           </div>
           <p className="hw-c-meta mb-4">
-            合婚、紫微、地理、年运报告生成后自动保存于此，可反复回看；命书请见「我的命盘」
+            合婚、紫微、地理、年运报告生成后自动保存于此，可反复回看；已购的八字命书也会显示在这里
           </p>
 
           {/* Waffo 客户门户：为后续会员订阅的改卡/取消铺路；本轮订阅未上线，仅放链接 */}
@@ -140,9 +172,19 @@ export default function MyReports() {
                     <p className="font-semibold text-ink truncate">{row.title}</p>
                   </div>
                   <div className="flex gap-3 shrink-0 text-sm">
-                    <Link href={`/reports/${row.id}`} className="font-medium hover:underline underline-offset-3">
-                      查看
-                    </Link>
+                    {row.kind === 'fatebook' ? (
+                      <button
+                        onClick={() => handleViewFatebook(row)}
+                        disabled={openingId !== null}
+                        className="font-medium hover:underline underline-offset-3 disabled:opacity-50"
+                      >
+                        {openingId === row.id ? '打开中…' : '查看'}
+                      </button>
+                    ) : (
+                      <Link href={`/reports/${row.id}`} className="font-medium hover:underline underline-offset-3">
+                        查看
+                      </Link>
+                    )}
                     <button
                       onClick={() => handleDelete(row.id)}
                       className="text-red-400 hover:text-red-600"

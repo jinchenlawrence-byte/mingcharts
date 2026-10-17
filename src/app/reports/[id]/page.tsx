@@ -28,6 +28,7 @@ const KIND_STYLE: Record<ReportKind, string> = {
   ziwei: 'bg-purple-100 text-ink',
   geo: 'bg-sky-100 text-sky-800',
   annual: 'bg-rose-100 text-rose-800',
+  fatebook: 'bg-emerald-100 text-emerald-800',
 }
 
 export default function ReportDetailPage() {

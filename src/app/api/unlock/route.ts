@@ -4,6 +4,7 @@ import { generateAnalysis, type AnalyzableChart } from '@/lib/analysis'
 import { generateAIAnalysis } from '@/lib/aiAnalysis'
 import { searchSimilarCases } from '@/lib/caseSearch'
 import { canViewFatebookForChart } from '@/lib/entitlement'
+import { ensureFatebookReportByAdmin } from '@/lib/reportSave'
 
 export async function POST(request: NextRequest) {
   try {
@@ -92,6 +93,16 @@ export async function POST(request: NextRequest) {
       //   （§四 canViewFatebookForChart）。
       //   保留它的用途：将来若要给内测期用户保留访问权，可据此识别。
       await admin.from('charts').update({ is_paid: true, chart_data: chartData }).eq('id', chartId)
+      // ★ 已购命书进「我的报告」（2026-10-18）：解锁回写时补插 fatebook 报告行
+      //   （cache_key=chartId 幂等）。webhook 主路径已插；这里兜底存量支付
+      //   （webhook 上线前的买家首次回看即入列表）。
+      await ensureFatebookReportByAdmin(admin, user.id, chartId, {
+        year: input.year,
+        month: input.month,
+        day: input.day,
+        hour: input.hour,
+        gender: input.gender
+      })
     } else {
       const { data: inserted, error: insertError } = await admin
         .from('charts')

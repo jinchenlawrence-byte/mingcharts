@@ -3,6 +3,7 @@ import { createServerSupabase } from '@/lib/supabase'
 import { verifyWaffoEvent } from '@/lib/waffo'
 import { createWaffoRepo } from '@/lib/waffo-repo'
 import { handleWaffoEvent } from '@/lib/waffo-events'
+import { ensureFatebookReportByAdmin } from '@/lib/reportSave'
 
 // POST /api/webhooks/waffo —— Waffo 支付回调（本任务核心）
 //
@@ -30,9 +31,35 @@ export async function POST(request: NextRequest) {
     const { eventType, eventId } = event
     const orderId = event.data?.orderId
     switch (result.kind) {
-      case 'inserted':
+      case 'inserted': {
         console.info(`[waffo-webhook] 支付已落账 ${eventType}/${eventId} order=${orderId}`)
+        // ★ 已购命书进「我的报告」（2026-10-18）：落账成功后把命书以 kind=fatebook
+        //   行写入 reports（cache_key=chartId 幂等）。查 charts 行取出生信息拼标题；
+        //   失败仅记日志不阻断（对账兜底：unlock 回写时还会补插）。
+        try {
+          const { userId, chartId } = result
+          if (userId && chartId) {
+            const admin = createServerSupabase()
+            const { data: chartRow } = await admin
+              .from('charts')
+              .select('gender,birth_year,birth_month,birth_day,birth_hour')
+              .eq('id', chartId)
+              .maybeSingle()
+            if (chartRow) {
+              await ensureFatebookReportByAdmin(admin, userId, chartId, {
+                year: chartRow.birth_year,
+                month: chartRow.birth_month,
+                day: chartRow.birth_day,
+                hour: chartRow.birth_hour,
+                gender: chartRow.gender
+              })
+            }
+          }
+        } catch (reportErr) {
+          console.warn('[waffo-webhook] reports 命书行写入失败（不阻断）:', reportErr)
+        }
         break
+      }
       case 'duplicate':
         console.info(`[waffo-webhook] 重复事件已忽略 ${eventType}/${eventId}`)
         break

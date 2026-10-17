@@ -3,13 +3,14 @@
 // 门禁/标题/容错只此一处，route 不得各自另写保存逻辑。
 import { createServerSupabase } from './supabase'
 
-export type ReportKind = 'hemun' | 'ziwei' | 'geo' | 'annual'
+export type ReportKind = 'hemun' | 'ziwei' | 'geo' | 'annual' | 'fatebook'
 
 export const REPORT_KIND_LABELS: Record<ReportKind, string> = {
   hemun: '合婚详批',
   ziwei: '紫微深度',
   geo: '地理 · 财富之城',
   annual: '年运报告',
+  fatebook: '八字命书',
 }
 
 /** 报告标题派生所需的请求要素（各 route 从 body 取） */
@@ -46,6 +47,50 @@ export function deriveReportTitle(kind: ReportKind, i: ReportTitleInput): string
       return `${ymd(i.year, i.month, i.day)} ${i.hour ?? 0}时 ${sex(i.gender)} · 紫微深度`
     case 'geo':
       return `${ymd(i.year, i.month, i.day)} ${i.hour ?? 0}时 ${sex(i.gender)} · 地理方位`
+    case 'fatebook':
+      return `${ymd(i.year, i.month, i.day)} ${i.hour ?? 0}时 ${sex(i.gender)} · 八字命书`
+  }
+}
+
+/**
+ * ★ 已购命书进「我的报告」（2026-10-18）：支付落账（webhook）或解锁回写（unlock）
+ *   成功后调用，把命书以 kind=fatebook 行写入 reports——cache_key=chartId 幂等
+ *   （同 (user_id, kind, cache_key) 只一行，并发冲突走 idx_reports_cache 23505 覆盖）。
+ *   input 存 chart_id 供列表页「查看」回放命盘。静默降级：失败仅 console.warn，
+ *   绝不阻断支付/解锁主流程。
+ */
+export async function ensureFatebookReportByAdmin(
+  admin: ReturnType<typeof createServerSupabase>,
+  userId: string,
+  chartId: string,
+  birth: { year: number; month: number; day: number; hour?: number; gender?: number }
+): Promise<void> {
+  try {
+    const title = deriveReportTitle('fatebook', {
+      year: birth.year,
+      month: birth.month,
+      day: birth.day,
+      hour: birth.hour,
+      gender: birth.gender
+    })
+    const { data: existing } = await admin
+      .from('reports')
+      .select('id')
+      .eq('user_id', userId)
+      .eq('kind', 'fatebook')
+      .eq('cache_key', chartId)
+      .maybeSingle()
+    if (existing?.id) return
+    const { error } = await admin.from('reports').insert({
+      user_id: userId,
+      kind: 'fatebook',
+      title,
+      input: { chart_id: chartId } as never,
+      cache_key: chartId
+    })
+    if (error && (error as { code?: string }).code !== '23505') throw error
+  } catch (e) {
+    console.warn('[report-save] 命书报告行写入失败（不影响主流程）:', e instanceof Error ? e.message : e)
   }
 }
 

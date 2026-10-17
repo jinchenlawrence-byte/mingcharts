@@ -3,6 +3,7 @@
 // 我的命盘列表（2026-10-17 风格统一）：接入 hw- 设计语言，逻辑零改动
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
 
 interface ChartRow {
@@ -133,6 +134,9 @@ export default function MyCharts() {
       <div className="hw-wrap hw-c-pg">
         <div className="hw-narrow">
           {error && <p className="hw-c-err">{error}</p>}
+          <nav className="hw-c-back mb-3">
+            <Link href="/">← 返回首页</Link>
+          </nav>
           <div className="flex items-center justify-between mb-6">
             <h1 className="hw-c-h1">我的命盘</h1>
             <button

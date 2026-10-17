@@ -78,7 +78,7 @@ export interface RemotePaymentLookup {
 }
 
 export type HandleEventResult =
-  | { kind: 'inserted' }
+  | { kind: 'inserted'; userId: string; chartId: string | null } // ★ 归属随结果外带（2026-10-18）：route 落账后用它把命书写进「我的报告」
   | { kind: 'duplicate' } // processed_webhooks 命中，整条事件此前已处理
   | { kind: 'payment_conflict' } // transaction_id UNIQUE 命中（不同 eventId 的重投）
   | { kind: 'ignored_missing_user' } // metadata 与单号都拿不到 userId：记日志、返 200
@@ -189,7 +189,7 @@ export async function handleWaffoEvent(
 
   // 幂等闸口 (b)：transaction_id UNIQUE，冲突即已授过权益。
   const inserted = await repo.insertPaidPayment(rowOwned)
-  return inserted ? { kind: 'inserted' } : { kind: 'payment_conflict' }
+  return inserted ? { kind: 'inserted', userId: row.user_id, chartId } : { kind: 'payment_conflict' }
 }
 
 // ── 兜底对账（/api/verify-payment）──────────────────────────

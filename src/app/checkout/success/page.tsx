@@ -124,10 +124,13 @@ function SuccessInner() {
               </p>
               <div className="space-y-3">
                 <Link
-                  href="/charts"
+                  href="/chart"
                   className="block hw-c-btnBig"
                 >
-                  查看我的命书
+                  查看命书全文
+                </Link>
+                <Link href="/charts" className="block text-sm hw-c-blue">
+                  进入我的命盘列表
                 </Link>
                 <Link href="/" className="block text-sm hw-c-blue">
                   返回首页
