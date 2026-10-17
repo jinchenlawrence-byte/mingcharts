@@ -124,7 +124,7 @@ function SuccessInner() {
               </p>
               <div className="space-y-3">
                 <Link
-                  href="/mingshu"
+                  href="/reports"
                   className="block hw-c-btnBig"
                 >
                   查看我的命书
