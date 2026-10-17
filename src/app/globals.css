@@ -818,18 +818,21 @@ h1, h2, h3, .font-serif-sc {
   animation-delay: calc(var(--i) * 120ms);
 }
 .hw-c-pillar .hw-t {
-  font-size: 13px;
-  padding: 9px 0 7px;
-  color: var(--hw-mute);
+  font-size: 16px;
+  padding: 12px 0 10px;
+  text-align: center;
+  color: var(--hw-ink);
+  font-weight: 800;
 }
 .hw-c-pillar.hw-day:hover {
   transform: translateY(-16px);
 }
 .hw-c-s {
-  font-size: 13px;
-  padding: 9px 0 12px;
-  color: var(--hw-mute);
-  font-weight: 500;
+  font-size: 16px;
+  padding: 12px 0 14px;
+  text-align: center;
+  color: var(--hw-ink);
+  font-weight: 800;
 }
 /* 大运天干文字色（展示层五色编码，字面即内容，色盲可达） */
 .hw-tx-wood {
