@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import Nav from '@/components/Nav'
 import { SHENGXIAO, getShengXiao, getLiunian, LIUNIAN_YEARS } from '@/lib/shengxiaoData'
 
 export function generateStaticParams() {
@@ -45,20 +46,22 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
   const isFanTaiSui = ['值', '冲', '害', '刑'].includes(ln.relation)
 
   return (
-    <main className="min-h-screen ">
-      <div className="container mx-auto px-4 py-8 max-w-3xl">
-        <nav className="text-sm text-ink-light/60 mb-4">
-          <Link href="/" className="hover:text-ink/70">首页</Link>
+    <main className="hw-page">
+      <Nav />
+      <div className="hw-wrap hw-c-pg">
+        <div className="hw-narrow">
+        <nav className="hw-c-back">
+          <Link href="/">首页</Link>
           <span className="mx-2">›</span>
-          <Link href="/shengxiao" className="hover:text-ink/70">十二生肖</Link>
+          <Link href="/shengxiao">十二生肖</Link>
           <span className="mx-2">›</span>
-          <Link href={`/shengxiao/${sx.slug}`} className="hover:text-ink/70">属{sx.name}</Link>
+          <Link href={`/shengxiao/${sx.slug}`}>属{sx.name}</Link>
           <span className="mx-2">›</span>
-          <span className="text-ink">{year}年运势</span>
+          <span>{year}年运势</span>
         </nav>
 
         {/* 头部 */}
-        <div className="paper-card rounded-lg p-6 mb-6">
+        <div className="hw-c-box mb-6">
           <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
             <h1 className="text-2xl md:text-3xl font-bold text-ink">
               {year}年属{sx.name}运势详解
@@ -84,19 +87,19 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
         <FortuneSection title="健康运势" body={ln.health} />
 
         {/* 开运建议 */}
-        <div className="bg-gold/5 border border-gold/20 rounded-lg shadow p-6 mb-6">
-          <h2 className="text-xl font-bold text-ink mb-3">{year}年开运建议</h2>
-          <p className="text-ink/70 leading-loose text-[15px]">{ln.advice}</p>
+        <div className="hw-c-box mb-6">
+          <h2 className="hw-c-secTitle">{year}年开运建议</h2>
+          <p className="hw-c-body">{ln.advice}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 text-sm">
-            <div className="bg-white rounded p-3 text-center">
+            <div className="bg-gold/5 rounded p-3 text-center">
               <div className="text-xs text-ink-light/60">幸运颜色</div>
               <div className="font-semibold text-ink mt-1">{sx.luckyColor.split('、')[0]}</div>
             </div>
-            <div className="bg-white rounded p-3 text-center">
+            <div className="bg-gold/5 rounded p-3 text-center">
               <div className="text-xs text-ink-light/60">幸运数字</div>
               <div className="font-semibold text-ink mt-1">{sx.luckyNumber}</div>
             </div>
-            <div className="bg-white rounded p-3 text-center col-span-2 sm:col-span-1">
+            <div className="bg-gold/5 rounded p-3 text-center col-span-2 sm:col-span-1">
               <div className="text-xs text-ink-light/60">本命佛</div>
               <div className="font-semibold text-ink mt-1 text-xs">{sx.benmingfo}</div>
             </div>
@@ -104,8 +107,8 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
         </div>
 
         {/* 常见问题（SEO） */}
-        <div className="paper-card rounded-lg p-6 mb-6">
-          <h2 className="text-xl font-bold text-ink mb-4">{year}年属{sx.name}常见问题</h2>
+        <div className="hw-c-box mb-6">
+          <h2 className="hw-c-secTitle">{year}年属{sx.name}常见问题</h2>
           <div className="space-y-4 text-sm">
             <div>
               <h3 className="font-semibold text-gray-800 mb-1">{year}年属{sx.name}犯太岁吗？</h3>
@@ -135,27 +138,24 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
         {/* 年份切换 */}
         <div className="flex justify-between mb-6">
           {prevYear ? (
-            <Link href={`/shengxiao/${sx.slug}/${prevYear}`} className="text-ink/70 hover:text-ink text-sm">
+            <Link href={`/shengxiao/${sx.slug}/${prevYear}`} className="hw-c-back">
               ← {prevYear}年属{sx.name}运势
             </Link>
           ) : <span />}
           {nextYear ? (
-            <Link href={`/shengxiao/${sx.slug}/${nextYear}`} className="text-ink/70 hover:text-ink text-sm">
+            <Link href={`/shengxiao/${sx.slug}/${nextYear}`} className="hw-c-back">
               {nextYear}年属{sx.name}运势 →
             </Link>
           ) : <span />}
         </div>
 
         {/* CTA */}
-        <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg shadow-lg p-6 text-white text-center">
-          <h2 className="text-xl font-bold mb-2">想看更准确的{year}年个人运势？</h2>
-          <p className="text-amber-100 text-sm mb-4">
+        <div className="hw-c-cta">
+          <h2 className="hw-c-secTitle">想看更准确的{year}年个人运势？</h2>
+          <p className="hw-c-dx">
             生肖运势是12分之一的共性参考，结合您完整八字（四柱、大运、流年）分析的个人运势才精准。
           </p>
-          <Link
-            href="/"
-            className="inline-block bg-white text-ink/70 px-8 py-2.5 rounded-md font-bold hover:bg-gold/5 transition-colors"
-          >
+          <Link href="/" className="hw-c-btnBig">
             输入时辰，排我的八字 →
           </Link>
         </div>
@@ -163,6 +163,7 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
         <p className="text-center text-xs text-ink-light/40 mt-6">
           本文为传统命理民俗内容，仅供参考娱乐，不构成任何决策建议。
         </p>
+        </div>
       </div>
     </main>
   )
@@ -170,9 +171,9 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
 
 function FortuneSection({ title, body }: { title: string; body: string }) {
   return (
-    <div className="paper-card rounded-lg p-6 mb-4">
-      <h2 className="text-lg font-bold text-ink mb-2">{title}</h2>
-      <p className="text-ink/70 leading-loose text-[15px]">{body}</p>
+    <div className="hw-c-box mb-4">
+      <h2 className="hw-c-secTitle">{title}</h2>
+      <p className="hw-c-body">{body}</p>
     </div>
   )
 }
