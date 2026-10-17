@@ -57,15 +57,12 @@ export default function MyCharts() {
   const handleView = async (row: ChartRow) => {
     // chart_data 为任意 JSON，运行时可能含 input/analysis（unlock 响应同构）
     let data = row.chart_data as Record<string, any>
-    // ★ 已购命盘回看补全文（2026-10-17）：chart_data.analysis.isPaid/paid 是存盘快照，
-    //   付款前存的盘回看会永远锁死（webhook 只写 payments，不回填 chart_data）。
-    //   走 /api/unlock：已购则服务端按同八字行判权益通过，生成/缓存全文并回写
-    //   charts.chart_data（is_paid=true）——本次与以后的回看都有全文；
-    //   未购（402）则按存盘原样展示锁定态，与现状一致。绝不本地重排
-    //   （真太阳时可能改四柱，对不上已购的盘）。
+    // ★ 回看必经 /api/unlock 同步（2026-10-18）：已购盘走服务端快路径——存量全文
+    //   秒回【且顺带补插「我的报告」fatebook 行（幂等），不重跑 AI】；未购盘 402
+    //   按存盘原样展示锁定态。绝不本地重排（真太阳时可能改四柱，对不上已购的盘）。
     setViewingId(row.id)
     try {
-      if (row?.id && data?.input && data?.pillars && !data.analysis?.isPaid) {
+      if (row?.id && data?.input && data?.pillars) {
         const supabase = getSupabase()
         const { data: { session } } = await supabase.auth.getSession()
         if (session) {

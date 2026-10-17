@@ -6,7 +6,7 @@
 //   · 数据一律来自 /api/paipan 真排盘引擎（paipan.ts 单一事实源），五行配色仅展示层
 //   · 藏干/十二长生/神煞/空亡行与 SHEN_SHA_NOTE 口径说明受 test-shensha-changsheng.mjs ⑤ 守护，不得改写
 //   · 价格取自 SKUS（单一事实源），本文件不得硬编码价格
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -230,6 +230,8 @@ export default function ChartPage() {
   const router = useRouter()
   const [chart, setChart] = useState<ChartData | null>(null)
   const [screenChartId, setScreenChartId] = useState<string | null>(null)
+  const [syncing, setSyncing] = useState(false)
+  const syncedRef = useRef(false)
 
   useEffect(() => {
     const stored = localStorage.getItem('currentChart')
@@ -240,35 +242,36 @@ export default function ChartPage() {
     }
   }, [router])
 
-  // ★ 落库预检（2026-10-18）：当前盘在购买前可能从未入库（只在 localStorage），
-  //   而 CheckoutButton 兜底取「服务端最新一张」会把款绑到旧盘上。挂载时带完整
-  //   chart 调 /api/unlock：402 响应含 chartId（缺行时服务端先落库 is_paid=false），
-  //   200 则本盘已解锁、购买按钮不渲染。chartId 随单绑定用，绝不本地造 id。
+  // ★ 回看同步（2026-10-18）：每次进命盘页都经 /api/unlock 同步一次——
+  //   已购盘走服务端快路径（存量全文秒回＋补插「我的报告」行，不重跑 AI）；
+  //   新购盘在 webhook 落账后由成功页确认解锁再进入；未购盘 402 并落库返回
+  //   chartId 供购买精确绑定。syncedRef 保证每次挂载只调一次，防 setChart 循环。
   useEffect(() => {
-    if (!chart || chart.analysis?.isPaid) return
-    let cancelled = false
+    if (!chart || syncedRef.current) return
+    syncedRef.current = true
+    setSyncing(true)
     ;(async () => {
       try {
         const supabase = getSupabase()
         const { data: { session } } = await supabase.auth.getSession()
-        if (!session || cancelled) return
-        const res = await fetch('/api/unlock', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ token: session.access_token, chart }),
-        })
-        const out = await res.json().catch(() => null)
-        if (cancelled) return
-        if (out?.chartId) setScreenChartId(out.chartId)
-        if (res.ok && out?.success && out?.data?.chartData) {
-          setChart(out.data.chartData)
-          localStorage.setItem('currentChart', JSON.stringify(out.data.chartData))
+        if (session) {
+          const res = await fetch('/api/unlock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: session.access_token, chart }),
+          })
+          const out = await res.json().catch(() => null)
+          if (out?.chartId) setScreenChartId(out.chartId)
+          if (res.ok && out?.success && out?.data?.chartData) {
+            setChart(out.data.chartData)
+            localStorage.setItem('currentChart', JSON.stringify(out.data.chartData))
+          }
         }
       } catch {
-        // 预检失败不影响浏览；购买回退「最新一张」兜底
+        // 同步失败不影响浏览：未购按锁定展示，购买回退「最新一张」兜底
       }
+      setSyncing(false)
     })()
-    return () => { cancelled = true }
   }, [chart])
 
   if (!chart) {
@@ -547,6 +550,7 @@ export default function ChartPage() {
         {!chart.analysis.isPaid && (
           <div className="hw-c-cta">
             {chart.locked?.preview && <p className="hw-c-dx">{chart.locked.preview}</p>}
+            {syncing && <p className="hw-c-meta">命书同步中，请稍候…</p>}
             <div style={{ maxWidth: 380, margin: '0 auto' }}>
               <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} chartId={screenChartId ?? undefined}>
                 解锁完整命书 · {FATEBOOK_PRICE}

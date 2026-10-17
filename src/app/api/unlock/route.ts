@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     const input = chart.input
     const { data: existing } = await admin
       .from('charts')
-      .select('id')
+      .select('id, chart_data')
       .eq('user_id', user.id)
       .eq('birth_year', input.year)
       .eq('birth_month', input.month)
@@ -71,6 +71,25 @@ export async function POST(request: NextRequest) {
         { success: false, error: '尚未购买命书报告', locked: true, sku: 'fatebook', chartId },
         { status: 402 }
       )
+    }
+
+    // ★★ 已解锁快路径（2026-10-18）：该命盘此前已生成过全文时【绝不重跑 AI】——
+    //    直接返回存量全文，并顺带补插 fatebook 报告行（幂等）。这让本路由成为
+    //    客户端可每次回看都调用的「同步端点」：已购→秒回；未购→402；新购→生成。
+    //    （修复：一旦 chart_data 自愈 isPaid=true，报告行补插永不触发的历史缺口。）
+    const prevChartData = (existing?.[0]?.chart_data ?? null) as Record<string, any> | null
+    if (chartId && prevChartData?.analysis?.isPaid && prevChartData.analysis.paid) {
+      await ensureFatebookReportByAdmin(admin, user.id, chartId, {
+        year: input.year,
+        month: input.month,
+        day: input.day,
+        hour: input.hour,
+        gender: input.gender
+      })
+      return NextResponse.json({
+        success: true,
+        data: { analysis: prevChartData.analysis.paid, chartData: prevChartData }
+      })
     }
 
     // 优先 AI 深度解读，失败（未配置密钥/超时/格式异常）自动回退规则引擎
