@@ -1,6 +1,13 @@
 'use client'
 
+// ★ 排盘结果页（2026-10-17 重塑）：设计稿多页版「排盘结果页」生产实现
+// 纪律：
+//   · 样式 hw-c- 前缀并入 globals.css（site-audit ④ 在 Node 直接 import 本文件，不能用 CSS module）
+//   · 数据一律来自 /api/paipan 真排盘引擎（paipan.ts 单一事实源），五行配色仅展示层
+//   · 藏干/十二长生/神煞/空亡行与 SHEN_SHA_NOTE 口径说明受 test-shensha-changsheng.mjs ⑤ 守护，不得改写
+//   · 价格取自 SKUS（单一事实源），本文件不得硬编码价格
 import { useEffect, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
@@ -12,6 +19,31 @@ import type { PaidAnalysis, LuckCycles, LuckTag, FortuneTier } from '@/lib/analy
 
 // 价格一律取自 SKUS（单一事实源），本文件不得硬编码价格
 const FATEBOOK_PRICE = formatPriceUSD(SKUS.fatebook.priceUSD)
+
+// ── 五行展示映射（仅展示层；排盘算法见 src/lib/paipan.ts）──
+const GAN_WX: Record<string, string> = {
+  '甲': 'wood', '乙': 'wood', '丙': 'fire', '丁': 'fire', '戊': 'earth', '己': 'earth',
+  '庚': 'metal', '辛': 'metal', '壬': 'water', '癸': 'water',
+}
+const ZHI_WX: Record<string, string> = {
+  '寅': 'wood', '卯': 'wood', '巳': 'fire', '午': 'fire',
+  '辰': 'earth', '戌': 'earth', '丑': 'earth', '未': 'earth',
+  '申': 'metal', '酉': 'metal', '亥': 'water', '子': 'water',
+}
+const WX_CN: Record<string, string> = { wood: '木', fire: '火', earth: '土', metal: '金', water: '水' }
+const WX_BG: Record<string, string> = { wood: '#3CC796', fire: '#FF6B5B', earth: '#F6C24F', metal: '#D6DBE6', water: '#3A66FF' }
+const WX_ORDER = ['wood', 'fire', 'earth', 'metal', 'water'] as const
+const WX_DESC: Record<string, string> = {
+  wood: '如树，向上生长，重成长与仁心。',
+  fire: '如火，热烈外放，重表达与行动。',
+  earth: '如山，稳重厚实，重信用与承载。',
+  metal: '如金，果断利落，重原则与边界。',
+  water: '如水，灵动聪慧，重洞察与变通。',
+}
+const CN_NUM = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十']
+// 命书十卷：与解锁后「六书精要」十章一一对应（顺序即 paid 字段顺序）
+const VOLS = ['八字总览', '性格天赋', '用神喜忌', '格局成败', '调候用神', '大运流年', '事业财运', '婚姻感情', '子女六亲', '健康提示']
+const PAID_KEYS = ['overview', 'personality', 'yongShen', 'geJuAnalysis', 'tiaoHou', 'daYunAnalysis', 'career', 'marriage', 'children', 'health'] as const
 
 interface ChartData {
   input: {
@@ -95,8 +127,8 @@ function LuckCyclesView({ luck }: { luck: LuckCycles }) {
   return (
     <div className="space-y-4">
       {/* 大运 */}
-      <div className="paper-card rounded-lg p-4">
-        <h3 className="font-semibold text-ink mb-1">岁运时间轴 · 大运</h3>
+      <div className="hw-c-box">
+        <h3 className="hw-c-secTitle">岁运时间轴 · 大运</h3>
         <p className="text-xs text-ink-light/60 mb-3">大运十年一步，以节气换运；干支十神与吉凶由规则引擎推算</p>
         <div className="flex flex-wrap gap-2">
           {luck.daYun.map((d, i) => (
@@ -138,8 +170,8 @@ function LuckCyclesView({ luck }: { luck: LuckCycles }) {
       </div>
 
       {/* 流年 */}
-      <div className="paper-card rounded-lg p-4">
-        <h3 className="font-semibold text-ink mb-3">流年 · 今年起三年</h3>
+      <div className="hw-c-box">
+        <h3 className="hw-c-secTitle">流年 · 今年起三年</h3>
         <div className="grid md:grid-cols-3 gap-3">
           {luck.liuNian.map((y, i) => (
             <div key={i} className={`rounded border-l-4 p-3 bg-paper-dark/30 ${FORTUNE_BORDER[y.tag]}`}>
@@ -162,8 +194,8 @@ function LuckCyclesView({ luck }: { luck: LuckCycles }) {
       </div>
 
       {/* 流月 */}
-      <div className="paper-card rounded-lg p-4">
-        <h3 className="font-semibold text-ink mb-1">流月 · 当年十二个节令月</h3>
+      <div className="hw-c-box">
+        <h3 className="hw-c-secTitle">流月 · 当年十二个节令月</h3>
         <p className="text-xs text-ink-light/60 mb-3">命理以节气换月（非农历初一）：如寅月自立春起，丑月至次年小寒前</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {luck.liuYue.map((m, i) => (
@@ -233,215 +265,246 @@ export default function ChartPage() {
     }
   }, [router])
 
-  if (!chart) return <div className="min-h-screen flex items-center justify-center">加载中...</div>
+  if (!chart) {
+    return (
+      <main className="hw-page flex min-h-screen items-center justify-center">
+        <p className="hw-c-meta">正在取盘…</p>
+      </main>
+    )
+  }
 
   const pillarNames = ['年柱', '月柱', '日柱', '时柱']
   const pillars = [chart.pillars.year, chart.pillars.month, chart.pillars.day, chart.pillars.hour]
   const nowYearNum = new Date().getFullYear()
+  const dayWx = GAN_WX[chart.dayMaster] ?? 'water'
+  const pad = (n: number) => (n < 10 ? '0' : '') + n
+  // 农历仅取「日期＋四柱干支」段（纳音/彭祖百忌/贵神方位等长尾在 toFullString 里，展示层不铺开）
+  const lunarShort = chart.lunarDate.split('纳音')[0].trim()
+
+  // 五行分布：四天干＋四地支（藏干/合化不计入，仅作快速印象）
+  const wxCount: Record<string, number> = { wood: 0, fire: 0, earth: 0, metal: 0, water: 0 }
+  for (const p of pillars) {
+    const g = GAN_WX[p.ganZhi[0]]
+    const z = ZHI_WX[p.ganZhi[1]]
+    if (g) wxCount[g]++
+    if (z) wxCount[z]++
+  }
+  const lack = WX_ORDER.filter((k) => wxCount[k] === 0)
+
+  const paid = chart.analysis.isPaid ? chart.analysis.paid ?? null : null
+  const paidRows: [string, string][] | null = paid
+    ? VOLS.map((title, i) => [title, paid[PAID_KEYS[i]]])
+    : null
 
   return (
-    <main className="min-h-screen py-8">
+    <main className="hw-page">
       <Nav />
-      <div className="container mx-auto px-4 max-w-4xl">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-serif-sc font-bold text-ink mb-2">排盘结果</h1>
-          <p className="text-ink-light">
-            {chart.input.year}年{chart.input.month}月{chart.input.day}日 {chart.input.hour}时{chart.input.minute}分
-            {chart.input.gender === 1 ? ' 男' : ' 女'} · 农历{chart.lunarDate}
-          </p>
-        </div>
+      <div className="hw-wrap hw-c-pg">
+        <Link href="/" className="hw-c-back">‹ 重新排盘</Link>
+        <h1 className="hw-c-h1">日主 {chart.dayMaster}{WX_CN[dayWx]}</h1>
+        <p className="hw-c-meta">
+          {chart.input.year}年{chart.input.month}月{chart.input.day}日 {pad(chart.input.hour)}:{pad(chart.input.minute)}
+          {' · '}{chart.input.gender === 1 ? '乾造' : '坤造'} · 农历{lunarShort}
+        </p>
+        <p className="hw-c-dx">你的日主属{WX_CN[dayWx]}，{WX_DESC[dayWx]}</p>
 
         {/* 夏令时切换点提示：出生时刻本身在 gap/重复时刻上（旧命盘无此字段时不显示） */}
         {chart.trueSolar?.dstNotice && (
-          <div className="mb-6 rounded-lg border border-gold/20 bg-gold/5 px-4 py-3 text-sm text-ink-light">
-            ⚠ {chart.trueSolar.dstNotice}
-          </div>
+          <div className="hw-c-warn">⚠ {chart.trueSolar.dstNotice}</div>
         )}
 
-        {/* 四柱表 */}
-        <div className="paper-card rounded-xl overflow-hidden mb-6">
-          <table className="w-full">
-            <thead className="bg-gold/10">
-              <tr>
-                <th className="py-3 px-4 text-left text-ink"></th>
-                {pillarNames.map((name, i) => (
-                  <th key={i} className="py-3 px-4 text-center text-ink font-serif-sc font-semibold">{name}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-gold/10">
-                <td className="py-3 px-4 font-medium text-ink-light">天干</td>
-                {pillars.map((p, i) => (
-                  <td key={i} className="py-3 px-4 text-center text-2xl font-serif-sc font-bold text-cinnabar">
-                    {p.ganZhi[0]}
-                  </td>
-                ))}
-              </tr>
-              <tr className="border-b border-gold/10">
-                <td className="py-3 px-4 font-medium text-ink-light">地支</td>
-                {pillars.map((p, i) => (
-                  <td key={i} className="py-3 px-4 text-center text-2xl font-serif-sc font-bold text-ink">
-                    {p.ganZhi[1]}
-                  </td>
-                ))}
-              </tr>
-              <tr className="border-b border-gold/10">
-                <td className="py-3 px-4 font-medium text-ink-light">十神</td>
-                {pillars.map((p, i) => (
-                  <td key={i} className="py-3 px-4 text-center text-sm text-ink-light">
-                    {p.tenGodGan || '日主'}
-                  </td>
-                ))}
-              </tr>
-              <tr>
-                <td className="py-3 px-4 font-medium text-ink-light">藏干</td>
-                {pillars.map((p, i) => (
-                  <td key={i} className="py-3 px-4 text-center text-sm text-ink-light">
-                    {p.cangGan.join(' ')}
-                  </td>
-                ))}
-              </tr>
-              {/* 十二长生 / 神煞：新排盘才有此字段，旧命盘（localStorage 旧数据）不显示 */}
-              {pillars.some(p => p.changSheng) && (
-                <tr className="border-b">
-                  <td className="py-3 px-4 font-medium text-ink/70">十二长生</td>
-                  {pillars.map((p, i) => (
-                    <td key={i} className="py-3 px-4 text-center text-sm text-ink-light">
-                      {p.changSheng
-                        ? <Link href={`/article/${CHANG_SHENG_SLUG}`} className="text-ink/70 hover:text-ink hover:underline">{p.changSheng}</Link>
-                        : '—'}
-                    </td>
-                  ))}
-                </tr>
-              )}
-              {pillars.some(p => p.shenSha && p.shenSha.length > 0) && (
-                <tr className="border-b">
-                  <td className="py-3 px-4 font-medium text-ink/70">神煞</td>
-                  {pillars.map((p, i) => (
-                    <td key={i} className="py-3 px-4 text-center text-xs text-ink-light">
-                      {p.shenSha && p.shenSha.length > 0
-                        ? p.shenSha.map((name, j) => {
-                            const href = shenshaHref(name)
-                            return (
-                              <span key={j}>
-                                {j > 0 && '、'}
-                                {href
-                                  ? <Link href={href} className="text-ink/70 hover:text-ink hover:underline">{name}</Link>
-                                  : name}
-                              </span>
-                            )
-                          })
-                        : '—'}
-                    </td>
-                  ))}
-                </tr>
-              )}
-              {pillars.some(p => p.kongWang) && (
+        {/* 四柱（五行配色柱卡；日柱抬升并标「日主」） */}
+        <div className="hw-pillars" style={{ paddingTop: 28 }}>
+          {pillars.map((p, i) => (
+            <div key={i} className={`hw-c-pillar${i === 2 ? ' hw-day' : ''}`} style={{ '--i': i } as CSSProperties}>
+              <span className="hw-t">{pillarNames[i]}</span>
+              <span className={`hw-g hw-${GAN_WX[p.ganZhi[0]] ?? 'water'}`}>{p.ganZhi[0]}</span>
+              <span className={`hw-g hw-${ZHI_WX[p.ganZhi[1]] ?? 'water'}`}>{p.ganZhi[1]}</span>
+              <span className="hw-c-s">{p.tenGodGan || '日主'}</span>
+            </div>
+          ))}
+        </div>
+        <div className="hw-legend" aria-label="五行配色">
+          {WX_ORDER.map((k) => (
+            <span key={k}><i style={{ background: WX_BG[k] }} />{WX_CN[k]}</span>
+          ))}
+        </div>
+
+        {/* 藏干/十二长生/神煞/空亡 明细（test-shensha-changsheng.mjs ⑤ 逐字守护） */}
+        <div className="hw-c-box hw-c-boxFlush">
+          <div className="hw-c-tableWrap">
+            <table className="hw-c-table">
+              <thead>
                 <tr>
-                  <td className="py-3 px-4 font-medium text-ink/70">空亡</td>
+                  <th aria-label="项目"></th>
+                  {pillarNames.map((n, i) => <th key={i}>{n}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>藏干</td>
                   {pillars.map((p, i) => (
-                    <td key={i} className="py-3 px-4 text-center text-sm text-ink-light">
-                      {p.kongWang
-                        ? <Link href={`/article/${KONG_WANG_SLUG}`} className="text-ink/70 hover:text-ink hover:underline">{p.kongWang}</Link>
-                        : '—'}
-                    </td>
+                    <td key={i}>{p.cangGan.join(' ')}</td>
                   ))}
                 </tr>
-              )}
-            </tbody>
-          </table>
+                {/* 十二长生 / 神煞 / 空亡：新排盘才有此字段，旧命盘（localStorage 旧数据）不显示 */}
+                {pillars.some(p => p.changSheng) && (
+                  <tr>
+                    <td>十二长生</td>
+                    {pillars.map((p, i) => (
+                      <td key={i}>
+                        {p.changSheng
+                          ? <Link href={`/article/${CHANG_SHENG_SLUG}`} className="hw-c-link">{p.changSheng}</Link>
+                          : '—'}
+                      </td>
+                    ))}
+                  </tr>
+                )}
+                {pillars.some(p => p.shenSha && p.shenSha.length > 0) && (
+                  <tr>
+                    <td>神煞</td>
+                    {pillars.map((p, i) => (
+                      <td key={i}>
+                        {p.shenSha && p.shenSha.length > 0
+                          ? p.shenSha.map((name, j) => {
+                              const href = shenshaHref(name)
+                              return (
+                                <span key={j}>
+                                  {j > 0 && '、'}
+                                  {href
+                                    ? <Link href={href} className="hw-c-link">{name}</Link>
+                                    : name}
+                                </span>
+                              )
+                            })
+                          : '—'}
+                      </td>
+                    ))}
+                  </tr>
+                )}
+                {pillars.some(p => p.kongWang) && (
+                  <tr>
+                    <td>空亡</td>
+                    {pillars.map((p, i) => (
+                      <td key={i}>
+                        {p.kongWang
+                          ? <Link href={`/article/${KONG_WANG_SLUG}`} className="hw-c-link">{p.kongWang}</Link>
+                          : '—'}
+                      </td>
+                    ))}
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
           {/* 口径说明：文案与 src/lib/paipan.ts 的 SHEN_SHA_NOTE 同步（测试守护一致性） */}
-          <p className="px-4 py-3 text-[11px] text-ink-light/40 border-t border-gray-100">
+          <p className="hw-c-fine">
             神煞取法依《渊海子平》《三命通会》通行口径：天乙贵人、文昌、禄神、羊刃、太极贵人、福星贵人、国印贵人、金舆、红艳煞自日干起（羊刃仅阳干）；桃花、驿马、华盖、将星、劫煞、灾煞、亡神自年支、日支起（三合局取支）；孤辰寡宿、红鸾、天喜自年支起；天德贵人、月德贵人、天医、天赦、四废自月支起（天赦、四废见于日柱）；魁罡、阴阳差错、十恶大败、孤鸾煞取自日柱干支，三奇贵人取年月日或月日时天干顺布；童子煞依月支季节（春秋寅子、冬夏卯未辰）或年柱纳音（金木命见午卯、水火命见酉戌、土命见辰巳）查日支、时支，德秀贵人自月支起见四柱天干（《三命通会》），金神取乙丑、己巳、癸酉见于日柱、时柱，飞刃自日干起（仅阳干、羊刃对冲），流霞自日干起，天罗地网依年柱纳音（火命见戌亥、水土命见辰巳，金木命不论）查日支、时支，六秀日、十灵日取自日柱干支；空亡为各柱干支所在旬空之二支。均为传统民俗论法（童子煞属民俗传说），流派间取法或有差异，仅供参考、非确定性，不构成任何决策建议。
           </p>
-          <p className="px-4 py-2 text-[11px] text-ink-light/40">
+          <p className="hw-c-fine">
             点击神煞、十二长生、空亡名称可查看对应知识文章（命理知识 › 神煞查询）。
           </p>
         </div>
 
-        {/* 基础信息 */}
-        <div className="grid md:grid-cols-2 gap-4 mb-6">
-          <div className="paper-card rounded-lg p-4">
-            <h3 className="font-semibold text-ink mb-2">基础信息</h3>
-            <div className="space-y-1 text-sm">
-              <p><span className="text-ink-light">日主：</span>{chart.dayMaster}</p>
-              <p><span className="text-ink-light">旺衰：</span>{chart.analysis.wangShuai}</p>
-              <p><span className="text-ink-light">格局：</span>{chart.analysis.geJu}</p>
-              <p><span className="text-ink-light">起运：</span>{chart.qiYun}</p>
+        {/* 五行分布 */}
+        <h2 className="hw-c-h2">五行分布</h2>
+        <div className="hw-c-bar5">
+          {WX_ORDER.map((k) =>
+            wxCount[k] > 0 ? (
+              <span key={k} className={`hw-${k}`} style={{ flex: wxCount[k] }}>
+                {WX_CN[k]}{wxCount[k]}
+              </span>
+            ) : null
+          )}
+        </div>
+        <p className="hw-c-dx" style={{ marginTop: 12 }}>
+          {lack.length > 0 ? `五行缺：${lack.map((k) => WX_CN[k]).join('、')}。` : '五行俱全。'}
+        </p>
+        <p className="hw-note">按四柱天干＋地支八字统计；藏干与地支合化未计入，仅作快速印象。</p>
+
+        {/* 格局旺衰 / 胎元命宫 */}
+        <div className="hw-c-two" style={{ marginTop: 20 }}>
+          <div className="hw-c-box">
+            <h3 className="hw-c-secTitle">格局旺衰</h3>
+            <div className="hw-c-kv">
+              <p><span>旺衰：</span>{chart.analysis.wangShuai}</p>
+              <p><span>格局：</span>{chart.analysis.geJu}</p>
+              <p><span>起运：</span>{chart.qiYun}</p>
             </div>
           </div>
-          <div className="paper-card rounded-lg p-4">
-            <h3 className="font-semibold text-ink mb-2">胎元命宫</h3>
-            <div className="space-y-1 text-sm">
-              <p><span className="text-ink-light">胎元：</span>{chart.taiYuan}</p>
-              <p><span className="text-ink-light">命宫：</span>{chart.mingGong}</p>
-              <p><span className="text-ink-light">身宫：</span>{chart.shenGong}</p>
+          <div className="hw-c-box">
+            <h3 className="hw-c-secTitle">胎元命宫</h3>
+            <div className="hw-c-kv">
+              <p><span>胎元：</span>{chart.taiYuan}</p>
+              <p><span>命宫：</span>{chart.mingGong}</p>
+              <p><span>身宫：</span>{chart.shenGong}</p>
             </div>
           </div>
         </div>
 
-        {/* 大运 */}
-        <div className="paper-card rounded-lg p-4 mb-6">
-          <h3 className="font-semibold text-ink mb-3">大运</h3>
-          <div className="flex flex-wrap gap-2">
-            {chart.daYun.map((dy, i) => {
-              const isCurrent = nowYearNum >= dy.startYear && nowYearNum <= dy.endYear
-              return (
-                <div
-                  key={i}
-                  className={`rounded px-3 py-2 text-center ${
-                    isCurrent ? 'bg-amber-200 ring-1 ring-amber-400' : 'bg-gold/5'
-                  }`}
-                >
-                  <div className="font-bold text-ink">{dy.ganZhi}</div>
-                  <div className="text-xs text-ink-light">{dy.startAge}-{dy.startAge + 9}岁</div>
-                  {isCurrent && <div className="text-[10px] text-ink/70 font-medium">当前</div>}
-                </div>
-              )
-            })}
-          </div>
+        {/* 大运时间轴（当前大运描黑圈；干支天干按五行着色） */}
+        <h2 className="hw-c-h2">大运</h2>
+        <div className="hw-c-dy">
+          {chart.daYun.map((dy, i) => {
+            const isCurrent = nowYearNum >= dy.startYear && nowYearNum <= dy.endYear
+            const tx = GAN_WX[dy.ganZhi[0]] ?? 'water'
+            return (
+              <div key={i} className={isCurrent ? 'hw-c-cur' : ''}>
+                <b className={`hw-tx-${tx}`}>{dy.ganZhi}</b>
+                <i>{dy.startAge}–{dy.startAge + 9}岁</i>
+                <i>{dy.startYear}–{dy.endYear}</i>
+                {isCurrent && <span className="hw-c-curTag">当前</span>}
+              </div>
+            )
+          })}
         </div>
+        <p className="hw-note">起运：{chart.qiYun}。大运十年一步，以节气精确换运；当前大运的吉凶细断见解锁后的「大运流年」卷。</p>
 
         {/* 保存命盘 */}
         <SaveChart />
 
-        {/* 已解锁：完整命理分析 */}
-        {chart.analysis.isPaid && chart.analysis.paid && (
-          <div className="mb-6 space-y-4">
-            <h2 className="text-xl font-bold text-ink">完整命理分析 · 六书精要</h2>
-            {/* 结构化岁运时间轴（旧命盘无此数据时不显示，仅展示文字） */}
-            {chart.analysis.paid.luckCycles && (
-              <LuckCyclesView luck={chart.analysis.paid.luckCycles} />
-            )}
-            {([
-              ['八字总览', chart.analysis.paid.overview],
-              ['性格天赋', chart.analysis.paid.personality],
-              ['用神喜忌', chart.analysis.paid.yongShen],
-              ['格局成败', chart.analysis.paid.geJuAnalysis],
-              ['调候用神', chart.analysis.paid.tiaoHou],
-              ['大运流年', chart.analysis.paid.daYunAnalysis],
-              ['事业财运', chart.analysis.paid.career],
-              ['婚姻感情', chart.analysis.paid.marriage],
-              ['子女六亲', chart.analysis.paid.children],
-              ['健康提示', chart.analysis.paid.health]
-            ] as [string, string][]).map(([title, text]) => (
-              <div key={title} className="paper-card rounded-lg p-4">
-                <h3 className="font-semibold text-ink mb-2">{title}</h3>
-                <p className="text-sm text-ink/70 leading-relaxed whitespace-pre-line">{text}</p>
+        {/* 命书十卷 */}
+        <h2 className="hw-c-h2">命书十卷</h2>
+        <div className={`hw-c-vols${chart.analysis.isPaid ? '' : ' hw-c-locked'}`}>
+          {VOLS.map((v, i) => (
+            <span key={v}><i>卷{CN_NUM[i]}</i>{v}</span>
+          ))}
+        </div>
+
+        {/* 付费解锁区（内测期免费解锁；正式开放后走 SKUS 价格） */}
+        {!chart.analysis.isPaid && (
+          <div className="hw-c-cta">
+            {chart.locked?.preview && <p className="hw-c-dx">{chart.locked.preview}</p>}
+            <button onClick={handleUnlock} disabled={unlocking} className="hw-c-btnBig">
+              {unlocking ? 'AI命理师解读生成中（约30秒）...' : '解锁完整命书（内测期免费体验）'}
+            </button>
+            {payError && <p className="hw-c-err">{payError}</p>}
+            <p className="hw-note" style={{ marginTop: 14 }}>
+              正式开放后 {FATEBOOK_PRICE}/次（会员不含报告）· <Link href="/mingshu" className="hw-c-link">查看命书详情</Link>
+            </p>
+          </div>
+        )}
+
+        {/* 已解锁：完整命理分析（六书精要十章 + 岁运时间轴 + 古籍相似命例） */}
+        {paidRows && paid && (
+          <div className="space-y-4" style={{ marginTop: 20 }}>
+            {paid.luckCycles && <LuckCyclesView luck={paid.luckCycles} />}
+            {paidRows.map(([title, text], i) => (
+              <div key={title} className="hw-c-box">
+                <h3 className="hw-c-secTitle">卷{CN_NUM[i]} · {title}</h3>
+                <p className="hw-c-body">{text}</p>
               </div>
             ))}
 
             {/* 古籍相似命例（规则引擎检索，旧命盘无此数据时不显示） */}
-            {chart.analysis.paid.similarCases && chart.analysis.paid.similarCases.length > 0 && (
-              <div className="paper-card rounded-lg p-4">
-                <h3 className="font-semibold text-ink mb-1">古籍相似命例</h3>
+            {paid.similarCases && paid.similarCases.length > 0 && (
+              <div className="hw-c-box">
+                <h3 className="hw-c-secTitle">古籍相似命例</h3>
                 <p className="text-xs text-ink-light/60 mb-3">
                   从《子平真诠》《滴天髓》《三命通会》等典籍命例库中按四柱结构相似度检索，供参照印证（仅供学习参考）
                 </p>
                 <div className="space-y-3">
-                  {chart.analysis.paid.similarCases.map((c, i) => (
+                  {paid.similarCases.map((c, i) => (
                     <div key={i} className={`rounded-lg border p-3 ${c.exact ? 'border-amber-400 bg-gold/5' : 'border-gold/15'}`}>
                       <div className="flex flex-wrap items-baseline gap-2 mb-1">
                         <span className="font-bold text-ink">
@@ -483,55 +546,7 @@ export default function ChartPage() {
             )}
           </div>
         )}
-
-        {/* 付费解锁区 */}
-        {!chart.analysis.isPaid && (
-        <div className="bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg shadow-lg p-6 text-white text-center">
-          <h3 className="text-xl font-bold mb-2">解锁完整命理分析</h3>
-          <p className="mb-4 opacity-90">基于《子平真诠》《滴天髓》《穷通宝鉴》等六书精要</p>
-          {chart.locked?.preview && (
-            <p className="mb-4 text-sm opacity-90">{chart.locked.preview}</p>
-          )}
-          
-          <div className="grid md:grid-cols-3 gap-3 mb-4 text-sm">
-            <div className="bg-white/20 rounded p-2">八字总览</div>
-            <div className="bg-white/20 rounded p-2">性格天赋</div>
-            <div className="bg-white/20 rounded p-2">用神喜忌</div>
-            <div className="bg-white/20 rounded p-2">格局成败</div>
-            <div className="bg-white/20 rounded p-2">调候用神</div>
-            <div className="bg-white/20 rounded p-2">大运流年</div>
-            <div className="bg-white/20 rounded p-2">事业财运</div>
-            <div className="bg-white/20 rounded p-2">婚姻感情</div>
-            <div className="bg-white/20 rounded p-2">子女六亲</div>
-            <div className="bg-white/20 rounded p-2">健康提示</div>
-          </div>
-
-          <button
-            onClick={handleUnlock}
-            disabled={unlocking}
-            className="bg-white text-amber-600 px-8 py-3 rounded-full font-bold hover:bg-gold/5 transition disabled:opacity-60"
-          >
-            {unlocking ? 'AI命理师解读生成中（约30秒）...' : `解锁完整分析（内测期免费体验）`}
-          </button>
-          {payError && <p className="text-sm mt-2 text-red-100">{payError}</p>}
-          <p className="text-xs mt-3 opacity-75">
-            正式开放后 {FATEBOOK_PRICE}/次（会员不含报告）·{' '}
-            <Link href="/mingshu" className="underline">查看命书详情</Link>
-          </p>
-        </div>
-        )}
-
-        {/* 返回 */}
-        <div className="text-center mt-6">
-          <button
-            onClick={() => router.push('/')}
-            className="text-amber-600 hover:text-ink"
-          >
-            ← 重新排盘
-          </button>
-        </div>
       </div>
-
     </main>
   )
 }

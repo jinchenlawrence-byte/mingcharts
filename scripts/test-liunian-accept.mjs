@@ -140,8 +140,9 @@ if (!existsSync(new URL('../src/app/liunian/layout.tsx', import.meta.url))) { pF
 const viewSrc = read('../src/components/reports/LiunianResultView.tsx')
 if (!viewSrc.includes('export interface LiunianResultData')) { pFail++; fail('LiunianResultView 缺导出数据类型') }
 const navSrc = read('../src/components/Nav.tsx')
-if (!navSrc.includes('href="/liunian"')) { pFail++; fail('Nav 缺「年运报告」链接') }
-if (!navSrc.includes('href="/reports"')) { pFail++; fail('Nav 缺「我的报告」链接') }
+// 2026-10-17 Nav 胶囊化重构：链接清单进 NAV_LINKS 数组（href: '/liunian'），断言放宽为两种形态都认
+if (!/href[:=]\s*["']\/liunian["']/.test(navSrc)) { pFail++; fail('Nav 缺「年运报告」链接') }
+if (!/href[:=]\s*["']\/reports["']/.test(navSrc)) { pFail++; fail('Nav 缺「我的报告」链接') }
 console.log(pFail === 0
   ? `✓ 页面：/liunian（use client+三档年份+共享View+定价披露）、layout、Nav 年运/我的报告链接齐备`
   : '✗ 页面断言失败')
