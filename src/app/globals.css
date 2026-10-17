@@ -212,6 +212,20 @@ h1, h2, h3, .font-serif-sc {
   color: inherit;
   text-decoration: none;
 }
+/* 层叠：.hw-page a (0,1,1) 会压过 Tailwind 工具类与单类，带色的链接用更高优先级接管 */
+.hw-page a.hw-c-back {
+  color: var(--hw-mute);
+}
+.hw-page a.hw-c-btnBig {
+  color: #fff;
+}
+.hw-page a.hw-c-blue {
+  color: var(--hw-water);
+}
+/* 深底白字的链接（Nav 登录钮 / 免费排盘卡 / CheckoutButton 无命盘引导） */
+.hw-page a.bg-ink {
+  color: #fff;
+}
 .hw-page :focus-visible {
   outline: 3px solid var(--hw-water);
   outline-offset: 3px;
@@ -1055,4 +1069,65 @@ h1, h2, h3, .font-serif-sc {
   .hw-c-pillar {
     animation: none;
   }
+}
+
+/* ── 三页轻量风格统一（2026-10-17）：daily / hemun / pricing 接入 hw- 设计语言 ──
+   原则：只换外壳（页面底色/标题/卡片/按钮/输入框），业务逻辑、守护文案、
+   共享组件（BirthPlacePicker/HemunResultView/DailyShareCard/PersonalDailySection）不动。 */
+.hw-narrow {
+  max-width: 640px;
+  margin: 0 auto;
+}
+/* 层叠注意：hw- 未分层类会压过 Tailwind @layer 工具类，居中需用修饰类而非 text-center/mx-auto */
+.hw-c-h2C {
+  text-align: center;
+}
+.hw-ledeC {
+  margin-left: auto;
+  margin-right: auto;
+}
+.hw-c-input {
+  width: 100%;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--hw-ink);
+  background: var(--hw-bg);
+  border: 1.5px solid transparent;
+  border-radius: 14px;
+  padding: 10px 12px;
+}
+.hw-c-input:focus {
+  border-color: var(--hw-water);
+  outline: 0;
+}
+.hw-c-plan {
+  position: relative;
+  background: var(--hw-surface);
+  border: 1px solid var(--hw-line);
+  border-radius: 30px;
+  padding: 28px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.hw-c-planHot {
+  border-color: var(--hw-water);
+  box-shadow: 0 0 0 2px var(--hw-water);
+}
+.hw-c-pr {
+  font-family: var(--font-serif-sc), serif;
+  font-weight: 900;
+  font-size: 40px;
+  line-height: 1.2;
+}
+.hw-d-card {
+  background: var(--hw-surface);
+  border: 1px solid var(--hw-line);
+  border-radius: 36px;
+  padding: 36px 28px;
+  max-width: 460px;
+  margin: 24px auto 0;
+  text-align: center;
 }

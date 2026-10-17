@@ -35,38 +35,35 @@ export default async function DailyPage({
   const fellBack = !!rawZone && rawZone !== view.zone
 
   return (
-    <main className="min-h-screen ">
+    <main className="hw-page">
       <Nav />
 
-      <div className="container mx-auto px-4 py-10 max-w-2xl">
-        <nav className="text-sm text-ink-light/60 mb-4">
-          <Link href="/" className="hover:text-ink/70">首页</Link>
-          <span className="mx-2">›</span>
-          <span className="text-ink">每日日签</span>
-        </nav>
+      <div className="hw-wrap hw-c-pg">
+        <div className="hw-narrow">
+        <Link href="/" className="hw-c-back">‹ 首页</Link>
 
         <header className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-ink mb-2">今日一省</h1>
-          <p className="text-ink-light text-sm">
+          <h1 className="hw-c-h1">今日一省</h1>
+          <p className="hw-lede hw-ledeC">
             日签取当日干支的历法意象，是一面自省的小镜子，不是吉凶判决。
           </p>
         </header>
 
         {/* 日签卡 */}
-        <section className="bg-white rounded-2xl shadow-lg ring-1 ring-amber-100 p-8 sm:p-10">
+        <section className="hw-d-card">
           <div className="text-center">
             <div className="text-ink font-semibold text-lg">
               {chineseDate(view.date)} · {view.liuRi}日
             </div>
             <div className="text-xs text-ink-light/40 mt-1">六十甲子第 {view.jiaziIndex} 位</div>
 
-            <div className="my-8 mx-auto w-16 h-px bg-amber-200" />
+            <div className="my-8 mx-auto w-16 h-px bg-[#dedcf0]" />
 
             <p className="text-2xl leading-relaxed text-stone-800 font-serif tracking-wide">
               「{view.sign}」
             </p>
 
-            <div className="my-8 mx-auto w-16 h-px bg-amber-200" />
+            <div className="my-8 mx-auto w-16 h-px bg-[#dedcf0]" />
 
             <p className="text-xs text-ink/70/80 mb-1.5">★ {DAILY_SIGN_DAY_BOUNDARY}</p>
             <p className="text-xs text-ink-light/40">{view.disclaimer}</p>
@@ -86,7 +83,7 @@ export default async function DailyPage({
         <PersonalDailySection zone={view.zone} />
 
         {/* 时区切换 */}
-        <form method="get" className="mt-6 bg-white rounded-xl shadow p-4">
+        <form method="get" className="mt-6 hw-c-box">
           <label htmlFor="zone" className="block text-sm font-semibold text-ink mb-2">
             按所在时区归日（IANA 时区名）
           </label>
@@ -96,11 +93,11 @@ export default async function DailyPage({
               name="zone"
               list="zone-suggestions"
               defaultValue={view.zone}
-              className="flex-1 border border-gold/20 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"
+              className="hw-c-input flex-1"
             />
             <button
               type="submit"
-              className="bg-gold/10 text-ink px-4 py-2 rounded-md text-sm font-semibold hover:bg-amber-200 transition"
+              className="rounded-full bg-ink px-5 py-2 text-sm font-bold text-white transition hover:brightness-110"
             >
               切换时区
             </button>
@@ -121,10 +118,11 @@ export default async function DailyPage({
         <div className="text-center mt-8">
           <Link
             href="/"
-            className="inline-block bg-amber-600 text-white px-6 py-2.5 rounded-full font-semibold hover:bg-amber-700 transition"
+            className="hw-c-btnBig"
           >
             免费排八字命盘 →
           </Link>
+        </div>
         </div>
       </div>
     </main>

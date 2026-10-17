@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import Nav from '@/components/Nav'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
@@ -47,41 +48,41 @@ function PersonFields({
   accent: 'blue' | 'rose'
 }) {
   const set = (patch: Partial<BirthFormState>) => onChange({ ...value, ...patch })
-  const inputCls = 'w-full px-2.5 py-1.5 border border-gold/20 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-amber-500'
-  const titleCls = accent === 'blue' ? 'text-blue-700' : 'text-rose-700'
+  const inputCls = 'hw-c-input'
+  const titleCls = accent === 'blue' ? 'text-[#3a66ff]' : 'text-[#e04a3a]'
   return (
-    <div className="border border-gold/15 rounded-lg p-4 bg-white">
+    <div className="hw-c-box">
       <h3 className={`font-semibold mb-3 ${titleCls}`}>{title}</h3>
       <div className="grid grid-cols-3 gap-2 mb-2">
         <div>
-          <label className="block text-xs text-ink-light/60 mb-0.5">年</label>
+          <label className="hw-f">年</label>
           <input type="number" required placeholder="1990" className={inputCls}
             value={value.year} onChange={e => set({ year: e.target.value })} />
         </div>
         <div>
-          <label className="block text-xs text-ink-light/60 mb-0.5">月</label>
+          <label className="hw-f">月</label>
           <input type="number" required min={1} max={12} placeholder="5" className={inputCls}
             value={value.month} onChange={e => set({ month: e.target.value })} />
         </div>
         <div>
-          <label className="block text-xs text-ink-light/60 mb-0.5">日</label>
+          <label className="hw-f">日</label>
           <input type="number" required min={1} max={31} placeholder="8" className={inputCls}
             value={value.day} onChange={e => set({ day: e.target.value })} />
         </div>
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div>
-          <label className="block text-xs text-ink-light/60 mb-0.5">时</label>
+          <label className="hw-f">时</label>
           <input type="number" required min={0} max={23} placeholder="16" className={inputCls}
             value={value.hour} onChange={e => set({ hour: e.target.value })} />
         </div>
         <div>
-          <label className="block text-xs text-ink-light/60 mb-0.5">分</label>
+          <label className="hw-f">分</label>
           <input type="number" min={0} max={59} placeholder="30" className={inputCls}
             value={value.minute} onChange={e => set({ minute: e.target.value })} />
         </div>
         <div>
-          <label className="block text-xs text-ink-light/60 mb-0.5">性别</label>
+          <label className="hw-f">性别</label>
           <select className={inputCls} value={value.gender}
             onChange={e => set({ gender: parseInt(e.target.value) as 1 | 0 })}>
             <option value={1}>男</option>
@@ -141,30 +142,33 @@ export default function HehunPage() {
   }
 
   return (
-    <div className="min-h-screen ">
+    <div className="hw-page">
       <Nav />
-      <main className="container mx-auto px-4 py-8 max-w-5xl">
-        <header className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-ink mb-2">八字合婚配对</h1>
-          <p className="text-ink-light text-sm">
+      <main className="hw-wrap hw-c-pg">
+        <Link href="/" className="hw-c-back">‹ 首页</Link>
+        <header>
+          <h1 className="hw-c-h1">八字合婚配对</h1>
+          <p className="hw-lede">
             输入双方出生信息，以「日柱夫妻宫」为核心，合参年柱生肖、配偶星、五行互补、十神互见与大运节奏
           </p>
         </header>
 
         <form onSubmit={handleSubmit}>
-          <div className="grid md:grid-cols-2 gap-4 mb-4">
+          <div className="hw-c-two mb-4">
             <PersonFields title="男方" value={male} onChange={setMale} accent="blue" />
             <PersonFields title="女方" value={female} onChange={setFemale} accent="rose" />
           </div>
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full md:w-96 md:mx-auto md:block bg-amber-600 text-white py-3 rounded-md font-semibold hover:bg-amber-700 transition disabled:opacity-50"
-          >
-            {loading ? '合婚分析中...' : '开始合婚配对'}
-          </button>
-          {error && <p className="text-sm text-red-600 text-center mt-3">{error}</p>}
-          <p className="text-xs text-ink-light/40 text-center mt-2">结果仅供参考娱乐，感情经营在人不在命</p>
+          <p className="text-center">
+            <button
+              type="submit"
+              disabled={loading}
+              className="hw-c-btnBig"
+            >
+              {loading ? '合婚分析中...' : '开始合婚配对'}
+            </button>
+          </p>
+          {error && <p className="hw-c-err text-center">{error}</p>}
+          <p className="hw-note text-center">结果仅供参考娱乐，感情经营在人不在命</p>
         </form>
 
         {/* ── 结果区 ── */}

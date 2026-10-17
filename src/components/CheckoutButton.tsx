@@ -32,7 +32,7 @@ export default function CheckoutButton({
 
   if (!available) {
     return (
-      <div className="block text-center py-2.5 rounded-md font-semibold bg-paper-dark/40 text-ink-light/40 cursor-not-allowed">
+      <div className="block text-center py-2.5 rounded-full font-semibold bg-paper-dark/40 text-ink-light/40 cursor-not-allowed">
         即将推出
       </div>
     )
@@ -94,10 +94,10 @@ export default function CheckoutButton({
         type="button"
         onClick={handleClick}
         disabled={loading}
-        className={`w-full block text-center py-2.5 rounded-md font-semibold transition disabled:opacity-60 ${
+        className={`w-full block text-center py-2.5 rounded-full font-semibold transition disabled:opacity-60 ${
           highlight
-            ? 'bg-amber-600 text-white hover:bg-amber-700'
-            : 'bg-gold/10 text-ink hover:bg-amber-200'
+            ? 'bg-[#3a66ff] text-white hover:brightness-110'
+            : 'bg-ink text-white hover:brightness-110'
         }`}
       >
         {loading ? '正在跳转支付…' : children}
@@ -109,7 +109,7 @@ export default function CheckoutButton({
           <p className="mb-2">命书会围绕你排好的命盘撰写——先免费排盘，再回来看命书详批。</p>
           <Link
             href="/?returnTo=/pricing"
-            className="inline-block bg-amber-600 text-white px-4 py-1.5 rounded-md font-semibold hover:bg-amber-700 transition"
+            className="inline-block bg-ink text-white px-4 py-1.5 rounded-full font-semibold hover:brightness-110 transition"
           >
             去免费排盘
           </Link>
