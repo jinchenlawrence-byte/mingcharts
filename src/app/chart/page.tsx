@@ -397,6 +397,22 @@ export default function ChartPage() {
                     <td key={i}>{p.ganZhi[1]}</td>
                   ))}
                 </tr>
+                <tr>
+                  <td>藏干</td>
+                  {pillars.map((p, i) => (
+                    <td key={i}>
+                      {p.cangGan.map((g, j) => (
+                        <span key={j}>
+                          {j > 0 && '　'}
+                          {g}
+                          {p.tenGodCangGan?.[j] && (
+                            <span style={{ opacity: 0.6, fontSize: 12 }}>（{p.tenGodCangGan[j]}）</span>
+                          )}
+                        </span>
+                      ))}
+                    </td>
+                  ))}
+                </tr>
                 {/* 十二长生 / 神煞 / 空亡：新排盘才有此字段，旧命盘（localStorage 旧数据）不显示 */}
                 {pillars.some(p => p.changSheng) && (
                   <tr>
