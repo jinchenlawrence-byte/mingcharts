@@ -327,14 +327,13 @@ export default function ChartPage() {
           <div className="hw-c-warn">⚠ {chart.trueSolar.dstNotice}</div>
         )}
 
-        {/* 四柱（五行配色柱卡；日柱抬升并标「日主」） */}
+        {/* 四柱（五行配色柱卡；日柱抬升） */}
         <div className="hw-pillars" style={{ paddingTop: 28 }}>
           {pillars.map((p, i) => (
             <div key={i} className={`hw-c-pillar${i === 2 ? ' hw-day' : ''}`} style={{ '--i': i } as CSSProperties}>
               <span className="hw-t">{pillarNames[i]}</span>
               <span className={`hw-g hw-${GAN_WX[p.ganZhi[0]] ?? 'water'}`}>{p.ganZhi[0]}</span>
               <span className={`hw-g hw-${ZHI_WX[p.ganZhi[1]] ?? 'water'}`}>{p.ganZhi[1]}</span>
-              <span className="hw-c-s">{p.tenGodGan || '日主'}</span>
             </div>
           ))}
         </div>
@@ -370,7 +369,7 @@ export default function ChartPage() {
           </div>
         )}
 
-        {/* 藏干/十二长生/神煞/空亡 明细（test-shensha-changsheng.mjs ⑤ 逐字守护） */}
+        {/* 天干/地支/十二长生/神煞/空亡 明细（test-shensha-changsheng.mjs ⑤ 逐字守护） */}
         <div className="hw-c-box hw-c-boxFlush">
           <div className="hw-c-tableWrap">
             <table className="hw-c-table">
@@ -382,19 +381,20 @@ export default function ChartPage() {
               </thead>
               <tbody>
                 <tr>
-                  <td>藏干</td>
+                  <td>天干</td>
                   {pillars.map((p, i) => (
                     <td key={i}>
-                      {p.cangGan.map((g, j) => (
-                        <span key={j}>
-                          {j > 0 && '　'}
-                          {g}
-                          {p.tenGodCangGan?.[j] && (
-                            <span style={{ opacity: 0.6, fontSize: 12 }}>（{p.tenGodCangGan[j]}）</span>
-                          )}
-                        </span>
-                      ))}
+                      {p.ganZhi[0]}
+                      {(p.tenGodGan || i === 2) && (
+                        <span style={{ opacity: 0.6, fontSize: 12 }}>（{p.tenGodGan || '日主'}）</span>
+                      )}
                     </td>
+                  ))}
+                </tr>
+                <tr>
+                  <td>地支</td>
+                  {pillars.map((p, i) => (
+                    <td key={i}>{p.ganZhi[1]}</td>
                   ))}
                 </tr>
                 {/* 十二长生 / 神煞 / 空亡：新排盘才有此字段，旧命盘（localStorage 旧数据）不显示 */}

@@ -827,13 +827,6 @@ h1, h2, h3, .font-serif-sc {
 .hw-c-pillar.hw-day:hover {
   transform: translateY(-16px);
 }
-.hw-c-s {
-  font-size: 16px;
-  padding: 12px 0 14px;
-  text-align: center;
-  color: var(--hw-ink);
-  font-weight: 800;
-}
 /* 大运天干文字色（展示层五色编码，字面即内容，色盲可达） */
 .hw-tx-wood {
   color: #1f9d72;
