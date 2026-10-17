@@ -278,8 +278,22 @@ export default function ChartPage() {
   const nowYearNum = new Date().getFullYear()
   const dayWx = GAN_WX[chart.dayMaster] ?? 'water'
   const pad = (n: number) => (n < 10 ? '0' : '') + n
-  // 农历仅取「日期＋四柱干支」段（纳音/彭祖百忌/贵神方位等长尾在 toFullString 里，展示层不铺开）
+  // 农历仅取「日期＋四柱干支」段（纳音/星宿/彭祖百忌/方位/冲煞在下方「命盘档案」条还原展示）
   const lunarShort = chart.lunarDate.split('纳音')[0].trim()
+  // 命盘档案拆解：农历 toFullString 的方括号分段
+  // 实测格式：一九九〇年四月十四 庚午(马)年 … 巳(蛇)时 纳音[四柱纳音] 星期X 西方白虎 星宿[觜火猴](凶)
+  //           彭祖百忌[…] 喜神方位[巽](东南) 阳贵神方位[…] 阴贵神方位[…] 福神方位[…] 财神方位[…] 冲[(丁卯)兔] 煞[东]
+  const fullLunar = chart.lunarDate
+  const bracketOf = (label: string) => fullLunar.match(new RegExp(label + '\\[([^\\]]*)\\]'))?.[1]?.trim() ?? ''
+  const naYin = bracketOf('纳音').split(/\s+/).filter(Boolean).join(' · ')
+  const xiuXiang = fullLunar.match(/([东南西北]方(?:青龙|白虎|朱雀|玄武))/)?.[1] ?? ''
+  const xiu = bracketOf('星宿')
+  const xiuJi = fullLunar.match(/星宿\[[^\]]*\]\((吉|凶|平)\)/)?.[1] ?? ''
+  const pengZu = bracketOf('彭祖百忌').replace(/\s+/g, '，')
+  const fangWei = [...fullLunar.matchAll(/(喜神|阳贵神|阴贵神|福神|财神)方位\[([^\]]+)\]\(([^)]+)\)/g)]
+    .map((m) => `${m[1]}${m[3]}（${m[2]}）`).join(' · ')
+  const chong = fullLunar.match(/冲\[([^\]]*)\]/)?.[1]?.replace(/\(/g, '（').replace(/\)/g, '）') ?? ''
+  const sha = bracketOf('煞')
 
   // 五行分布：四天干＋四地支（藏干/合化不计入，仅作快速印象）
   const wxCount: Record<string, number> = { wood: 0, fire: 0, earth: 0, metal: 0, water: 0 }
@@ -330,6 +344,32 @@ export default function ChartPage() {
           ))}
         </div>
 
+        {/* 命盘档案：纳音 / 星宿 / 彭祖百忌 / 方位 / 冲煞（农历 toFullString 全量信息，设计稿省略、此处以档案条还原） */}
+        {(naYin || pengZu || fangWei || xiu) && (
+          <div className="hw-c-box" style={{ marginTop: 14 }}>
+            <div className="hw-c-kv" style={{ lineHeight: 1.9 }}>
+              {naYin && (
+                <p>
+                  <span>纳音：</span>{naYin}<span style={{ marginLeft: 6 }}>（年 · 月 · 日 · 时）</span>
+                </p>
+              )}
+              {xiu && (
+                <p>
+                  <span>星宿：</span>{xiuXiang}{xiuXiang && ' · '}{xiu}
+                  {xiuJi && <span style={{ opacity: 0.6 }}>（{xiuJi}）</span>}
+                </p>
+              )}
+              {pengZu && <p><span>彭祖百忌：</span>{pengZu}</p>}
+              {fangWei && <p><span>方位：</span>{fangWei}</p>}
+              {(chong || sha) && (
+                <p>
+                  <span>冲煞：</span>{chong && `冲${chong}`}{chong && sha ? ' · ' : ''}{sha && `煞${sha}`}
+                </p>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* 藏干/十二长生/神煞/空亡 明细（test-shensha-changsheng.mjs ⑤ 逐字守护） */}
         <div className="hw-c-box hw-c-boxFlush">
           <div className="hw-c-tableWrap">
@@ -344,7 +384,17 @@ export default function ChartPage() {
                 <tr>
                   <td>藏干</td>
                   {pillars.map((p, i) => (
-                    <td key={i}>{p.cangGan.join(' ')}</td>
+                    <td key={i}>
+                      {p.cangGan.map((g, j) => (
+                        <span key={j}>
+                          {j > 0 && '　'}
+                          {g}
+                          {p.tenGodCangGan?.[j] && (
+                            <span style={{ opacity: 0.6, fontSize: 12 }}>（{p.tenGodCangGan[j]}）</span>
+                          )}
+                        </span>
+                      ))}
+                    </td>
                   ))}
                 </tr>
                 {/* 十二长生 / 神煞 / 空亡：新排盘才有此字段，旧命盘（localStorage 旧数据）不显示 */}
