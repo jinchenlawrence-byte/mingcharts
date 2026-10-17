@@ -86,6 +86,10 @@ export async function ensureFatebookReportByAdmin(
       kind: 'fatebook',
       title,
       input: { chart_id: chartId } as never,
+      // ★ result 列 NOT NULL（2026-10-18 踩坑）：本行不存正文（正文在 charts.chart_data）
+      //   但该列无默认值，缺省会以 23502 被拒且被 catch 静默吞掉 → 报告行永不出现。
+      //   存一个指针对象即可，列表页「查看」按 input.chart_id 回放命盘。
+      result: { source: 'fatebook', chart_id: chartId } as never,
       cache_key: chartId
     })
     if (error && (error as { code?: string }).code !== '23505') throw error

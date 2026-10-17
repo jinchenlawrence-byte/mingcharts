@@ -18,7 +18,7 @@ export default function CheckoutButton({
   sku,
   available,
   highlight = false,
-  chartId,
+  chartId: chartIdProp,
   children,
 }: {
   sku: SkuId
@@ -58,8 +58,8 @@ export default function CheckoutButton({
 
       // ★ 绑定目标优先级（2026-10-18 修复）：命盘页直传的当前盘 > 服务端最新一张。
       //   旧逻辑只取最新一张——新排未落库的盘会把款绑到旧盘上。
-      const boundChartId = chartId ?? (await latestChartIdOf(supabase, session.user.id))
-      if (!boundChartId) {
+      const chartId = chartIdProp ?? (await latestChartIdOf(supabase, session.user.id))
+      if (!chartId) {
         setNoChart(true)
         setLoading(false)
         return
@@ -71,7 +71,7 @@ export default function CheckoutButton({
         // ★ chartId 必须随单透传（2026-10-17 修复）：预检算出的 chartId 之前只当门槛没回传，
         //   webhook 收不到 metadata.chartId → payments.chart_id 落 NULL → 按盘解锁永不生效。
         //   归属安全由 webhook 落账前 resolveChartIdForUser 校验（chart 不属于买家则落 NULL）。
-        body: JSON.stringify({ sku, token: session.access_token, chartId: boundChartId }),
+        body: JSON.stringify({ sku, token: session.access_token, chartId }),
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) {

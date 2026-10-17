@@ -112,12 +112,17 @@ CREATE POLICY "Users can view own payments" ON payments
 CREATE POLICY "Anonymous can insert charts" ON charts
   FOR INSERT WITH CHECK (auth.uid() IS NULL);
 
--- 付费报告资产表（合婚/紫微/地理/年运；命书存于 charts 表）
+-- 付费报告资产表（合婚/紫微/地理/年运/命书；命书正文存于 charts.chart_data，本表仅存指针行）
 -- 写入走 service_role（绕过 RLS）；列表/详情走客户端会话 + 下方 SELECT 策略
 CREATE TABLE IF NOT EXISTS reports (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
-  kind TEXT NOT NULL CHECK (kind IN ('hemun', 'ziwei', 'geo', 'annual')),
+  -- ★ fatebook 加入 kind（2026-10-18）：已购命书也进「我的报告」列表。
+  --   【已有数据库】需在 SQL Editor 补跑（新建库跑本文件即已就位）：
+  --     ALTER TABLE reports DROP CONSTRAINT reports_kind_check;
+  --     ALTER TABLE reports ADD CONSTRAINT reports_kind_check
+  --       CHECK (kind IN ('hemun','ziwei','geo','annual','fatebook'));
+  kind TEXT NOT NULL CHECK (kind IN ('hemun', 'ziwei', 'geo', 'annual', 'fatebook')),
   title TEXT NOT NULL,
   input JSONB NOT NULL,
   result JSONB NOT NULL,
