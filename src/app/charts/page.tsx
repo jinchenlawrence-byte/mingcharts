@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 // 我的命盘列表（2026-10-17 风格统一）：接入 hw- 设计语言，逻辑零改动
 import { useEffect, useState } from 'react'
@@ -33,6 +33,7 @@ export default function MyCharts() {
   const [loading, setLoading] = useState(true)
   const [notLogged, setNotLogged] = useState(false)
   const [error, setError] = useState('')
+  const [viewingId, setViewingId] = useState<string | null>(null)
 
   useEffect(() => {
     ;(async () => {
@@ -52,8 +53,37 @@ export default function MyCharts() {
     })()
   }, [])
 
-  const handleView = (row: ChartRow) => {
-    localStorage.setItem('currentChart', JSON.stringify(row.chart_data))
+  const handleView = async (row: ChartRow) => {
+    // chart_data 为任意 JSON，运行时可能含 input/analysis（unlock 响应同构）
+    let data = row.chart_data as Record<string, any>
+    // ★ 已购命盘回看补全文（2026-10-17）：chart_data.analysis.isPaid/paid 是存盘快照，
+    //   付款前存的盘回看会永远锁死（webhook 只写 payments，不回填 chart_data）。
+    //   走 /api/unlock：已购则服务端按同八字行判权益通过，生成/缓存全文并回写
+    //   charts.chart_data（is_paid=true）——本次与以后的回看都有全文；
+    //   未购（402）则按存盘原样展示锁定态，与现状一致。绝不本地重排
+    //   （真太阳时可能改四柱，对不上已购的盘）。
+    setViewingId(row.id)
+    try {
+      if (row?.id && data?.input && data?.pillars && !data.analysis?.isPaid) {
+        const supabase = getSupabase()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (session) {
+          const res = await fetch('/api/unlock', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ token: session.access_token, chart: data }),
+          })
+          const out = await res.json().catch(() => null)
+          if (res.ok && out?.success && out?.data?.chartData) {
+            data = out.data.chartData
+          }
+        }
+      }
+    } catch {
+      // 解锁预取失败不阻断回看：按存盘原样展示
+    }
+    setViewingId(null)
+    localStorage.setItem('currentChart', JSON.stringify(data))
     router.push('/chart')
   }
 
@@ -140,9 +170,10 @@ export default function MyCharts() {
                   <div className="flex gap-3 shrink-0 text-sm">
                     <button
                       onClick={() => handleView(row)}
-                      className="font-medium hover:underline underline-offset-3"
+                      disabled={viewingId !== null}
+                      className="font-medium hover:underline underline-offset-3 disabled:opacity-50"
                     >
-                      查看
+                      {viewingId === row.id ? '解锁中…' : '查看'}
                     </button>
                     <button
                       onClick={() => handleDelete(row.id)}
