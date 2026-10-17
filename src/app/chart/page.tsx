@@ -442,9 +442,9 @@ export default function ChartPage() {
                       <td key={i}>
                         {p.shenSha && p.shenSha.length > 0
                           ? (
-                            /* 竖排：每柱神煞各占一行。横排时整行拼接会把表格撑到溢出
+                            /* 竖排：每柱神煞各占一行，列内居中。横排时整行拼接会把表格撑到溢出
                                （横滚条），竖排后列宽只由最长单个神煞名决定。 */
-                            <div className="flex flex-col items-start gap-0.5">
+                            <div className="flex flex-col items-center gap-0.5">
                               {p.shenSha.map((name, j) => {
                                 const href = shenshaHref(name)
                                 return href
