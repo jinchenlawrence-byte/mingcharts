@@ -49,7 +49,7 @@ export default function Nav() {
   }
 
   const linkCls = (hide?: 'md' | 'lg') =>
-    `text-ink/60 transition-colors hover:text-ink${
+    `whitespace-nowrap text-ink/60 transition-colors hover:text-ink${
       hide === 'md' ? ' hidden md:inline' : hide === 'lg' ? ' hidden lg:inline' : ''
     }`
 
@@ -66,34 +66,37 @@ export default function Nav() {
           ))}
         </span>
       </Link>
-      <div className="flex items-center gap-3 text-[13px] sm:gap-4 sm:text-[15px]">
-        {NAV_LINKS.map((l) => (
-          <Link key={l.href} href={l.href} className={linkCls(l.hide)}>
-            {l.label}
-          </Link>
-        ))}
-        {email ? (
-          <>
-            <Link href="/charts" className={linkCls('md')}>
-              我的命盘
+      <div className="flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3">
+        <div className="flex min-w-0 items-center gap-3 overflow-x-auto text-[13px] [scrollbar-width:none] sm:gap-4 sm:text-[15px] [&::-webkit-scrollbar]:hidden">
+          {NAV_LINKS.map((l) => (
+            <Link key={l.href} href={l.href} className={linkCls(l.hide)}>
+              {l.label}
             </Link>
-            <Link href="/reports" className={linkCls('md')}>
-              我的报告
-            </Link>
-            <Link href="/account" className="text-ink/60 transition-colors hover:text-ink">
-              账号设置
-            </Link>
-            <span className="max-w-[160px] truncate text-ink/40 hidden sm:inline">
-              {email}
-            </span>
-            <button
-              onClick={handleLogout}
-              className="text-ink/50 transition-colors hover:text-ink"
-            >
-              退出
-            </button>
-          </>
-        ) : (
+          ))}
+          {email ? (
+            <>
+              <Link href="/charts" className={linkCls('md')}>
+                我的命盘
+              </Link>
+              <Link href="/reports" className={linkCls('md')}>
+                我的报告
+              </Link>
+              <Link href="/account" className="whitespace-nowrap text-ink/60 transition-colors hover:text-ink">
+                账号设置
+              </Link>
+              <span className="max-w-[160px] truncate text-ink/40 hidden sm:inline">
+                {email}
+              </span>
+              <button
+                onClick={handleLogout}
+                className="whitespace-nowrap text-ink/50 transition-colors hover:text-ink"
+              >
+                退出
+              </button>
+            </>
+          ) : null}
+        </div>
+        {!email && (
           <Link
             href="/auth"
             className="shrink-0 rounded-full bg-ink px-3.5 py-2 text-[13px] font-bold text-white transition hover:brightness-110 sm:px-5 sm:text-[15px]"
