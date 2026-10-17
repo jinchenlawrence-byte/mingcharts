@@ -1,13 +1,13 @@
 // 神煞名 → 命理知识文章 slug 映射（/chart 排盘结果页神煞跳转的唯一事实源）。
 //
 // 映射完整性由 scripts/test-shensha-articles.mjs 守护：
-//   SHEN_SHA_SLUG 键集 === paipan.SHEN_SHA_NAMES（38 项），值必须能在 articles.ts
+//   SHEN_SHA_SLUG 键集 === paipan.SHEN_SHA_NAMES（51 项），值必须能在 articles.ts
 //   的「神煞查询」分类下找到对应文章（slug 唯一、标题含神煞名）。
 // 新增神煞须同步三处：paipan.ts 神煞表、本映射、articles.ts 文章。
 export const SHEN_SHA_SLUG: Record<string, string> = {
   // ① 日干起
   '天乙贵人': 'tianyi-guiren-chafa',
-  '文昌': 'wenchang-chafa',
+  '文昌贵人': 'wenchang-chafa',
   '禄神': 'lushen-chafa',
   '羊刃': 'yangren-chafa',
   '太极贵人': 'taiji-guiren-chafa',
@@ -15,6 +15,10 @@ export const SHEN_SHA_SLUG: Record<string, string> = {
   '国印贵人': 'guoyin-guiren-chafa',
   '金舆': 'jinyu-chafa',
   '红艳煞': 'hongyansha-chafa',
+  '天官贵人': 'tianguan-guiren-chafa',
+  '天厨贵人': 'tianchu-guiren-chafa',
+  '学堂': 'xuetang-chafa',
+  '词馆': 'ciguan-chafa',
   // ② 年支/日支三合局起
   '桃花': 'taohua-xing-chafa',
   '驿马': 'yima-xing-chafa',
@@ -23,14 +27,22 @@ export const SHEN_SHA_SLUG: Record<string, string> = {
   '劫煞': 'jiesha-chafa',
   '灾煞': 'zaisha-chafa',
   '亡神': 'wangshen-chafa',
+  '六厄': 'liue-chafa',
+  '金匮': 'jinkui-chafa',
   // ③ 年支起
   '孤辰': 'guchen-chafa',
   '寡宿': 'guasu-chafa',
   '红鸾': 'hongluan-chafa',
   '天喜': 'tianxi-chafa',
+  '元辰': 'yuanchen-chafa',
+  '勾绞煞': 'goujiao-sha-chafa',
+  '血刃': 'xueren-chafa',
+  '破碎': 'posui-chafa',
   // ④ 月支起
   '天德贵人': 'tiande-guiren-chafa',
   '月德贵人': 'yuede-guiren-chafa',
+  '天德合': 'tiande-he-chafa',
+  '月德合': 'yuede-he-chafa',
   '天医': 'tianyi-chafa',
   '天赦': 'tianshe-chafa',
   '四废': 'sifei-chafa',
@@ -39,6 +51,7 @@ export const SHEN_SHA_SLUG: Record<string, string> = {
   '阴阳差错': 'yinyang-chacuo-chafa',
   '十恶大败': 'shiedabai-chafa',
   '孤鸾煞': 'guluan-sha-chafa',
+  '九丑日': 'jiuchou-ri-chafa',
   '三奇贵人': 'sanqi-guiren-chafa',
   // ⑥ 第二批
   '童子煞': 'tongzisha-chafa',

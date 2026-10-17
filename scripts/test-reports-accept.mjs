@@ -129,7 +129,7 @@ let schemaFail = 0
 const sql = read('../supabase/schema.sql')
 const SQL_NEEDS = [
   'CREATE TABLE IF NOT EXISTS reports',
-  "kind TEXT NOT NULL CHECK (kind IN ('hemun', 'ziwei', 'geo', 'annual'))",
+  "kind TEXT NOT NULL CHECK (kind IN ('hemun', 'ziwei', 'geo', 'annual', 'fatebook'))",
   'ALTER TABLE reports ENABLE ROW LEVEL SECURITY',
   'FOR SELECT USING (auth.uid() = user_id)',
   'FOR INSERT WITH CHECK (auth.uid() = user_id)',

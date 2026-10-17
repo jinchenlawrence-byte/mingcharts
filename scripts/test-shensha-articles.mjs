@@ -1,7 +1,7 @@
 // 神煞知识文章与跳转映射回归（纳入 npm run verify，纯本地不耗 API）
 //
 // 三方一致性（单一事实源链）：
-//   paipan.SHEN_SHA_NAMES（38 项神煞名）
+//   paipan.SHEN_SHA_NAMES（51 项神煞名）
 //     ↔ shenshaArticles.SHEN_SHA_SLUG（名→slug 映射）
 //     ↔ articles.ts「神煞查询」分类文章
 // 断言纪律：凡断言「函数行为」必须真调用（shenshaHref 实际调用），源码文本断言仅用于接线守护。
@@ -22,12 +22,12 @@ const check = (ok, line) => {
 }
 
 // ═══════════════════════════════════════════════════════════
-// ① 名字清单：38 项、无重复
+// ① 名字清单：51 项、无重复
 // ═══════════════════════════════════════════════════════════
 console.log('① SHEN_SHA_NAMES 名字清单')
 {
   const names = [...SHEN_SHA_NAMES]
-  check(names.length === 38, `SHEN_SHA_NAMES 共 38 项（实测 ${names.length}）`)
+  check(names.length === 51, `SHEN_SHA_NAMES 共 51 项（实测 ${names.length}）`)
   check(new Set(names).size === names.length, 'SHEN_SHA_NAMES 无重复')
 }
 
@@ -38,12 +38,12 @@ console.log('② SHEN_SHA_SLUG 映射与 shenshaHref 真调用')
 {
   const names = [...SHEN_SHA_NAMES]
   const mapKeys = Object.keys(SHEN_SHA_SLUG)
-  check(mapKeys.length === 38, `SHEN_SHA_SLUG 共 38 键（实测 ${mapKeys.length}）`)
+  check(mapKeys.length === 51, `SHEN_SHA_SLUG 共 51 键（实测 ${mapKeys.length}）`)
   check(names.every(n => mapKeys.includes(n)) && mapKeys.every(k => names.includes(k)),
     '映射键集与 SHEN_SHA_NAMES 完全一致（多一个少一个都翻红）')
 
   const hrefOk = names.every(n => shenshaHref(n) === `/article/${SHEN_SHA_SLUG[n]}`)
-  check(hrefOk, 'shenshaHref 真调用：38 名全部返回 /article/<slug>')
+  check(hrefOk, 'shenshaHref 真调用：51 名全部返回 /article/<slug>')
   check(shenshaHref('不存在的神煞') === null, 'shenshaHref 未知名返回 null（不渲染死链）')
 
   const slugs = Object.values(SHEN_SHA_SLUG)
@@ -53,7 +53,7 @@ console.log('② SHEN_SHA_SLUG 映射与 shenshaHref 真调用')
 // ═══════════════════════════════════════════════════════════
 // ③ 映射值 ↔ articles：每篇存在、属神煞查询分类、可被神煞名检索到
 // ═══════════════════════════════════════════════════════════
-console.log('③ 文章存在性与检索性（38 项逐一核对）')
+console.log('③ 文章存在性与检索性（51 项逐一核对）')
 {
   const allSlugs = articles.map(a => a.slug)
   check(new Set(allSlugs).size === allSlugs.length, `全部文章 slug 唯一（共 ${allSlugs.length} 篇）`)

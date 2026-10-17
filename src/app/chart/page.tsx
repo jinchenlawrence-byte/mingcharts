@@ -441,17 +441,18 @@ export default function ChartPage() {
                     {pillars.map((p, i) => (
                       <td key={i}>
                         {p.shenSha && p.shenSha.length > 0
-                          ? p.shenSha.map((name, j) => {
-                              const href = shenshaHref(name)
-                              return (
-                                <span key={j}>
-                                  {j > 0 && '、'}
-                                  {href
-                                    ? <Link href={href} className="hw-c-link">{name}</Link>
-                                    : name}
-                                </span>
-                              )
-                            })
+                          ? (
+                            /* 竖排：每柱神煞各占一行。横排时整行拼接会把表格撑到溢出
+                               （横滚条），竖排后列宽只由最长单个神煞名决定。 */
+                            <div className="flex flex-col items-start gap-0.5">
+                              {p.shenSha.map((name, j) => {
+                                const href = shenshaHref(name)
+                                return href
+                                  ? <Link key={j} href={href} className="hw-c-link">{name}</Link>
+                                  : <span key={j}>{name}</span>
+                              })}
+                            </div>
+                          )
                           : '—'}
                       </td>
                     ))}
@@ -474,7 +475,7 @@ export default function ChartPage() {
           </div>
           {/* 口径说明：文案与 src/lib/paipan.ts 的 SHEN_SHA_NOTE 同步（测试守护一致性） */}
           <p className="hw-c-fine">
-            神煞取法依《渊海子平》《三命通会》通行口径：天乙贵人、文昌、禄神、羊刃、太极贵人、福星贵人、国印贵人、金舆、红艳煞自日干起（羊刃仅阳干）；桃花、驿马、华盖、将星、劫煞、灾煞、亡神自年支、日支起（三合局取支）；孤辰寡宿、红鸾、天喜自年支起；天德贵人、月德贵人、天医、天赦、四废自月支起（天赦、四废见于日柱）；魁罡、阴阳差错、十恶大败、孤鸾煞取自日柱干支，三奇贵人取年月日或月日时天干顺布；童子煞依月支季节（春秋寅子、冬夏卯未辰）或年柱纳音（金木命见午卯、水火命见酉戌、土命见辰巳）查日支、时支，德秀贵人自月支起见四柱天干（《三命通会》），金神取乙丑、己巳、癸酉见于日柱、时柱，飞刃自日干起（仅阳干、羊刃对冲），流霞自日干起，天罗地网依年柱纳音（火命见戌亥、水土命见辰巳，金木命不论）查日支、时支，六秀日、十灵日取自日柱干支；空亡为各柱干支所在旬空之二支。均为传统民俗论法（童子煞属民俗传说），流派间取法或有差异，仅供参考、非确定性，不构成任何决策建议。
+            神煞取法依《渊海子平》《三命通会》通行口径：天乙贵人、文昌贵人、禄神、羊刃、太极贵人、福星贵人、国印贵人、金舆、红艳煞、天官贵人、天厨贵人自日干起（羊刃仅阳干），学堂、词馆依日干取长生、临官之干支；桃花、驿马、华盖、将星、劫煞、灾煞、亡神、六厄自年支、日支起（三合局取支，六厄取局之死位），金匮取年支三合局之帝旺；孤辰寡宿、红鸾、天喜、元辰、勾绞煞、血刃、破碎自年支起（元辰依阳男阴女取年支冲前一位、阴男阳女取冲后一位，勾绞煞取年支前、后三辰，血刃依《果老星宗》驾后神煞戌上起子逆行，破碎即暗金的煞子午卯酉见巳、寅申巳亥见酉、辰戌丑未见丑）；天德贵人、月德贵人、天医、天赦、四废、月德合、天德合自月支起（天赦、四废见于日柱，月德合、天德合各取月德、天德之合）；魁罡、阴阳差错、十恶大败、孤鸾煞、九丑日取自日柱干支（九丑日为乙卯、己卯、辛卯、乙酉、己酉、辛酉、戊子、戊午、壬子、壬午十日），三奇贵人取年月日或月日时天干顺布；童子煞依月支季节（春秋寅子、冬夏卯未辰）或年柱纳音（金木命见午卯、水火命见酉戌、土命见辰巳）查日支、时支，德秀贵人自月支起见四柱天干（《三命通会》），金神取乙丑、己巳、癸酉见于日柱、时柱，飞刃自日干起（仅阳干、羊刃对冲），流霞自日干起，天罗地网依年柱纳音（火命见戌亥、水土命见辰巳，金木命不论）查日支、时支，六秀日、十灵日取自日柱干支；空亡为各柱干支所在旬空之二支。均为传统民俗论法（童子煞属民俗传说），流派间取法或有差异，仅供参考、非确定性，不构成任何决策建议。
           </p>
           <p className="hw-c-fine">
             点击神煞、十二长生、空亡名称可查看对应知识文章（命理知识 › 神煞查询）。
@@ -550,7 +551,7 @@ export default function ChartPage() {
         {!chart.analysis.isPaid && (
           <div className="hw-c-cta">
             {chart.locked?.preview && <p className="hw-c-dx">{chart.locked.preview}</p>}
-            {syncing && <p className="hw-c-meta">命书同步中，请稍候…</p>}
+            {syncing && <p className="hw-c-syncing">命书同步中，请稍候…</p>}
             <div style={{ maxWidth: 380, margin: '0 auto' }}>
               <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} chartId={screenChartId ?? undefined}>
                 解锁完整命书 · {FATEBOOK_PRICE}

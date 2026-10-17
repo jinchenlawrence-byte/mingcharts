@@ -28,9 +28,11 @@ export interface Pillar {
 
 /** 神煞取法说明（展示层直接引用，保证口径与实现同源；测试守护逐字同步） */
 export const SHEN_SHA_NOTE =
-  '神煞取法依《渊海子平》《三命通会》通行口径：天乙贵人、文昌、禄神、羊刃、太极贵人、福星贵人、国印贵人、金舆、红艳煞自日干起（羊刃仅阳干）；' +
-  '桃花、驿马、华盖、将星、劫煞、灾煞、亡神自年支、日支起（三合局取支）；孤辰寡宿、红鸾、天喜自年支起；' +
-  '天德贵人、月德贵人、天医、天赦、四废自月支起（天赦、四废见于日柱）；魁罡、阴阳差错、十恶大败、孤鸾煞取自日柱干支，三奇贵人取年月日或月日时天干顺布；' +
+  '神煞取法依《渊海子平》《三命通会》通行口径：天乙贵人、文昌贵人、禄神、羊刃、太极贵人、福星贵人、国印贵人、金舆、红艳煞、天官贵人、天厨贵人自日干起（羊刃仅阳干），学堂、词馆依日干取长生、临官之干支；' +
+  '桃花、驿马、华盖、将星、劫煞、灾煞、亡神、六厄自年支、日支起（三合局取支，六厄取局之死位），金匮取年支三合局之帝旺；' +
+  '孤辰寡宿、红鸾、天喜、元辰、勾绞煞、血刃、破碎自年支起（元辰依阳男阴女取年支冲前一位、阴男阳女取冲后一位，勾绞煞取年支前、后三辰，血刃依《果老星宗》驾后神煞戌上起子逆行，破碎即暗金的煞子午卯酉见巳、寅申巳亥见酉、辰戌丑未见丑）；' +
+  '天德贵人、月德贵人、天医、天赦、四废、月德合、天德合自月支起（天赦、四废见于日柱，月德合、天德合各取月德、天德之合）；' +
+  '魁罡、阴阳差错、十恶大败、孤鸾煞、九丑日取自日柱干支（九丑日为乙卯、己卯、辛卯、乙酉、己酉、辛酉、戊子、戊午、壬子、壬午十日），三奇贵人取年月日或月日时天干顺布；' +
   '童子煞依月支季节（春秋寅子、冬夏卯未辰）或年柱纳音（金木命见午卯、水火命见酉戌、土命见辰巳）查日支、时支，德秀贵人自月支起见四柱天干（《三命通会》），' +
   '金神取乙丑、己巳、癸酉见于日柱、时柱，飞刃自日干起（仅阳干、羊刃对冲），流霞自日干起，天罗地网依年柱纳音（火命见戌亥、水土命见辰巳，金木命不论）查日支、时支，' +
   '六秀日、十灵日取自日柱干支；空亡为各柱干支所在旬空之二支。均为传统民俗论法（童子煞属民俗传说），流派间取法或有差异，仅供参考、非确定性，不构成任何决策建议。'
@@ -117,7 +119,7 @@ const TIAN_YI: Record<string, string[]> = {
   '辛': ['午', '寅']
 }
 
-/** 文昌：「甲乙巳午报君知，丙戊申宫丁己鸡，庚猪辛鼠壬逢虎，癸人见卯入云梯」（日干起） */
+/** 文昌贵人：「甲乙巳午报君知，丙戊申宫丁己鸡，庚猪辛鼠壬逢虎，癸人见卯入云梯」（日干起） */
 const WEN_CHANG: Record<string, string> = {
   '甲': '巳', '乙': '午', '丙': '申', '丁': '酉', '戊': '申',
   '己': '酉', '庚': '亥', '辛': '子', '壬': '寅', '癸': '卯'
@@ -133,6 +135,9 @@ const LU_SHEN: Record<string, string> = {
 const YANG_REN: Record<string, string> = {
   '甲': '卯', '丙': '午', '戊': '午', '庚': '酉', '壬': '子'
 }
+
+/** 五阳干（甲丙戊庚壬），用于元辰/勾绞煞判定阳年/阴年 */
+const YANG_GAN_SET = new Set(['甲', '丙', '戊', '庚', '壬'])
 
 /** 太极贵人：「甲乙生人子午中，丙丁鸡兔定亨通，戊己两干临四季（辰戌丑未），庚辛寅亥禄丰隆，壬癸巳申偏喜美」（日干起） */
 const TAI_JI: Record<string, string[]> = {
@@ -168,6 +173,29 @@ const HONG_YAN: Record<string, string> = {
   '己': '辰', '庚': '戌', '辛': '酉', '壬': '子', '癸': '申'
 }
 
+/** 天官贵人（《渊海子平》）：「天官遁甲入羊群，乙诲青龙事要陈，丙见巳兮丁见酉，戊戌己卯庚亥寻，辛申壬寅癸见午」（日干起） */
+const TIAN_GUAN: Record<string, string> = {
+  '甲': '未', '乙': '辰', '丙': '巳', '丁': '酉', '戊': '戌',
+  '己': '卯', '庚': '亥', '辛': '申', '壬': '寅', '癸': '午'
+}
+
+/** 天厨贵人（《古今图书集成》引古籍，「天厨名食神禄」）：「甲乙巳午丙在子，丁戊巳午己申储，庚落寅中辛寻午，壬厨居酉癸临猪」（日干起） */
+const TIAN_CHU: Record<string, string> = {
+  '甲': '巳', '乙': '午', '丙': '子', '丁': '巳', '戊': '午',
+  '己': '申', '庚': '寅', '辛': '午', '壬': '酉', '癸': '亥'
+}
+
+/** 学堂（《渊海子平》论十干学堂，「长生乃学堂之正位」，子平法取日干长生干支）：甲见己亥、乙见壬午、丙见丙寅、丁见丁酉、戊见戊寅、己见己酉、庚见辛巳、辛见甲子、壬见甲申、癸见乙卯（日干起，配干支） */
+const XUE_TANG: Record<string, string> = {
+  '甲': '己亥', '乙': '壬午', '丙': '丙寅', '丁': '丁酉', '戊': '戊寅',
+  '己': '己酉', '庚': '辛巳', '辛': '甲子', '壬': '甲申', '癸': '乙卯'
+}
+/** 词馆（《渊海子平》「临官乃词馆之正位」）：甲见庚寅、乙见辛卯、丙见乙巳、丁见戊午、戊见丁巳、己见庚午、庚见壬申、辛见癸酉、壬见癸亥、癸见壬戌（日干起，配干支） */
+const CI_GUAN: Record<string, string> = {
+  '甲': '庚寅', '乙': '辛卯', '丙': '乙巳', '丁': '戊午', '戊': '丁巳',
+  '己': '庚午', '庚': '壬申', '辛': '癸酉', '壬': '癸亥', '癸': '壬戌'
+}
+
 type SanHeGroup = '申子辰' | '寅午戌' | '巳酉丑' | '亥卯未'
 
 /** 三合局归属：每支所属三合局 */
@@ -192,6 +220,10 @@ const JIE_SHA: Record<SanHeGroup, string> = { '申子辰': '巳', '寅午戌': '
 const ZAI_SHA: Record<SanHeGroup, string> = { '申子辰': '午', '寅午戌': '子', '巳酉丑': '卯', '亥卯未': '酉' }
 /** 亡神（三合局临官位）：「申子辰亡在亥，寅午戌亡在巳，巳酉丑亡在申，亥卯未亡在寅」（年支/日支起） */
 const WANG_SHEN: Record<SanHeGroup, string> = { '申子辰': '亥', '寅午戌': '巳', '巳酉丑': '申', '亥卯未': '寅' }
+/** 六厄（三合局死位，《三命通会》「常居马前一辰，劫后二辰」）：「申子辰见卯，寅午戌见酉，巳酉丑见子，亥卯未见午」（年支/日支起） */
+const LIU_E: Record<SanHeGroup, string> = { '申子辰': '卯', '寅午戌': '酉', '巳酉丑': '子', '亥卯未': '午' }
+/** 金匮（财帛星，三合局之帝旺）：「申子辰见子，亥卯未见卯，寅午戌见午，巳酉丑见酉」（年支起） */
+const JIN_GUI: Record<SanHeGroup, string> = { '申子辰': '子', '寅午戌': '午', '巳酉丑': '酉', '亥卯未': '卯' }
 
 /** 孤辰（年支起）：「亥子丑孤在寅，寅卯辰孤在巳，巳午未孤在申，申酉戌孤在亥」 */
 const GU_CHEN: Record<string, string> = {
@@ -217,6 +249,17 @@ const TIAN_XI: Record<string, string> = {
   '子': '酉', '丑': '申', '寅': '未', '卯': '午', '辰': '巳', '巳': '辰',
   '午': '卯', '未': '寅', '申': '丑', '酉': '子', '戌': '亥', '亥': '戌'
 }
+/** 血刃（《果老星宗》驾后神煞，「戌上起子逆行」；年支起）：子见戌、丑见酉、寅见申、卯见未、辰见午、巳见巳、午见辰、未见卯、申见寅、酉见丑、戌见子、亥见亥 */
+const XUE_REN: Record<string, string> = {
+  '子': '戌', '丑': '酉', '寅': '申', '卯': '未', '辰': '午', '巳': '巳',
+  '午': '辰', '未': '卯', '申': '寅', '酉': '丑', '戌': '子', '亥': '亥'
+}
+/** 破碎（《三命通会》暗金的煞，又名吟呻、白衣；年支起）：「子午卯酉在巳，寅申巳亥在酉，辰戌丑未在丑」 */
+const PO_SUI: Record<string, string> = {
+  '子': '巳', '午': '巳', '卯': '巳', '酉': '巳',
+  '寅': '酉', '申': '酉', '巳': '酉', '亥': '酉',
+  '辰': '丑', '戌': '丑', '丑': '丑', '未': '丑'
+}
 
 /** 天德贵人（月支起，见四柱天干或地支）：「正丁二申中，三壬四辛同，五乾六甲上，七癸八艮宫（寅），九丙十居乙，子巳（十一月巳）十二月庚」 */
 const TIAN_DE: Record<string, string> = {
@@ -225,6 +268,13 @@ const TIAN_DE: Record<string, string> = {
 }
 /** 月德贵人（月支三合局起，见四柱天干）：「寅午戌月在丙，申子辰月在壬，亥卯未月在甲，巳酉丑月在庚」 */
 const YUE_DE: Record<SanHeGroup, string> = { '申子辰': '壬', '寅午戌': '丙', '巳酉丑': '庚', '亥卯未': '甲' }
+/** 月德合（月支三合局起，见四柱天干）：「寅午戌月在辛，申子辰月在丁，亥卯未月在己，巳酉丑月在乙」——即月德贵人之合干 */
+const YUE_DE_HE: Record<SanHeGroup, string> = { '申子辰': '丁', '寅午戌': '辛', '巳酉丑': '乙', '亥卯未': '己' }
+/** 天德合（月支起，见四柱天干或地支）＝天德贵人之六合：天德为干取其合干、为支取其六合支（寅见壬、卯见巳、辰见丁、巳见丙、午见寅、未见己、申见戊、酉见亥、戌见辛、亥见庚、子见申、丑见乙） */
+const TIAN_DE_HE: Record<string, string> = {
+  '寅': '壬', '卯': '巳', '辰': '丁', '巳': '丙', '午': '寅', '未': '己',
+  '申': '戊', '酉': '亥', '戌': '辛', '亥': '庚', '子': '申', '丑': '乙'
+}
 /** 天医（月支前一支）：正月（寅月）见丑、二月见寅，依次类推 */
 const ZHI_ORDER: string[] = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
 /** 四季（月支→季节），供天赦/四废查表 */
@@ -251,6 +301,8 @@ const YIN_YANG_CHA_CUO: string[] = ['丙子', '丁丑', '戊寅', '辛卯', '壬
 const SHI_E_DA_BAI: string[] = ['甲辰', '乙巳', '壬申', '丙申', '丁亥', '庚辰', '戊戌', '癸亥', '辛巳', '己丑']
 /** 孤鸾煞（日柱）：「木火逢蛇大不祥，金猪何必强猴郎，土猴木虎夫何在」→ 乙巳、丁巳、辛亥、戊申、甲寅 */
 const GU_LUAN: string[] = ['乙巳', '丁巳', '辛亥', '戊申', '甲寅']
+/** 九丑日（《御定星历考原》引《金柜经》；日柱）：「壬戊两双居子午，乙辛卯酉亦重逢，更将己上兔鸡位」→ 乙卯、己卯、辛卯、乙酉、己酉、辛酉、戊子、戊午、壬子、壬午 */
+const JIU_CHOU_RI: string[] = ['乙卯', '己卯', '辛卯', '乙酉', '己酉', '辛酉', '戊子', '戊午', '壬子', '壬午']
 /** 三奇贵人（年月日或月日时天干顺布）：天上甲戊庚、地下乙丙丁、人中壬癸辛 */
 const SAN_QI: string[] = ['甲戊庚', '乙丙丁', '壬癸辛']
 
@@ -323,31 +375,32 @@ const LIU_XIU_RI: string[] = ['丙午', '丁未', '戊子', '戊午', '己丑', 
 /** 十灵日（日柱）：甲辰、乙亥、丙辰、丁酉、戊午、庚戌、庚寅、辛亥、壬寅、癸未 */
 const SHI_LING_RI: string[] = ['甲辰', '乙亥', '丙辰', '丁酉', '戊午', '庚戌', '庚寅', '辛亥', '壬寅', '癸未']
 
-/** 38 项神煞名清单（= shenShaOf 扫描序）。知识文章映射（shenshaArticles.ts）与测试以此对账，新增神煞须同步三处：本表、映射、文章 */
+/** 51 项神煞名清单（= shenShaOf 扫描序）。知识文章映射（shenshaArticles.ts）与测试以此对账，新增神煞须同步三处：本表、映射、文章 */
 export const SHEN_SHA_NAMES: readonly string[] = [
   // ① 日干起
-  '天乙贵人', '文昌', '禄神', '羊刃', '太极贵人', '福星贵人', '国印贵人', '金舆', '红艳煞',
+  '天乙贵人', '文昌贵人', '禄神', '羊刃', '太极贵人', '福星贵人', '国印贵人', '金舆', '红艳煞',
+  '天官贵人', '天厨贵人', '学堂', '词馆',
   // ② 年支/日支三合局起
-  '桃花', '驿马', '华盖', '将星', '劫煞', '灾煞', '亡神',
+  '桃花', '驿马', '华盖', '将星', '劫煞', '灾煞', '亡神', '六厄', '金匮',
   // ③ 年支起
-  '孤辰', '寡宿', '红鸾', '天喜',
+  '孤辰', '寡宿', '红鸾', '天喜', '元辰', '勾绞煞', '血刃', '破碎',
   // ④ 月支起
-  '天德贵人', '月德贵人', '天医', '天赦', '四废',
+  '天德贵人', '月德贵人', '天德合', '月德合', '天医', '天赦', '四废',
   // ⑤ 日柱系
-  '魁罡', '阴阳差错', '十恶大败', '孤鸾煞', '三奇贵人',
+  '魁罡', '阴阳差错', '十恶大败', '孤鸾煞', '九丑日', '三奇贵人',
   // ⑥ 第二批
   '童子煞', '德秀贵人', '金神', '飞刃', '流霞', '天罗地网', '六秀日', '十灵日'
 ]
 
 /**
  * 四柱神煞（渊海子平/三命通会通行口径）。
- * 输入四柱干支与日主，返回每柱命中的神煞名列表。
+ * 输入四柱干支与日主（可选性别，供元辰/勾绞煞按阳男阴女、阴男阳女取法），返回每柱命中的神煞名列表。
  * 柱内顺序 = 扫描序：
- *   ① 日干起：天乙贵人→文昌→禄神→羊刃→太极贵人→福星贵人→国印贵人→金舆→红艳煞；
- *   ② 年支、日支逐局（去重）：桃花→驿马→华盖→将星→劫煞→灾煞→亡神；
- *   ③ 年支起：孤辰→寡宿→红鸾→天喜；
- *   ④ 月支起：天德贵人→月德贵人→天医（天赦、四废仅日柱）；
- *   ⑤ 日柱：魁罡→阴阳差错→十恶大败→孤鸾煞；三奇贵人（年月日/月日时顺布）；
+ *   ① 日干起：天乙贵人→文昌贵人→禄神→羊刃→太极贵人→福星贵人→国印贵人→金舆→红艳煞→天官贵人→天厨贵人→学堂→词馆；
+ *   ② 年支、日支逐局（去重）：桃花→驿马→华盖→将星→劫煞→灾煞→亡神→六厄→金匮；
+ *   ③ 年支起：孤辰→寡宿→红鸾→天喜→元辰→勾绞煞→血刃→破碎；
+ *   ④ 月支起：天德贵人→月德贵人→天德合→月德合→天医（天赦、四废仅日柱）；
+ *   ⑤ 日柱：魁罡→阴阳差错→十恶大败→孤鸾煞→九丑日；三奇贵人（年月日/月日时顺布）；
  *   ⑥ 第二批：童子煞（月支季节/年柱纳音起，见日支、时支）→德秀贵人（月支起见四柱天干）→
  *      金神（日柱/时柱）→飞刃（日干起，仅阳干）→流霞（日干起）→天罗地网（年柱纳音起，见日支、时支）→
  *      六秀日/十灵日（日柱）。
@@ -355,7 +408,8 @@ export const SHEN_SHA_NAMES: readonly string[] = [
  */
 export function shenShaOf(
   pillars: Array<{ gan: string; zhi: string }>,
-  dayMaster: string
+  dayMaster: string,
+  gender?: number
 ): string[][] {
   const result: string[][] = [[], [], [], []]
   const push = (name: string, match: (i: number) => boolean) => {
@@ -368,7 +422,7 @@ export function shenShaOf(
 
   // ① 日干起
   push('天乙贵人', byZhi(TIAN_YI[dayMaster] || []))
-  push('文昌', byZhi([WEN_CHANG[dayMaster]].filter(Boolean)))
+  push('文昌贵人', byZhi([WEN_CHANG[dayMaster]].filter(Boolean)))
   push('禄神', byZhi([LU_SHEN[dayMaster]].filter(Boolean)))
   if (YANG_REN[dayMaster]) push('羊刃', byZhi([YANG_REN[dayMaster]]))
   push('太极贵人', byZhi(TAI_JI[dayMaster] || []))
@@ -376,6 +430,13 @@ export function shenShaOf(
   push('国印贵人', byZhi([GUO_YIN[dayMaster]].filter(Boolean)))
   push('金舆', byZhi([JIN_YU[dayMaster]].filter(Boolean)))
   push('红艳煞', byZhi([HONG_YAN[dayMaster]].filter(Boolean)))
+  push('天官贵人', byZhi([TIAN_GUAN[dayMaster]].filter(Boolean)))
+  push('天厨贵人', byZhi([TIAN_CHU[dayMaster]].filter(Boolean)))
+  // 学堂/词馆：取日干对应长生/临官之干支（配干配支，见四柱）
+  const xueTang = XUE_TANG[dayMaster]
+  if (xueTang) push('学堂', (i) => pillars[i].gan + pillars[i].zhi === xueTang)
+  const ciGuan = CI_GUAN[dayMaster]
+  if (ciGuan) push('词馆', (i) => pillars[i].gan + pillars[i].zhi === ciGuan)
 
   // ② 年支、日支起（三合局系）
   for (const sz of [...new Set([pillars[0].zhi, pillars[2].zhi])]) {
@@ -388,6 +449,12 @@ export function shenShaOf(
     push('劫煞', byZhi([JIE_SHA[g]]))
     push('灾煞', byZhi([ZAI_SHA[g]]))
     push('亡神', byZhi([WANG_SHEN[g]]))
+    push('六厄', byZhi([LIU_E[g]]))
+  }
+  // 金匮：年支三合局之帝旺（财帛星）
+  {
+    const ygz = SAN_HE_GROUP[pillars[0].zhi]
+    if (ygz) push('金匮', byZhi([JIN_GUI[ygz]]))
   }
 
   // ③ 年支起
@@ -396,13 +463,37 @@ export function shenShaOf(
   push('寡宿', byZhi([GUA_SU[yZhi]].filter(Boolean)))
   push('红鸾', byZhi([HONG_LUAN[yZhi]].filter(Boolean)))
   push('天喜', byZhi([TIAN_XI[yZhi]].filter(Boolean)))
+  // 元辰（大耗）、勾绞煞：依阳男阴女 / 阴男阳女取法（需性别；未传性别则不取，不臆断）
+  if (gender === 0 || gender === 1) {
+    const yearYin = !YANG_GAN_SET.has(pillars[0].gan)
+    const yangNanYinNv = (gender === 1 && !yearYin) || (gender === 0 && yearYin)
+    const yIdx = ZHI_ORDER.indexOf(yZhi)
+    // 元辰：冲前一位（阳男阴女）／冲后一位（阴男阳女）
+    if (yIdx >= 0) {
+      const chongIdx = (yIdx + 6) % 12
+      const yuanChen = yangNanYinNv ? ZHI_ORDER[(chongIdx + 1) % 12] : ZHI_ORDER[(chongIdx + 11) % 12]
+      push('元辰', byZhi([yuanChen]))
+      // 勾绞煞：命前三辰为勾、命后三辰为绞（阳男阴女）；阴男阳女反是
+      const three = yangNanYinNv ? 3 : 9
+      const gou = ZHI_ORDER[(yIdx + three) % 12]
+      const jiao = ZHI_ORDER[(yIdx + 12 - three) % 12]
+      push('勾绞煞', byZhi([gou, jiao]))
+    }
+  }
+  // 血刃（《果老星宗》驾后神煞戌上起子逆行）、破碎（暗金的煞）
+  push('血刃', byZhi([XUE_REN[yZhi]].filter(Boolean)))
+  push('破碎', byZhi([PO_SUI[yZhi]].filter(Boolean)))
 
   // ④ 月支起（天德见天干或地支；月德见天干；天医＝月支前一支；天赦/四废见日柱干支）
   const mZhi = pillars[1].zhi
   const tianDe = TIAN_DE[mZhi]
   if (tianDe) push('天德贵人', (i) => pillars[i].gan === tianDe || pillars[i].zhi === tianDe)
+  const tianDeHe = TIAN_DE_HE[mZhi]
+  if (tianDeHe) push('天德合', (i) => pillars[i].gan === tianDeHe || pillars[i].zhi === tianDeHe)
   const yueDe = YUE_DE[SAN_HE_GROUP[mZhi]]
   if (yueDe) push('月德贵人', byGan([yueDe]))
+  const yueDeHe = YUE_DE_HE[SAN_HE_GROUP[mZhi]]
+  if (yueDeHe) push('月德合', byGan([yueDeHe]))
   const mIdx = ZHI_ORDER.indexOf(mZhi)
   if (mIdx > 0) push('天医', byZhi([ZHI_ORDER[mIdx - 1]]))
   else if (mIdx === 0) push('天医', byZhi([ZHI_ORDER[11]]))
@@ -418,6 +509,7 @@ export function shenShaOf(
   push('阴阳差错', (i) => i === 2 && YIN_YANG_CHA_CUO.includes(dayGanZhi))
   push('十恶大败', (i) => i === 2 && SHI_E_DA_BAI.includes(dayGanZhi))
   push('孤鸾煞', (i) => i === 2 && GU_LUAN.includes(dayGanZhi))
+  push('九丑日', (i) => i === 2 && JIU_CHOU_RI.includes(dayGanZhi))
   const gans = pillars.map(p => p.gan)
   for (const [a, b, c] of [[0, 1, 2], [1, 2, 3]]) {
     const seq = gans[a] + gans[b] + gans[c]
@@ -541,7 +633,8 @@ export function paipan(input: PaipanInput): PaipanResult {
   // 神煞（日干起 + 年支/日支/月支起 + 日柱系，渊海子平/三命通会通行口径）
   const shenShaLists = shenShaOf(
     [yearPillar, monthPillar, dayPillar, hourPillar].map(gz => ({ gan: gz[0], zhi: gz[1] })),
-    dayMaster
+    dayMaster,
+    gender
   )
 
   // 空亡（各柱干支所在旬空二支；EightChar 各getXunKong 与四柱同源，日柱版自带晚子时 sect 处理）

@@ -1030,6 +1030,14 @@ h1, h2, h3, .font-serif-sc {
   color: var(--hw-mute);
   font-size: 14.5px;
 }
+/* 命书同步/生成中的醒目提示（比 .hw-c-meta 更重，避免被误认为页面卡死） */
+.hw-c-cta .hw-c-syncing {
+  margin: 0 0 14px;
+  color: var(--hw-water);
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
 .hw-c-btnBig {
   display: inline-flex;
   align-items: center;
