@@ -18,11 +18,14 @@ export default function CheckoutButton({
   sku,
   available,
   highlight = false,
+  chartId,
   children,
 }: {
   sku: SkuId
   available: boolean
   highlight?: boolean
+  /** ★ 命盘页直传当前盘 id（挂载时 /api/unlock 预检返回）；不传则回退「服务端最新一张」 */
+  chartId?: string
   children: React.ReactNode
 }) {
   const router = useRouter()
@@ -53,9 +56,10 @@ export default function CheckoutButton({
         return
       }
 
-      // ★ 前置校验：查 charts 表有没有命盘（与 latestChartIdOf 同一单一事实源）
-      const chartId = await latestChartIdOf(supabase, session.user.id)
-      if (!chartId) {
+      // ★ 绑定目标优先级（2026-10-18 修复）：命盘页直传的当前盘 > 服务端最新一张。
+      //   旧逻辑只取最新一张——新排未落库的盘会把款绑到旧盘上。
+      const boundChartId = chartId ?? (await latestChartIdOf(supabase, session.user.id))
+      if (!boundChartId) {
         setNoChart(true)
         setLoading(false)
         return
@@ -67,7 +71,7 @@ export default function CheckoutButton({
         // ★ chartId 必须随单透传（2026-10-17 修复）：预检算出的 chartId 之前只当门槛没回传，
         //   webhook 收不到 metadata.chartId → payments.chart_id 落 NULL → 按盘解锁永不生效。
         //   归属安全由 webhook 落账前 resolveChartIdForUser 校验（chart 不属于买家则落 NULL）。
-        body: JSON.stringify({ sku, token: session.access_token, chartId }),
+        body: JSON.stringify({ sku, token: session.access_token, chartId: boundChartId }),
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) {

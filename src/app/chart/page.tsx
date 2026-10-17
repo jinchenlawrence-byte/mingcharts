@@ -13,6 +13,7 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 import SaveChart from '@/components/SaveChart'
 import CheckoutButton from '@/components/CheckoutButton'
+import { getSupabase } from '@/lib/supabase'
 import { waffoProductId } from '@/lib/waffo-products'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import { shenshaHref, KONG_WANG_SLUG, CHANG_SHENG_SLUG } from '@/lib/shenshaArticles'
@@ -228,6 +229,7 @@ function LuckCyclesView({ luck }: { luck: LuckCycles }) {
 export default function ChartPage() {
   const router = useRouter()
   const [chart, setChart] = useState<ChartData | null>(null)
+  const [screenChartId, setScreenChartId] = useState<string | null>(null)
 
   useEffect(() => {
     const stored = localStorage.getItem('currentChart')
@@ -237,6 +239,37 @@ export default function ChartPage() {
       router.push('/')
     }
   }, [router])
+
+  // ★ 落库预检（2026-10-18）：当前盘在购买前可能从未入库（只在 localStorage），
+  //   而 CheckoutButton 兜底取「服务端最新一张」会把款绑到旧盘上。挂载时带完整
+  //   chart 调 /api/unlock：402 响应含 chartId（缺行时服务端先落库 is_paid=false），
+  //   200 则本盘已解锁、购买按钮不渲染。chartId 随单绑定用，绝不本地造 id。
+  useEffect(() => {
+    if (!chart || chart.analysis?.isPaid) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const supabase = getSupabase()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session || cancelled) return
+        const res = await fetch('/api/unlock', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ token: session.access_token, chart }),
+        })
+        const out = await res.json().catch(() => null)
+        if (cancelled) return
+        if (out?.chartId) setScreenChartId(out.chartId)
+        if (res.ok && out?.success && out?.data?.chartData) {
+          setChart(out.data.chartData)
+          localStorage.setItem('currentChart', JSON.stringify(out.data.chartData))
+        }
+      } catch {
+        // 预检失败不影响浏览；购买回退「最新一张」兜底
+      }
+    })()
+    return () => { cancelled = true }
+  }, [chart])
 
   if (!chart) {
     return (
@@ -515,7 +548,7 @@ export default function ChartPage() {
           <div className="hw-c-cta">
             {chart.locked?.preview && <p className="hw-c-dx">{chart.locked.preview}</p>}
             <div style={{ maxWidth: 380, margin: '0 auto' }}>
-              <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null}>
+              <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} chartId={screenChartId ?? undefined}>
                 解锁完整命书 · {FATEBOOK_PRICE}
               </CheckoutButton>
             </div>
