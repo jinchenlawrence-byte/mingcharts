@@ -1,6 +1,10 @@
 'use client'
 
+// ★ 紫微斗数页（2026-10-17 风格统一）：接入 hw- 设计语言（同 daily/hemun/pricing 三页做法）
+// 纪律：只换外壳；排盘逻辑、/api/ziwei 载荷、BirthPlacePicker、ZiweiResultView（十二宫盘 +
+//       命宫红标 + 中宫五行局/命主身主）全部不动；免责与口径文案逐字保留。
 import { useState } from 'react'
+import Link from 'next/link'
 import Nav from '@/components/Nav'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
@@ -60,62 +64,55 @@ export default function ZiweiPage() {
   }
 
   return (
-    <main className="min-h-screen">
+    <div className="hw-page">
       <Nav />
-      <div className="container mx-auto px-4 py-8">
-        <header className="text-center mb-10">
-          <h1 className="text-4xl font-serif-sc font-bold text-ink mb-2">紫微斗数</h1>
-          <p className="text-ink-light">十四主星 · 四化飞星 · 十二宫命理分析</p>
+      <main className="hw-wrap hw-c-pg">
+        <Link href="/" className="hw-c-back">‹ 首页</Link>
+        <header>
+          <h1 className="hw-c-h1">紫微斗数</h1>
+          <p className="hw-lede">十四主星 · 四化飞星 · 十二宫命理分析</p>
         </header>
 
         {/* 输入表单 */}
-        <div className="max-w-md mx-auto paper-card rounded-xl p-6 mb-10">
-          <h2 className="text-xl font-serif-sc font-semibold mb-6 text-center text-ink">填写出生信息</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="hw-narrow">
+          <div className="hw-c-box">
+            <h2 className="hw-c-secTitle">填写出生信息</h2>
+            <div className="grid grid-cols-3 gap-2 mb-2">
               <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">年</label>
-                <input type="number" required placeholder="1990"
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-cinnabar/40"
+                <label className="hw-f">年</label>
+                <input type="number" required placeholder="1990" className="hw-c-input"
                   value={formData.year}
                   onChange={(e) => setFormData({ ...formData, year: e.target.value })} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">月</label>
-                <input type="number" required min="1" max="12" placeholder="5"
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-cinnabar/40"
+                <label className="hw-f">月</label>
+                <input type="number" required min={1} max={12} placeholder="5" className="hw-c-input"
                   value={formData.month}
                   onChange={(e) => setFormData({ ...formData, month: e.target.value })} />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">日</label>
-                <input type="number" required min="1" max="31" placeholder="8"
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-cinnabar/40"
+                <label className="hw-f">日</label>
+                <input type="number" required min={1} max={31} placeholder="8" className="hw-c-input"
                   value={formData.day}
                   onChange={(e) => setFormData({ ...formData, day: e.target.value })} />
               </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">时</label>
-                <input type="number" required min="0" max="23" placeholder="16"
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-cinnabar/40"
+                <label className="hw-f">时</label>
+                <input type="number" required min={0} max={23} placeholder="16" className="hw-c-input"
                   value={formData.hour}
                   onChange={(e) => setFormData({ ...formData, hour: e.target.value })} />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">分</label>
-                <input type="number" min="0" max="59" placeholder="30"
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-cinnabar/40"
+                <label className="hw-f">分</label>
+                <input type="number" min={0} max={59} placeholder="30" className="hw-c-input"
                   value={formData.minute}
                   onChange={(e) => setFormData({ ...formData, minute: e.target.value })} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">性别</label>
-                <select
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-cinnabar/40"
+                <label className="hw-f">性别</label>
+                <select className="hw-c-input"
                   value={formData.gender}
                   onChange={(e) => setFormData({ ...formData, gender: parseInt(e.target.value) as 1 | 0 })}
                 >
@@ -124,21 +121,23 @@ export default function ZiweiPage() {
                 </select>
               </div>
             </div>
-            <BirthPlacePicker value={birth} onChange={setBirth} accent="purple" />
-
-            <button type="submit" disabled={loading}
-              className="w-full seal-btn py-3 rounded-md font-semibold disabled:opacity-50">
-              {loading ? '排盘分析中...' : '开始紫微分析'}
-            </button>
-            {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
-          </form>
-          <p className="text-xs text-ink-light/60 text-center mt-4">紫微斗数排盘以农历出生时辰为准，结果仅供参考</p>
-          <p className="text-[11px] text-ink-light/40 text-center mt-2">若选项内无法找到出生城市，可选「其它」手动指定时区。</p>
-        </div>
+            <div className="mt-2">
+              <BirthPlacePicker value={birth} onChange={setBirth} accent="purple" />
+            </div>
+            <p className="mt-4 text-center">
+              <button type="submit" disabled={loading} className="hw-c-btnBig">
+                {loading ? '排盘分析中...' : '开始紫微分析'}
+              </button>
+            </p>
+            {error && <p className="hw-c-err text-center">{error}</p>}
+          </div>
+          <p className="hw-note text-center">紫微斗数排盘以农历出生时辰为准，结果仅供参考</p>
+          <p className="hw-note text-center">若选项内无法找到出生城市，可选「其它」手动指定时区。</p>
+        </form>
 
         {/* 结果区 */}
         {data && (
-          <div>
+          <div className="mt-10">
             {/* 资产保存提示 */}
             {saved === true ? (
               <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2 mb-4">
@@ -152,7 +151,7 @@ export default function ZiweiPage() {
             <ZiweiResultView data={data} />
           </div>
         )}
-      </div>
-    </main>
+      </main>
+    </div>
   )
 }

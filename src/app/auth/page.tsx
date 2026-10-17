@@ -1,6 +1,13 @@
 'use client'
 
+// ★ 登录/注册页（2026-10-17 风格统一）：接入 hw- 设计语言（胶囊双标签＝登录/注册）
+// 纪律：
+//   · Turnstile 三态（token/加载中/失败重试）、withTimeout、friendlyAuthError、
+//     忘记密码 try/finally 防账号枚举结构全部不动（test-account-auth.mjs 守护）
+//   · 注册态按设计稿新增：确认密码＋服务条款/隐私政策勾选；邮箱格式、密码长度、
+//     两次密码一致性在页面上提示（客户端校验，不打接口）
 import { useState } from 'react'
+import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import Turnstile from '@/components/Turnstile'
@@ -40,6 +47,9 @@ export default function AuthPage() {
   const [forgot, setForgot] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
+  // 注册态（设计稿要素）：确认密码＋条款勾选
+  const [confirm, setConfirm] = useState('')
+  const [agree, setAgree] = useState(false)
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
@@ -57,6 +67,21 @@ export default function AuthPage() {
   }
   // 加载中占位：启用验证但尚无 token 且未失败——禁用按钮必须有解释，不能无声
   const tsPending = TURNSTILE_ENABLED && !captchaToken && !tsFailed
+
+  // 双标签切换（设计稿要素）：切换即清空上一轮的提示
+  const switchMode = (login: boolean) => {
+    setIsLogin(login)
+    setMessage('')
+  }
+
+  // 注册态客户端校验：邮箱格式 / 密码长度 / 两次密码一致 / 条款勾选——页内提示，不打接口
+  const validateRegister = (): string => {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return '邮箱格式不正确，请检查后重试'
+    if (password.length < 6) return '密码长度至少 6 位'
+    if (confirm !== password) return '两次输入的密码不一致'
+    if (!agree) return '请先阅读并勾选同意服务条款与隐私政策'
+    return ''
+  }
 
   // 忘记密码（HANDOFF-密码重置与账号设置 §一）：
   // 走 Supabase 原生 resetPasswordForEmail，邮件链接回跳 /reset-password 设新密码。
@@ -84,12 +109,20 @@ export default function AuthPage() {
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
+    // 注册态先过客户端校验（页内提示，不触发请求）
+    if (!isLogin) {
+      const vErr = validateRegister()
+      if (vErr) {
+        setMessage(vErr)
+        return
+      }
+    }
     setLoading(true)
     setMessage('')
 
     try {
       const supabase = getSupabase()
-      
+
       if (isLogin) {
         const { error } = await withTimeout(supabase.auth.signInWithPassword({
           email,
@@ -121,144 +154,180 @@ export default function AuthPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <div className="paper-card rounded-xl p-8 max-w-md w-full mx-4">
-        <h1 className="text-2xl font-bold text-center text-ink mb-6">
-          {forgot ? '找回密码' : (isLogin ? '登录' : '注册')}
-        </h1>
+    <main className="hw-page">
+      <div className="hw-wrap hw-c-pg">
+        <div className="hw-auth">
+          <div className="hw-c-box">
+            <h1 className="hw-c-secTitle hw-c-h2C">
+              {forgot ? '找回密码' : (isLogin ? '登录' : '注册')}
+            </h1>
 
-        {forgot ? (
-          <form onSubmit={handleForgot} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-ink/70 mb-1">注册邮箱</label>
-              <input
-                type="email"
-                required
-                className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-              />
-            </div>
-
-            {message && (
-              <p className={`text-sm ${message.includes('成功') || message.includes('已发送') ? 'text-green-600' : 'text-red-600'}`}>
-                {message}
-              </p>
-            )}
-
-            <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)} />
-            {tsPending && (
-              <p className="text-xs text-ink/40 text-center">正在加载人机验证…</p>
-            )}
-            {tsFailed && (
-              <div className="text-center space-y-2">
-                <p className="text-sm text-red-600">
-                  人机验证加载失败：请关闭浏览器的广告/拦截功能，或更换浏览器（Chrome／Edge／Safari）后重试
-                </p>
-                <button
-                  type="button"
-                  onClick={retryTurnstile}
-                  className="text-sm text-amber-600 hover:text-ink"
-                >
-                  重试验证
-                </button>
+            {/* 双标签（设计稿要素）：登录 / 注册 */}
+            {!forgot && (
+              <div className="hw-tabs">
+                <button type="button" aria-selected={isLogin} onClick={() => switchMode(true)}>登录</button>
+                <button type="button" aria-selected={!isLogin} onClick={() => switchMode(false)}>注册</button>
               </div>
             )}
 
-            <button
-              type="submit"
-              disabled={loading || (TURNSTILE_ENABLED && !captchaToken)}
-              className="w-full bg-amber-600 text-white py-2 rounded-md font-semibold hover:bg-amber-700 transition disabled:opacity-50"
-            >
-              {loading ? '发送中...' : '发送重置邮件'}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleAuth} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-ink/70 mb-1">邮箱</label>
-            <input
-              type="email"
-              required
-              className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
+            {forgot ? (
+              <form onSubmit={handleForgot} className="space-y-4">
+                <div>
+                  <label className="hw-f">注册邮箱</label>
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    className="hw-c-input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
 
-          <div>
-            <label className="block text-sm font-medium text-ink/70 mb-1">密码</label>
-            <input
-              type="password"
-              required
-              minLength={6}
-              className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </div>
+                {message && (
+                  <p className={`text-sm ${message.includes('成功') || message.includes('已发送') ? 'text-green-600' : 'text-red-600'}`}>
+                    {message}
+                  </p>
+                )}
 
-          {message && (
-            <p className={`text-sm ${message.includes('成功') ? 'text-green-600' : 'text-red-600'}`}>
-              {message}
-            </p>
-          )}
+                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)} />
+                {tsPending && (
+                  <p className="text-xs text-ink-light text-center">正在加载人机验证…</p>
+                )}
+                {tsFailed && (
+                  <div className="text-center space-y-2">
+                    <p className="text-sm text-red-600">
+                      人机验证加载失败：请关闭浏览器的广告/拦截功能，或更换浏览器（Chrome／Edge／Safari）后重试
+                    </p>
+                    <button
+                      type="button"
+                      onClick={retryTurnstile}
+                      className="text-sm text-amber-600 hover:text-ink"
+                    >
+                      重试验证
+                    </button>
+                  </div>
+                )}
 
-          <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)} />
-          {tsPending && (
-            <p className="text-xs text-ink/40 text-center">正在加载人机验证…</p>
-          )}
-          {tsFailed && (
-            <div className="text-center space-y-2">
-              <p className="text-sm text-red-600">
-                人机验证加载失败：请关闭浏览器的广告/拦截功能，或更换浏览器（Chrome／Edge／Safari）后重试
-              </p>
+                <button
+                  type="submit"
+                  disabled={loading || (TURNSTILE_ENABLED && !captchaToken)}
+                  className="hw-c-btnBig"
+                >
+                  {loading ? '发送中...' : '发送重置邮件'}
+                </button>
+              </form>
+            ) : (
+              <form onSubmit={handleAuth} noValidate={!isLogin} className="space-y-4">
+                <div>
+                  <label className="hw-f">邮箱</label>
+                  <input
+                    type="email"
+                    required
+                    autoComplete="email"
+                    className="hw-c-input"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="hw-f">密码</label>
+                  <input
+                    type="password"
+                    required
+                    minLength={6}
+                    autoComplete={isLogin ? 'current-password' : 'new-password'}
+                    className="hw-c-input"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                  />
+                </div>
+
+                {/* 注册多出的两项（设计稿要素）：确认密码＋服务条款勾选 */}
+                {!isLogin && (
+                  <>
+                    <div>
+                      <label className="hw-f">确认密码</label>
+                      <input
+                        type="password"
+                        required
+                        minLength={6}
+                        autoComplete="new-password"
+                        className="hw-c-input"
+                        value={confirm}
+                        onChange={(e) => setConfirm(e.target.value)}
+                      />
+                    </div>
+                    <label className="hw-agree">
+                      <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
+                      <span>
+                        我已阅读并同意
+                        <Link href="/terms" className="hw-c-link">服务条款</Link>
+                        与
+                        <Link href="/privacy" className="hw-c-link">隐私政策</Link>
+                      </span>
+                    </label>
+                  </>
+                )}
+
+                {message && (
+                  <p className={`text-sm ${message.includes('成功') ? 'text-green-600' : 'text-red-600'}`}>
+                    {message}
+                  </p>
+                )}
+
+                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)} />
+                {tsPending && (
+                  <p className="text-xs text-ink-light text-center">正在加载人机验证…</p>
+                )}
+                {tsFailed && (
+                  <div className="text-center space-y-2">
+                    <p className="text-sm text-red-600">
+                      人机验证加载失败：请关闭浏览器的广告/拦截功能，或更换浏览器（Chrome／Edge／Safari）后重试
+                    </p>
+                    <button
+                      type="button"
+                      onClick={retryTurnstile}
+                      className="text-sm text-amber-600 hover:text-ink"
+                    >
+                      重试验证
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={loading || (TURNSTILE_ENABLED && !captchaToken)}
+                  className="hw-c-btnBig"
+                >
+                  {loading ? '处理中...' : (isLogin ? '登录' : '注册')}
+                </button>
+              </form>
+            )}
+
+            {forgot ? (
               <button
-                type="button"
-                onClick={retryTurnstile}
-                className="text-sm text-amber-600 hover:text-ink"
-              >
-                重试验证
-              </button>
-            </div>
-          )}
-
-          <button
-            type="submit"
-            disabled={loading || (TURNSTILE_ENABLED && !captchaToken)}
-            className="w-full bg-amber-600 text-white py-2 rounded-md font-semibold hover:bg-amber-700 transition disabled:opacity-50"
-          >
-            {loading ? '处理中...' : (isLogin ? '登录' : '注册')}
-          </button>
-          </form>
-        )}
-
-        {forgot ? (
-          <button
-            onClick={() => { setForgot(false); setMessage('') }}
-            className="w-full mt-4 text-amber-600 hover:text-ink text-sm"
-          >
-            返回登录
-          </button>
-        ) : (
-          <>
-            {isLogin && (
-              <button
-                type="button"
-                onClick={() => setForgot(true)}
+                onClick={() => { setForgot(false); setMessage('') }}
                 className="w-full mt-4 text-amber-600 hover:text-ink text-sm"
               >
-                忘记密码？
+                返回登录
               </button>
+            ) : (
+              isLogin && (
+                <button
+                  type="button"
+                  onClick={() => setForgot(true)}
+                  className="w-full mt-4 text-amber-600 hover:text-ink text-sm"
+                >
+                  忘记密码？
+                </button>
+              )
             )}
-            <button
-              onClick={() => setIsLogin(!isLogin)}
-              className="w-full mt-4 text-amber-600 hover:text-ink text-sm"
-            >
-              {isLogin ? '没有账号？去注册' : '已有账号？去登录'}
-            </button>
-          </>
-        )}
+
+            <p className="hw-note text-center">登录后可保存你的命盘和已解锁的命书。</p>
+          </div>
+        </div>
       </div>
     </main>
   )

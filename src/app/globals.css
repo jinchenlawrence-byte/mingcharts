@@ -1131,3 +1131,135 @@ h1, h2, h3, .font-serif-sc {
   margin: 24px auto 0;
   text-align: center;
 }
+
+/* ── 五页轻量风格统一（2026-10-17）：ziwei / auth / liunian / geo / shengxiao 接入 hw- 设计语言 ──
+   原则同三页统一：只换外壳；业务逻辑、守护文案、共享 ResultView 组件不动。
+   auth 注册态按设计稿新增确认密码＋条款勾选，校验提示页内呈现；
+   注意 .hw-page a 压制规则：本段 a 相关规则均在其后声明，同特异性后者胜。 */
+.hw-auth {
+  max-width: 440px;
+  margin: 48px auto 0;
+}
+.hw-tabs {
+  display: flex;
+  background: var(--hw-bg);
+  border-radius: 999px;
+  padding: 4px;
+  margin-bottom: 18px;
+}
+.hw-tabs button {
+  flex: 1;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--hw-mute);
+  padding: 10px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+.hw-tabs button[aria-selected='true'] {
+  background: var(--hw-ink);
+  color: #fff;
+}
+.hw-agree {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  font-size: 13px;
+  color: var(--hw-mute);
+  margin-top: 4px;
+  cursor: pointer;
+}
+.hw-agree input {
+  margin-top: 3px;
+  accent-color: var(--hw-ink);
+}
+.hw-agree a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* 目标流年三档选择（liunian）：选中态墨底白字，双行文案（年份干支＋节奏说明） */
+.hw-yr3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.hw-yr3 button {
+  border: 1.5px solid var(--hw-line);
+  background: var(--hw-surface);
+  border-radius: 16px;
+  padding: 10px 6px;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: center;
+  color: var(--hw-ink);
+}
+.hw-yr3 button b {
+  display: block;
+  font-size: 14px;
+  font-weight: 700;
+}
+.hw-yr3 button i {
+  display: block;
+  font-style: normal;
+  font-size: 11px;
+  color: var(--hw-mute);
+  margin-top: 2px;
+}
+.hw-yr3 button[aria-pressed='true'] {
+  background: var(--hw-ink);
+  border-color: var(--hw-ink);
+  color: #fff;
+}
+.hw-yr3 button[aria-pressed='true'] i {
+  color: rgb(255 255 255 / 0.72);
+}
+/* 生肖卡片墙（shengxiao）：地支五行色圆徽＋属相名＋地支·五行·本命佛小字 */
+.hw-zod {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 12px;
+}
+.hw-zod > a {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--hw-surface);
+  border: 1px solid var(--hw-line);
+  border-radius: 22px;
+  padding: 14px 16px;
+  transition: border-color 0.2s, transform 0.2s;
+}
+.hw-zod > a:hover {
+  border-color: var(--hw-ink);
+  transform: translateY(-2px);
+}
+.hw-zx {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-serif-sc), serif;
+  font-weight: 900;
+  font-size: 26px;
+  flex: none;
+}
+.hw-zod b {
+  display: block;
+  font-size: 15px;
+}
+.hw-zod i {
+  display: block;
+  font-style: normal;
+  font-size: 12px;
+  color: var(--hw-mute);
+  margin-top: 2px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .hw-zod > a {
+    transition: none;
+  }
+}

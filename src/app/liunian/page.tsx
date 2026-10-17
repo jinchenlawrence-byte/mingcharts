@@ -1,6 +1,10 @@
 'use client'
 
+// ★ 年运报告页（2026-10-17 风格统一）：接入 hw- 设计语言（同 daily/hemun/pricing 三页做法）
+// 纪律：只换外壳；yearOptions 三档年份（今年/明年/后年）、targetYear、force 重新生成、
+//       定价披露（SKUS 单一事实源）、免责说明逐字保留（test-liunian-accept.mjs ④ 守护）。
 import { useState } from 'react'
+import Link from 'next/link'
 import Nav from '@/components/Nav'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
@@ -91,65 +95,58 @@ export default function LiunianPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-rose-50 to-white">
+    <div className="hw-page">
       <Nav />
-      <div className="container mx-auto px-4 py-8">
-        <header className="text-center mb-10">
-          <h1 className="text-4xl font-bold text-rose-900 mb-2">年运报告 · 流年详批</h1>
-          <p className="text-ink-light">流年干支十神与原局冲合，事业/财运/感情/健康分维度深度解读</p>
-          <p className="text-xs text-ink-light/40 mt-2">
+      <main className="hw-wrap hw-c-pg">
+        <Link href="/" className="hw-c-back">‹ 首页</Link>
+        <header>
+          <h1 className="hw-c-h1">年运报告 · 流年详批</h1>
+          <p className="hw-lede">流年干支十神与原局冲合，事业/财运/感情/健康分维度深度解读</p>
+          <p className="hw-note">
             说明：流年事实（干支、十神、冲合、倾向标签）由规则引擎确定性计算，AI 仅据事实撰写解读；倾向性参考，非确定性结论
           </p>
         </header>
 
         {/* 表单 */}
-        <div className="max-w-md mx-auto paper-card rounded-xl p-6 mb-10">
-          <h2 className="text-xl font-semibold mb-6 text-center text-rose-800">填写出生信息</h2>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="hw-narrow">
+          <div className="hw-c-box">
+            <h2 className="hw-c-secTitle">填写出生信息</h2>
+            <div className="grid grid-cols-3 gap-2 mb-2">
               <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">年</label>
-                <input type="number" required placeholder="1990"
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
+                <label className="hw-f">年</label>
+                <input type="number" required placeholder="1990" className="hw-c-input"
                   value={formData.year}
                   onChange={(e) => setFormData({ ...formData, year: e.target.value })} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">月</label>
-                <input type="number" required min="1" max="12" placeholder="5"
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
+                <label className="hw-f">月</label>
+                <input type="number" required min={1} max={12} placeholder="5" className="hw-c-input"
                   value={formData.month}
                   onChange={(e) => setFormData({ ...formData, month: e.target.value })} />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">日</label>
-                <input type="number" required min="1" max="31" placeholder="8"
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
+                <label className="hw-f">日</label>
+                <input type="number" required min={1} max={31} placeholder="8" className="hw-c-input"
                   value={formData.day}
                   onChange={(e) => setFormData({ ...formData, day: e.target.value })} />
               </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
               <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">时</label>
-                <input type="number" required min="0" max="23" placeholder="16"
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
+                <label className="hw-f">时</label>
+                <input type="number" required min={0} max={23} placeholder="16" className="hw-c-input"
                   value={formData.hour}
                   onChange={(e) => setFormData({ ...formData, hour: e.target.value })} />
               </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">分</label>
-                <input type="number" min="0" max="59" placeholder="30"
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
+                <label className="hw-f">分</label>
+                <input type="number" min={0} max={59} placeholder="30" className="hw-c-input"
                   value={formData.minute}
                   onChange={(e) => setFormData({ ...formData, minute: e.target.value })} />
               </div>
               <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">性别</label>
-                <select
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-rose-500"
+                <label className="hw-f">性别</label>
+                <select className="hw-c-input"
                   value={formData.gender}
                   onChange={(e) => setFormData({ ...formData, gender: parseInt(e.target.value) as 1 | 0 })}
                 >
@@ -158,43 +155,40 @@ export default function LiunianPage() {
                 </select>
               </div>
             </div>
-            <BirthPlacePicker value={birth} onChange={setBirth} accent="rose" />
-            <div>
-              <label className="block text-sm font-medium text-ink/70 mb-1">目标流年</label>
-              <div className="grid grid-cols-3 gap-2">
+            <div className="mt-2">
+              <BirthPlacePicker value={birth} onChange={setBirth} accent="rose" />
+            </div>
+            <div className="mt-3">
+              <label className="hw-f">目标流年</label>
+              <div className="hw-yr3">
                 {options.map(o => (
                   <button
                     key={o.year}
                     type="button"
+                    aria-pressed={targetYear === o.year}
                     onClick={() => setTargetYear(o.year)}
-                    className={`px-2 py-2 rounded-md border text-sm transition ${
-                      targetYear === o.year
-                        ? 'border-rose-600 bg-rose-600 text-white font-semibold'
-                        : 'border-gold/20 bg-white text-ink/70 hover:border-rose-400'
-                    }`}
                   >
-                    <span className="block">{o.label}</span>
-                    <span className={`block text-[10px] mt-0.5 ${targetYear === o.year ? 'text-rose-100' : 'text-ink-light/40'}`}>
-                      {o.note}
-                    </span>
+                    <b>{o.label}</b>
+                    <i>{o.note}</i>
                   </button>
                 ))}
               </div>
             </div>
-            <button type="submit" disabled={loading}
-              className="w-full bg-rose-600 text-white py-3 rounded-md font-semibold hover:bg-rose-700 transition disabled:opacity-50">
-              {loading ? '流年详批生成中（约30秒）...' : '生成年运报告'}
-            </button>
-            {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
-          </form>
-          <p className="text-xs text-ink-light/60 text-center mt-4">
+            <p className="mt-4 text-center">
+              <button type="submit" disabled={loading} className="hw-c-btnBig">
+                {loading ? '流年详批生成中（约30秒）...' : '生成年运报告'}
+              </button>
+            </p>
+            {error && <p className="hw-c-err text-center">{error}</p>}
+          </div>
+          <p className="hw-note text-center">
             内测期免费体验 · 正式开放后 {formatPriceUSD(SKUS.annual_report.priceUSD)}/次（会员不含报告）
           </p>
-        </div>
+        </form>
 
         {/* 结果区 */}
         {data && (
-          <div>
+          <div className="mt-10">
             {/* 资产保存提示 */}
             {saved === true ? (
               <p className="text-xs text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2 mb-4">
@@ -206,12 +200,12 @@ export default function LiunianPage() {
               </p>
             ) : null}
             {/* 重新生成入口（HANDOFF §四）：force=true 绕过缓存重调 AI，覆盖写同一报告不堆积 */}
-            <div className="flex items-center justify-center gap-3 mb-6">
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
               <button
                 type="button"
                 onClick={() => runGenerate(true)}
                 disabled={loading}
-                className="px-5 py-2 rounded-md border border-rose-300 text-rose-700 text-sm font-medium hover:bg-rose-50 transition disabled:opacity-50"
+                className="px-5 py-2 rounded-full border border-gold/15 bg-white text-sm font-medium hover:border-ink transition disabled:opacity-50"
               >
                 重新生成本报告
               </button>
@@ -220,7 +214,7 @@ export default function LiunianPage() {
             <LiunianResultView data={data} />
           </div>
         )}
-      </div>
-    </main>
+      </main>
+    </div>
   )
 }
