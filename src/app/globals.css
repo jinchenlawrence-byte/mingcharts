@@ -222,6 +222,12 @@ h1, h2, h3, .font-serif-sc {
 .hw-page a.hw-c-blue {
   color: var(--hw-water);
 }
+/* 蓝色下划线链接（mailto / 行内强调链接） */
+.hw-page a.hw-c-blueU {
+  color: var(--hw-water);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
 /* 深底白字的链接（Nav 登录钮 / 免费排盘卡 / CheckoutButton 无命盘引导） */
 .hw-page a.bg-ink {
   color: #fff;

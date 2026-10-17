@@ -4,6 +4,7 @@
 //   只读邮箱 ＋ 主动修改密码（走 Supabase 原生 updateUser）。
 // ★ 未登录访问给明确提示去登录，不白屏。
 // ★ 本轮不加改邮箱/删账号/订阅管理（改邮箱会影响已购权益归属，属另外的产品决策）。
+// 2026-10-17 风格统一：接入 hw- 设计语言（同 /auth 壳），逻辑零改动（test-account-auth.mjs 守护）。
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
@@ -55,75 +56,78 @@ export default function AccountPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <div className="paper-card rounded-xl p-8 max-w-md w-full mx-4">
-        <h1 className="text-2xl font-bold text-center text-ink mb-6">账号设置</h1>
+    <main className="hw-page">
+      <div className="hw-wrap hw-c-pg">
+        <div className="hw-auth">
+          <div className="hw-c-box">
+            <h1 className="hw-c-secTitle hw-c-h2C">账号设置</h1>
 
-        {!checked && <p className="text-center text-ink/60">正在加载…</p>}
+            {!checked && <p className="text-center text-ink/60">正在加载…</p>}
 
-        {checked && !email && (
-          <div className="text-center">
-            <p className="text-sm text-ink/70 mb-6">请先登录后查看账号设置</p>
-            <Link
-              href="/auth"
-              className="inline-block bg-amber-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-amber-700 transition"
-            >
-              去登录
-            </Link>
+            {checked && !email && (
+              <div className="text-center">
+                <p className="hw-c-dx text-center">请先登录后查看账号设置</p>
+                <p>
+                  <Link href="/auth" className="hw-c-btnBig">
+                    去登录
+                  </Link>
+                </p>
+              </div>
+            )}
+
+            {checked && email && (
+              <>
+                <div className="mb-6">
+                  <label className="hw-f">当前邮箱</label>
+                  <p className="hw-c-input break-all" aria-readonly="true">
+                    {email}
+                  </p>
+                </div>
+
+                <form onSubmit={handleChange} className="space-y-4">
+                  <div>
+                    <label className="hw-f">新密码</label>
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      className="hw-c-input"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="hw-f">确认新密码</label>
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      className="hw-c-input"
+                      value={confirm}
+                      onChange={(e) => setConfirm(e.target.value)}
+                    />
+                  </div>
+
+                  {error && <p className="hw-c-err text-center">{error}</p>}
+                  {message && <p className="text-sm text-green-600 text-center">{message}</p>}
+
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="hw-c-btnBig"
+                  >
+                    {loading ? '提交中...' : '修改密码'}
+                  </button>
+                </form>
+
+                <div className="mt-4 flex justify-center gap-6 text-sm">
+                  <Link href="/charts" className="hw-c-blue">我的命盘</Link>
+                  <Link href="/reports" className="hw-c-blue">我的报告</Link>
+                </div>
+              </>
+            )}
           </div>
-        )}
-
-        {checked && email && (
-          <>
-            <div className="mb-6">
-              <label className="block text-sm font-medium text-ink/70 mb-1">当前邮箱</label>
-              <p className="px-3 py-2 border border-gold/10 rounded-md bg-paper/60 text-ink/80 break-all">
-                {email}
-              </p>
-            </div>
-
-            <form onSubmit={handleChange} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">新密码</label>
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">确认新密码</label>
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                />
-              </div>
-
-              {error && <p className="text-sm text-red-600">{error}</p>}
-              {message && <p className="text-sm text-green-600">{message}</p>}
-
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-amber-600 text-white py-2 rounded-md font-semibold hover:bg-amber-700 transition disabled:opacity-50"
-              >
-                {loading ? '提交中...' : '修改密码'}
-              </button>
-            </form>
-
-            <div className="mt-4 flex justify-center gap-4 text-sm text-amber-600 hover:text-ink">
-              <Link href="/charts">我的命盘</Link>
-              <Link href="/reports">我的报告</Link>
-            </div>
-          </>
-        )}
+        </div>
       </div>
     </main>
   )

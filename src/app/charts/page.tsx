@@ -1,5 +1,6 @@
-'use client'
+﻿'use client'
 
+// 我的命盘列表（2026-10-17 风格统一）：接入 hw- 设计语言，逻辑零改动
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
@@ -69,87 +70,92 @@ export default function MyCharts() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        加载中...
+      <main className="hw-page flex items-center justify-center">
+        <p className="text-ink/60">加载中...</p>
       </main>
     )
   }
 
   if (notLogged) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-ink-light mb-4">请先登录后查看命盘</p>
-          <button
-            onClick={() => router.push('/auth')}
-            className="bg-amber-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-amber-700 transition"
-          >
-            去登录
-          </button>
+      <main className="hw-page">
+        <div className="hw-wrap hw-c-pg">
+          <div className="hw-narrow text-center">
+            <div className="hw-c-box">
+              <p className="hw-c-dx text-center">请先登录后查看命盘</p>
+              <p>
+                <button
+                  onClick={() => router.push('/auth')}
+                  className="hw-c-btnBig"
+                >
+                  去登录
+                </button>
+              </p>
+            </div>
+          </div>
         </div>
       </main>
     )
   }
 
   return (
-    <main className="min-h-screen py-8">
-      <div className="container mx-auto px-4 max-w-3xl">
-        {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
-        <div className="flex items-center justify-between mb-6">
-          <h1 className="text-2xl font-bold text-ink">我的命盘</h1>
-          <button
-            onClick={() => router.push('/')}
-            className="bg-amber-600 text-white px-4 py-2 rounded-md text-sm font-semibold hover:bg-amber-700 transition"
-          >
-            + 新排盘
-          </button>
-        </div>
+    <main className="hw-page">
+      <div className="hw-wrap hw-c-pg">
+        <div className="hw-narrow">
+          {error && <p className="hw-c-err">{error}</p>}
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="hw-c-h1">我的命盘</h1>
+            <button
+              onClick={() => router.push('/')}
+              className="bg-ink text-white px-4 py-2 rounded-full text-sm font-semibold hover:opacity-85 transition"
+            >
+              + 新排盘
+            </button>
+          </div>
 
-        {rows.length === 0 ? (
-          <div className="paper-card rounded-lg p-10 text-center text-ink-light/60">
-            还没有保存的命盘，去排一个吧
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {rows.map((row) => (
-              <div
-                key={row.id}
-                className="paper-card rounded-lg p-4 flex items-center justify-between gap-4"
-              >
-                <div className="min-w-0">
-                  <p className="font-semibold text-ink">
-                    {row.birth_year}年{row.birth_month}月{row.birth_day}日 {row.birth_hour}时
-                    {row.birth_minute > 0 ? `${row.birth_minute}分` : ''}
-                    {row.gender === 1 ? ' 男' : ' 女'}
-                    {row.birth_place && (
-                      <span className="text-sm text-ink-light/40 ml-2">{row.birth_place}</span>
-                    )}
-                  </p>
-                  <p className="text-sm text-ink-light mt-1 tracking-wider">
-                    {row.chart_data?.pillars
-                      ? `${row.chart_data.pillars.year.ganZhi} ${row.chart_data.pillars.month.ganZhi} ${row.chart_data.pillars.day.ganZhi} ${row.chart_data.pillars.hour.ganZhi}`
-                      : ''}
-                    <span className="text-ink-light/40 ml-2">日主 {row.chart_data?.dayMaster}</span>
-                  </p>
+          {rows.length === 0 ? (
+            <div className="hw-c-box text-center text-ink-light/60">
+              还没有保存的命盘，去排一个吧
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {rows.map((row) => (
+                <div key={row.id} className="hw-c-box p-4! flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="font-semibold text-ink">
+                      {row.birth_year}年{row.birth_month}月{row.birth_day}日 {row.birth_hour}时
+                      {row.birth_minute > 0 ? `${row.birth_minute}分` : ''}
+                      {row.gender === 1 ? ' 男' : ' 女'}
+                      {row.birth_place && (
+                        <span className="text-sm text-ink-light/40 ml-2">{row.birth_place}</span>
+                      )}
+                    </p>
+                    <p className="text-sm text-ink-light mt-1 tracking-wider">
+                      {row.chart_data?.pillars
+                        ? `${row.chart_data.pillars.year.ganZhi} ${row.chart_data.pillars.month.ganZhi} ${row.chart_data.pillars.day.ganZhi} ${row.chart_data.pillars.hour.ganZhi}`
+                        : ''}
+                      <span className="text-ink-light/40 ml-2">日主 {row.chart_data?.dayMaster}</span>
+                    </p>
+                  </div>
+                  <div className="flex gap-3 shrink-0 text-sm">
+                    <button
+                      onClick={() => handleView(row)}
+                      className="font-medium hover:underline underline-offset-3"
+                    >
+                      查看
+                    </button>
+                    <button
+                      onClick={() => handleDelete(row.id)}
+                      className="text-red-400 hover:text-red-600"
+                    >
+                      删除
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                  <button
-                    onClick={() => handleView(row)}
-                    className="text-amber-600 hover:text-ink text-sm"
-                  >
-                    查看
-                  </button>
-                  <button
-                    onClick={() => handleDelete(row.id)}
-                    className="text-red-400 hover:text-red-600 text-sm"
-                  >
-                    删除
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </main>
   )

@@ -1,5 +1,6 @@
-'use client'
+﻿'use client'
 
+// 我的报告列表（2026-10-17 风格统一）：接入 hw- 设计语言，逻辑零改动
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
@@ -60,101 +61,100 @@ export default function MyReports() {
 
   if (loading) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        加载中...
+      <main className="hw-page flex items-center justify-center">
+        <p className="text-ink/60">加载中...</p>
       </main>
     )
   }
 
   if (notLogged) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-ink-light mb-4">请先登录后查看报告</p>
-          <button
-            onClick={() => router.push('/auth')}
-            className="bg-amber-600 text-white px-6 py-2 rounded-md font-semibold hover:bg-amber-700 transition"
-          >
-            去登录
-          </button>
+      <main className="hw-page">
+        <div className="hw-wrap hw-c-pg">
+          <div className="hw-narrow text-center">
+            <div className="hw-c-box">
+              <p className="hw-c-dx text-center">请先登录后查看报告</p>
+              <p>
+                <button
+                  onClick={() => router.push('/auth')}
+                  className="hw-c-btnBig"
+                >
+                  去登录
+                </button>
+              </p>
+            </div>
+          </div>
         </div>
       </main>
     )
   }
 
   return (
-    <main className="min-h-screen py-8">
-      <div className="container mx-auto px-4 max-w-3xl">
-        {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
-        <div className="flex items-center justify-between mb-2">
-          <h1 className="text-2xl font-bold text-ink">我的报告</h1>
-          <Link
-            href="/pricing"
-            className="text-amber-600 hover:text-ink text-sm"
-          >
-            去生成新报告 →
-          </Link>
-        </div>
-        <p className="text-sm text-ink-light/60 mb-4">
-          合婚、紫微、地理、年运报告生成后自动保存于此，可反复回看；命书请见「我的命盘」
-        </p>
-
-        {/* Waffo 客户门户：为后续会员订阅的改卡/取消铺路；本轮订阅未上线，仅放链接 */}
-        <div className="paper-card rounded-lg p-4 mb-6 flex items-center justify-between gap-4">
-          <div className="text-sm">
-            <span className="font-semibold text-ink">管理订阅</span>
-            <span className="text-ink-light/40 ml-2">（订阅功能开放后可用：查看账单、更换卡片、取消续费）</span>
+    <main className="hw-page">
+      <div className="hw-wrap hw-c-pg">
+        <div className="hw-narrow">
+          {error && <p className="hw-c-err">{error}</p>}
+          <div className="flex items-center justify-between mb-2">
+            <h1 className="hw-c-h1">我的报告</h1>
+            <Link href="/pricing" className="hw-c-blue text-sm">
+              去生成新报告 →
+            </Link>
           </div>
-          <a
-            href={WAFFO_PORTAL_URL}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="shrink-0 text-sm text-amber-600 hover:text-ink"
-          >
-            前往支付门户 →
-          </a>
-        </div>
+          <p className="hw-c-meta mb-4">
+            合婚、紫微、地理、年运报告生成后自动保存于此，可反复回看；命书请见「我的命盘」
+          </p>
 
-        {rows.length === 0 ? (
-          <div className="paper-card rounded-lg p-10 text-center text-ink-light/60">
-            还没有报告。完成一次合婚配对、紫微斗数、方位城市或年运分析后会自动保存到这里
+          {/* Waffo 客户门户：为后续会员订阅的改卡/取消铺路；本轮订阅未上线，仅放链接 */}
+          <div className="hw-c-box p-4! mb-6 flex items-center justify-between gap-4">
+            <div className="text-sm">
+              <span className="font-semibold text-ink">管理订阅</span>
+              <span className="text-ink-light/40 ml-2">（订阅功能开放后可用：查看账单、更换卡片、取消续费）</span>
+            </div>
+            <a
+              href={WAFFO_PORTAL_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="shrink-0 text-sm hw-c-blue"
+            >
+              前往支付门户 →
+            </a>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {rows.map((row) => (
-              <div
-                key={row.id}
-                className="paper-card rounded-lg p-4 flex items-center justify-between gap-4"
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className={`text-xs px-2 py-0.5 rounded ${KIND_STYLE[row.kind] ?? 'bg-paper-dark/40 text-ink-light'}`}>
-                      {REPORT_KIND_LABELS[row.kind] ?? row.kind}
-                    </span>
-                    <span className="text-xs text-ink-light/40">
-                      {new Date(row.created_at).toLocaleString('zh-CN')}
-                    </span>
+
+          {rows.length === 0 ? (
+            <div className="hw-c-box text-center text-ink-light/60">
+              还没有报告。完成一次合婚配对、紫微斗数、方位城市或年运分析后会自动保存到这里
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {rows.map((row) => (
+                <div key={row.id} className="hw-c-box p-4! flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className={`text-xs px-2 py-0.5 rounded ${KIND_STYLE[row.kind] ?? 'bg-paper-dark/40 text-ink-light'}`}>
+                        {REPORT_KIND_LABELS[row.kind] ?? row.kind}
+                      </span>
+                      <span className="text-xs text-ink-light/40">
+                        {new Date(row.created_at).toLocaleString('zh-CN')}
+                      </span>
+                    </div>
+                    <p className="font-semibold text-ink truncate">{row.title}</p>
                   </div>
-                  <p className="font-semibold text-ink truncate">{row.title}</p>
+                  <div className="flex gap-3 shrink-0 text-sm">
+                    <Link href={`/reports/${row.id}`} className="font-medium hover:underline underline-offset-3">
+                      查看
+                    </Link>
+                    <button
+                      onClick={() => handleDelete(row.id)}
+                      className="text-red-400 hover:text-red-600"
+                    >
+                      删除
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2 shrink-0">
-                  <Link
-                    href={`/reports/${row.id}`}
-                    className="text-amber-600 hover:text-ink text-sm"
-                  >
-                    查看
-                  </Link>
-                  <button
-                    onClick={() => handleDelete(row.id)}
-                    className="text-red-400 hover:text-red-600 text-sm"
-                  >
-                    删除
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </main>
   )

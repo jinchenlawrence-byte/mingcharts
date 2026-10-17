@@ -5,6 +5,7 @@
 // supabase-js 的 detectSessionInUrl（默认开启）会自动交换会话，
 // getSession() 会等初始化（含交换）完成后返回 → 挂载时读一次即可分派两态。
 // ★ 必须处理两种会话状态（§〇-7）：有会话→设新密码；无会话/链接过期→明确提示+重新请求入口。
+// 2026-10-17 风格统一：接入 hw- 设计语言（同 /auth 壳），逻辑零改动（test-account-auth.mjs 守护）。
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
@@ -50,79 +51,81 @@ export default function ResetPasswordPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center">
-      <div className="paper-card rounded-xl p-8 max-w-md w-full mx-4">
-        {phase === 'checking' && (
-          <p className="text-center text-ink/60">正在验证链接…</p>
-        )}
+    <main className="hw-page">
+      <div className="hw-wrap hw-c-pg">
+        <div className="hw-auth">
+          <div className="hw-c-box">
+            {phase === 'checking' && (
+              <p className="text-center text-ink/60">正在验证链接…</p>
+            )}
 
-        {phase === 'form' && (
-          <>
-            <h1 className="text-2xl font-bold text-center text-ink mb-6">设置新密码</h1>
-            <form onSubmit={handleReset} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">新密码</label>
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-ink/70 mb-1">确认新密码</label>
-                <input
-                  type="password"
-                  required
-                  minLength={6}
-                  className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  value={confirm}
-                  onChange={(e) => setConfirm(e.target.value)}
-                />
-              </div>
-              {error && <p className="text-sm text-red-600">{error}</p>}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-amber-600 text-white py-2 rounded-md font-semibold hover:bg-amber-700 transition disabled:opacity-50"
-              >
-                {loading ? '提交中...' : '确认修改'}
-              </button>
-            </form>
-          </>
-        )}
+            {phase === 'form' && (
+              <>
+                <h1 className="hw-c-secTitle hw-c-h2C">设置新密码</h1>
+                <form onSubmit={handleReset} className="space-y-4">
+                  <div>
+                    <label className="hw-f">新密码</label>
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      className="hw-c-input"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <label className="hw-f">确认新密码</label>
+                    <input
+                      type="password"
+                      required
+                      minLength={6}
+                      className="hw-c-input"
+                      value={confirm}
+                      onChange={(e) => setConfirm(e.target.value)}
+                    />
+                  </div>
+                  {error && <p className="hw-c-err text-center">{error}</p>}
+                  <button
+                    type="submit"
+                    disabled={loading}
+                    className="hw-c-btnBig"
+                  >
+                    {loading ? '提交中...' : '确认修改'}
+                  </button>
+                </form>
+              </>
+            )}
 
-        {phase === 'no-session' && (
-          <>
-            <h1 className="text-2xl font-bold text-center text-ink mb-4">链接无效或已过期</h1>
-            <p className="text-sm text-ink/70 text-center mb-6">
-              重置链接只能使用一次，且有时效。请重新请求一封重置邮件。
-            </p>
-            <Link
-              href="/auth"
-              className="w-full block text-center bg-amber-600 text-white py-2 rounded-md font-semibold hover:bg-amber-700 transition"
-            >
-              返回登录页重新获取
-            </Link>
-          </>
-        )}
+            {phase === 'no-session' && (
+              <>
+                <h1 className="hw-c-secTitle hw-c-h2C">链接无效或已过期</h1>
+                <p className="hw-c-dx text-center">
+                  重置链接只能使用一次，且有时效。请重新请求一封重置邮件。
+                </p>
+                <p className="text-center">
+                  <Link href="/auth" className="hw-c-btnBig">
+                    返回登录页重新获取
+                  </Link>
+                </p>
+              </>
+            )}
 
-        {phase === 'done' && (
-          <>
-            <h1 className="text-2xl font-bold text-center text-ink mb-4">密码已重置</h1>
-            <p className="text-sm text-ink/70 text-center mb-6">
-              新密码已生效，下次登录请使用新密码。
-            </p>
-            <Link
-              href="/"
-              className="w-full block text-center bg-amber-600 text-white py-2 rounded-md font-semibold hover:bg-amber-700 transition"
-            >
-              返回首页
-            </Link>
-          </>
-        )}
+            {phase === 'done' && (
+              <>
+                <h1 className="hw-c-secTitle hw-c-h2C">密码已重置</h1>
+                <p className="hw-c-dx text-center">
+                  新密码已生效，下次登录请使用新密码。
+                </p>
+                <p className="text-center">
+                  <Link href="/" className="hw-c-btnBig">
+                    返回首页
+                  </Link>
+                </p>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </main>
   )
