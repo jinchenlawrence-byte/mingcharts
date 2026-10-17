@@ -64,7 +64,10 @@ export default function CheckoutButton({
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sku, token: session.access_token }),
+        // ★ chartId 必须随单透传（2026-10-17 修复）：预检算出的 chartId 之前只当门槛没回传，
+        //   webhook 收不到 metadata.chartId → payments.chart_id 落 NULL → 按盘解锁永不生效。
+        //   归属安全由 webhook 落账前 resolveChartIdForUser 校验（chart 不属于买家则落 NULL）。
+        body: JSON.stringify({ sku, token: session.access_token, chartId }),
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) {
