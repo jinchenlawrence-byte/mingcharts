@@ -1,0 +1,30 @@
+<!--
+  明理 · Supabase 邮件模板副本（Confirm signup / 注册确认）
+  ── 本文件是【线上模板的仓库副本】，应用运行时不读它，仅供人工核对与回贴。
+  ── 粘贴位置：Supabase Dashboard → Authentication → Emails → Templates → Confirm signup → Body
+  ── Subject 需在 Subject 输入框单独填写（本文件不含 Subject）：确认注册 - 明理
+  ── 守护：scripts/test-email-templates.mjs（npm run verify 会跑）
+  ──
+  ── ★ 为什么必须是 HTML 锚点（2026-10-18 真实事故）：
+  ──   模板曾被写成【纯文本裸链接】，163 网页邮箱不自动识别超长裸 URL → 用户只能
+  ──   复制粘贴到地址栏才能完成确认。而 Supabase 默认模板是 <a href>，任何客户端都能点。
+  ── ★ 裸链兜底【必须保留】：任何客户端把超链接改坏时，用户仍可复制粘贴自救。
+  ── ★ 链接落在自有域名（.SiteURL/auth/callback）是大陆可达性改造的一部分：
+  ──   默认 {{ .ConfirmationURL }} 指向 supabase.co 的 verify 端点，大陆点不动。
+  ──   本页用 verifyOtp({ token_hash, type }) 显式完成验证，见 src/app/auth/callback/page.tsx。
+-->
+<h2>确认你的邮箱</h2>
+<p>感谢注册明理。请点击下方按钮完成邮箱确认：</p>
+<p>
+  <a href="{{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup"
+     style="display:inline-block;padding:12px 26px;background:#8b2f2f;color:#ffffff;text-decoration:none;border-radius:999px;font-weight:bold;">
+    点此完成邮箱确认
+  </a>
+</p>
+<p style="font-size:13px;color:#666666;">
+  若按钮无法点击，请复制下面这条完整链接，粘贴到浏览器地址栏打开：<br>
+  {{ .SiteURL }}/auth/callback?token_hash={{ .TokenHash }}&type=signup
+</p>
+<p style="font-size:13px;color:#666666;">
+  确认链接只能使用一次且有时效。如果你没有进行过此操作，可以忽略这封邮件。
+</p>
