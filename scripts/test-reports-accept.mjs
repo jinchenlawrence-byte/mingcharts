@@ -292,8 +292,13 @@ for (const [name, path] of PAGES) {
 }
 if (!detailCode.includes('onRegen=')) { regenFail++; fail('/reports/[id] 未把 onRegen 下传（年运规则版无法就地重生成）') }
 if (!detailCode.includes('force: true')) { regenFail++; fail('/reports/[id] 就地重生成未带 force=true（会命中缓存，AI 根本没被重调）') }
+// 无就地补算能力的规则版（紫微/合婚/地理）也必须给出路：MODULE_HREF 引导块，且必须由 !canRegen 门控
+if (!detailCode.includes('!canRegen && isRuleVersion(')) {
+  regenFail++; fail('/reports/[id] 规则版引导块未由 !canRegen 门控（会与年运的就地按钮重复/误导）')
+}
+if (!detailCode.includes('前往重新生成')) { regenFail++; fail('/reports/[id] 无就地补算的规则版缺「前往重新生成」链接') }
 console.log(regenFail === 0
-  ? `✓ 规则版出口：isRuleVersion ${RULE_CASES.length} 用例真跑通过；4 个 View 判据+入口+接口齐备；4 个模块页均有按钮与下传；详情页就地重生成带 force`
+  ? `✓ 规则版出口：isRuleVersion ${RULE_CASES.length} 用例真跑通过；4 个 View 判据+入口+接口齐备；4 个模块页均有按钮与下传；详情页就地重生成带 force、无能力时给「前往重新生成」引导`
   : '✗ 规则版出口断言失败')
 
 console.log('\n' + (allPass ? 'REPORTS_ACCEPT_PASS' : 'REPORTS_ACCEPT_FAIL'))

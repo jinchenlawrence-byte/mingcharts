@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
 import { REPORT_KIND_LABELS, type ReportKind } from '@/lib/reportSave'
-import { REPORT_GATE, gateReportForDetail, canRegenContent } from '@/lib/reportGate'
+import { REPORT_GATE, gateReportForDetail, canRegenContent, isRuleVersion } from '@/lib/reportGate'
 import { grantsCover } from '@/lib/entitlement'
 import type { SkuId } from '@/lib/pricing'
 import HemunResultView from '@/components/reports/HemunResultView'
@@ -147,6 +147,11 @@ export default function ReportDetailPage() {
   //   同要素 + force=true 重调 AI（绕过缓存重新调、覆盖写同一 cache_key，不新增报告行），
   //   成功后原地替换渲染。存档不全（缺出生地/分钟键）时不显示按钮；补算失败静默保持原内容。
   const canRegen = !!row && canRegenContent(row.kind, row.input)
+  // ★ 规则版但【无可就地重生成的能力】（紫微/合婚/地理：存档不足以忠实回放，regenApi=null）
+  //   → 详情页不能重写，必须给「前往模块页重新生成」的出路，否则付费用户只能要求退款。
+  //   与 needsRegen（库里没全文）互斥：那种情形已由上面的诚实提示块引导。
+  const ruleVersionNoRegen =
+    !needsRegen && !canRegen && isRuleVersion((result as Record<string, unknown> | null)?.aiSource)
   const regenReport = async () => {
     if (!row || !canRegen) return
     const gate = REPORT_GATE[row.kind]
@@ -256,6 +261,21 @@ export default function ReportDetailPage() {
                   → 前往重新生成
                 </Link>
               )}
+            </div>
+          )}
+
+          {/* ★ 规则版兜底出口（2026-10-18 退款事故）：本次 AI 解读被合规校验退回，
+              本模块的存档不足以就地忠实重放（缺出生地/分钟）→ 引导到模块页重新生成。 */}
+          {ruleVersionNoRegen && MODULE_HREF[row.kind] && (
+            <div className="hw-c-box mb-4">
+              <p className="font-bold text-ink mb-2">本报告为规则版解读</p>
+              <p className="text-sm text-ink/70 mb-3">
+                AI 深度解读未通过合规校验，本报告已回退为规则引擎生成的文本。
+                可前往对应页面按相同出生信息重新生成一次：AI 将重写全文并覆盖本报告，不额外收费。
+              </p>
+              <Link href={MODULE_HREF[row.kind]!} className="hw-c-blue text-sm">
+                → 前往重新生成
+              </Link>
             </div>
           )}
 
