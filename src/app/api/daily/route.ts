@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { dailyFor, type DailyChartFacts } from '@/lib/daily'
 import { createServerSupabase } from '@/lib/supabase'
 import { getEntitlements, canView } from '@/lib/entitlement'
-import type { Zhi } from '@/lib/branchRelations'
+import { chartFactsFrom } from '@/lib/chartFacts'
 
 // 通用日签（免费）＋ 个性化日运（订阅权益 daily；HANDOFF-个性化日运 §六/§七）
 // ★ 归日只算一次（dailyFor），日签段与日运段出自同一次归日（§五 P0）。
@@ -10,18 +10,6 @@ function getToken(req: NextRequest): string | null {
   const auth = req.headers.get('authorization')
   if (auth?.startsWith('Bearer ')) return auth.slice(7)
   return req.nextUrl.searchParams.get('token')
-}
-
-// 从已保存的 chart_data 取个性化日运所需的最小事实集
-function chartFactsFrom(chartData: any): DailyChartFacts | null {
-  const dm = chartData?.dayMaster
-  const pillars = chartData?.pillars
-  if (!dm || !pillars?.day?.zhi) return null
-  const zhis: Zhi[] = [
-    pillars.year?.zhi, pillars.month?.zhi, pillars.day?.zhi, pillars.hour?.zhi,
-  ].filter((z): z is Zhi => typeof z === 'string' && z.length === 1) as Zhi[]
-  if (zhis.length !== 4) return null
-  return { dayMaster: dm, dayZhi: pillars.day.zhi as Zhi, allZhi: zhis }
 }
 
 export async function GET(req: NextRequest) {

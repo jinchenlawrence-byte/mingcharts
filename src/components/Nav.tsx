@@ -75,6 +75,9 @@ export default function Nav() {
           ))}
           {email ? (
             <>
+              <Link href="/member" className={linkCls('md')}>
+                会员中心
+              </Link>
               <Link href="/charts" className={linkCls('md')}>
                 我的命盘
               </Link>

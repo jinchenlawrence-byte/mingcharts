@@ -182,6 +182,7 @@ const CLIENT_PAGES = [
   { route: '/', file: 'src/app/page.tsx' },
   { route: '/chart', file: 'src/app/chart/page.tsx' },
   { route: '/charts', file: 'src/app/charts/page.tsx' },
+  { route: '/member', file: 'src/app/member/page.tsx' },
   { route: '/hemun', file: 'src/app/hemun/page.tsx' },
   { route: '/ziwei', file: 'src/app/ziwei/page.tsx' },
   { route: '/geo', file: 'src/app/geo/page.tsx' },

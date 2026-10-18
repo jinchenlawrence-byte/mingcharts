@@ -52,6 +52,12 @@ export const REPORT_GRANTS: GrantId[] =
 export const SUBSCRIPTION_GRANTS: GrantId[] =
   ['daily', 'liuyue', 'jiaoyun', 'multi_chart', 'similar_cases', 'history']
 
+/**
+ * ★ 多命盘数量上限（订阅权益 multi_chart；docs/订阅权益设计 §二①：免费 1 / 订阅 3–5）。
+ *   取上限值 5 匹配「3–5 个」文案上限；上限判定统一走 entitlement.chartLimitFor（单一事实源）。
+ */
+export const MULTI_CHART_LIMIT = { free: 1, member: 5 } as const
+
 export const SKUS: Record<SkuId, Sku> = {
   fatebook: {
     id: 'fatebook', name: '命书报告',

@@ -34,18 +34,19 @@ export default function SaveChart() {
     setStatus('saving')
     try {
       const chart = JSON.parse(stored)
-      const { error } = await supabase.from('charts').insert({
-        user_id: session.user.id,
-        gender: chart.input.gender,
-        birth_year: chart.input.year,
-        birth_month: chart.input.month,
-        birth_day: chart.input.day,
-        birth_hour: chart.input.hour,
-        birth_minute: chart.input.minute,
-        birth_place: chart.input.birthPlace || null,
-        chart_data: chart
-      } as any)
-      if (error) throw error
+      // ★ 改走服务端保存路由（档 A 2026-10-18）：数量上限由服务端校验，超限返 402
+      const res = await fetch('/api/charts/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: session.access_token, chart }),
+      })
+      const out = await res.json().catch(() => null)
+      if (res.status === 402) {
+        setStatus('error')
+        setMessage(out?.error || '已达命盘上限，开通会员可保存更多')
+        return
+      }
+      if (!res.ok || !out?.success) throw new Error(out?.error || '保存失败')
       setStatus('saved')
       setMessage('保存成功！可在"我的命盘"中查看')
     } catch (e: any) {

@@ -2,7 +2,7 @@
 // 全局面禁只此一处：route/页面不得各自写判定（§8.5.1 同型错误）。
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { SkuId, GrantId } from './pricing'
-import { SKUS } from './pricing'
+import { SKUS, MULTI_CHART_LIMIT } from './pricing'
 
 /**
  * ★★★★★ 付费墙总开关（26号任务书 §二 方案 B，2026-10-13：由写死 false 改为 env 可控）。
@@ -61,6 +61,17 @@ export function grantsCover(
 export function canView(ent: Entitlements, grant: GrantId): boolean {
   if (!ENTITLEMENT_ENFORCE) return true
   return grantsCover(ent, grant)
+}
+
+/**
+ * ★ 多命盘可保存上限（订阅权益 multi_chart；档 A 2026-10-18）。
+ *   复用 grantsCover —— 门禁口径只此一份：覆盖 multi_chart → 会员上限，否则免费上限。
+ *   消费方：api/charts/save（服务端硬校验）、app/member（展示 n/上限）。
+ *   ★ 不依赖 ENTITLEMENT_ENFORCE：上限是"产品配额"，内测期也按同一口径展示/校验
+ *     （内测期 canView 恒真会让所有用户都算会员，故此处刻意走 grantsCover 而非 canView）。
+ */
+export function chartLimitFor(ent: Entitlements): number {
+  return grantsCover(ent, 'multi_chart') ? MULTI_CHART_LIMIT.member : MULTI_CHART_LIMIT.free
 }
 
 /**

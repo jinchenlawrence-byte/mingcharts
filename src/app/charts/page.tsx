@@ -35,6 +35,8 @@ export default function MyCharts() {
   const [notLogged, setNotLogged] = useState(false)
   const [error, setError] = useState('')
   const [viewingId, setViewingId] = useState<string | null>(null)
+  // 多命盘上限（展示"已保存 n/上限"；上限判定在服务端 entitlement.chartLimitFor）
+  const [limit, setLimit] = useState<number | null>(null)
 
   useEffect(() => {
     ;(async () => {
@@ -50,6 +52,14 @@ export default function MyCharts() {
         .select('*')
         .order('created_at', { ascending: false })
       if (!error && data) setRows(data as ChartRow[])
+      // 取多命盘上限（软提示；硬校验在 /api/charts/save，超限返 402）
+      try {
+        const res = await fetch(`/api/member/summary?token=${encodeURIComponent(session.access_token)}`)
+        const out = await res.json().catch(() => null)
+        if (out?.success && out?.data?.multiChart) setLimit(out.data.multiChart.limit)
+      } catch {
+        // 上限展示失败不阻断列表
+      }
       setLoading(false)
     })()
   }, [])
@@ -143,6 +153,15 @@ export default function MyCharts() {
               + 新排盘
             </button>
           </div>
+
+          {limit !== null && (
+            <p className="text-xs text-ink-light/60 -mt-3 mb-4">
+              已保存 {rows.length}/{limit} 个命盘
+              {rows.length >= limit && (
+                <> —— 已达上限，<Link href="/pricing" className="text-[#3a66ff] hover:underline">开通会员</Link>可保存更多</>
+              )}
+            </p>
+          )}
 
           {rows.length === 0 ? (
             <div className="hw-c-box text-center text-ink-light/60">
