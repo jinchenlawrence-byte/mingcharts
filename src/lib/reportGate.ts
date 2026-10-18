@@ -34,7 +34,7 @@ export const REPORT_GATE: Record<
   ziwei: {
     sku: 'ziwei_deep',
     grant: 'ziwei_deep',
-    preview: '紫微十二宫深度解读（命格总论、事业、财运、感情、健康、大限流年）解锁后可见。',
+    preview: '紫微十二宫深度解读（命格、性格、十二宫导读、事业、财运、婚姻、健康、生年四化、格局成败、大限十年、流年流月、趋避建议）解锁后可见。',
     // 不开启补算：老行存档缺 birthZone/birthLng，回放会按默认时区算出另一张盘
     regenApi: null,
   },

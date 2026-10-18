@@ -30,7 +30,8 @@ export const ANNUAL_CACHE_VERSION = 1
  *   读取侧仍由详情页 reportGate 按当前权益重算。
  */
 export const HEMUN_CACHE_VERSION = 1
-export const ZIWEI_CACHE_VERSION = 1
+// ★ 2：2026-10-18 紫微 6 板块 → 12 板块（prompt 结构改写，纪律要求 +1）
+export const ZIWEI_CACHE_VERSION = 2
 export const GEO_CACHE_VERSION = 1
 
 /** 年运缓存的入键参数全量（route 的 reportInput 与此同源） */

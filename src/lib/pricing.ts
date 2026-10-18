@@ -75,7 +75,7 @@ export const SKUS: Record<SkuId, Sku> = {
   },
   ziwei_deep: {
     id: 'ziwei_deep', name: '紫微深度',
-    desc: '十二宫星盘深度解读',
+    desc: '十二宫完整星盘 + 十二板块深度解读：命格、性格、十二宫导读、事业、财运、婚姻、健康、生年四化、格局成败、大限十年、流年流月、趋避建议',
     priceUSD: 24.99, kind: 'one_time',
     grants: ['ziwei_deep']
   },

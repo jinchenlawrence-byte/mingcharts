@@ -17,7 +17,7 @@ const { hehun } = await import('../src/lib/hemun.ts')
 const { generateAIHemun } = await import('../src/lib/aiHemun.ts')
 const { analyzeGeo } = await import('../src/lib/geo.ts')
 const { generateAIGeo } = await import('../src/lib/aiGeo.ts')
-const { paipanZiwei, analyzeZiwei } = await import('../src/lib/ziwei.ts')
+const { paipanZiwei, analyzeZiwei, ZIWEI_PALACE_NAMES } = await import('../src/lib/ziwei.ts')
 const { generateAIZiwei } = await import('../src/lib/aiZiwei.ts')
 const {
   findForbidden, classifyConfuse, unknownGanzhi, splitSentences
@@ -26,8 +26,9 @@ const {
 // ---------- 检查常量 ----------
 const BASIS_WORDS = ['典籍', '古法', '民俗', '产品设定']
 const JIAZI_RE = /[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]/g
-// 紫微 prompt 实际给出宫干支的 7 个关键宫（其余 5 宫 prompt 未给，不进事实集）
-const ZW_KEY7 = new Set(['命宫', '官禄', '财帛', '夫妻', '迁移', '福德', '疾厄'])
+// 紫微 prompt 给出的宫干支＝十二宫全量（2026-10-18 十二板块方案后无遗漏；
+// ★ 取值直接来自 ziwei.ts 的单一事实源，禁止手抄宫名清单——抄一份就会与 prompt 漂移）
+const ZW_PALACES = new Set(ZIWEI_PALACE_NAMES)
 
 // 7 项检查；opts：needBasis（合婚/地理才查 3、4）；dayunSection（批命查 5、6）；strictBi（合婚物理禁必）
 function runChecks(label, sections, factsGanzhi, opts) {
@@ -228,9 +229,9 @@ for (let i = 0; i < ziweiCases.length; i++) {
     console.log('  ✗ AI 返回 null（API 失败），该用例不通过')
   } else {
     if (ai._usage) Object.keys(usageSum).forEach(k => { usageSum[k] += ai._usage[k] || 0 })
-    // 事实集对齐 prompt：palaceBlock 实际给干支的 7 个关键宫＋大限/流年/小限
+    // 事实集对齐 prompt：palaceBlock 实际给干支的十二宫＋大限/流年/小限
     const facts = new Set([
-      ...chart.palaces.filter(p => ZW_KEY7.has(p.name)).map(p => p.ganZhi),
+      ...chart.palaces.filter(p => ZW_PALACES.has(p.name)).map(p => p.ganZhi),
       a.decadal.ganZhi, a.yearly.ganZhi, a.xiaoxian.ganZhi
     ])
     ok = runChecks(`aiZiwei #${i + 1} ${label}`, ai, facts, {})

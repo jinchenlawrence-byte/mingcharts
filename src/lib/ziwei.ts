@@ -79,6 +79,15 @@ export interface PalaceRead {
   tags: string[]
 }
 
+/** ★ 十二宫全量（2026-10-18 紫微 12 板块深度解读）：单一事实源。
+ *  此前只给 7 宫（命宫/官禄/财帛/夫妻/迁移/福德/疾厄），只能支撑 6 个板块；
+ *  「十二宫导读」板块要求逐宫覆盖，故扩到 iztro 的全 12 宫名。
+ *  顺序与 iztro 宫名一致（命宫、兄弟、夫妻、子女…），prompt 与渲染表都取此序，禁止各处手抄。 */
+export const ZIWEI_PALACE_NAMES = [
+  '命宫', '兄弟', '夫妻', '子女', '财帛', '疾厄', '迁移', '仆役', '官禄', '田宅', '福德', '父母'
+] as const
+export type ZiweiPalaceName = (typeof ZIWEI_PALACE_NAMES)[number]
+
 export interface PeriodRead {
   title: string
   ganZhi: string
@@ -92,7 +101,7 @@ export interface PeriodRead {
 export interface ZiweiAnalysis {
   patterns: PatternTag[]
   transforms: TransformEntry[]
-  palaces: Record<'命宫' | '官禄' | '财帛' | '夫妻' | '迁移' | '福德' | '疾厄', PalaceRead>
+  palaces: Record<ZiweiPalaceName, PalaceRead>
   score: number
   scoreLabel: string
   decadal: PeriodRead
@@ -562,7 +571,7 @@ export function analyzeZiwei(chart: ZwChart, now: Date): ZiweiAnalysis {
   const transforms = collectTransforms(chart)
   const { score, label } = scoreChart(chart)
 
-  const keyPalaceNames = ['命宫', '官禄', '财帛', '夫妻', '迁移', '福德', '疾厄'] as const
+  const keyPalaceNames = ZIWEI_PALACE_NAMES
   const palaces = Object.fromEntries(
     keyPalaceNames.map((name) => {
       const p = chart.palaces.find((x) => x.name === name)!

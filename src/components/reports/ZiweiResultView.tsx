@@ -46,6 +46,25 @@ const PATTERN_BADGE: Record<string, string> = {
   忌: 'bg-red-100 text-red-700'
 }
 
+// ★ 十二板块渲染顺序与标题（2026-10-18 定价 A+C）：
+//   此处另抄一份（而非 import aiZiwei.SECTION_ORDER）是为了不让 aiZiwei/ziwei 的运行时
+//   （含 iztro）进客户端包；漂移由 scripts/test-checker-accept.mjs 的「View 渲染表 vs
+//   SECTION_ORDER 逐项比对」断言守护 —— 抄一份可以，抄一份且无人看守不行。
+const SECTIONS: Array<[keyof ZiweiAIReport, string]> = [
+  ['overview', '命格总论'],
+  ['personality', '性格底色'],
+  ['palaces', '十二宫导读'],
+  ['career', '事业格局'],
+  ['wealth', '财富财运'],
+  ['marriage', '感情婚姻'],
+  ['health', '身心安康'],
+  ['transforms', '生年四化专题'],
+  ['patterns', '格局成败'],
+  ['decadal', '大限十年'],
+  ['yearly', '流年与流月'],
+  ['advice', '趋避建议']
+]
+
 export default function ZiweiResultView({ data, onRegen, regenBusy }: {
   data: ZiweiResultData
   /** ★ 规则版兜底时的「重新生成」出口（模块页下传）；回看页无此能力时不传＝不显示 */
@@ -268,19 +287,19 @@ export default function ZiweiResultView({ data, onRegen, regenBusy }: {
               <span className="text-xs text-ink-light/50">不额外收费 · AI 将重写全文并覆盖本报告</span>
             </div>
           )}
-          {([
-            ['命格总论', ai.overview],
-            ['事业格局', ai.career],
-            ['财富财运', ai.wealth],
-            ['感情婚姻', ai.marriage],
-            ['身心安康', ai.health],
-            ['大限流年', ai.yearly]
-          ] as [string, string][]).map(([title, text]) => (
-            <div key={title} className="paper-card rounded-lg p-4">
-              <h3 className="font-semibold text-ink mb-2">{title}</h3>
-              <p className="text-sm text-ink/70 leading-relaxed whitespace-pre-line">{text}</p>
-            </div>
-          ))}
+          {/* ★ 按【存在键】渲染（2026-10-18）：老报告（库里 6 键）照旧显示原有板块，
+              缺键不出现空标题；新报告 12 板块全量显示 */}
+          {SECTIONS
+            .filter(([key]) => {
+              const v = ai[key] as string | undefined
+              return typeof v === 'string' && v.trim().length > 0
+            })
+            .map(([key, title]) => (
+              <div key={key} className="paper-card rounded-lg p-4">
+                <h3 className="font-semibold text-ink mb-2">{title}</h3>
+                <p className="text-sm text-ink/70 leading-relaxed whitespace-pre-line">{ai[key]}</p>
+              </div>
+            ))}
         </div>
       )}
     </div>

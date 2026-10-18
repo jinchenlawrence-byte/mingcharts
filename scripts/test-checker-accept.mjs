@@ -237,5 +237,54 @@ console.log(wireFail === 0
   ? `✓ 回灌接线：${AI_MODULES.length} 个模块均接收 feedback 并在其存在时才追加消息（首次请求逐字不变）`
   : '✗ 回灌接线缺失')
 
+// ---------- 紫微 12 板块结构守护（用户拍板 2026-10-18 定价方案 A+C）----------
+// 背景：紫微 $24.99 原为【单次调用写 6 板块】（实测各板块达成率仅 52-66%、全文 1300-1900 字），
+//   与命书 $29.99（10 板块 5750 字）内容密度不匹配。改为 12 板块、每板块一次调用。
+// 四处必须同源，任一处漂移都会让付费用户看到缺板块/空标题/规则版兜底缺块：
+//   ① SECTION_ORDER 12 键 + SECTION_BATCHES 每批 1 板块；② 每板块写作要求都写明字数下限；
+//   ③ 规则版 fallback 12 键全覆盖且无多余键；④ ZiweiResultView 渲染表与 SECTION_ORDER 逐项一致。
+const { SECTION_ORDER, SECTION_BATCHES, fallbackZiweiText } = await import('../src/lib/aiZiwei.ts')
+const zwSrc = readSrc('../src/lib/aiZiwei.ts')
+const viewSrc = readSrc('../src/components/reports/ZiweiResultView.tsx')
+let zwFail = 0
+const zw0 = (m) => { zwFail++; allOk = false; console.log('  ✗ ' + m) }
+
+// ① 板块数与分批：12 键、键不重复、每批一个板块（字数下限只有在「本批就是这一个板块」时才管得住）
+if (SECTION_ORDER.length !== 12) zw0(`SECTION_ORDER 应含 12 板块，实为 ${SECTION_ORDER.length}`)
+if (SECTION_ORDER.some((s) => !s.key || !s.name)) zw0('SECTION_ORDER 存在空键或空标题（渲染会出空标题）')
+if (new Set(SECTION_ORDER.map((s) => s.key)).size !== SECTION_ORDER.length) zw0('SECTION_ORDER 键重复')
+if (SECTION_BATCHES.length !== 12) zw0(`SECTION_BATCHES 应为 12 批，实为 ${SECTION_BATCHES.length}`)
+else if (SECTION_BATCHES.some((b) => b.length !== 1)) zw0(`SECTION_BATCHES 存在多板块同批（每批长度 ${SECTION_BATCHES.map((b) => b.length).join(',')}）`)
+
+// ② 字数下限写在 prompt 里（「本板块正文不少于 X 字」是字数达标的唯一抓手），合计与命书对齐 5750
+const floors = [...zwSrc.matchAll(/本板块正文不少于 (\d+) 字/g)].map((m) => Number(m[1]))
+if (floors.length !== 12) zw0(`aiZiwei 只有 ${floors.length} 个板块写了字数下限（应 12）`)
+const floorSum = floors.reduce((a, b) => a + b, 0)
+if (floorSum !== 5750) zw0(`字数下限合计应为 5750（与命书对齐），实为 ${floorSum}`)
+
+// ③ 规则版兜底 12 键全覆盖：AI 被合规退回时付费用户看到的就是它，缺一块即少一块内容
+const { paipanZiwei, analyzeZiwei } = await import('../src/lib/ziwei.ts')
+const fbChart = paipanZiwei({ year: 1991, month: 4, day: 12, hour: 3, minute: 10, gender: 1 })
+const fb = fallbackZiweiText(fbChart, analyzeZiwei(fbChart, new Date()))
+const missFb = SECTION_ORDER.filter((s) => typeof fb[s.key] !== 'string' || fb[s.key].trim().length < 30)
+if (missFb.length) zw0(`规则版兜底缺板块或过短：${missFb.map((s) => s.key).join('、')}`)
+const extraFb = Object.keys(fb).filter((k) => !SECTION_ORDER.some((s) => s.key === k))
+if (extraFb.length) zw0(`规则版兜底多出 SECTION_ORDER 之外的键：${extraFb.join('、')}（渲染层不显示，等于白写）`)
+// 兜底文案自身不得踩禁用词（它绕过 AI 校验直接上线，一旦含禁词无人拦）
+const fbText = SECTION_ORDER.map((s) => fb[s.key]).join('\n')
+const fbHits = findForbidden(fbText).hits
+if (fbHits.length) zw0(`规则版兜底含禁用词：${[...new Set(fbHits.map((h) => h.w))].join('、')}`)
+
+// ④ View 渲染表与 SECTION_ORDER 同源（组件另抄一份是为了不带 iztro 进客户端包，故必须比对）
+const viewPairs = [...viewSrc.matchAll(/^\s*\['([A-Za-z]+)', '([^']+)'\],?$/gm)].map((m) => [m[1], m[2]])
+if (viewPairs.length !== SECTION_ORDER.length) zw0(`ZiweiResultView 渲染表应含 ${SECTION_ORDER.length} 项，实为 ${viewPairs.length}（模式：行首 ['键', '标题'],）`)
+else {
+  const mismatch = SECTION_ORDER.filter((s, i) => viewPairs[i][0] !== s.key || viewPairs[i][1] !== s.name)
+  if (mismatch.length) zw0(`View 渲染表与 SECTION_ORDER 不一致：${mismatch.map((s) => `${s.key}/${s.name}`).join('、')}`)
+}
+// 老报告（库里 6 键）必须按存在键渲染：缺键不得出现空标题
+if (!/SECTIONS\s*\n?\s*\.filter/.test(viewSrc) && !viewSrc.includes('SECTIONS.filter')) zw0('ZiweiResultView 未按【存在键】过滤渲染（老报告缺键会出空标题）')
+if (zwFail === 0) console.log(`✓ 紫微 12 板块：SECTION_ORDER ${SECTION_ORDER.length} 键、字数下限合计 ${floorSum}、规则版兜底与 View 渲染表逐项一致`)
+
 console.log(allOk ? 'CHECKER_ACCEPT_PASS' : 'CHECKER_ACCEPT_FAIL')
 process.exit(allOk ? 0 : 1)

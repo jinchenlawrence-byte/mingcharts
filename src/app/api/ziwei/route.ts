@@ -80,7 +80,7 @@ export async function POST(request: NextRequest) {
       free: { chart, analysis },
       locked: unlocked ? null : {
         skus: ['ziwei_deep'],
-        preview: '紫微十二宫深度解读（命格总论、事业、财运、感情、健康、大限流年）解锁后可见。'
+        preview: '紫微十二宫深度解读（命格、性格、十二宫导读、事业、财运、婚姻、健康、生年四化、格局成败、大限十年、流年流月、趋避建议）解锁后可见。'
       },
       ai,
       aiSource,
