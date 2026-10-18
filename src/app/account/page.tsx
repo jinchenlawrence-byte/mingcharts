@@ -1,20 +1,25 @@
 'use client'
 
 // ★ 账号设置（HANDOFF-密码重置与账号设置 §二/H2）——最小集：
-//   只读邮箱 ＋ 主动修改密码（走 Supabase 原生 updateUser）。
+//   只读邮箱 ＋ 主动修改密码（走 Supabase 原生 updateUser）＋ 退出登录。
 // ★ 未登录访问给明确提示去登录，不白屏。
 // ★ 本轮不加改邮箱/删账号/订阅管理（改邮箱会影响已购权益归属，属另外的产品决策）。
 // 2026-10-17 风格统一：接入 hw- 设计语言（同 /auth 壳），逻辑零改动（test-account-auth.mjs 守护）。
+// 2026-10-18 补「退出登录」：Nav 的退出钮在移动端被挤在横向滚动条最右端（屏幕外），
+//   用户实测找不到 —— 账号设置页是登出的自然归属地，此处给显式按钮。
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
 
 export default function AccountPage() {
+  const router = useRouter()
   const [email, setEmail] = useState<string | null>(null)
   const [checked, setChecked] = useState(false)
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
   const [error, setError] = useState('')
   const [message, setMessage] = useState('')
 
@@ -53,6 +58,18 @@ export default function AccountPage() {
     } finally {
       setLoading(false)
     }
+  }
+
+  // 退出登录：与 Nav 的退出钮同一动作（signOut → 回首页）。
+  // ★ 用 replace 而非 push：登出后按浏览器「返回」不应回到一个看似已登录的账号页。
+  const handleLogout = async () => {
+    setLoggingOut(true)
+    try {
+      await getSupabase().auth.signOut()
+    } catch {
+      // 静默：本地会话已被清掉即可，网络异常不阻断离开
+    }
+    router.replace('/')
   }
 
   return (
@@ -123,6 +140,22 @@ export default function AccountPage() {
                 <div className="mt-4 flex justify-center gap-6 text-sm">
                   <Link href="/charts" className="hw-c-blue">我的命盘</Link>
                   <Link href="/reports" className="hw-c-blue">我的报告</Link>
+                </div>
+
+                {/* 退出登录（2026-10-18 补）：Nav 的退出钮在手机上需横向滑动才可见，
+                    用户实测找不到 —— 这里给一个显式、无需滑动的入口。 */}
+                <div className="mt-8 border-t border-ink/10 pt-6">
+                  <button
+                    type="button"
+                    onClick={handleLogout}
+                    disabled={loggingOut}
+                    className="mx-auto block w-full max-w-[420px] rounded-full border border-ink/20 bg-white px-6 py-3 text-[15px] font-bold text-ink/70 transition-colors hover:border-ink/45 hover:text-ink disabled:opacity-60"
+                  >
+                    {loggingOut ? '正在退出…' : '退出登录'}
+                  </button>
+                  <p className="mt-3 text-center text-xs text-ink/45">
+                    退出后需重新登录，才能查看「我的命盘」「我的报告」与已购内容。
+                  </p>
                 </div>
               </>
             )}

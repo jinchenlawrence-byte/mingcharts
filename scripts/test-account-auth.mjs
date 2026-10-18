@@ -85,6 +85,17 @@ assert(existsSync(rpPath) && existsSync(acPath),
   const acHandler = extractHandler(code, 'handleChange')
   assert(acHandler !== null && /updateUser\(\s*\{\s*password/.test(acHandler),
     'account 页 updateUser 调用在提交处理函数（handleChange）体内')
+
+  // ★ 退出登录（2026-10-18 用户实测「找不到退出按钮」）：
+  //   移动端 Nav 的退出钮排在横向滚动区最右端（屏幕外，需滑动才见）——
+  //   账号设置页必须有显式登出按钮，且真接线 signOut（不是只有文案）。
+  const loHandler = extractHandler(code, 'handleLogout')
+  assert(loHandler !== null && /\.auth\.signOut\(/.test(loHandler.replace(/\s+/g, '')),
+    'account 页含退出登录处理函数（handleLogout 内真调 auth.signOut）')
+  assert(/onClick=\{handleLogout\}/.test(code),
+    'account 页登出按钮真绑 onClick={handleLogout}（非纯文案）')
+  assert(code.includes('退出登录'),
+    'account 页登出按钮文案为「退出登录」（用户可找到）')
 }
 
 // layout 提供 metadata（use client 页不能导出 metadata；site-audit ① 同判据，此处保完整性）
