@@ -9,6 +9,7 @@ import { resolveBirthFromBody } from '@/lib/birthRequest'
 import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
 import { createServerSupabase } from '@/lib/supabase'
 import { saveReport, deriveReportTitle } from '@/lib/reportSave'
+import { stripEntitlementState, reportCacheKey, HEMUN_CACHE_VERSION } from '@/lib/reportCache'
 
 interface RawBirth {
   year?: unknown; month?: unknown; day?: unknown
@@ -97,10 +98,12 @@ export async function POST(request: NextRequest) {
       if (user) ent = await getEntitlements(admin, user.id)
     }
     const unlocked = canView(ent, 'hemun')
-    const ai = unlocked ? (aiReport || fallbackHemunText(result)) : null
-    const aiSource = !unlocked ? '未解锁'
-      : aiReport ? 'AI 深度解读'
-      : '规则版（AI结果未过合规校验）'
+    // ★ 全量 AI 文本（无条件生成，见上）；门禁只作用于【响应】，不作用于【入库】——
+    //   入库置空会让付费用户回看「我的报告」永远读到锁定版（2026-10-18 真实事故）。
+    const rawAi = aiReport || fallbackHemunText(result)
+    const rawAiSource = aiReport ? 'AI 深度解读' : '规则版（AI结果未过合规校验）'
+    const ai = unlocked ? rawAi : null
+    const aiSource = !unlocked ? '未解锁' : rawAiSource
 
     const data = {
       male, female, result, ai, aiSource, dstNotices,
@@ -113,15 +116,23 @@ export async function POST(request: NextRequest) {
     }
 
     // 登录用户：报告作为账户资产自动保存（静默降级，不阻断主流程）
+    // ★ 入库只存【内容】（2026-10-18）：locked 剥掉、ai 存全量全文 ——
+    //   读取侧按当前权益重算（详情页 reportGate.gateReportForDetail），试吃→付费即刻生效。
+    // ★ 双方出生地入键（原则②）：真太阳时不同则内容不同，键不入会互相覆盖（丢报告）
     const reportInput = {
-      year: m.data!.year, month: m.data!.month, day: m.data!.day, gender: m.data!.gender,
-      partnerYear: f.data!.year, partnerMonth: f.data!.month, partnerDay: f.data!.day, partnerGender: f.data!.gender
+      year: m.data!.year, month: m.data!.month, day: m.data!.day, hour: m.data!.hour,
+      minute: m.data!.minute, gender: m.data!.gender,
+      birthZone: m.data!.birthZone ?? null, birthLng: m.data!.birthLng ?? null,
+      partnerYear: f.data!.year, partnerMonth: f.data!.month, partnerDay: f.data!.day,
+      partnerHour: f.data!.hour, partnerMinute: f.data!.minute, partnerGender: f.data!.gender,
+      partnerBirthZone: f.data!.birthZone ?? null, partnerBirthLng: f.data!.birthLng ?? null
     }
     const reportId = await saveReport(token || undefined, {
       kind: 'hemun',
       title: deriveReportTitle('hemun', reportInput),
       input: reportInput,
-      result: data
+      result: { ...stripEntitlementState(data), ai: rawAi, aiSource: rawAiSource } as never,
+      cacheKey: reportCacheKey('hemun', HEMUN_CACHE_VERSION, reportInput)
     })
 
     return NextResponse.json({ success: true, data, reportId })

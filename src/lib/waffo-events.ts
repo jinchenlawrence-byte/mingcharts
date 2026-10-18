@@ -34,6 +34,13 @@ export interface PaidPaymentRow {
   //   任一不过即 null —— 绝不写 NULL 之外的猜测值；null=未关联（天然不匹配任何按盘判定，§〇-8）。
   chart_id: string | null
   amount: number // ★ Number(chargedAmount)，废弃的 amount/total 等字段一律不用
+  // ★★ 购买的 SKU（2026-10-18 修复）：权益归集的【唯一依据】。
+  //   payment_type='single' 只表示「一次性付款」，不表示买的是哪件商品——
+  //   旧实现把所有单次购买一律归成 fatebook，导致买「紫微深度/合婚/地理/年运」
+  //   既拿不到对应权益、又白送一份命书（真实事故）。故必须落库真实 SKU。
+  //   取值 = checkout 时写入 metadata 的 sku（pricing.ts 的 SkuId）。
+  //   空串 = 迁移前的老流水（均为命书单），归集层按历史行为兜底为 fatebook。
+  sku: string
   payment_type: 'single'
   payment_method: 'card'
   status: 'paid'
@@ -57,6 +64,11 @@ export interface WaffoPaymentRepository {
   //   命盘不存在 → null。落账前用它确认 metadata.chartId 确实属于该买家，
   //   否则恶意构造的 metadata 可把付款关联到【别人的命盘】。
   findChartUserId(chartId: string): Promise<string | null>
+  /**
+   * ★ SKU 回填（2026-10-18，可选实现）：把 payments.sku 列上线前落库的空 sku 补成真实值。
+   * 声明为可选 —— 测试内存实现不必实现它（未实现时 reconcile 跳过回填，行为退化为原样）。
+   */
+  updatePaymentSku?(externalId: string, sku: string): Promise<void>
 }
 
 // GraphQL 反查得到的标准化支付节点（字段由 route 层从原始响应映射进来）
@@ -130,13 +142,18 @@ export function buildPaidPaymentRow(
 
   const paidAt = data.paymentDate || nowIso
 
+  const metaRec = data.orderMetadata as Record<string, unknown> | undefined
   // chartId：此处只做形态校验；归属校验在落账前统一走 resolveChartIdForUser（查库，纯函数做不了）
-  const rawChartId = (data.orderMetadata as Record<string, unknown> | undefined)?.chartId
+  const rawChartId = metaRec?.chartId
+  // ★ SKU（2026-10-18 修复）：来自我方 checkout 时写入的 metadata.sku —— 权益归集的唯一依据。
+  //   缺失时留空串（老流水/异常载荷）：归集层空 sku 按历史行为兜底为 fatebook，不臆断其它商品。
+  const rawSku = metaRec?.sku
 
   return {
     user_id: userId,
     chart_id: normalizeChartIdMeta(rawChartId),
     amount,
+    sku: typeof rawSku === 'string' ? rawSku.trim() : '',
     payment_type: 'single',
     payment_method: 'card',
     status: 'paid',
@@ -212,7 +229,20 @@ export async function reconcilePayment(deps: {
 
   // ① 快路径：按业务单号查本地 payments（不用 transaction_id，那是 PAY_ 单号）
   const local = await repo.findPaidByExternalId(ref)
-  if (local && local.status === 'paid') return { status: 'owned', row: local }
+  if (local && local.status === 'paid') {
+    // ★ SKU 回填（2026-10-18）：payments.sku 列上线【之前】落库的流水 sku 为空，
+    //   而权益归集必须按 sku —— 不补的话，已买过紫微/合婚/地理/年运的用户永远拿不到
+    //   自己的权益（真实事故）。首次方：我方 checkout 一直把 sku 写进 metadata，
+    //   故远端 orderMetadata 里必有真实 sku；仅当本地缺失时才反查（正常快路径零额外请求）。
+    if (!local.sku && repo.updatePaymentSku) {
+      const node = await remote.findSucceededPayment(ref)
+      if (node && node.status === 'succeeded' && node.sku) {
+        await repo.updatePaymentSku(ref, node.sku)
+        return { status: 'owned', row: { ...local, sku: node.sku } }
+      }
+    }
+    return { status: 'owned', row: local }
+  }
 
   // ② 反查 Waffo：webhook 可能丢了（3 次重试失败后无手动重发）
   const node = await remote.findSucceededPayment(ref)
@@ -225,6 +255,7 @@ export async function reconcilePayment(deps: {
     user_id: userId, // 以登录态为准，不信远端 metadata 里的 userId
     chart_id: chartId,
     amount: Number(node.chargedAmount),
+    sku: node.sku, // ★ 补写行同样按真实 SKU 归集（node.sku 由远端 orderMetadata 映射而来）
     payment_type: 'single',
     payment_method: 'card',
     status: 'paid',

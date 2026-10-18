@@ -57,6 +57,13 @@ CREATE TABLE IF NOT EXISTS payments (
   chart_id UUID REFERENCES charts(id) ON DELETE SET NULL,
   amount DECIMAL(10, 2) NOT NULL,
   payment_type TEXT NOT NULL CHECK (payment_type IN ('single', 'monthly', 'yearly', 'lifetime')),
+  -- ★ 购买的 SKU（2026-10-18）：权益归集【必须】按它判——旧实现把所有单次购买
+  --   一律映射成 fatebook，导致买「紫微深度」既拿不到紫微权益、又白送一份命书。
+  --   取值 = pricing.ts 的 SkuId（fatebook/annual_report/hemun/ziwei_deep/geo/bundle3…）。
+  --   历史行为兼容：sku 为空（迁移前的老流水）时仍按 payment_type='single' 归集为 fatebook。
+  --   【已有数据库】需在 SQL Editor 补跑（新建库跑本文件即已就位）：
+  --     ALTER TABLE payments ADD COLUMN IF NOT EXISTS sku TEXT;
+  sku TEXT,
   payment_method TEXT CHECK (payment_method IN ('card', 'wechat', 'alipay', 'stripe')),
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'failed', 'refunded')),
   transaction_id TEXT,
@@ -65,6 +72,9 @@ CREATE TABLE IF NOT EXISTS payments (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   CONSTRAINT payments_transaction_id_key UNIQUE (transaction_id)
 );
+
+-- ★ 已有数据库迁移：为老库补 sku 列（幂等，可重复执行；新库因上方已含该列而空跑）
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS sku TEXT;
 
 -- Webhook 处理记录表：幂等方案 (a) 辅——
 --   未产生权益的事件（重复投递/非支付事件）也在此留痕；(event_type,event_id) 官方保证系统内唯一

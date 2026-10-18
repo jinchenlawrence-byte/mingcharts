@@ -10,6 +10,7 @@ import { tiaoHouWuxing } from '@/lib/analysis'
 import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
 import { createServerSupabase } from '@/lib/supabase'
 import { saveReport, deriveReportTitle } from '@/lib/reportSave'
+import { stripEntitlementState, reportCacheKey, GEO_CACHE_VERSION } from '@/lib/reportCache'
 import type { WX } from '@/lib/geo'
 
 export async function POST(request: NextRequest) {
@@ -103,11 +104,13 @@ export async function POST(request: NextRequest) {
       if (user) ent = await getEntitlements(admin, user.id)
     }
     const unlocked = canView(ent, 'geo')
+    // ★ 全量 AI 文本（无条件生成，见上）；门禁只作用于【响应】，不作用于【入库】——
+    //   入库置空会让付费用户回看「我的报告」永远读到锁定版（2026-10-18 真实事故）。
+    const rawAi = aiReport || fallbackGeoText(analysis)
+    const rawAiSource = aiReport ? 'AI 深度解读' : '规则版（AI结果未过合规校验）'
     // ★ free 层保留结构化城市推荐与指数（试吃本意）；ai 在未解锁时为 null
-    const ai = unlocked ? (aiReport || fallbackGeoText(analysis)) : null
-    const aiSource = !unlocked ? '未解锁'
-      : aiReport ? 'AI 深度解读'
-      : '规则版（AI结果未过合规校验）'
+    const ai = unlocked ? rawAi : null
+    const aiSource = !unlocked ? '未解锁' : rawAiSource
 
     const data = {
       chart: { ...chart, analysis: { wangShuai, isPaid: false } },
@@ -136,12 +139,22 @@ export async function POST(request: NextRequest) {
     }
 
     // 登录用户：报告作为账户资产自动保存（静默降级，不阻断主流程）
-    const reportInput = { year, month, day, hour, gender }
+    // ★ 入库只存【内容】（2026-10-18）：locked 剥掉、ai 存全量全文 ——
+    //   读取侧按当前权益重算（详情页 reportGate.gateReportForDetail），试吃→付费即刻生效。
+    // ★ 出生地与现居城市入键（原则②）：地理报告依赖这两者，键不入会互相覆盖（丢报告）
+    const reportInput = {
+      year, month, day, hour, minute, gender,
+      birthZone: ref?.zone ?? null,
+      birthLng: ref?.lng ?? null,
+      birthCity: city?.name ?? null,
+      currentCity: currentCity?.name ?? null
+    }
     const reportId = await saveReport(token || undefined, {
       kind: 'geo',
       title: deriveReportTitle('geo', reportInput),
       input: reportInput,
-      result: data
+      result: { ...stripEntitlementState(data), ai: rawAi, aiSource: rawAiSource } as never,
+      cacheKey: reportCacheKey('geo', GEO_CACHE_VERSION, reportInput)
     })
 
     return NextResponse.json({ success: true, data, reportId })

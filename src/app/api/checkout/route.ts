@@ -11,17 +11,19 @@ import { waffoProductId } from '@/lib/waffo-products'
 import { makeMerchantOrderId } from '@/lib/waffo-events'
 import type { SkuId } from '@/lib/pricing'
 
-// POST /api/checkout { token, sku, chartId? }
+// POST /api/checkout { token, sku, chartId?, returnTo? }
 // 创建 Waffo 托管收银台会话并返回跳转地址。幂等：每次点击生成新的业务单号
 // （未支付的旧会话 45 分钟自动取消，不产生费用）。
 // ★ chartId（HANDOFF-命书一份一付 §3.1）：随 metadata 透传给 webhook 落账关联命盘。
 //   此处不校验归属（webhook 落账前统一校验 §3.2）；本 route 也【不做】无命盘拦截（§2.4）。
+// ★ returnTo（2026-10-18）：成功后回跳的站内路径，透传进 successUrl（waffo.ts 内白名单校验）。
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => null)
     const token = typeof body?.token === 'string' ? body.token.trim() : ''
     const sku = typeof body?.sku === 'string' ? (body.sku as SkuId) : ''
     const chartId = typeof body?.chartId === 'string' ? body.chartId.trim() : ''
+    const returnTo = typeof body?.returnTo === 'string' ? body.returnTo.trim() : ''
     if (!token || !sku) {
       return NextResponse.json({ error: '参数缺失或格式错误' }, { status: 400 })
     }
@@ -59,6 +61,7 @@ export async function POST(request: NextRequest) {
       userId: user.id,
       sku,
       chartId: chartId || undefined, // 空串=未关联，metadata 里落空串
+      returnTo: returnTo || undefined, // 空串=不回跳指定页（成功页走默认 /chart）
       appUrl: getAppUrl(),
       storeId: getWaffoStoreId(),
     })

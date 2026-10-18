@@ -122,6 +122,12 @@ export interface CheckoutParamsInput {
   //   走 metadata 不改单号格式（MC-<userId>-<ts> 已实测 54 字符，塞 UUID 36 字符会逼近 128 上限）。
   //   webhook 落账前会校验归属（§3.2），此处只透传不信任。
   chartId?: string
+  /**
+   * ★ 支付成功后要回到的【站内路径】（2026-10-18 修复）：模块（紫微/合婚/地理/年运）
+   *   购买后应回原模块页看已解锁内容，而不是被统一扔去 /chart（真实事故）。
+   *   仅接受以 / 开头的站内绝对路径（非 //），其余一律丢弃——防开放重定向。
+   */
+  returnTo?: string
   appUrl: string
   storeId: string
 }
@@ -141,7 +147,18 @@ export function buildCheckoutParams(input: CheckoutParamsInput): WaffoCheckoutPa
       `NEXT_PUBLIC_APP_URL 必须是 https 绝对地址（当前：${input.appUrl}）；本地联调请填 cloudflared/ngrok 的 https 隧道地址。`,
     )
   }
-  const successUrl = `${base.origin}/checkout/success?ref=${encodeURIComponent(input.orderMerchantExternalId)}`
+  // ★ successUrl 带回 sku 与 returnTo（2026-10-18 修复）：
+  //   · sku —— 成功页据此轮询【正确商品】的权益（旧实现只轮询 fatebook，买紫微永远等不到）
+  //   · returnTo —— 成功页据此把用户送回原模块页看已解锁内容
+  //   两者都经 encodeURIComponent；returnTo 只收站内相对路径（非 //），防开放重定向。
+  const rawReturnTo = (input.returnTo ?? '').trim()
+  const safeReturnTo =
+    rawReturnTo.startsWith('/') && !rawReturnTo.startsWith('//') ? rawReturnTo : ''
+  const successQuery =
+    `ref=${encodeURIComponent(input.orderMerchantExternalId)}` +
+    `&sku=${encodeURIComponent(input.sku)}` +
+    (safeReturnTo ? `&returnTo=${encodeURIComponent(safeReturnTo)}` : '')
+  const successUrl = `${base.origin}/checkout/success?${successQuery}`
   const cardOnly: PaymentMethod[] = ['card']
   return {
     storeId: input.storeId,

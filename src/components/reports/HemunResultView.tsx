@@ -5,6 +5,7 @@
 import type { HemunResult } from '@/lib/hemun'
 import type { AIHemunSections } from '@/lib/aiHemun'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
+import CheckoutButton from '@/components/CheckoutButton'
 
 export interface HemunData {
   result: HemunResult
@@ -151,11 +152,13 @@ export default function HemunResultView({ data }: { data: HemunData }) {
           {data.locked.skus.map((skuId) => {
             const sku = SKUS[skuId as keyof typeof SKUS]
             if (!sku) return null
+            // ★ 直连收银台（2026-10-18 修复）：不再绕价格页；returnTo=/reports 付完回我的报告
             return (
-              <a key={skuId} href="/pricing"
-                className="inline-block px-6 py-2 bg-amber-600 text-white rounded-lg font-semibold hover:bg-amber-700 mr-2">
-                解锁 {sku.name} {formatPriceUSD(sku.priceUSD)}
-              </a>
+              <div key={skuId} className="max-w-xs mx-auto mb-2">
+                <CheckoutButton sku={sku.id} available requireChart={false} returnTo="/reports">
+                  解锁 {sku.name} {formatPriceUSD(sku.priceUSD)}
+                </CheckoutButton>
+              </div>
             )
           })}
         </div>

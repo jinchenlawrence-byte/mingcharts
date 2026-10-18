@@ -6,6 +6,7 @@ import { useState } from 'react'
 import type { ZwChart, ZiweiAnalysis, PeriodRead } from '@/lib/ziwei'
 import type { ZiweiAIReport } from '@/lib/aiZiwei'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
+import CheckoutButton from '@/components/CheckoutButton'
 
 export interface ZiweiResultData {
   chart: ZwChart
@@ -229,11 +230,15 @@ export default function ZiweiResultView({ data }: { data: ZiweiResultData }) {
           {locked.skus.map((skuId) => {
             const sku = SKUS[skuId as keyof typeof SKUS]
             if (!sku) return null
+            // ★ 直连收银台（2026-10-18 修复）：旧实现 href="/pricing" 把用户丢去价格页再点一次，
+            //   且「紫微深度」在价格页的按钮同样绕路（真实事故）。returnTo=/reports：付完回我的报告
+            //   看已解锁内容（紫微与命盘无绑定关系，requireChart=false —— 未排盘也能买）。
             return (
-              <a key={skuId} href="/pricing"
-                className="inline-block px-6 py-2 bg-cinnabar text-white rounded-lg font-semibold hover:bg-cinnabar/90 mr-2">
-                解锁 {sku.name} {formatPriceUSD(sku.priceUSD)}
-              </a>
+              <div key={skuId} className="max-w-xs mx-auto mb-2">
+                <CheckoutButton sku={sku.id} available requireChart={false} returnTo="/reports">
+                  解锁 {sku.name} {formatPriceUSD(sku.priceUSD)}
+                </CheckoutButton>
+              </div>
             )
           })}
         </div>

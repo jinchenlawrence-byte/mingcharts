@@ -2,8 +2,9 @@
 
 import { Suspense, useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
+import { SKUS, type SkuId } from '@/lib/pricing'
 
 // 支付成功回跳页。
 // ★★★ 不能假设付款已确认：从收银台跳回时 webhook 可能还在路上，也可能最终丢失。
@@ -19,11 +20,28 @@ type Phase = 'preparing' | 'polling' | 'verifying' | 'unlocked' | 'pending' | 'n
 const POLL_INTERVAL_MS = 2000
 const POLL_MAX_TIMES = 15
 
+// ★ 未带 returnTo 时的默认落点（2026-10-18）：修「买完紫微被扔去 /chart」——
+//   按【本次购买的 SKU】决定去哪、文案说什么，不再一律当命书。
+//   模块报告（紫微/合婚/地理/年运）无独立详情入口，统一落「我的报告」列表。
+const DEFAULT_LANDING: Record<string, { href: string; label: string }> = {
+  fatebook: { href: '/chart', label: '查看命书全文' },
+  annual_report: { href: '/reports', label: '进入我的报告' },
+  hemun: { href: '/reports', label: '进入我的报告' },
+  ziwei_deep: { href: '/reports', label: '进入我的报告' },
+  geo: { href: '/reports', label: '进入我的报告' },
+  bundle3: { href: '/reports', label: '查看已购内容' },
+  member_monthly: { href: '/', label: '返回首页' },
+  member_yearly: { href: '/', label: '返回首页' },
+}
+
 function SuccessInner() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const [phase, setPhase] = useState<Phase>('preparing')
   const [ref, setRef] = useState('')
   const [seconds, setSeconds] = useState(0)
+  const [skuId, setSkuId] = useState<SkuId>('fatebook')
+  const [returnTo, setReturnTo] = useState('')
   const startedRef = useRef(false)
 
   useEffect(() => {
@@ -46,6 +64,17 @@ function SuccessInner() {
         return
       }
       setRef(orderRef)
+
+      // ★ 本次购买的 SKU 与回跳目标（2026-10-18）：checkout 已把它们编进 successUrl。
+      //   轮询【正确商品】的权益（旧实现只认 fatebook，买紫微永远等不到解锁）；
+      //   returnTo 仅接受站内绝对路径（非 //），防开放重定向；非法/缺失则回落默认落点。
+      const urlSku = searchParams.get('sku')?.trim() || ''
+      const resolvedSku: SkuId = urlSku && urlSku in SKUS ? (urlSku as SkuId) : 'fatebook'
+      const rawReturnTo = searchParams.get('returnTo')?.trim() || ''
+      const safeReturnTo =
+        rawReturnTo.startsWith('/') && !rawReturnTo.startsWith('//') ? rawReturnTo : ''
+      setSkuId(resolvedSku)
+      setReturnTo(safeReturnTo)
 
       const supabase = getSupabase()
       const {
@@ -70,11 +99,13 @@ function SuccessInner() {
       const timer = setInterval(() => setSeconds((s) => s + 2), 2000)
 
       // ② 轮询权益（★ 看 ownedSkus 而不是 canViewFatebook——内测期 ENFORCE=false 会恒真）
+      //   ★ 按【本次购买的 SKU】判定（2026-10-18 修复）：旧实现只认 fatebook，
+      //     买紫微/合婚/地理/年运的用户会被无限轮询到超时（真实事故）。
       setPhase('polling')
       let owned = false
       for (let i = 0; i < POLL_MAX_TIMES; i++) {
         const ent = await postJson('/api/entitlements', { token })
-        if (Array.isArray(ent?.ownedSkus) && ent.ownedSkus.includes('fatebook')) {
+        if (Array.isArray(ent?.ownedSkus) && ent.ownedSkus.includes(resolvedSku)) {
           owned = true
           break
         }
@@ -83,6 +114,8 @@ function SuccessInner() {
       if (owned) {
         clearInterval(timer)
         setPhase('unlocked')
+        // ★ 模块购买直接送回原模块页看已解锁内容（不再统一扔去 /chart）
+        if (safeReturnTo) router.replace(safeReturnTo)
         return
       }
 
@@ -95,7 +128,7 @@ function SuccessInner() {
       clearInterval(timer)
       setPhase(verify?.status === 'owned' ? 'unlocked' : 'pending')
     })()
-  }, [searchParams])
+  }, [searchParams, router])
 
   return (
     <main className="hw-page">
@@ -118,20 +151,27 @@ function SuccessInner() {
           {phase === 'unlocked' && (
             <>
               <div className="text-4xl mb-4">✅</div>
-              <h1 className="text-xl font-bold text-ink mb-2">支付成功，命书已解锁</h1>
+              <h1 className="text-xl font-bold text-ink mb-2">
+                支付成功，{SKUS[skuId]?.name ?? '内容'}已解锁
+              </h1>
               <p className="text-sm text-ink-light mb-6">
-                命书已永久保存到你的账号，可随时登录查看。
+                {skuId === 'fatebook'
+                  ? '命书已永久保存到你的账号，可随时登录查看。'
+                  : '已保存到你的账号，可随时登录查看。'}
               </p>
               <div className="space-y-3">
                 <Link
-                  href="/chart"
+                  href={returnTo || (DEFAULT_LANDING[skuId]?.href ?? '/')}
                   className="block hw-c-btnBig"
                 >
-                  查看命书全文
+                  {DEFAULT_LANDING[skuId]?.label ?? '查看已购内容'}
                 </Link>
-                <Link href="/charts" className="block text-sm hw-c-blue">
-                  进入我的命盘列表
-                </Link>
+                {/* ★ 命书才有「我的命盘列表」；模块（紫微/合婚/地理/年运）已落「我的报告」，不重复给 */}
+                {skuId === 'fatebook' ? (
+                  <Link href="/charts" className="block text-sm hw-c-blue">
+                    进入我的命盘列表
+                  </Link>
+                ) : null}
                 <Link href="/" className="block text-sm hw-c-blue">
                   返回首页
                 </Link>

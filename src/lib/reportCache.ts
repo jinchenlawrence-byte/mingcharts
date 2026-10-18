@@ -24,6 +24,15 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  */
 export const ANNUAL_CACHE_VERSION = 1
 
+/**
+ * ★★ 合婚/紫微/地理的缓存版本（同上纪律：改 AI prompt / 判据 / 排盘算法必须 +1）。
+ *   这三个模块本轮只为「覆盖写」引入 cacheKey（同一请求参数重复生成不堆积重复行），
+ *   读取侧仍由详情页 reportGate 按当前权益重算。
+ */
+export const HEMUN_CACHE_VERSION = 1
+export const ZIWEI_CACHE_VERSION = 1
+export const GEO_CACHE_VERSION = 1
+
 /** 年运缓存的入键参数全量（route 的 reportInput 与此同源） */
 export interface AnnualCacheInput {
   year: number
@@ -54,6 +63,12 @@ function stableStringify(v: unknown): string {
 export function annualCacheKey(input: AnnualCacheInput): string {
   const digest = createHash('sha1').update(stableStringify(input)).digest('hex').slice(0, 16)
   return `annual:v${ANNUAL_CACHE_VERSION}:y${input.targetYear}:${digest}`
+}
+
+/** 通用报告缓存键：{kind}:v{版本}:{参数全量摘要}（摘要取 sha1 前 16 位，字段顺序无关） */
+export function reportCacheKey(kind: string, version: number, input: unknown): string {
+  const digest = createHash('sha1').update(stableStringify(input)).digest('hex').slice(0, 16)
+  return `${kind}:v${version}:${digest}`
 }
 
 /** 写缓存前剥掉权益状态（locked 是派生字段，入缓存即违反原则①） */

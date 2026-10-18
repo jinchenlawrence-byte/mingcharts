@@ -110,9 +110,14 @@ console.log('—— ① 购买前要求有命盘 ——')
   assert(posQuery >= 0 && posFetch >= 0 && posQuery < posFetch,
     `预检（charts 查询）在发起支付（/api/checkout）之前（${posQuery} < ${posFetch}）`)
   // 短路语义：无命盘（!chartId）分支内必须在发起支付前 return——
+  // ★ 2026-10-18：分支加了 requireChart 前置 —— 模块购买（紫微/合婚/地理/年运）
+  //   传 requireChart=false 跳过命盘预检直接可买（权益是账号级的，与命盘无关）；
+  //   命书（默认 requireChart=true）仍必须短路（一份一付绑定命盘）。
   // 牙口锚点：把分支里的 return 改成 ;（文本几乎不变、行为变坏：继续走 fetch）→ 此正则不命中 → 翻红
-  const shortCircuit = /if\s*\(!chartId\)\s*\{[^{}]*\breturn\b/.test(src)
-  assert(shortCircuit, '无命盘分支短路成立（if (!chartId) { … return }，不继续发起支付）')
+  const shortCircuit = /if\s*\(\s*requireChart\s*&&\s*!chartId\s*\)\s*\{[^{}]*\breturn\b/.test(src)
+  assert(shortCircuit, '无命盘分支短路成立（requireChart && !chartId { … return }）')
+  assert(/requireChart\s*=\s*(true|false)\s*,/.test(src) && src.includes('requireChart'),
+    'CheckoutButton 暴露 requireChart 开关（命书默认强制绑盘、模块可跳过）')
   assert(src.includes('先免费排盘'), '无命盘引导文案「先免费排盘」存在')
   assert(src.includes('/?returnTo=/pricing'), '引导链接带 returnTo=/pricing')
   assert(!/\balert\(/.test(src), '无命盘分支不弹 alert（§2.3：页内可点下一步）')

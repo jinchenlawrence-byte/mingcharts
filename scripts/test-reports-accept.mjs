@@ -144,5 +144,92 @@ console.log(schemaFail === 0
   ? `✓ 表结构：reports 表/RLS/SELECT+INSERT+DELETE 三策略/双索引齐备（${SQL_NEEDS.length} 项判据全中）`
   : '✗ schema 断言失败')
 
+// ---------- ⑦ ★★★ 读取侧重算（2026-10-18 事故修复：付费后回看仍显示「未解锁」）----------
+// 事故链条：生成时未解锁 → 入库 ai=null/locked 非空 → 详情页【直接渲染这一行】→ 付费等于没生效。
+// 修法：入库只存内容（见 ⑧），渲染前按【当前权益】重算 locked/ai/aiSource（本段真调用守护）。
+console.log('—— ⑦ 读取侧重算 gateReportForDetail（真调用）——')
+let gateFail = 0
+const { gateReportForDetail, REPORT_GATE } = await import('../src/lib/reportGate.ts')
+const { SKUS: SKU_TABLE } = await import('../src/lib/pricing.ts')
+
+// 内容里【带着全文】（新入库形态）：未持有必须看不到全文，已持有必须看到
+const FULL = { locked: { skus: ['ziwei_deep'], preview: '旧快照文案' }, ai: '紫微全文内容', aiSource: 'AI 深度解读' }
+const noEnt = { memberSkus: [], ownedSkus: [] }
+const notOwned = gateReportForDetail('ziwei', FULL, noEnt)
+if (notOwned.ai !== null) { gateFail++; fail(`未持有不得看到 ai 全文，实得 ${JSON.stringify(notOwned.ai)}`) }
+if (!notOwned.locked || !notOwned.locked.preview) { gateFail++; fail('未持有应给 locked.preview') }
+if (notOwned.locked.preview === '旧快照文案') { gateFail++; fail('未持有文案应即时重算（不是入库旧快照）') }
+
+const ownedEnt = { memberSkus: [], ownedSkus: ['ziwei_deep'] }
+const owned = gateReportForDetail('ziwei', FULL, ownedEnt)
+if (owned.ai !== '紫微全文内容') { gateFail++; fail(`已持有必须看到全文，实得 ${JSON.stringify(owned.ai)}`) }
+if (owned.locked !== null) { gateFail++; fail('已持有 locked 应为 null') }
+
+// 交叉不得越权：买合婚不得解锁紫微；会员不含报告；bundle3 三件套应隐式解锁紫微
+if (gateReportForDetail('ziwei', FULL, { memberSkus: [], ownedSkus: ['hemun'] }).ai !== null) {
+  gateFail++; fail('买合婚不得解锁紫微（SKU 交叉越权）')
+}
+if (gateReportForDetail('ziwei', FULL, { memberSkus: ['member_yearly'], ownedSkus: [] }).ai !== null) {
+  gateFail++; fail('会员不应解锁报告（订阅 grants 不含报告）')
+}
+if (gateReportForDetail('ziwei', FULL, { memberSkus: [], ownedSkus: ['bundle3'] }).ai !== '紫微全文内容') {
+  gateFail++; fail('bundle3 应隐式解锁紫微（含 ziwei_deep）')
+}
+// 命书不走本重算（正文在 charts.chart_data）
+const fbPass = gateReportForDetail('fatebook', { x: 1 }, noEnt)
+if (fbPass.x !== 1) { gateFail++; fail('fatebook 应原样透传（不走 reportGate）') }
+
+// 门禁口径与价目表同源：每类的 sku 其 grants 必须真含该 grant（防文案/权益漂移）
+for (const [kind, g] of Object.entries(REPORT_GATE)) {
+  if (!g) { if (kind !== 'fatebook') { gateFail++; fail(`REPORT_GATE 缺 ${kind}`) } ; continue }
+  if (!SKU_TABLE[g.sku] || !SKU_TABLE[g.sku].grants.includes(g.grant)) {
+    gateFail++; fail(`REPORT_GATE.${kind} 的 sku=${g.sku} grants 不含 ${g.grant}（口径漂移）`)
+  }
+}
+// 详情页必须走重算，不得直接渲染 row.result
+const detailCode = stripComments(read('../src/app/reports/[id]/page.tsx'))
+if (!detailCode.includes('gateReportForDetail(')) { gateFail++; fail('/reports/[id] 未按当前权益重算（缺 gateReportForDetail）') }
+if (!detailCode.includes("'/api/entitlements'")) { gateFail++; fail('/reports/[id] 未取当前权益（缺 /api/entitlements）') }
+console.log(gateFail === 0
+  ? '✓ 读取侧重算：内容带全文时未持有不可见、已持有可见；交叉不越权；会员不含报告；bundle3 隐式解锁；详情页接线'
+  : '✗ 读取侧重算断言失败')
+
+// ---------- ⑧ ★★ 入库只存内容 + 覆盖写 + payments.sku（2026-10-18）----------
+console.log('—— ⑧ 入库纪律与 payments.sku ——')
+let storeFail = 0
+for (const [kind, path] of ROUTES) {
+  const code = stripComments(read(path))
+  if (!code.includes('stripEntitlementState(')) { storeFail++; fail(`${kind} route 入库未剥权益状态（会把 locked 存进库）`) }
+  if (!code.includes('CacheKey(')) { storeFail++; fail(`${kind} route 未设 cacheKey（重复点击堆积重复报告）`) }
+  // 版本号：三模块用 reportCacheKey(kind, X_CACHE_VERSION…)；年运沿用其既有 annualCacheKey（实现内含 ANNUAL_CACHE_VERSION）
+  if (kind === 'annual') {
+    if (!code.includes('annualCacheKey(')) { storeFail++; fail('annual route 未用 hourlyCacheKey 系列（annualCacheKey）') }
+  } else if (!/_CACHE_VERSION/.test(code)) {
+    storeFail++; fail(`${kind} route cacheKey 未带版本号（改算法不会失效重建）`)
+  }
+}
+// 版本常量四份齐备（改 AI prompt / 判据必须 +1）
+const cacheCode = stripComments(read('../src/lib/reportCache.ts'))
+for (const v of ['ANNUAL_CACHE_VERSION', 'HEMUN_CACHE_VERSION', 'ZIWEI_CACHE_VERSION', 'GEO_CACHE_VERSION']) {
+  if (!cacheCode.includes(v)) { storeFail++; fail(`reportCache.ts 缺版本常量 ${v}`) }
+}
+// schema：payments.sku 列 + 老库迁移语句
+const sqlSku = read('../supabase/schema.sql')
+for (const n of ['ALTER TABLE payments ADD COLUMN IF NOT EXISTS sku TEXT', 'sku TEXT']) {
+  if (!sqlSku.includes(n)) { storeFail++; fail(`schema.sql 缺「${n}」`) }
+}
+// 归集查 payments.sku（不做则一律 fatebook 的手误会白送命书）
+const entCode2 = stripComments(read('../src/lib/entitlement.ts'))
+if (!entCode2.includes("select('payment_type, status, transaction_id, sku')")) {
+  storeFail++; fail('entitlement.ts 未查 payments.sku（权益归集依赖它）')
+}
+if (!entCode2.includes('skuOfPayment(')) { storeFail++; fail('entitlement.ts 未按流水 sku 归集（旧实现一律 fatebook）') }
+if (!read('../src/lib/waffo-repo.ts').includes('updatePaymentSku')) {
+  storeFail++; fail('缺 SKU 回填（老流水 sku 为空 → 已购用户永远拿不到权益）')
+}
+console.log(storeFail === 0
+  ? '✓ 入库纪律：四 route 剥权益状态+覆盖写+版本号；payments.sku 列与迁移语句就位；归集按 sku 且可回填'
+  : '✗ 入库纪律断言失败')
+
 console.log('\n' + (allPass ? 'REPORTS_ACCEPT_PASS' : 'REPORTS_ACCEPT_FAIL'))
 if (!allPass) process.exit(1)

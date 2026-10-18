@@ -68,6 +68,46 @@ if (expiredMember.memberSkus.length !== 0) {
   behavFail++; fail(`过期会员不应持 SKU，实得 memberSkus=[${expiredMember.memberSkus}]`)
 }
 
+// ①-5 ★★★ SKU 归集（2026-10-18 修复）：买紫微深度不得白送命书，且必须真授紫微
+const ziweiEnt = entitlementsFromRows(
+  [{ payment_type: 'single', status: 'paid', transaction_id: 'WF-2026-003', sku: 'ziwei_deep' }],
+  null
+)
+if (ziweiEnt.ownedSkus.has('fatebook')) {
+  behavFail++; fail('买紫微深度不得白送命书（fatebook）—— 旧实现一律归 fatebook 的真实事故')
+}
+if (!ziweiEnt.ownedSkus.has('ziwei_deep')) {
+  behavFail++; fail('买紫微深度必须授予 ziwei_deep（真实事故：付款后未解锁）')
+}
+
+// ①-6 ★★★ 五个单次 SKU 逐个核对：各授自身；除 bundle3（正含 fatebook）外不得白送命书
+for (const sku of ['annual_report', 'hemun', 'ziwei_deep', 'geo', 'bundle3']) {
+  const e = entitlementsFromRows(
+    [{ payment_type: 'single', status: 'paid', transaction_id: 'WF-X', sku }], null
+  )
+  if (!e.ownedSkus.has(sku)) { behavFail++; fail(`${sku} 付款未授予自身权益`) }
+  if (!SKUS[sku].grants.includes('fatebook') && e.ownedSkus.has('fatebook')) {
+    behavFail++; fail(`${sku} 不应白送 fatebook（其 grants 不含）`)
+  }
+}
+
+// ①-7 未知/脏 sku → 不授予任何权益（防脏数据放大权益）
+const dirtyEnt = entitlementsFromRows(
+  [{ payment_type: 'single', status: 'paid', transaction_id: 'WF-Y', sku: ' admin ' }], null
+)
+if (dirtyEnt.ownedSkus.size !== 0) {
+  behavFail++; fail(`未知 sku 不得授予权益，实得 [${[...dirtyEnt.ownedSkus]}]`)
+}
+
+// ①-8 空 sku（payments.sku 列上线前的老流水，当时只有命书单）→ 仍归 fatebook（历史兼容）
+const legacyEnt = entitlementsFromRows(
+  [{ payment_type: 'single', status: 'paid', transaction_id: 'WF-Z' }], null
+)
+if (!legacyEnt.ownedSkus.has('fatebook')) {
+  behavFail++; fail('空 sku 老流水应仍归 fatebook（历史兼容，不可丢老用户命书）')
+}
+
+
 // ①-a 静态守卫：源码必须含 startsWith('MOCK_') 排除逻辑
 const entSrc = readFileSync(
   new URL('../src/lib/entitlement.ts', import.meta.url), 'utf8'
@@ -78,7 +118,8 @@ if (!entCode.includes("startsWith('MOCK_')")) {
 }
 
 console.log(behavFail === 0
-  ? '✓ 行为断言：MOCK_流水→无fatebook / 真实单号→有fatebook / 未支付→无 / 会员有效期与过期；源码含排除逻辑'
+  ? '✓ 行为断言：MOCK_流水→无fatebook / 真实单号→有fatebook / 未支付→无 / 会员有效期与过期；'
+    + '★按sku归集(买紫微不白送命书且真授紫微/五SKU逐个核对/脏sku不授/空sku归fatebook兼容)；源码含排除逻辑'
   : '✗ 行为断言失败')
 
 // ---------- ② ★★ membership POST 不含 admin.from(（充分条件，抓换写法）----------

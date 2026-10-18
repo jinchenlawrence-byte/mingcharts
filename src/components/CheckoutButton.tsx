@@ -19,6 +19,8 @@ export default function CheckoutButton({
   available,
   highlight = false,
   chartId: chartIdProp,
+  requireChart = true,
+  returnTo,
   children,
 }: {
   sku: SkuId
@@ -26,6 +28,14 @@ export default function CheckoutButton({
   highlight?: boolean
   /** ★ 命盘页直传当前盘 id（挂载时 /api/unlock 预检返回）；不传则回退「服务端最新一张」 */
   chartId?: string
+  /**
+   * ★ 是否要求已有命盘（2026-10-18）：命书必须绑定命盘（一份一付），故默认 true。
+   *   紫微/合婚/地理/年运等【模块】购买与命盘无关，传 false —— 跳过命盘预检，
+   *   未排盘的用户也能直接购买（否则会被挡在「先去免费排盘」里，无法付费）。
+   */
+  requireChart?: boolean
+  /** ★ 支付成功后回跳的站内路径（模块购买回原模块页看已解锁内容）；缺省走成功页默认 */
+  returnTo?: string
   children: React.ReactNode
 }) {
   const router = useRouter()
@@ -58,8 +68,12 @@ export default function CheckoutButton({
 
       // ★ 绑定目标优先级（2026-10-18 修复）：命盘页直传的当前盘 > 服务端最新一张。
       //   旧逻辑只取最新一张——新排未落库的盘会把款绑到旧盘上。
-      const chartId = chartIdProp ?? (await latestChartIdOf(supabase, session.user.id))
-      if (!chartId) {
+      //   ★ requireChart=false（模块购买）：不预检、不拦截，chartId 留空（payments.chart_id 落 NULL）
+      //     —— 紫微/合婚/地理/年运的权益是【账号级】的，与某一命盘无关。
+      const chartId = requireChart
+        ? chartIdProp ?? (await latestChartIdOf(supabase, session.user.id))
+        : chartIdProp ?? ''
+      if (requireChart && !chartId) {
         setNoChart(true)
         setLoading(false)
         return
@@ -71,7 +85,13 @@ export default function CheckoutButton({
         // ★ chartId 必须随单透传（2026-10-17 修复）：预检算出的 chartId 之前只当门槛没回传，
         //   webhook 收不到 metadata.chartId → payments.chart_id 落 NULL → 按盘解锁永不生效。
         //   归属安全由 webhook 落账前 resolveChartIdForUser 校验（chart 不属于买家则落 NULL）。
-        body: JSON.stringify({ sku, token: session.access_token, chartId }),
+        // ★ returnTo（2026-10-18）：模块购买回原模块页，不再被统一扔去 /chart。
+        body: JSON.stringify({
+          sku,
+          token: session.access_token,
+          ...(chartId ? { chartId } : {}),
+          ...(returnTo ? { returnTo } : {}),
+        }),
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) {

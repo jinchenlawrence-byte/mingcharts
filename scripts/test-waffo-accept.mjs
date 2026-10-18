@@ -498,10 +498,32 @@ console.log('—— ⑥ 单号规则 / buildCheckoutParams / SKU 映射 ——')
   assert(Array.isArray(params.includePaymentMethods) && params.includePaymentMethods.length === 1 && params.includePaymentMethods[0] === 'card', '仅开放 card（includePaymentMethods）')
   assert(params.orderMerchantExternalId === orderId, 'orderMerchantExternalId = MC- 单号')
   assert(params.metadata.userId === UID_A && params.metadata.sku === 'fatebook', 'metadata 带 userId/sku（字符串值）')
+  // ★ successUrl 必须带 sku（2026-10-18 修复）：成功页据此轮询【正确商品】的权益，
+  //   旧实现只认 fatebook —— 买紫微/合婚/地理/年运的用户会被无限轮询到超时（真实事故）
   assert(
-    params.successUrl === `https://www.mingcharts.com/checkout/success?ref=${encodeURIComponent(orderId)}`,
-    'successUrl 为绝对 https 且带 ?ref=业务单号',
+    params.successUrl ===
+      `https://www.mingcharts.com/checkout/success?ref=${encodeURIComponent(orderId)}&sku=fatebook`,
+    'successUrl 为绝对 https 且带 ref + sku',
   )
+
+  // ★ returnTo 白名单（2026-10-18）：只收站内相对路径，防开放重定向
+  const withReturn = buildCheckoutParams({
+    productId: 'PROD_live', orderMerchantExternalId: orderId, buyerEmail: 'a@b.c',
+    userId: UID_A, sku: 'ziwei_deep', appUrl: 'https://www.mingcharts.com', storeId: 'STO_live',
+    returnTo: '/reports',
+  })
+  assert(
+    withReturn.successUrl.endsWith(`&returnTo=${encodeURIComponent('/reports')}`),
+    'returnTo 站内路径透传进 successUrl',
+  )
+  for (const evil of ['https://evil.com', '//evil.com', '', '  ']) {
+    const p = buildCheckoutParams({
+      productId: 'PROD_live', orderMerchantExternalId: orderId, buyerEmail: 'a@b.c',
+      userId: UID_A, sku: 'ziwei_deep', appUrl: 'https://www.mingcharts.com', storeId: 'STO_live',
+      returnTo: evil,
+    })
+    assert(!p.successUrl.includes('returnTo='), `非站内 returnTo 被丢弃：${JSON.stringify(evil)}`)
+  }
 
   // 本地 http 开发地址放行；非环回 http 拒绝
   assert(

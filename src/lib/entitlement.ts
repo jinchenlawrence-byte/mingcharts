@@ -38,6 +38,20 @@ export const EMPTY_ENTITLEMENTS: Entitlements = {
 }
 
 /**
+ * 纯判定：显式给定权益集，判断是否覆盖 grant（★ 不含 ENFORCE 开关）。
+ * canView 与「读侧按当前权益重算」共用它 —— 门禁口径只此一份。
+ * 客户端可安全调用（若要让客户端按真实持有重算，权益集来自服务端 /api/entitlements）。
+ */
+export function grantsCover(
+  ent: { memberSkus: SkuId[]; ownedSkus: Set<SkuId> | SkuId[] },
+  grant: GrantId
+): boolean {
+  const owned = Array.isArray(ent.ownedSkus) ? ent.ownedSkus : [...ent.ownedSkus]
+  const sources = [...ent.memberSkus, ...owned]
+  return sources.some((id) => SKUS[id]?.grants.includes(grant) ?? false)
+}
+
+/**
  * 唯一门禁判定：问「这些权益能否访问该 grant」。
  * ★ ENFORCE 关闭时无条件放行 —— 结构就位、默认全放行，等支付接入后统一开启。
  * 开启后：会员或已购 SKU 中，任一 SKU 的 grants 覆盖该 grant 即放行。
@@ -46,8 +60,7 @@ export const EMPTY_ENTITLEMENTS: Entitlements = {
  */
 export function canView(ent: Entitlements, grant: GrantId): boolean {
   if (!ENTITLEMENT_ENFORCE) return true
-  const sources = [...ent.memberSkus, ...ent.ownedSkus]
-  return sources.some((id) => SKUS[id].grants.includes(grant))
+  return grantsCover(ent, grant)
 }
 
 /**
@@ -57,10 +70,12 @@ export function canView(ent: Entitlements, grant: GrantId): boolean {
  *   ✗ 绝不接受"内测期临时开通"写入的数据 —— 内测期的免费由
  *     ENTITLEMENT_ENFORCE 开关表达（生产不设该 env ⇒ false，见该常量注释）
  *
- * 现状：payments 表无 sku 列（见 supabase/schema.sql），
- *   payment_type='single' 的已支付流水＝旧版单次解锁命书 → 映射 fatebook；
- *   会员订阅流水（payment_type='monthly'/'yearly'）的权益以 profiles 会员状态为准。
- *   第 6 步加 sku 列后，改为直接按流水 sku 归集，此处是唯一改动点。
+ * ★★ 按【流水真实 SKU 归集】（2026-10-18 修复，本处即当时预告的唯一改动点）：
+ *   旧实现把 payment_type='single' 一律归成 fatebook —— 于是买「紫微深度/合婚/地理/年运」
+ *   的用户既拿不到对应权益，又白送一份命书（真实事故：紫微深度付款后未解锁）。
+ *   现按流水 sku 归集：sku 合法 → 只授予该 SKU 的 grants；sku 为空（列上线前的老流水，
+ *   当时只有命书单）→ 按历史行为兜底 fatebook；sku 非法（未知字符串）→ 不授予任何权益。
+ *   会员订阅流水（monthly/yearly）权益仍以 profiles 会员状态为准（见下）。
  */
 
 /** profiles 行的类型（getEntitlements 查回的子集） */
@@ -75,6 +90,15 @@ export interface PaymentRow {
   payment_type?: string | null
   status?: string | null
   transaction_id?: string | null
+  /** ★ 购买的 SKU（payments.sku，2026-10-18 新增）：权益归集依据；空=列上线前的老流水 */
+  sku?: string | null
+}
+
+/** 触发权益授予的一次性付款 SKU 是否为已知 SKU（未知 sku 一律不授予，防脏数据放大权益） */
+function skuOfPayment(p: PaymentRow): SkuId | null {
+  const sku = (p.sku ?? '').trim()
+  if (!sku) return 'fatebook' // ★ 历史兼容：列上线前的老流水均为命书单
+  return sku in SKUS ? (sku as SkuId) : null
 }
 
 /**
@@ -103,7 +127,9 @@ export function entitlementsFromRows(
     //    【不是真实购买】，绝不能据此授予权益（否则内测期用户会永久白拿）。
     //    真实流水由支付平台（Waffo）回调写入，transaction_id 为其真实单号。
     if (typeof p.transaction_id === 'string' && p.transaction_id.startsWith('MOCK_')) continue
-    if (p.payment_type === 'single') ownedSkus.add('fatebook')
+    if (p.payment_type !== 'single') continue // 订阅流水权益以 profiles 会员状态为准
+    const sku = skuOfPayment(p)
+    if (sku) ownedSkus.add(sku)
   }
 
   return { memberSkus, ownedSkus }
@@ -125,7 +151,7 @@ export async function getEntitlements(
       .maybeSingle(),
     admin
       .from('payments')
-      .select('payment_type, status, transaction_id')
+      .select('payment_type, status, transaction_id, sku')
       .eq('user_id', userId)
   ])
 
@@ -156,11 +182,15 @@ export async function latestChartIdOf(
  * ★★★ 命书「按盘」判定（HANDOFF-命书一份一付 §四，2026-10-13）
  *   第一层：ENTITLEMENT_ENFORCE —— 内测开关，false 时【一律放行】且【不查库】
  *           （保持内测期行为与成本与现状完全一致）
- *   第二层：该 chart 是否【已付款】—— 查 payments(user_id, chart_id, status='paid')
+ *   第二层：该 chart 是否买了【命书】—— 查 payments(user_id, chart_id, status='paid')
+ *           并逐行按 sku 判定其 grants 是否含 fatebook（2026-10-18 修复）
  * ★ 两层都要过；权益凭据是 payments.chart_id（§3.2 归属校验后写入），
  *   绝不用 charts.is_paid 当凭据（其语义是「解锁过」，不参与权益判定）。
  * ★ chartId 为 null/undefined → 不放行（§五：NULL 行天然不匹配任何「已付某盘」，
  *   且有守卫兜底——不带 chartId 的调用绝不放行，防旧数据 chart_id=NULL 被误判）。
+ * ★★ 2026-10-18 赔付性修复：买「紫微深度」等非命书商品时，旧实现同样按
+ *   payment_type='single' 授予命书权益（白送命书）。现按 sku 判：只有 grants
+ *   含 fatebook 的 SKU 才算「这一盘付过命书」。sku 空（列上线前老流水）仍算命书。
  * ★ opts.enforce 仅供断言注入双层判定的 ENFORCE=true 分支（默认读全局开关），
  *   生产调用一律不传 —— 生产不设该 env ⇒ 开关为 false（26号方案 B，守护断言把关）。
  *   ★ 牙口锚点（三条，见 scripts/test-fatebook-onepay.mjs ③段）：
@@ -178,12 +208,20 @@ export async function canViewFatebookForChart(
   if (!enforce) return true // ★ 内测期：与现状完全一致，不查库
   if (!admin) return false // ★ 无客户端＝无凭据可查（paipan 匿名请求不建 Supabase 客户端，排盘不因此强依赖 Supabase 配置）
   if (!chartId) return false // ★ 无命盘归属 → 不放行（先于任何查询）
+  // ★ 取该盘全部已付流水（不 .limit(1)）：同一盘可能有多笔不同 SKU 的付款
+  //   （先买「紫微深度」再买「命书」）—— 只取第一条会漏判命书是否付过。
   const { data } = await admin
     .from('payments')
-    .select('id')
+    .select('sku')
     .eq('user_id', userId)
     .eq('chart_id', chartId)
     .eq('status', 'paid')
-    .limit(1)
-  return !!data?.length
+  return (data ?? []).some((r) => fatebookPaidRow(r as { sku?: string | null }))
+}
+
+/** 一行已付流水是否携带「命书」权益（sku 空＝列上线前的老流水，当时只有命书单） */
+function fatebookPaidRow(row: { sku?: string | null }): boolean {
+  const sku = (row.sku ?? '').trim()
+  if (!sku) return true // ★ 历史兼容：payments.sku 列上线前落库的老流水均为命书单
+  return SKUS[sku as SkuId]?.grants.includes('fatebook') ?? false
 }
