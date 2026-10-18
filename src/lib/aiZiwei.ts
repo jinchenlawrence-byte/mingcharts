@@ -150,6 +150,22 @@ interface ChatCompletionResponse {
   error?: { message?: string }
 }
 
+// ★ 合规退回后的【带反馈重写】提示（2026-10-18 付费模块回退规则版事故）：
+//   把首次命中的词与所在句子原样回灌，要求模型【整句改写】——盲重试（同 prompt、
+//   temperature 0.8）命中率低，模型极可能再次写出同一个词，于是付费用户看到规则版。
+//   另外明说两条规避歧途：① 不得靠句尾补"不一定/未必"糊过去（虽能过校验，但断语自相矛盾）；
+//   ② "必"是单字，凡含该字的词都命中；"一定程度上"也含"一定"，须改写为"在某种程度上"。
+function complianceFeedback(reason: string): string {
+  return `★ 合规重写要求：你上一次的输出被自动合规校验退回，请整篇重写六个板块。\n` +
+    `退回原因：${reason}\n` +
+    `请把命中的那些句子【整句改写】，不要只在原句后面补"不一定""未必"之类的否定词来规避。\n` +
+    `替换口径：务必→宜；必然/注定/势必/必先/必有→往往、多半、倾向于；必定→多半；` +
+    `一定→倾向于；积极进取→稳中求进；突破性进展→阶段性的进展。\n` +
+    `注意："必"是一个字，凡含该字的词（务必、必然、必定、势必、必有、必先等）都算命中；` +
+    `"一定程度上"也含"一定"，请改写为"在某种程度上"。\n` +
+    `重新输出完整 JSON（六个板块，不要 markdown 代码块、不要任何额外文字）。`
+}
+
 export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis): Promise<(ZiweiAIReport & { _usage?: AIUsage }) | null> {
   if (!AI_API_KEY) {
     // ★ 回退必须可见（任务书 §四）：静默降级让「AI 没跑」这件事不可见
@@ -160,10 +176,19 @@ export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis): 
   const ZW_DISCLAIMER = '以上为命理倾向性分析，仅供参考，非确定性结论，不构成任何决策依据。'
 
   // 单次 API 调用，失败返回 null
-  const attempt = async (): Promise<(ZiweiAIReport & { _usage?: AIUsage }) | null> => {
+  // feedback：合规退回时由 withComplianceRetry 传入（见 complianceFeedback）；首次调用为 undefined
+  const attempt = async (feedback?: string): Promise<(ZiweiAIReport & { _usage?: AIUsage }) | null> => {
     try {
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
+
+      const messages: Array<{ role: string; content: string }> = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: buildUserPrompt(chart, analysis) }
+      ]
+      // 以追加一条 user 消息的方式回灌退回原因：不动 buildUserPrompt 的原始请求体，
+      // 保证「首次请求」与既有形态逐字一致（便于与历史日志/断言对齐）
+      if (feedback) messages.push({ role: 'user', content: complianceFeedback(feedback) })
 
       const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
         method: 'POST',
@@ -173,10 +198,7 @@ export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis): 
         },
         body: JSON.stringify({
           model: AI_MODEL,
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: buildUserPrompt(chart, analysis) }
-          ],
+          messages,
           temperature: 0.8,
           response_format: { type: 'json_object' }
         }),
@@ -213,9 +235,19 @@ export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis): 
   }
 
   // 禁用词属红线（否定式除外）：首次检出给一次重试；仍不合规放弃 AI 结果，由调用方回退规则版
+  // ★ 退回原因必须【具体到词与句子】（2026-10-18）：原先只回一句"检出禁用词"，
+  //   线上日志无法判断是哪个词触发的（「必」是单字、"一定"是词，改法完全不同），
+  //   也让重试拿不到可执行的改写依据。filter 掉 _usage 避免把对象混进待检文本。
   const out = await withComplianceRetry(
     attempt,
-    (r) => (findForbidden(Object.values(r).join('')).hits.length ? '检出禁用词' : null),
+    (r) => {
+      const text = Object.values(r)
+        .filter((v): v is string => typeof v === 'string')
+        .join('\n')
+      const hits = findForbidden(text).hits
+      if (!hits.length) return null
+      return '检出禁用词：' + hits.map((h) => `${h.w}｜${h.s.slice(0, 30)}`).join('；')
+    },
     'aiZiwei'
   )
 

@@ -122,8 +122,14 @@ export function unknownGanzhi(text: string, facts: Set<string>): string[] {
 
 // 通用「调用 → 校验 → 重试一次」编排：
 //   validate 返回 null 为通过；返回错误描述则打印并重试；重试仍不通过 → null（调用方回退规则版）
+// ★ 2026-10-18 加固（付费模块回退规则版事故）：
+//   ① 首次不合规【也要留痕】：原先只有「重试后仍不合规」才打印，首次的失败原因被丢弃——
+//      线上只能看到"回退规则版"，无法判断是哪个词触发的（付费用户看到规则版，排查无门）。
+//   ② 重试改为【带反馈】：把首次的失败原因回灌给 attempt，让 prompt 能针对性地整句改写。
+//      盲重试（同 prompt、temperature 0.8）命中率低 —— 模型极可能再次写出同一个词。
+//   attempt 的 feedback 参数可选：既有调用方（不接收参数的闭包）无需改动即兼容。
 export async function withComplianceRetry<T>(
-  attempt: () => Promise<T | null>,
+  attempt: (feedback?: string) => Promise<T | null>,
   validate: (r: T) => string | null,
   label: string
 ): Promise<T | null> {
@@ -131,7 +137,8 @@ export async function withComplianceRetry<T>(
   if (!first) return null
   const err = validate(first)
   if (!err) return first
-  const second = await attempt()
+  console.warn(`[${label}] 首次输出不合规（${err}），带反馈重试一次`)
+  const second = await attempt(err)
   if (!second) return null
   const err2 = validate(second)
   if (err2) {

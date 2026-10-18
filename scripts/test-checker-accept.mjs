@@ -1,7 +1,7 @@
 // 离线验收：依据混淆判据（FAIL/INFO 两档）的 10 个回归用例
 // 对应任务书 §1.4；纯本地、不耗 API，纳入 npm run verify
 // 铁律：不仅要验「否定句不再误报」，还必须验「真违规仍判 FAIL」——含 2 条同句肯定+否定边界
-import { classifyConfuse } from '../src/lib/ai-check.ts'
+import { classifyConfuse, withComplianceRetry } from '../src/lib/ai-check.ts'
 
 // [期望档位, 句子]
 const CASES = [
@@ -55,6 +55,56 @@ for (const s of WIRING_PASS) {
   const ok = r === null
   if (!ok) allOk = false
   console.log(`${ok ? '✓' : '✗'} 接线放行「${s}」→ ${r === null ? 'null（豁免正确）' : `${r}（误拦！）`}`)
+}
+
+// ---------- withComplianceRetry：带反馈重试 + 首次失败留痕（2026-10-18 付费回退事故）----------
+// 背景：付费模块（紫微/合婚/地理/年运）AI 输出被禁用词校验退回时回退规则版，付费用户看到
+//   「规则版（AI结果未过合规校验）」→ 不满意要退款。原先两个问题：
+//     ① 首次退回【不打印原因】——线上只看到"回退了"，无法判断是哪个词触发的（「必」是单字、
+//        「一定」是词，改法完全不同），排查无门；
+//     ② 重试【不带反馈】——同 prompt + temperature 0.8 盲重试，模型极可能再次写出同一个词。
+// 本段真调 withComplianceRetry（假 attempt 记录两次收到的 feedback），把两个修法都钉住。
+const seen = []
+const warns = []
+const origWarn = console.warn
+console.warn = (...a) => { warns.push(a.join(' ')) }
+const retried = await withComplianceRetry(
+  async (feedback) => {
+    seen.push(feedback)
+    return seen.length === 1 ? { text: '务必谨慎行事' } : { text: '宜谨慎行事' }
+  },
+  (r) => (r.text.includes('务必') ? '检出禁用词：务必' : null),
+  'selftest'
+)
+// 二轮仍不合规 → 放弃 AI 结果（调用方回退规则版）
+const giveUp = await withComplianceRetry(
+  async () => ({ text: '势必有所取舍' }),
+  (r) => (r.text.includes('势必') ? '检出禁用词：势必' : null),
+  'selftest2'
+)
+// 首次调用就失败（无响应）→ 不该白花一次重试的 API 成本
+let nullCalls = 0
+const nullCase = await withComplianceRetry(
+  async () => { nullCalls++; return null },
+  () => null,
+  'selftest3'
+)
+console.warn = origWarn
+
+const RETRY_CASES = [
+  [seen[0] === undefined, `首次调用不带反馈（保持首次请求形态不变）：feedback=${String(seen[0])}`],
+  [seen.length === 2, `不合规时重试一次（总调用次数 ${seen.length}）`],
+  [seen[1] === '检出禁用词：务必', `重试把退回原因回灌给 attempt（feedback=${String(seen[1])}）`],
+  [retried?.text === '宜谨慎行事', `重试合规后返回重试结果（得「${retried?.text}」）`],
+  [warns.some((w) => w.includes('首次输出不合规') && w.includes('务必')),
+    `首次不合规必须留痕且带具体命中词（warn：${warns.filter((w) => w.includes('首次')).join(' / ') || '无'}）`],
+  [giveUp === null && warns.some((w) => w.includes('重试后仍不合规')),
+    '重试仍不合规 → 返回 null 且打印「重试后仍不合规」（回退必须可见）'],
+  [nullCalls === 1 && nullCase === null, `首次调用失败不重试（调用次数 ${nullCalls}，返回 ${String(nullCase)}）`],
+]
+for (const [ok, line] of RETRY_CASES) {
+  if (!ok) allOk = false
+  console.log(`${ok ? '✓' : '✗'} ${line}`)
 }
 
 console.log(allOk ? 'CHECKER_ACCEPT_PASS' : 'CHECKER_ACCEPT_FAIL')
