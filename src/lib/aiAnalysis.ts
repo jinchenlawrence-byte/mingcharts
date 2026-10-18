@@ -3,7 +3,7 @@ import { Solar } from 'lunar-javascript'
 import type { AnalyzableChart, PaidAnalysis } from './analysis'
 import { TIAO_HOU, buildLuckCycles } from './analysis'
 import type { AIUsage } from './ai-types'
-import { unknownGanzhi, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT } from './ai-check'
+import { unknownGanzhi, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
 // ★ 冲/合/害表复用 branchRelations.ts 的单一事实源（HANDOFF-个性化日运 §二）
 import { LIU_CHONG, LIU_HAI, LIU_HE } from './branchRelations'
 import type { Zhi } from './branchRelations'
@@ -211,6 +211,10 @@ interface ChatCompletionResponse {
   error?: { message?: string }
 }
 
+// ★ 合规退回后的结构提示（配合 ai-check.complianceRetryHint 回灌退回原因，单一事实源）：
+//   与紫微模块同法——把退回原因追加为一条 user 消息，不改 buildUserPrompt，保证首次请求逐字一致。
+const ANALYSIS_SHAPE = '完整 JSON（命书十段：八字总览、性格天赋、用神喜忌、格局成败、调候用神、大运流年、事业财运、婚姻感情、子女六亲、健康提示）'
+
 // 调用 OpenAI 兼容接口，返回解析后的文字板块；失败返回 null（调用方回退规则引擎）
 export async function generateAIAnalysis(chart: AnalyzableChart): Promise<(AIPaidAnalysis & { _usage?: AIUsage }) | null> {
   if (!AI_API_KEY) {
@@ -235,11 +239,18 @@ export async function generateAIAnalysis(chart: AnalyzableChart): Promise<(AIPai
 
   // 单批 API 调用（一批板块子集），失败返回 null
   const callAI = async (
-    specs: Array<{ key: keyof AIPaidAnalysis; name: string; requirement: string }>
+    specs: Array<{ key: keyof AIPaidAnalysis; name: string; requirement: string }>,
+    feedback?: string
   ): Promise<(Partial<AIPaidAnalysis> & { _usage?: AIUsage }) | null> => {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
     try {
+      const messages: Array<{ role: string; content: string }> = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: buildUserPrompt(chart, specs) }
+      ]
+      if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, ANALYSIS_SHAPE) })
+
       const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
         method: 'POST',
         headers: {
@@ -250,10 +261,7 @@ export async function generateAIAnalysis(chart: AnalyzableChart): Promise<(AIPai
           model: AI_MODEL,
           temperature: 0.7,
           response_format: { type: 'json_object' },
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: buildUserPrompt(chart, specs) }
-          ]
+          messages
         }),
         signal: controller.signal
       })
@@ -291,11 +299,11 @@ export async function generateAIAnalysis(chart: AnalyzableChart): Promise<(AIPai
   }
 
   // 一次完整尝试：按 SECTION_BATCHES 分批并行调用，合并为十个板块（任一批失败则整体失败）
-  const attempt = async (): Promise<(AIPaidAnalysis & { _usage?: AIUsage }) | null> => {
+  const attempt = async (feedback?: string): Promise<(AIPaidAnalysis & { _usage?: AIUsage }) | null> => {
     const batches = SECTION_BATCHES.map(keys =>
       keys.map(k => SECTION_SPECS.find(s => s.key === k)!)
     )
-    const results = await Promise.all(batches.map(callAI))
+    const results = await Promise.all(batches.map(b => callAI(b, feedback)))
     if (results.some(r => r === null)) return null
     const merged = {} as Record<string, string>
     const usage: AIUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
@@ -320,8 +328,8 @@ export async function generateAIAnalysis(chart: AnalyzableChart): Promise<(AIPai
   const validate = makeAnalysisComplianceValidator(facts)
 
   // 「不必」→「无须」（语义等价）先替换再校验，与 aiHemun 同序
-  const wrappedAttempt = async () => {
-    const r = await attempt()
+  const wrappedAttempt = async (feedback?: string) => {
+    const r = await attempt(feedback)
     if (r) {
       let n = 0
       for (const k of Object.keys(r) as (keyof AIPaidAnalysis)[]) {

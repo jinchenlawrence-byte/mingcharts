@@ -3,7 +3,7 @@
 import type { AnalyzableChart } from './analysis'
 import type { HemunResult } from './hemun'
 import type { AIUsage } from './ai-types'
-import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT } from './ai-check'
+import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -82,6 +82,10 @@ interface ChatCompletionResponse {
   error?: { message?: string }
 }
 
+// ★ 合规退回后的结构提示（配合 ai-check.complianceRetryHint 回灌退回原因，单一事实源）：
+//   与紫微模块同法——把退回原因追加为一条 user 消息，不改 buildUserPrompt，保证首次请求逐字一致。
+const HEMUN_SHAPE = '完整 JSON（六个板块：配对总评、生肖年柱、日柱夫妻宫、配偶星与感情模式、五行互补喜用互助、相处建议）'
+
 // 调用 OpenAI 兼容接口；失败返回 null（调用方回退到规则版文字）
 export async function generateAIHemun(
   male: AnalyzableChart,
@@ -98,10 +102,16 @@ export async function generateAIHemun(
   const HEMUN_DISCLAIMER = '以上为倾向性分析，仅供参考，非确定性结论，不构成婚姻决策依据；感情经营在人。'
 
   // 单次 API 调用，失败返回 null
-  const attempt = async (): Promise<(AIHemunSections & { _usage?: AIUsage }) | null> => {
+  const attempt = async (feedback?: string): Promise<(AIHemunSections & { _usage?: AIUsage }) | null> => {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
     try {
+      const messages: Array<{ role: string; content: string }> = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: buildUserPrompt(male, female, result) }
+      ]
+      if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, HEMUN_SHAPE) })
+
       const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
         method: 'POST',
         headers: {
@@ -112,10 +122,7 @@ export async function generateAIHemun(
           model: AI_MODEL,
           temperature: 0.7,
           response_format: { type: 'json_object' },
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: buildUserPrompt(male, female, result) }
-          ]
+          messages
         }),
         signal: controller.signal
       })
@@ -162,8 +169,8 @@ export async function generateAIHemun(
   // 合婚口径物理禁「必」字（含不必/未必，SYSTEM_PROMPT 第9条）。
   // 每次拿到结果先做安全等价替换（不必→无须，语义不变），其余「必」字由重试编排处理：
   // 仍含则放弃 AI 结果，由调用方回退规则版
-  const wrappedAttempt = async () => {
-    const r = await attempt()
+  const wrappedAttempt = async (feedback?: string) => {
+    const r = await attempt(feedback)
     if (r) {
       const n = sanitize(r)
       if (n) { void n }

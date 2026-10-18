@@ -6,7 +6,7 @@ import { Solar } from 'lunar-javascript'
 import type { AnalyzableChart, LuckCycles, LuckLiuNianItem, LuckLiuYueItem } from './analysis'
 import { getFavorSets, TIAO_HOU } from './analysis'
 import type { AIUsage } from './ai-types'
-import { unknownGanzhi, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT } from './ai-check'
+import { unknownGanzhi, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -150,6 +150,10 @@ interface ChatCompletionResponse {
   error?: { message?: string }
 }
 
+// ★ 合规退回后的结构提示（配合 ai-check.complianceRetryHint 回灌退回原因，单一事实源）：
+//   与紫微模块同法——把退回原因追加为一条 user 消息，不改 buildUserPrompt，保证首次请求逐字一致。
+const LIUNIAN_SHAPE = '完整 JSON（流年各段：年运总纲、流年事业、流年财运、流年感情、流年健康，当年另含流月节奏）'
+
 // 调用 OpenAI 兼容接口；失败返回 null（调用方回退到规则版文字）
 export async function generateAILiunian(
   chart: AnalyzableChart,
@@ -189,10 +193,16 @@ export async function generateAILiunian(
   }
 
   // 单次 API 调用，失败返回 null
-  const attempt = async (): Promise<(AILiunianSections & { _usage?: AIUsage }) | null> => {
+  const attempt = async (feedback?: string): Promise<(AILiunianSections & { _usage?: AIUsage }) | null> => {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
     try {
+      const messages: Array<{ role: string; content: string }> = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: buildUserPrompt(chart, luck, targetYear) }
+      ]
+      if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, LIUNIAN_SHAPE) })
+
       const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
         method: 'POST',
         headers: {
@@ -203,10 +213,7 @@ export async function generateAILiunian(
           model: AI_MODEL,
           temperature: 0.7,
           response_format: { type: 'json_object' },
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: buildUserPrompt(chart, luck, targetYear) }
-          ]
+          messages
         }),
         signal: controller.signal
       })
@@ -238,8 +245,8 @@ export async function generateAILiunian(
   }
 
   // 安全同义替换兜底：「不必」→「无须」（语义等价），先替换再校验，与 aiHemun/aiAnalysis 同序
-  const wrappedAttempt = async () => {
-    const r = await attempt()
+  const wrappedAttempt = async (feedback?: string) => {
+    const r = await attempt(feedback)
     if (r) {
       let n = 0
       for (const k of Object.keys(r) as (keyof AILiunianSections)[]) {

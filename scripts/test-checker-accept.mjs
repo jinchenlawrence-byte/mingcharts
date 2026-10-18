@@ -1,7 +1,12 @@
 // 离线验收：依据混淆判据（FAIL/INFO 两档）的 10 个回归用例
 // 对应任务书 §1.4；纯本地、不耗 API，纳入 npm run verify
 // 铁律：不仅要验「否定句不再误报」，还必须验「真违规仍判 FAIL」——含 2 条同句肯定+否定边界
-import { classifyConfuse, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT } from '../src/lib/ai-check.ts'
+import {
+  classifyConfuse, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT,
+  FORBIDDEN_WORDS, PREFERRED_WORDS, FORBIDDEN_FEWSHOT, complianceRetryHint,
+} from '../src/lib/ai-check.ts'
+import { readFileSync } from 'node:fs'
+const readSrc = (rel) => readFileSync(new URL(rel, import.meta.url), 'utf8')
 
 // [期望档位, 句子]
 const CASES = [
@@ -156,6 +161,81 @@ console.log(`${biOk ? '✓' : '✗'} 合婚 strictBi 未开口子：「你不必
 const promptOk = FORBIDDEN_WORDS_PROMPT.includes('作【限定】用') && FORBIDDEN_WORDS_PROMPT.includes('一定')
 if (!promptOk) allOk = false
 console.log(`${promptOk ? '✓' : '✗'} 禁词 prompt 已写明限定用法例外（与校验器同源）`)
+
+// ---------- 生成前规则注入（用户拍板 2026-10-18 方案①④）----------
+// 动机：只给模型「禁用词表」命中率仍会翻——实测特定命盘连中两次 → 放弃 AI 结果回退规则版，
+//   付费用户拿到「规则版（AI结果未过合规校验）」→ 要求退款。
+// 修法：① 整句 few-shot（模型模仿句子 ≫ 记忆词表）；④ 安全替代白名单（模型缺词会硬凑）。
+// 本段把「示范自身是否合规」「是否真的注入了 5 个模块」都钉住。
+let injFail = 0
+const bad0 = (m) => { injFail++; allOk = false; console.log('  ✗ ' + m) }
+
+// (a) few-shot 自证：✗ 例句必被判违规、✓ 例句必须通过 —— 示范自身不合规等于教模型违规
+let fnBad = 0
+for (const [bad, good] of FORBIDDEN_FEWSHOT) {
+  const hb = findForbidden(bad).hits.length
+  const hg = findForbidden(good).hits.length
+  if (hb === 0) { fnBad++; bad0(`示范 ✗ 例句「${bad}」竟然合规（该被拦却没拦，示范失去意义）`) }
+  if (hg > 0) { fnBad++; bad0(`示范 ✓ 例句「${good}」仍判违规（示范等于教模型违规）`) }
+}
+console.log(fnBad === 0
+  ? `✓ few-shot 自证：${FORBIDDEN_FEWSHOT.length} 对示范全部「✗ 被拦 / ✓ 通过」双向成立`
+  : '✗ few-shot 自证失败')
+
+// (b) 生成前 prompt 必须含：全禁用表 + 全替代白名单 + 全部整句示范
+const missWord = FORBIDDEN_WORDS.filter((w) => !FORBIDDEN_WORDS_PROMPT.includes(w))
+if (missWord.length) bad0(`FORBIDDEN_WORDS_PROMPT 缺禁用词：${missWord.join('、')}（模式：每个 FORBIDDEN_WORDS 项 includes）`)
+const missPref = PREFERRED_WORDS.filter((w) => !FORBIDDEN_WORDS_PROMPT.includes(w))
+if (missPref.length) bad0(`FORBIDDEN_WORDS_PROMPT 缺替代白名单：${missPref.join('、')}`)
+const missShot = FORBIDDEN_FEWSHOT.filter(([b, g]) => !FORBIDDEN_WORDS_PROMPT.includes(b) || !FORBIDDEN_WORDS_PROMPT.includes(g))
+if (missShot.length) bad0(`FORBIDDEN_WORDS_PROMPT 缺整句示范：${missShot.map(([b]) => b).join('；')}`)
+console.log(`✓ prompt 完整性：禁用词 ${FORBIDDEN_WORDS.length - missWord.length}/${FORBIDDEN_WORDS.length}、替代白名单 ${PREFERRED_WORDS.length - missPref.length}/${PREFERRED_WORDS.length}、整句示范 ${FORBIDDEN_FEWSHOT.length - missShot.length}/${FORBIDDEN_FEWSHOT.length} 全中`)
+
+// (c) 五个 AI 模块都必须注入（防新增模块漏挂判据）：判据用【真实插值】`${FORBIDDEN_WORDS_PROMPT}`
+//     —— 注释里提到名字不算数，必须是模板串里真的插进去
+const AI_MODULES = ['aiZiwei', 'aiHemun', 'aiGeo', 'aiLiunian', 'aiAnalysis']
+let modMissing = 0
+for (const m of AI_MODULES) {
+  const s = readSrc(`../src/lib/${m}.ts`)
+  if (!s.includes('${FORBIDDEN_WORDS_PROMPT}')) { modMissing++; bad0(`${m}.ts 未把 FORBIDDEN_WORDS_PROMPT 插进 SYSTEM_PROMPT（模式：includes '\${FORBIDDEN_WORDS_PROMPT}'）`) }
+}
+console.log(modMissing === 0
+  ? `✓ 注入齐全：${AI_MODULES.length} 个 AI 模块的 SYSTEM_PROMPT 均插值 FORBIDDEN_WORDS_PROMPT`
+  : '✗ 有模块漏挂禁用判据')
+
+// ---------- 重试回灌（用户拍板 2026-10-18 方案③）----------
+// 只回灌命中的那个词 → 模型"修了这个又踩那个"（它不知道还有哪些词被禁）。
+// 故全表 + 白名单 + 整句示范一并回灌；且 5 个模块都必须真的把 feedback 接上（否则退回盲重试）。
+const hint = complianceRetryHint('检出禁用词：务必｜此局务必谨慎行事')
+let hintFail = 0
+const need = [
+  ['退回原因', hint.includes('检出禁用词：务必｜此局务必谨慎行事')],
+  ...[...FORBIDDEN_WORDS].map((w) => [`禁用全表含「${w}」`, hint.includes(w)]),
+  ...[...PREFERRED_WORDS].map((w) => [`替代白名单含「${w}」`, hint.includes(w)]),
+  [`含整句示范（${FORBIDDEN_FEWSHOT.length} 对全在）`, FORBIDDEN_FEWSHOT.every(([b, g]) => hint.includes(b) && hint.includes(g))],
+  ['要求整句改写、禁止只补否定词糊过去', hint.includes('整句改写') && hint.includes('不要只在原句后面补')],
+  ['提示"必"是单字（凡含必的字都命中）', hint.includes('"必"是一个字')],
+  ['提示"一定程度上"须改写', hint.includes('在某种程度上')],
+]
+for (const [label, ok] of need) {
+  if (!ok) { hintFail++; bad0(`complianceRetryHint 缺：${label}`) }
+}
+console.log(hintFail === 0
+  ? `✓ 重试回灌：真调 complianceRetryHint 通过 ${need.length} 项（原因 + 全表 + 白名单 + 示范 + 两条歧途提示）`
+  : '✗ 重试回灌内容不全')
+
+let wireFail = 0
+for (const m of [...AI_MODULES]) {
+  const s = readSrc(`../src/lib/${m}.ts`)
+  if (!s.includes('complianceRetryHint')) { wireFail++; bad0(`${m}.ts 未接 complianceRetryHint（重试仍是盲重试）`) }
+  if (!s.includes('if (feedback)')) { wireFail++; bad0(`${m}.ts 未按 feedback 分支追加回灌消息（模式：includes 'if (feedback)'）`) }
+  if (!s.includes('feedback?: string')) { wireFail++; bad0(`${m}.ts attempt 闭包未接收 feedback 形参（模式：includes 'feedback?: string'）`) }
+  // ★ 首次请求不变量：feedback 为空时不得追加任何消息（历史日志/断言对齐的前提）
+  if (!/if \(feedback\) messages\.push\(/.test(s)) { wireFail++; bad0(`${m}.ts 回灌未走「仅在 feedback 存在时」的单一入口`) }
+}
+console.log(wireFail === 0
+  ? `✓ 回灌接线：${AI_MODULES.length} 个模块均接收 feedback 并在其存在时才追加消息（首次请求逐字不变）`
+  : '✗ 回灌接线缺失')
 
 console.log(allOk ? 'CHECKER_ACCEPT_PASS' : 'CHECKER_ACCEPT_FAIL')
 process.exit(allOk ? 0 : 1)

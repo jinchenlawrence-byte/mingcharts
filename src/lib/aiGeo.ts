@@ -1,7 +1,7 @@
 // AI 地理位置深度解读：规则引擎定城市与影响指数，AI 只做解读文案
 import type { GeoAnalysis } from './geo'
 import type { AIUsage } from './ai-types'
-import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT } from './ai-check'
+import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -148,6 +148,10 @@ interface ChatCompletionResponse {
   error?: { message?: string }
 }
 
+// ★ 合规退回后的结构提示（配合 ai-check.complianceRetryHint 回灌退回原因，单一事实源）：
+//   与紫微模块同法——把退回原因追加为一条 user 消息，不改 buildUserPrompt，保证首次请求逐字一致。
+const GEO_SHAPE = '完整 JSON（八个板块：方位总论、现居城市影响、财富之城、事业之城、贵人之城、安居之城、才华之城、迁居开运建议）'
+
 export async function generateAIGeo(a: GeoAnalysis): Promise<(GeoAIReport & { _usage?: AIUsage }) | null> {
   if (!AI_API_KEY) {
     // ★ 回退必须可见（任务书 §四）：静默降级让「AI 没跑」这件事不可见
@@ -159,10 +163,16 @@ export async function generateAIGeo(a: GeoAnalysis): Promise<(GeoAIReport & { _u
   const GEO_DISCLAIMER = '以上方位分析仅供参考，非确定性结论，不构成迁居决策依据；福地福人居，个人努力为本。'
 
   // 单次 API 调用，失败返回 null
-  const attempt = async (): Promise<(GeoAIReport & { _usage?: AIUsage }) | null> => {
+  const attempt = async (feedback?: string): Promise<(GeoAIReport & { _usage?: AIUsage }) | null> => {
     try {
       const controller = new AbortController()
       const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
+
+      const messages: Array<{ role: string; content: string }> = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'user', content: buildUserPrompt(a) }
+      ]
+      if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, GEO_SHAPE) })
 
       const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
         method: 'POST',
@@ -172,10 +182,7 @@ export async function generateAIGeo(a: GeoAnalysis): Promise<(GeoAIReport & { _u
         },
         body: JSON.stringify({
           model: AI_MODEL,
-          messages: [
-            { role: 'system', content: SYSTEM_PROMPT },
-            { role: 'user', content: buildUserPrompt(a) }
-          ],
+          messages,
           temperature: 0.8,
           response_format: { type: 'json_object' }
         }),

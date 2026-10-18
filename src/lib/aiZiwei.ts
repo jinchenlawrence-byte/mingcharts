@@ -1,7 +1,7 @@
 // AI 紫微深度解读：规则引擎出星盘事实，AI 只做解读文案
 import type { ZwChart, ZiweiAnalysis } from './ziwei'
 import type { AIUsage } from './ai-types'
-import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT } from './ai-check'
+import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -151,20 +151,11 @@ interface ChatCompletionResponse {
 }
 
 // ★ 合规退回后的【带反馈重写】提示（2026-10-18 付费模块回退规则版事故）：
-//   把首次命中的词与所在句子原样回灌，要求模型【整句改写】——盲重试（同 prompt、
-//   temperature 0.8）命中率低，模型极可能再次写出同一个词，于是付费用户看到规则版。
-//   另外明说两条规避歧途：① 不得靠句尾补"不一定/未必"糊过去（虽能过校验，但断语自相矛盾）；
-//   ② "必"是单字，凡含该字的词都命中；"一定程度上"也含"一定"，须改写为"在某种程度上"。
-function complianceFeedback(reason: string): string {
-  return `★ 合规重写要求：你上一次的输出被自动合规校验退回，请整篇重写六个板块。\n` +
-    `退回原因：${reason}\n` +
-    `请把命中的那些句子【整句改写】，不要只在原句后面补"不一定""未必"之类的否定词来规避。\n` +
-    `替换口径：务必→宜；必然/注定/势必/必先/必有→往往、多半、倾向于；必定→多半；` +
-    `一定→倾向于；积极进取→稳中求进；突破性进展→阶段性的进展。\n` +
-    `注意："必"是一个字，凡含该字的词（务必、必然、必定、势必、必有、必先等）都算命中；` +
-    `"一定程度上"也含"一定"，请改写为"在某种程度上"。\n` +
-    `重新输出完整 JSON（六个板块，不要 markdown 代码块、不要任何额外文字）。`
-}
+//   提示文本已收编到 ai-check.complianceRetryHint（单一事实源，方案③）：它把
+//   【完整禁用表 + 替代白名单 + 整句示范】连同退回原因一并回灌 —— 原先只回灌命中的那个词，
+//   模型会"修了这个又踩那个"（它并不知道还有哪些词被禁）。本模块只补结构提示（六个板块）。
+//   采用「追加一条 user 消息」而非改写 buildUserPrompt：保证首次请求与既有形态逐字一致。
+const ZIWEI_SHAPE = '完整 JSON（六个板块，字段见系统提示）'
 
 export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis): Promise<(ZiweiAIReport & { _usage?: AIUsage }) | null> {
   if (!AI_API_KEY) {
@@ -188,7 +179,7 @@ export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis): 
       ]
       // 以追加一条 user 消息的方式回灌退回原因：不动 buildUserPrompt 的原始请求体，
       // 保证「首次请求」与既有形态逐字一致（便于与历史日志/断言对齐）
-      if (feedback) messages.push({ role: 'user', content: complianceFeedback(feedback) })
+      if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, ZIWEI_SHAPE) })
 
       const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
         method: 'POST',
