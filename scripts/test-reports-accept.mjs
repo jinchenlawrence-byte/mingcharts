@@ -186,10 +186,38 @@ for (const [kind, g] of Object.entries(REPORT_GATE)) {
     gateFail++; fail(`REPORT_GATE.${kind} 的 sku=${g.sku} grants 不含 ${g.grant}（口径漂移）`)
   }
 }
+// 就地补算门禁 canRegenContent：只在【存档完整且回放忠实】时才允许补算（2026-10-18 复核）
+// 依据：年运存档 input 即 route 的扁平请求体且含全量要素 → 回放同盘；其余模块回放会算出另一张盘。
+const { canRegenContent } = await import('../src/lib/reportGate.ts')
+const ANNUAL_FULL = {
+  year: 1990, month: 5, day: 8, hour: 16, minute: 15, gender: 0,
+  targetYear: 2026, birthZone: 'Asia/Shanghai', birthLng: 121.47, nowYear: 2026
+}
+if (!canRegenContent('annual', ANNUAL_FULL)) {
+  gateFail++; fail('年运存档完整时应允许就地补算（否则付费用户必须重填出生信息）')
+}
+if (canRegenContent('annual', { year: 1990, month: 5, day: 8, hour: 16, gender: 0, targetYear: 2026 })) {
+  gateFail++; fail('年运存档缺 minute/出生地时不得补算（回放会算出另一张盘）')
+}
+const noTargetYear = { ...ANNUAL_FULL }
+delete noTargetYear.targetYear
+if (canRegenContent('annual', noTargetYear)) {
+  gateFail++; fail('年运存档缺 targetYear 时不得补算')
+}
+for (const k of ['ziwei', 'hemun', 'geo']) {
+  if (canRegenContent(k, { ...ANNUAL_FULL })) {
+    gateFail++; fail(`${k} 不得开启就地补算（存档形态不足以忠实回放，会展示另一张盘）`)
+  }
+}
+if (canRegenContent('fatebook', { ...ANNUAL_FULL })) { gateFail++; fail('命书不走补算') }
+if (canRegenContent('annual', null)) { gateFail++; fail('存档为空不得补算') }
+
 // 详情页必须走重算，不得直接渲染 row.result
 const detailCode = stripComments(read('../src/app/reports/[id]/page.tsx'))
 if (!detailCode.includes('gateReportForDetail(')) { gateFail++; fail('/reports/[id] 未按当前权益重算（缺 gateReportForDetail）') }
 if (!detailCode.includes("'/api/entitlements'")) { gateFail++; fail('/reports/[id] 未取当前权益（缺 /api/entitlements）') }
+if (!detailCode.includes('canRegenContent(')) { gateFail++; fail('/reports/[id] 未按存档完整性决定是否补算（缺 canRegenContent）') }
+if (!detailCode.includes('regenApi')) { gateFail++; fail('/reports/[id] 补算未走 REPORT_GATE.regenApi') }
 console.log(gateFail === 0
   ? '✓ 读取侧重算：内容带全文时未持有不可见、已持有可见；交叉不越权；会员不含报告；bundle3 隐式解锁；详情页接线'
   : '✗ 读取侧重算断言失败')

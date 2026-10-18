@@ -6,7 +6,7 @@ import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
 import { REPORT_KIND_LABELS, type ReportKind } from '@/lib/reportSave'
-import { REPORT_GATE, gateReportForDetail } from '@/lib/reportGate'
+import { REPORT_GATE, gateReportForDetail, canRegenContent } from '@/lib/reportGate'
 import { grantsCover } from '@/lib/entitlement'
 import type { SkuId } from '@/lib/pricing'
 import HemunResultView from '@/components/reports/HemunResultView'
@@ -23,6 +23,8 @@ interface ReportDetail {
   kind: ReportKind
   title: string
   result: unknown
+  /** 请求要素存档：存档完整时用它就地补算全文（见 canRegenContent） */
+  input?: unknown
   created_at: string
 }
 
@@ -68,7 +70,7 @@ export default function ReportDetailPage() {
       }
       const { data, error } = await supabase
         .from('reports')
-        .select('id,kind,title,result,created_at')
+        .select('id,kind,title,result,input,created_at')
         .eq('id', id)
         .single()
       if (error || !data) {
@@ -99,12 +101,39 @@ export default function ReportDetailPage() {
       // ② 按当前权益重算 locked/ai/aiSource（2026-10-18 修复：付费后即刻生效）
       const gate = REPORT_GATE[detail.kind]
       const owned = !!gate && grantsCover(ent, gate.grant)
-      const rendered = gateReportForDetail(detail.kind, content, ent)
+      let rendered = gateReportForDetail(detail.kind, content, ent)
 
-      // ③ 已解锁但库里没有全文（生成于解锁之前的报告）→ 【不就地补算】：
-      //    老行的 input 缺 minute 与出生地，回放会算出另一张盘（错误内容）。
-      //    改为诚实提示，引导到模块页按原出生信息重新生成。
-      if (gate && owned && content.ai == null) setNeedsRegen(true)
+      // ③ 已解锁但库里没有全文（报告生成于解锁之前）→ 视【存档是否完整】分两种处置：
+      //    · 存档完整 + 模块开启了 regenApi（年运）→ 用存档要素【就地补算】：
+      //      付费用户点开旧报告即刻见全文，不必重填一遍出生信息（成本只这一次，
+      //      写回同一 cache_key 覆盖，后续打开直接命中缓存）。
+      //    · 存档不全（紫微/合婚/地理的老行缺出生地/分钟）→ 【绝不补算】：
+      //      回放会算出另一张盘，把错误内容当付费报告展示。改为诚实提示，
+      //      引导到模块页按原出生信息重新生成。
+      //    补算失败（年份窗口过期/服务不可用）同样退回提示，绝不渲染半成品。
+      if (gate && owned && content.ai == null) {
+        let filled = false
+        if (gate.regenApi && canRegenContent(detail.kind, detail.input)) {
+          try {
+            const r2 = await fetch(gate.regenApi, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                ...(detail.input as Record<string, unknown>),
+                token: session.access_token,
+              }),
+            })
+            const j2 = await r2.json()
+            if (j2?.success && j2.data) {
+              rendered = j2.data as Record<string, unknown>
+              filled = true
+            }
+          } catch {
+            // 静默降级：下面统一退回诚实提示
+          }
+        }
+        if (!filled) setNeedsRegen(true)
+      }
 
       setResult(rendered)
       setRow(detail)

@@ -17,35 +17,65 @@ import type { ReportKind } from './reportSave'
  * · sku：未解锁时引导购买的 SKU（与模块页 locked.skus 一致）
  * · grant：判定「已持有」的能力（走 entitlement.grantsCover，含 bundle3 隐式覆盖）
  * · preview：未解锁时展示的引导文案（与模块页口径一致）
+ * · regenApi：该行【存档输入完整】时可就地补算全文的端点；null = 不补算（走诚实提示）
  * fatebook = null：命书正文在 charts.chart_data，不走本重算。
  */
 export const REPORT_GATE: Record<
   ReportKind,
-  { sku: SkuId; grant: GrantId; preview: string } | null
+  { sku: SkuId; grant: GrantId; preview: string; regenApi: string | null } | null
 > = {
   hemun: {
     sku: 'hemun',
     grant: 'hemun',
     preview: '合婚双人九维深度解读（典籍干支、古法纳音、民俗生肖分级呈现）解锁后可见。',
+    // 不开启补算：合婚请求体是 {male,female} 双人形态，且老行存档缺出生地键
+    regenApi: null,
   },
   ziwei: {
     sku: 'ziwei_deep',
     grant: 'ziwei_deep',
     preview: '紫微十二宫深度解读（命格总论、事业、财运、感情、健康、大限流年）解锁后可见。',
+    // 不开启补算：老行存档缺 birthZone/birthLng，回放会按默认时区算出另一张盘
+    regenApi: null,
   },
   geo: {
     sku: 'geo',
     grant: 'geo',
     preview:
       '方位总论 · 现居城市影响 · 财富/事业/贵/安居/才华五城解读 · 迁居开运建议（AI 深度解读，共 8 节）解锁后可见。',
+    // 不开启补算：地理还依赖【现居城市】，该要素不在存档里，回放会给出不同的五城推荐
+    regenApi: null,
   },
   annual: {
     sku: 'annual_report',
     grant: 'annual_report',
     // 年运的模块页 preview 含「{目标年}（{干支}年）」前缀（需读内容；此处给通用口径）
     preview: '流年详批：事业/财运/感情/健康分维度深度解读解锁后可见。',
+    // ★ 仅年运开启就地补算（2026-10-18）：其存档 input 就是 route 接受的【扁平请求体】
+    //   且含全量排盘要素（分钟 + 出生地时区/经度），回放能忠实重算出同一张盘。
+    //   于是付费用户点开付款前生成的旧报告，即刻看到全文，不必重填一遍出生信息。
+    regenApi: '/api/liunian',
   },
   fatebook: null,
+}
+
+/**
+ * 纯函数：该行能否【就地补算全文】（付费后打开旧报告时用）。
+ * 判据 = 存档 input 必须含【全部影响排盘结果的键】—— 缺任何一个，回放都会算出
+ * 另一张盘，把【错误的报告】当成付费内容展示（比让用户多点两下严重得多）。
+ * · 年运（唯一开启 regenApi 的模块）：birthZone/birthLng 走「手动经度」分支，
+ *   resolveBirthRef 会解析出与原始完全相同的时区/经度 → 回放忠实。
+ * · 紫微/合婚/地理：regenApi 为 null，恒 false（存档形态不足以忠实回放）。
+ * ★ 牙口锚点：把 'birthZone'/'birthLng' 从 NEED 里去掉 → 断言「缺出生地不得补算」翻红。
+ */
+export function canRegenContent(kind: ReportKind, input: unknown): boolean {
+  const gate = REPORT_GATE[kind]
+  if (!gate?.regenApi) return false
+  if (!input || typeof input !== 'object') return false
+  const o = input as Record<string, unknown>
+  const NEED = ['year', 'month', 'day', 'hour', 'minute', 'gender', 'birthZone', 'birthLng']
+  const need = kind === 'annual' ? [...NEED, 'targetYear'] : NEED
+  return need.every((k) => k in o)
 }
 
 /** 年运未解锁文案：能读到内容里的目标流年时补上「{年}（{干支}年）」前缀（与模块页同口径） */
