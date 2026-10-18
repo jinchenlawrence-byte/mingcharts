@@ -1,7 +1,7 @@
 // 离线验收：依据混淆判据（FAIL/INFO 两档）的 10 个回归用例
 // 对应任务书 §1.4；纯本地、不耗 API，纳入 npm run verify
 // 铁律：不仅要验「否定句不再误报」，还必须验「真违规仍判 FAIL」——含 2 条同句肯定+否定边界
-import { classifyConfuse, withComplianceRetry } from '../src/lib/ai-check.ts'
+import { classifyConfuse, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT } from '../src/lib/ai-check.ts'
 
 // [期望档位, 句子]
 const CASES = [
@@ -106,6 +106,56 @@ for (const [ok, line] of RETRY_CASES) {
   if (!ok) allOk = false
   console.log(`${ok ? '✓' : '✗'} ${line}`)
 }
+
+// ---------- 「一定」限定用法豁免（用户拍板 2026-10-18 线上误报事故）----------
+// 事故：AI 报告写「一定程度上受长辈影响」→ findForbidden 命中「一定」→ 重试（同谓词）再命中
+//   → 放弃 AI 结果回退规则版 → 付费用户拿到「规则版（AI结果未过合规校验）」，要求退款。
+// B 类禁的是【确定性承诺】，作【限定】用的「一定」与之语义相反，必须豁免；
+// 但断言用法（一定能/一定会/一定是/一定可以）一个口子都不能开——本段两侧都钉住。
+const HEDGE_PASS = [
+  ['一定程度上受长辈影响，做事偏谨慎', '词后紧邻「程度」'],
+  ['在一定的条件下可顺势而为', '「一定的」+名词（作定语＝少量义）'],
+  ['这在一定范围内属正常波动', '词后紧邻「范围」'],
+  ['你需要在一定的时期内调整节奏', '「一定的」+时期'],
+  ['这份助力有一定的作用，但仍需自身努力', '「一定的」+作用'],
+]
+for (const [s, why] of HEDGE_PASS) {
+  const r = findForbidden(s)
+  const ok = r.hits.length === 0 && r.skipped.some((h) => h.kind === 'hedge')
+  if (!ok) allOk = false
+  console.log(`${ok ? '✓' : '✗'} 限定用法豁免「${s}」（${why}）→ hits=${r.hits.length}、skip=${r.skipped.map((h) => h.w + '/' + h.kind).join(',') || '无'}`)
+}
+const ASSERT_BLOCK = [
+  ['你一定能成功', '一定能'],
+  ['此事一定会发生', '一定会'],
+  ['结果一定是好的', '一定是'],
+  ['你一定可以做到', '一定可以'],
+  ['此局对你一定不会有利', '一定不会'],
+]
+for (const [s, why] of ASSERT_BLOCK) {
+  const r = findForbidden(s)
+  const ok = r.hits.some((h) => h.w === '一定')
+  if (!ok) allOk = false
+  console.log(`${ok ? '✓' : '✗'} 断言用法仍拦「${s}」（${why}）→ ${ok ? '判违规' : '✗ 漏放，成承诺'}`)
+}
+
+// neg 类别未串：否定豁免路径不得被对冲豁免吃掉
+const rNeg = findForbidden('此事未必如愿，仍需自身努力')
+const negOk = rNeg.hits.length === 0 && rNeg.skipped.some((h) => h.kind === 'neg')
+if (!negOk) allOk = false
+console.log(`${negOk ? '✓' : '✗'} 否定豁免类别未串：「此事未必如愿」→ hits=${rNeg.hits.length}、skip=${rNeg.skipped.map((h) => h.w + '/' + h.kind).join(',') || '无'}`)
+
+// 合婚 strictBi（物理禁「必」字）不受本豁免影响
+const rBi = findForbidden('你不必如此费心', true)
+const biOk = rBi.hits.some((h) => h.w === '必')
+if (!biOk) allOk = false
+console.log(`${biOk ? '✓' : '✗'} 合婚 strictBi 未开口子：「你不必如此费心」→ ${biOk ? '判违规' : '✗ 漏放'}`)
+
+// prompt 与校验器口径同源：限定用法例外必须写进 prompt，
+// 否则模型只知"禁用一定"、不知"限定用法可用"，仍会过度回避（甚至为规避写成别扭句式）
+const promptOk = FORBIDDEN_WORDS_PROMPT.includes('作【限定】用') && FORBIDDEN_WORDS_PROMPT.includes('一定')
+if (!promptOk) allOk = false
+console.log(`${promptOk ? '✓' : '✗'} 禁词 prompt 已写明限定用法例外（与校验器同源）`)
 
 console.log(allOk ? 'CHECKER_ACCEPT_PASS' : 'CHECKER_ACCEPT_FAIL')
 process.exit(allOk ? 0 : 1)

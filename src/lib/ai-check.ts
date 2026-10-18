@@ -29,8 +29,10 @@ export const FORBIDDEN_WORDS = [
 // ★ 否定/推断措辞指引收编于此（原 aiLiunian 手抄句），五处模块共同受益（单一事实源）
 export const FORBIDDEN_WORDS_PROMPT =
   `以下词语一律禁用：${FORBIDDEN_WORDS.join('、')}（"必"含务必/必然/必定；否定请用"无须"，推断请用"往往、多半、倾向于"）。\n` +
-  `逐字替换范例：务必→宜；必然/注定→往往；必定→多半；一定→倾向于；` +
-  `积极进取→稳中求进；突破性进展→阶段性的进展。`
+  `逐字替换范例：务必→宜；必然/注定→往往；必定→多半；一定（作断言时）→倾向于；` +
+  `积极进取→稳中求进；突破性进展→阶段性的进展。\n` +
+  `例外：「一定」作【限定】用时不算违规、可正常使用——一定程度／一定的X（时间、影响、帮助）／在一定条件、范围、限度内；` +
+  `但"一定能／一定会／一定是／一定可以"这类断言写法仍禁用。`
 
 const GANZHI_RE = /[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]/g
 
@@ -40,11 +42,15 @@ export const splitSentences = (t: string): string[] =>
 export interface HitSentence {
   w: string
   s: string
+  /** 豁免类别（仅 skipped 项有值）：neg=词前否定（未必）；hedge=词后限定（一定程度上） */
+  kind?: 'neg' | 'hedge'
 }
 
 // 禁用词检查（§8.4.5）：
 //   hits    —— 真违规（FAIL）
-//   skipped —— 词前 3 字内紧邻否定（无/非/不/未…，不跨标点），INFO 留痕不判失败
+//   skipped —— 豁免项，INFO 留痕不判失败：
+//              neg   词前 3 字内紧邻否定（无/非/不/未…，不跨标点）
+//              hedge 词后紧邻限定词（见 HEDGE_AFTER）
 // strictBi：合婚口径物理禁「必」字（含不必/未必，任务书 aiHemun 第9条）
 export function findForbidden(text: string, strictBi = false): { hits: HitSentence[]; skipped: HitSentence[] } {
   const sentences = splitSentences(text)
@@ -56,8 +62,15 @@ export function findForbidden(text: string, strictBi = false): { hits: HitSenten
       let idx = s.indexOf(w)
       while (idx >= 0) {
         const negNear = NEG_BEFORE.test(s.slice(0, idx))
-        if (negNear && !(strictBi && w === '必')) {
-          if (!skipped.some(h => h.w === w && h.s === s)) skipped.push({ w, s })
+        // ★ 对冲豁免（用户拍板 2026-10-18，线上误报事故）：B 类禁的是【确定性承诺】，
+        //   而作【限定】用的「一定」恰是弱化对冲——「一定程度上受长辈影响」「在一定的条件/范围/时期内」
+        //   ——与承诺语义相反，拦下它会白吃掉合法报告（线上实测已命中，逼 AI 重试后退回规则版）。
+        //   判据：词【后】紧邻限定词且不跨标点；反向守护：一定能/一定会/一定是/一定可以 仍判违规。
+        const hedged = HEDGE_AFTER.test(s.slice(idx + w.length))
+        if (hedged) {
+          if (!skipped.some(h => h.w === w && h.s === s)) skipped.push({ w, s, kind: 'hedge' })
+        } else if (negNear && !(strictBi && w === '必')) {
+          if (!skipped.some(h => h.w === w && h.s === s)) skipped.push({ w, s, kind: 'neg' })
         } else if (!hits.some(h => h.w === w && h.s === s)) {
           hits.push({ w, s })
         }
@@ -67,6 +80,12 @@ export function findForbidden(text: string, strictBi = false): { hits: HitSenten
   }
   return { hits, skipped }
 }
+
+// ★ 「一定」限定用法白名单（词后紧邻）：
+//   「一定的X」（任意名词：时间、影响、帮助、作用…——作定语即"少量/部分"义，是弱化而非承诺）
+//   ／一定程度上／在一定条件、范围、限度、意义、时期、阶段、情形、情况、规模、比例、数量、距离、时间内
+//   注意与断言用法区分：一定能、一定会、一定是、一定可以、一定不会 → 不在白名单，照旧判违规。
+const HEDGE_AFTER = /^(的|程度|条件|范围|限度|意义|时期|阶段|情形|情况|规模|比例|数量|距离|时间)/
 
 // 产品设定/古法/民俗维度的触发词——这些维度不得被说成典籍所载
 const BASIS_CONFUSE = /生肖|纳音|大运同步/

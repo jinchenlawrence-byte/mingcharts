@@ -43,7 +43,7 @@ function runChecks(label, sections, factsGanzhi, opts) {
     ? `禁用词命中：${[...new Set(hits.map(h => h.w))].join('、')}`
     : '禁用词 0 命中')
   hits.forEach(h => console.log(`     「${h.s}」（${h.w}）`))
-  skipped.forEach(h => console.log(`  ℹ️ 否定式不判违规：「${h.s}」（${h.w}）`))
+  skipped.forEach(h => console.log(`  ℹ️ ${h.kind === 'hedge' ? '限定用法豁免' : '否定式不判违规'}：「${h.s}」（${h.w}）`))
 
   // 2 免责立场
   const hasSoft = /倾向|参考|宜|注意/.test(text)
