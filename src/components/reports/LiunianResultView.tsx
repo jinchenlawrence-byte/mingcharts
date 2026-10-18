@@ -5,6 +5,7 @@ import type { LuckLiuNianItem, LuckLiuYueItem, LuckDaYunItem } from '@/lib/analy
 import type { Pillar } from '@/lib/paipan'
 import type { AILiunianSections } from '@/lib/aiLiunian'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
+import { isRuleVersion } from '@/lib/reportGate'
 import CheckoutButton from '@/components/CheckoutButton'
 
 export interface LiunianResultData {
@@ -63,10 +64,17 @@ const WX_COLOR: Record<string, string> = {
   '金': 'text-yellow-600', '水': 'text-blue-700'
 }
 
-export default function LiunianResultView({ data }: { data: LiunianResultData }) {
+export default function LiunianResultView({ data, onRegen, regenBusy }: {
+  data: LiunianResultData
+  /** ★ 规则版兜底时的「重新生成」出口（生成页/回看页下传）；无此能力时不传＝不显示 */
+  onRegen?: () => void
+  regenBusy?: boolean
+}) {
   const target = data.liuNian.find(y => y.year === data.targetYear)
   const gender = data.input.gender === 1 ? '男' : '女'
   const pillarLine = (pl: Pillar) => pl.ganZhi
+  // ★ 付费用户拿到规则版兜底（AI 结果未过合规校验）时，标签旁必须给出口，否则只能要求退款
+  const ruleVersion = isRuleVersion(data.aiSource)
 
   return (
     <div className="space-y-6">
@@ -83,6 +91,20 @@ export default function LiunianResultView({ data }: { data: LiunianResultData })
           )}
           <span className="text-xs text-ink-light/40 ml-auto">{data.aiSource}</span>
         </div>
+        {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
+        {ruleVersion && onRegen && (
+          <div className="flex flex-wrap items-center gap-3 mb-4">
+            <button
+              type="button"
+              onClick={onRegen}
+              disabled={regenBusy}
+              className="px-4 py-1.5 rounded-full border border-gold/20 bg-white text-sm font-medium text-ink hover:border-ink transition disabled:opacity-50"
+            >
+              {regenBusy ? '重新生成中...' : '免费重新生成'}
+            </button>
+            <span className="text-xs text-ink-light/50">不额外收费 · AI 将重写全文并覆盖本报告</span>
+          </div>
+        )}
 
         {/* 命主与四柱摘要 */}
         <div className="bg-slate-50 rounded-md p-4 text-sm">

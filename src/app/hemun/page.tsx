@@ -115,7 +115,15 @@ export default function HehunPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true); setError(''); setData(null); setSaved(null)
+    setData(null) // 首次生成：先清空旧结果
+    await runGenerate()
+  }
+
+  // ★ 生成/重新生成共用同一入口（2026-10-18 退款事故）：同要素重调 AI，结果按同一 cacheKey
+  //   覆盖写（不新增报告行、重复点击不堆积）；规则版兜底时用户据此免费重写，不必要求退款。
+  //   重新生成不清空旧结果（留在屏上，按钮只是 loading），与年运页同型。
+  const runGenerate = async () => {
+    setLoading(true); setError(''); setSaved(null)
     try {
       const token = await getAuthToken()
       const res = await fetch('/api/hemun', {
@@ -184,7 +192,19 @@ export default function HehunPage() {
                 登录后生成结果可保存到「我的报告」，随时回看
               </p>
             ) : null}
-            <HemunResultView data={data} />
+            {/* 重新生成入口（与年运页同型）：同要素重调 AI，覆盖写同一报告不堆积 */}
+            <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+              <button
+                type="button"
+                onClick={() => runGenerate()}
+                disabled={loading}
+                className="px-5 py-2 rounded-full border border-gold/15 bg-white text-sm font-medium hover:border-ink transition disabled:opacity-50"
+              >
+                重新生成本报告
+              </button>
+              <span className="text-xs text-ink-light/50">对解读不满意？AI 将重写全文并覆盖原报告</span>
+            </div>
+            <HemunResultView data={data} onRegen={() => runGenerate()} regenBusy={loading} />
           </div>
         )}
       </main>

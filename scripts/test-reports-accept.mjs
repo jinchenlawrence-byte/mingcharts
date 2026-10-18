@@ -259,5 +259,42 @@ console.log(storeFail === 0
   ? '✓ 入库纪律：四 route 剥权益状态+覆盖写+版本号；payments.sku 列与迁移语句就位；归集按 sku 且可回填'
   : '✗ 入库纪律断言失败')
 
+// ---------- ⑨ ★ 规则版兜底出口「免费重新生成」（2026-10-18 退款事故）----------
+// 事故：付费用户拿到「规则版（AI结果未过合规校验）」，标签旁没有任何出口 → 只能要求退款。
+// 修法：判据统一 isRuleVersion（reportGate 单一事实源），4 个 ResultView 在规则版时渲染
+//   入口，由有重生成能力的页面下传 onRegen。本段把「判据/入口/下传」三环都钉住。
+console.log('—— ⑨ 规则版兜底出口（付费用户看到规则版必须能免费重写）——')
+let regenFail = 0
+const { isRuleVersion } = await import('../src/lib/reportGate.ts')
+const RULE_CASES = [
+  ['规则版（AI结果未过合规校验）', true],
+  ['AI 深度解读', false],
+  ['未解锁', false],
+  [null, false],
+  [undefined, false],
+]
+for (const [src, want] of RULE_CASES) {
+  const got = isRuleVersion(src)
+  if (got !== want) { regenFail++; fail(`isRuleVersion(${JSON.stringify(src)}) = ${got}，期望 ${want}`) }
+}
+const VIEW_FILES = ['ZiweiResultView', 'HemunResultView', 'GeoResultView', 'LiunianResultView']
+for (const v of VIEW_FILES) {
+  const code = stripComments(read(`../src/components/reports/${v}.tsx`))
+  if (!code.includes('isRuleVersion(')) { regenFail++; fail(`${v} 未用统一判据（缺 isRuleVersion）—— 规则版标签旁无出口`) }
+  if (!code.includes('免费重新生成')) { regenFail++; fail(`${v} 规则版标签旁缺「免费重新生成」入口`) }
+  if (!code.includes('onRegen') || !code.includes('regenBusy')) { regenFail++; fail(`${v} 缺 onRegen/regenBusy 接口（页面无法下传重生成能力）`) }
+}
+for (const [name, path] of PAGES) {
+  const code = stripComments(read(path))
+  if (!code.includes('runGenerate(')) { regenFail++; fail(`${name}页 无 runGenerate 入口（重新生成按钮无来源）`) }
+  if (!code.includes('onRegen=')) { regenFail++; fail(`${name}页 未把 onRegen 下传给 ResultView（标签旁出口失效）`) }
+  if (!code.includes('重新生成本报告')) { regenFail++; fail(`${name}页 缺页面级「重新生成本报告」按钮`) }
+}
+if (!detailCode.includes('onRegen=')) { regenFail++; fail('/reports/[id] 未把 onRegen 下传（年运规则版无法就地重生成）') }
+if (!detailCode.includes('force: true')) { regenFail++; fail('/reports/[id] 就地重生成未带 force=true（会命中缓存，AI 根本没被重调）') }
+console.log(regenFail === 0
+  ? `✓ 规则版出口：isRuleVersion ${RULE_CASES.length} 用例真跑通过；4 个 View 判据+入口+接口齐备；4 个模块页均有按钮与下传；详情页就地重生成带 force`
+  : '✗ 规则版出口断言失败')
+
 console.log('\n' + (allPass ? 'REPORTS_ACCEPT_PASS' : 'REPORTS_ACCEPT_FAIL'))
 if (!allPass) process.exit(1)

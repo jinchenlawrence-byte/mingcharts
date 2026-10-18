@@ -5,6 +5,7 @@
 import type { HemunResult } from '@/lib/hemun'
 import type { AIHemunSections } from '@/lib/aiHemun'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
+import { isRuleVersion } from '@/lib/reportGate'
 import CheckoutButton from '@/components/CheckoutButton'
 
 export interface HemunData {
@@ -64,8 +65,15 @@ const AI_SECTIONS: Array<{ key: keyof AIHemunSections; name: string }> = [
   { key: 'advice', name: '相处建议·流年节奏' },
 ]
 
-export default function HemunResultView({ data }: { data: HemunData }) {
+export default function HemunResultView({ data, onRegen, regenBusy }: {
+  data: HemunData
+  /** ★ 规则版兜底时的「重新生成」出口（模块页下传）；回看页无此能力时不传＝不显示 */
+  onRegen?: () => void
+  regenBusy?: boolean
+}) {
   const r = data.result
+  // ★ 付费用户拿到规则版兜底（AI 结果未过合规校验）时，标签旁必须给出口，否则只能要求退款
+  const ruleVersion = isRuleVersion(data.aiSource)
   return (
     <div className="space-y-6">
       {/* 总观感（主展示，非分数） */}
@@ -169,6 +177,20 @@ export default function HemunResultView({ data }: { data: HemunData }) {
           <h2 className="text-lg font-semibold text-ink">合婚深度解读</h2>
           <span className="text-xs text-ink-light/40">文字来源：{data.aiSource}</span>
         </div>
+        {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
+        {ruleVersion && onRegen && (
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={onRegen}
+              disabled={regenBusy}
+              className="px-4 py-1.5 rounded-full border border-gold/20 bg-white text-sm font-medium text-ink hover:border-ink transition disabled:opacity-50"
+            >
+              {regenBusy ? '重新生成中...' : '免费重新生成'}
+            </button>
+            <span className="text-xs text-ink-light/50">不额外收费 · AI 将重写全文并覆盖本报告</span>
+          </div>
+        )}
         {AI_SECTIONS.map(s => (
           <div key={s.key} className="paper-card rounded-lg p-4">
             <h3 className="font-semibold text-ink mb-2">{s.name}</h3>

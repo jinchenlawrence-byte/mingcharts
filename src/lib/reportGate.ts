@@ -99,6 +99,17 @@ export function lockedPreviewOf(kind: ReportKind, content: Record<string, unknow
 }
 
 /**
+ * 纯函数：该报告的解读是否为「规则版」兜底（AI 结果未过合规校验 / AI 不可用）。
+ * ★ 为什么要它（2026-10-18 线上事故）：付费用户拿到「规则版（AI结果未过合规校验）」时，
+ *   标签旁没有任何出口 → 只能要求退款。谁渲染规则版标签，谁就必须给出「重新生成」入口。
+ * 判据 = aiSource 的稳定子串「规则版」（4 个 route 唯一产出：hemun / ziwei / geo / liunian 的 route.ts）。
+ * ★ 牙口锚点：把判据改成恒 false → 规则版标签旁不再出现入口（断言翻红）。
+ */
+export function isRuleVersion(aiSource: unknown): boolean {
+  return typeof aiSource === 'string' && aiSource.includes('规则版')
+}
+
+/**
  * 纯函数：按【当前权益】重算详情页渲染数据。
  * · 已持有 → locked=null，ai/aiSource 取内容里的（内容存的就是全量）
  * · 未持有 → ai=null、locked 给 preview（★ 即使内容里带了全文也不外泄）

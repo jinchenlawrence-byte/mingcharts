@@ -211,7 +211,7 @@ export default function LiunianPage() {
               </button>
               <span className="text-xs text-ink-light/50">对解读不满意？AI 将重写全文并覆盖原报告</span>
             </div>
-            <LiunianResultView data={data} />
+            <LiunianResultView data={data} onRegen={() => runGenerate(true)} regenBusy={loading} />
           </div>
         )}
       </main>

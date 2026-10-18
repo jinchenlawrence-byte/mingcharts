@@ -57,6 +57,8 @@ export default function ReportDetailPage() {
   const [loading, setLoading] = useState(true)
   const [notLogged, setNotLogged] = useState(false)
   const [notFound, setNotFound] = useState(false)
+  // ★ 规则版兜底时的「免费重新生成」在途状态（按钮禁用 + 文案切换）
+  const [regenBusy, setRegenBusy] = useState(false)
 
   useEffect(() => {
     if (!id) return
@@ -140,6 +142,37 @@ export default function ReportDetailPage() {
       setLoading(false)
     })()
   }, [id])
+
+  // ★ 规则版兜底时的「免费重新生成」出口（仅年运，见 REPORT_GATE.annual.regenApi）：
+  //   同要素 + force=true 重调 AI（绕过缓存重新调、覆盖写同一 cache_key，不新增报告行），
+  //   成功后原地替换渲染。存档不全（缺出生地/分钟键）时不显示按钮；补算失败静默保持原内容。
+  const canRegen = !!row && canRegenContent(row.kind, row.input)
+  const regenReport = async () => {
+    if (!row || !canRegen) return
+    const gate = REPORT_GATE[row.kind]
+    if (!gate?.regenApi) return
+    const supabase = getSupabase()
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return
+    setRegenBusy(true)
+    try {
+      const r = await fetch(gate.regenApi, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...(row.input as Record<string, unknown>),
+          force: true,
+          token: session.access_token,
+        }),
+      })
+      const j = await r.json()
+      if (j?.success && j.data) setResult(j.data as Record<string, unknown>)
+    } catch {
+      // 静默：保持原内容，绝不渲染半成品
+    } finally {
+      setRegenBusy(false)
+    }
+  }
 
   if (loading) {
     return (
@@ -230,7 +263,13 @@ export default function ReportDetailPage() {
           {row.kind === 'hemun' && <HemunResultView data={result as unknown as HemunData} />}
           {row.kind === 'ziwei' && <ZiweiResultView data={result as unknown as ZiweiResultData} />}
           {row.kind === 'geo' && <GeoResultView data={result as unknown as GeoResultData} />}
-          {row.kind === 'annual' && <LiunianResultView data={result as unknown as LiunianResultData} />}
+          {row.kind === 'annual' && (
+            <LiunianResultView
+              data={result as unknown as LiunianResultData}
+              onRegen={canRegen ? regenReport : undefined}
+              regenBusy={regenBusy}
+            />
+          )}
         </div>
       </div>
     </main>

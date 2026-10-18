@@ -6,6 +6,7 @@ import { useState } from 'react'
 import type { ZwChart, ZiweiAnalysis, PeriodRead } from '@/lib/ziwei'
 import type { ZiweiAIReport } from '@/lib/aiZiwei'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
+import { isRuleVersion } from '@/lib/reportGate'
 import CheckoutButton from '@/components/CheckoutButton'
 
 export interface ZiweiResultData {
@@ -45,9 +46,16 @@ const PATTERN_BADGE: Record<string, string> = {
   忌: 'bg-red-100 text-red-700'
 }
 
-export default function ZiweiResultView({ data }: { data: ZiweiResultData }) {
+export default function ZiweiResultView({ data, onRegen, regenBusy }: {
+  data: ZiweiResultData
+  /** ★ 规则版兜底时的「重新生成」出口（模块页下传）；回看页无此能力时不传＝不显示 */
+  onRegen?: () => void
+  regenBusy?: boolean
+}) {
   const { chart, analysis, ai, aiSource, trueSolar, locked } = data
   const [selected, setSelected] = useState<number | null>(chart.mingIndex)
+  // ★ 付费用户拿到规则版兜底（AI 结果未过合规校验）时，标签旁必须给出口，否则只能要求退款
+  const ruleVersion = isRuleVersion(aiSource)
 
   const periodPalaceIndex = (p: PeriodRead): number =>
     chart.palaces.findIndex((x) => x.name === p.basePalace)
@@ -246,6 +254,20 @@ export default function ZiweiResultView({ data }: { data: ZiweiResultData }) {
       {ai && (
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-ink">深度解读 · {aiSource}</h2>
+          {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
+          {ruleVersion && onRegen && (
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={onRegen}
+                disabled={regenBusy}
+                className="px-4 py-1.5 rounded-full border border-gold/20 bg-white text-sm font-medium text-ink hover:border-ink transition disabled:opacity-50"
+              >
+                {regenBusy ? '重新生成中...' : '免费重新生成'}
+              </button>
+              <span className="text-xs text-ink-light/50">不额外收费 · AI 将重写全文并覆盖本报告</span>
+            </div>
+          )}
           {([
             ['命格总论', ai.overview],
             ['事业格局', ai.career],

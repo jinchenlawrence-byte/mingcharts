@@ -9,6 +9,7 @@ import worldData from '@/data/world-countries.json'
 import type { GeoAnalysis, CategoryResult, GeoCityHit } from '@/lib/geo'
 import type { GeoAIReport } from '@/lib/aiGeo'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
+import { isRuleVersion } from '@/lib/reportGate'
 import CheckoutButton from '@/components/CheckoutButton'
 
 export interface GeoResultData {
@@ -208,8 +209,15 @@ function CategorySection({ cat }: { cat: CategoryResult }) {
   )
 }
 
-export default function GeoResultView({ data }: { data: GeoResultData }) {
+export default function GeoResultView({ data, onRegen, regenBusy }: {
+  data: GeoResultData
+  /** ★ 规则版兜底时的「重新生成」出口（模块页下传）；回看页无此能力时不传＝不显示 */
+  onRegen?: () => void
+  regenBusy?: boolean
+}) {
   const { geo, solar, ai, aiSource, locked } = data
+  // ★ 付费用户拿到规则版兜底（AI 结果未过合规校验）时，标签旁必须给出口，否则只能要求退款
+  const ruleVersion = isRuleVersion(aiSource)
   return (
     <div className="space-y-6">
       {/* 喜忌摘要 */}
@@ -345,6 +353,20 @@ export default function GeoResultView({ data }: { data: GeoResultData }) {
       {ai && (
         <div className="space-y-4">
           <h2 className="text-xl font-bold text-sky-900">深度解读 · {aiSource}</h2>
+          {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
+          {ruleVersion && onRegen && (
+            <div className="flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={onRegen}
+                disabled={regenBusy}
+                className="px-4 py-1.5 rounded-full border border-gold/20 bg-white text-sm font-medium text-ink hover:border-ink transition disabled:opacity-50"
+              >
+                {regenBusy ? '重新生成中...' : '免费重新生成'}
+              </button>
+              <span className="text-xs text-ink-light/50">不额外收费 · AI 将重写全文并覆盖本报告</span>
+            </div>
+          )}
           {([
             ['方位总论', ai.overview],
             ['现居城市影响', ai.currentCity],
