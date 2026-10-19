@@ -1,6 +1,8 @@
 # Terms of Service — MingCharts
 
-> **状态**：v0.2 定稿，**已发布**（2026-10-09 上线；2026-10-15 删 §7 内部同步注记——Waffo 网络自查指出）
+> **状态**：v0.3 定稿（2026-10-18：**会员订阅开放购买**——自动续费明确同意 ＋ 站内自助取消/恢复；
+> §4.3 由「尚未开放」改为购买与续费条款；§5.1 循环扣款授权正式生效；§6.1 新增站内自助取消）。
+> v0.2 曾于 2026-10-09 上线（2026-10-15 删 §7 内部同步注记——Waffo 网络自查指出）。
 > **基座**：Waffo Pancake 官方 [ToS 模板](https://docs.waffo.ai/mor/account-reviews/tos)（V1 Subscription）
 > **本次修订依据**：Waffo 三份官方清单（我方已取全文并逐条对照）
 > · [Account Reviews 总清单](https://docs.waffo.ai/mor/account-reviews)
@@ -127,7 +129,7 @@ We offer two kinds of paid products:
 
 **(a) One-off reports** — individually purchased interpretive reports (for example, a full BaZi report, a Zi Wei Dou Shu report, a compatibility report, or a location analysis report). Each purchase grants access to that specific report.
 
-**(b) Subscription** — recurring access to subscription content, including personalized daily readings and monthly cycle updates, for the billing period selected. **See Section 4.3 regarding current availability.**
+**(b) Subscription** — recurring access to subscription content, including personalized daily readings and monthly cycle updates, for the billing period selected. Subscription purchase, renewal, and cancellation are described in Section 4.3.
 
 For current products, plan details, and pricing, please visit **https://mingcharts.com/pricing**. All prices are displayed in **US Dollars (USD)**.
 
@@ -135,21 +137,20 @@ For current products, plan details, and pricing, please visit **https://mingchar
 
 We reserve the right to modify plan features, add new products, or discontinue products at any time. Price changes are governed by Section 5.4.
 
-### 4.3 ★ Subscription — Current Availability
+### 4.3 ★ Subscription — Purchase and Renewal
 
-**The subscription feature is not yet open for purchase.** Until it opens:
+Subscriptions are offered in two billing periods: **monthly** and **annual**. When you purchase a subscription:
 
-- no subscription can be purchased, and no recurring charge can be created;
-- the Subscription content described in Section 2.1 is not yet generally available;
-- this Section 4.3 will be removed, and Sections 5.1 and 6.1 will be updated with the self-service cancellation path, **before** subscriptions open.
+- **★ Explicit consent to automatic renewal.** Before checkout you must tick a consent box confirming that you agree to be charged on a recurring basis. That box is **unchecked by default**, and checkout cannot proceed without it.
+- **Automatic renewal.** Your subscription renews automatically at the end of each billing period at the price displayed at the time of purchase, until you cancel.
+- **Cancel online at any time.** You can cancel from the member area of your account — see Section 6.1. **No email is required.**
+- **7-day guarantee.** First-time subscribers are covered by the guarantee in Section 7.2.
 
-We state this explicitly rather than describing a feature that does not yet work.
+If a plan is not shown as purchasable on **https://mingcharts.com/pricing**, it is not open for purchase and no recurring charge can be created for it.
 
 ## 5. Billing & Payment
 
 ### 5.1 Recurring Billing Authorization (Subscription)
-
-*(Applies once subscriptions open — see Section 4.3.)*
 
 By providing your payment method and subscribing to a paid plan, you **expressly authorize** MingCharts to charge your payment method on a **recurring basis** for the applicable subscription fee. This recurring authorization remains in effect until you cancel in accordance with Section 6.
 
@@ -186,11 +187,13 @@ Access to purchased content is granted immediately upon confirmed payment, withi
 
 ### 6.1 How to Cancel
 
-*(Subscription is not yet open for purchase — see Section 4.3.)*
+You may cancel your subscription at any time. **Cancellation is self-service — no email is required.**
 
-You may cancel your subscription at any time by sending a cancellation request **from your registered email address** to **hello@mingcharts.com**. We will confirm the cancellation by email within **2 business days**.
+- **In your account (self-service).** Sign in and open the **member area** at **https://mingcharts.com/member**, then choose **Cancel subscription**. The cancellation is recorded immediately: your subscription is set to end at the close of the current billing period, and **you will not be charged again**.
+- **Changed your mind?** Until the current period ends, you can **resume** the subscription from the same page with one click, restoring automatic renewal.
+- **By email (fallback).** You may also send a cancellation request from your registered email address to **hello@mingcharts.com**. We confirm within **2 business days**.
 
-**★ Once subscriptions open, a self-service cancellation path inside your account will also be provided** — you will be able to cancel online, in the same channel you subscribed through, without contacting us. This section will be updated at that time.
+The cancellation channel is the same channel you subscribed through: the member area of this site.
 
 ### 6.2 Effect of Cancellation
 
@@ -386,6 +389,7 @@ We keep a version log so that it is possible to establish which version of these
 
 | Version | Effective date | Summary of changes |
 |---|---|---|
+| v0.3 | **2026-10-18** | **Subscription opened for purchase.** Section 4.3 rewritten from "not yet open" into purchase-and-renewal terms, including explicit auto-renewal consent at checkout (box unchecked by default). Section 5.1 recurring-billing authorization now in effect (placeholder removed). Section 6.1 replaced the email-only cancellation with **in-product self-service cancellation and reactivation**; email retained as a fallback. Section 7.2 first-time 7-day guarantee unchanged. |
 | v0.2 | **2026-10-09** | First published version. Aligned to Waffo Pancake merchant requirements: named Merchant of Record; specific AI model disclosure (`deepseek-chat`); renewal-notice and annual-reminder commitments; six explicit prohibited-content categories with reporting channel and moderation description; single monitored contact address. Subscription marked as not yet open (Section 4.3). |
 | v0.1 | — (unpublished draft) | Initial draft based on the Waffo Pancake ToS template. |
 
@@ -393,4 +397,4 @@ We keep a version log so that it is possible to establish which version of these
 
 ---
 
-Last Updated: 2026-10-09 · v0.2 · MingCharts · https://mingcharts.com
+Last Updated: 2026-10-18 · v0.3 · MingCharts · https://mingcharts.com

@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { WaffoPancakeError } from '@waffo/pancake-ts'
 import { createServerSupabase } from '@/lib/supabase'
-import {
-  getWaffo,
-  getWaffoStoreId,
-  getAppUrl,
-  buildCheckoutParams,
-} from '@/lib/waffo'
+import { createCheckoutSession } from '@/lib/checkout'
 import { waffoProductId } from '@/lib/waffo-products'
 import { makeMerchantOrderId } from '@/lib/waffo-events'
 import type { SkuId } from '@/lib/pricing'
@@ -54,7 +49,8 @@ export async function POST(request: NextRequest) {
     }
 
     const orderMerchantExternalId = makeMerchantOrderId(user.id)
-    const params = buildCheckoutParams({
+    // ★ 收银台会话创建抽到 lib/checkout.ts（档 C）：与会员订阅 POST 共用同一实现
+    const session = await createCheckoutSession({
       productId,
       orderMerchantExternalId,
       buyerEmail,
@@ -62,15 +58,11 @@ export async function POST(request: NextRequest) {
       sku,
       chartId: chartId || undefined, // 空串=未关联，metadata 里落空串
       returnTo: returnTo || undefined, // 空串=不回跳指定页（成功页走默认 /chart）
-      appUrl: getAppUrl(),
-      storeId: getWaffoStoreId(),
     })
-
-    const session = await getWaffo().checkout.createSession(params)
     return NextResponse.json({
       checkoutUrl: session.checkoutUrl,
       sessionId: session.sessionId,
-      ref: orderMerchantExternalId,
+      ref: session.ref,
     })
   } catch (error) {
     // 配置缺失（env 未填）/ appUrl 非 https：服务未就绪，503 而非裸 500

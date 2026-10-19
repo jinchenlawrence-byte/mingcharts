@@ -81,11 +81,22 @@ export async function POST(request: NextRequest) {
         )
         break
       case 'ignored_event':
-        // 订阅/退款/未知事件：本轮无订阅业务，只留日志。
-        // ★ 下一轮做订阅时必读 src/lib/waffo-events.ts 中 §3.4 两个陷阱的注释
-        // （activated+payment_succeeded 双发；canceling 不撤销、canceled 才撤销；
-        //   refund.failed 不撤销）。
+        // 无需动库的事件（退款/终止/逾期/套餐变更…）：只留日志。
+        // ★ 订阅行为判定集中在 src/lib/waffo-events.ts 的 subscriptionStateFromEvent
+        //   （activated+payment_succeeded 双发；canceling 不撤销、canceled 才撤销；
+        //    refund.failed 不撤销 —— 三条陷阱均有注释与断言守护）。
         console.info(`[waffo-webhook] 未处理事件类型，仅记录 ${eventType}/${eventId} order=${orderId}`)
+        break
+      // ★ 档 C（2026-10-18）订阅事件动库结果
+      case 'membership_updated':
+        console.info(
+          `[waffo-webhook] 会员变更已落库 ${eventType}/${eventId} action=${result.action} user=${result.userId} order=${orderId}`,
+        )
+        break
+      case 'membership_recorded':
+        console.info(
+          `[waffo-webhook] 订阅扣款已落账 ${eventType}/${eventId} plan=${result.plan} user=${result.userId} order=${orderId}`,
+        )
         break
     }
   } catch (e) {

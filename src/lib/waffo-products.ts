@@ -25,6 +25,12 @@ export const WAFFO_PRODUCTS: Partial<Record<SkuId, string>> = {
   ziwei_deep: 'PROD_7GDUSvdGALlj7Qcs14sa4Z',      // 紫微深度 24.99
   geo: 'PROD_6q01k9z1RWAL6WtmNvTpgp',             // 地理财富之城 19.99
   bundle3: 'PROD_28gtfik2BVN7O3m6KX2PVG',         // 三合一套餐 59.99
+  // ★ 会员订阅（档 C 2026-10-18 建档，2026-10-19 登记）：由 scripts/create-subscription-products.mjs
+  //   创建并发布（subscriptionProducts.create + publish），已向渠道复核价格/周期/状态均为 active。
+  //   登记规则不变：productId 只在【本映射这一处】登记。
+  //   ★ 登记即开闸：购买入口由「即将推出」切换为可购，POST /api/membership 改为创建真实收银台会话。
+  member_monthly: 'PROD_0BmnFGAMCcVqmxmhTKbqfZ',  // 月度会员 9.90 USD / monthly
+  member_yearly: 'PROD_2SKD8c2E4RmOD7I0NdebXq',   // 年度会员 49.00 USD / yearly
 }
 
 // 返回某 SKU 对应的 Waffo productId；未登记则返回 null（购买入口据此显示「即将推出」）

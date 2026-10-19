@@ -8,7 +8,7 @@
 // 绝不做「先 SELECT 看在不在，再 INSERT」（并发下两个请求会同时穿过）。
 // ─────────────────────────────────────────────────────────────
 import type { SupabaseClient } from '@supabase/supabase-js'
-import type { PaidPaymentRow, WaffoPaymentRepository } from './waffo-events'
+import type { MembershipPatch, PaidPaymentRow, WaffoPaymentRepository } from './waffo-events'
 
 const PG_UNIQUE_VIOLATION = '23505'
 
@@ -35,6 +35,8 @@ export function createWaffoRepo(admin: SupabaseClient): WaffoPaymentRepository {
         transaction_id: row.transaction_id,
         order_merchant_external_id: row.order_merchant_external_id,
         paid_at: row.paid_at,
+        // ★ 订阅单号审计列（档 C，需先跑 supabase/subscription.sql）；一次性订单为 null
+        order_id: row.order_id ?? null,
       })
       if (!error) return true
       if (error.code === PG_UNIQUE_VIOLATION) return false
@@ -94,6 +96,36 @@ export function createWaffoRepo(admin: SupabaseClient): WaffoPaymentRepository {
         throw new Error(`charts 查询失败: ${error.code} ${error.message}`)
       }
       return (data?.user_id as string | undefined) ?? null
+    },
+
+    // ── 会员列读写（档 C，2026-10-18）──────────────────────────
+    // ★ 仅 renew 的「取 max」需要读现有到期时间；这不是判重（判重仍只靠唯一约束）。
+    async findMemberExpiry(userId: string): Promise<string | null> {
+      const { data, error } = await admin
+        .from('profiles')
+        .select('member_expire_at')
+        .eq('id', userId)
+        .maybeSingle()
+      if (error) {
+        throw new Error(`profiles 查询失败: ${error.code} ${error.message}`)
+      }
+      return (data?.member_expire_at as string | null) ?? null
+    },
+
+    // ★ 写会员列（service_role 绕 RLS）。契约（见 MembershipPatch）：
+    //   · 省略的字段【保持不变】，显式 null 才清空 —— 故只把 patch 里出现过的键放进 update
+    //   · is_member 恒置 true：本补丁只在订阅【有效态】写入（激活/续期/已请求取消/已恢复），
+    //     失效由 member_expire_at 自然表达（getMembership 比对当下时间），绝不在 canceling 时清掉
+    async patchMembership(userId: string, patch: MembershipPatch): Promise<void> {
+      const update: Record<string, unknown> = { is_member: true }
+      if ('plan' in patch) update.member_plan = patch.plan ?? null
+      if ('orderId' in patch) update.member_order_id = patch.orderId ?? null
+      if ('expireAt' in patch) update.member_expire_at = patch.expireAt ?? null
+      if ('autoRenew' in patch) update.member_auto_renew = patch.autoRenew ?? null
+      if ('cancelAt' in patch) update.member_cancel_at = patch.cancelAt ?? null
+
+      const { error } = await admin.from('profiles').update(update).eq('id', userId)
+      if (error) throw new Error(`profiles 会员写入失败: ${error.code} ${error.message}`)
     },
   }
 }

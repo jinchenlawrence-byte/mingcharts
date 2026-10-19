@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import CheckoutButton from '@/components/CheckoutButton'
+import MembershipButton from '@/components/MembershipButton'
 import {
   SKUS,
   REPORT_GRANTS,
   SUBSCRIPTION_GRANTS,
+  MEMBER_SKUS,
   formatPriceUSD,
   ONE_TIME_SKUS,
   type GrantId,
@@ -143,6 +145,10 @@ const FAQS = [
     q: '如何支付？',
     a: '支持国际信用卡（Visa / Mastercard 等），由 Waffo 托管收银台安全处理；支付完成后报告自动解锁，可在「我的报告」中随时回看。',
   },
+  {
+    q: '会员怎么自动续费？不想续了怎么取消？',
+    a: `开通时需勾选同意自动续费：月度会员 ${formatPriceUSD(SKUS.member_monthly.priceUSD)}/月、年度会员 ${formatPriceUSD(SKUS.member_yearly.priceUSD)}/年，到期由支付渠道自动扣费续订。取消可在「会员中心」一键自助完成（也可通过收银台邮件入口联系我们）；取消后本计费周期内仍可继续使用，到期自动失效并不再扣费。退款政策见《服务条款》。`,
+  },
 ]
 
 // ★ 权益对比表行：免费列描述免费层；命书列与会员列一律由 grants 派生——
@@ -228,9 +234,16 @@ export default function PricingPage() {
               </ul>
 
               {card.membership ? (
-                // ★ 订阅权益（日运等）尚未上线，暂不开放购买（会员权益修复 §二）——本轮不动
-                <div className="block text-center py-2.5 rounded-full font-semibold bg-paper-dark/40 text-ink-light/40 cursor-not-allowed">
-                  即将推出
+                // ★ 档 C（2026-10-18）：会员改为真实购买入口。可购/「即将推出」由
+                //   MembershipButton 依 waffoProductId 自动判定（登记 PROD_ 即开闸）；
+                //   月/年两个 SKU 均来自 MEMBER_SKUS（pricing.ts 单一事实源）。
+                <div className="space-y-3">
+                  {MEMBER_SKUS.map((s) => (
+                    <MembershipButton
+                      key={s.id}
+                      plan={s.id === 'member_monthly' ? 'monthly' : 'yearly'}
+                    />
+                  ))}
                 </div>
               ) : card.buySku ? (
                 <div>

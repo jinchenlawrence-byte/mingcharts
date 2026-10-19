@@ -30,8 +30,9 @@ const DEFAULT_LANDING: Record<string, { href: string; label: string }> = {
   ziwei_deep: { href: '/reports', label: '进入我的报告' },
   geo: { href: '/reports', label: '进入我的报告' },
   bundle3: { href: '/reports', label: '查看已购内容' },
-  member_monthly: { href: '/', label: '返回首页' },
-  member_yearly: { href: '/', label: '返回首页' },
+  // ★ 档 C：会员订阅成功后落「会员中心」（权益不在「我的报告」里）
+  member_monthly: { href: '/member', label: '进入会员中心' },
+  member_yearly: { href: '/member', label: '进入会员中心' },
 }
 
 function SuccessInner() {
@@ -94,6 +95,10 @@ function SuccessInner() {
         })
         return res.json().catch(() => null)
       }
+      const getJson = async (url: string) => {
+        const res = await fetch(url)
+        return res.json().catch(() => null)
+      }
 
       // 计时展示
       const timer = setInterval(() => setSeconds((s) => s + 2), 2000)
@@ -101,13 +106,25 @@ function SuccessInner() {
       // ② 轮询权益（★ 看 ownedSkus 而不是 canViewFatebook——内测期 ENFORCE=false 会恒真）
       //   ★ 按【本次购买的 SKU】判定（2026-10-18 修复）：旧实现只认 fatebook，
       //     买紫微/合婚/地理/年运的用户会被无限轮询到超时（真实事故）。
+      //   ★ 档 C（2026-10-18）：会员订阅的解锁【不在 ownedSkus 里】——订阅权益由
+      //     subscription.* webhook 写入 profiles，故改看 /api/membership 只读 GET 的 active
+      //     （否则订阅买家会被白等满 15 次轮询）。
+      const isMemberSku = resolvedSku === 'member_monthly' || resolvedSku === 'member_yearly'
       setPhase('polling')
       let owned = false
       for (let i = 0; i < POLL_MAX_TIMES; i++) {
-        const ent = await postJson('/api/entitlements', { token })
-        if (Array.isArray(ent?.ownedSkus) && ent.ownedSkus.includes(resolvedSku)) {
-          owned = true
-          break
+        if (isMemberSku) {
+          const m = await getJson(`/api/membership?token=${encodeURIComponent(token)}`)
+          if (m?.success && m.data?.active === true) {
+            owned = true
+            break
+          }
+        } else {
+          const ent = await postJson('/api/entitlements', { token })
+          if (Array.isArray(ent?.ownedSkus) && ent.ownedSkus.includes(resolvedSku)) {
+            owned = true
+            break
+          }
         }
         await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS))
       }
@@ -152,12 +169,16 @@ function SuccessInner() {
             <>
               <div className="text-4xl mb-4">✅</div>
               <h1 className="text-xl font-bold text-ink mb-2">
-                支付成功，{SKUS[skuId]?.name ?? '内容'}已解锁
+                {skuId === 'member_monthly' || skuId === 'member_yearly'
+                  ? '支付成功，会员已开通'
+                  : `支付成功，${SKUS[skuId]?.name ?? '内容'}已解锁`}
               </h1>
               <p className="text-sm text-ink-light mb-6">
-                {skuId === 'fatebook'
-                  ? '命书已永久保存到你的账号，可随时登录查看。'
-                  : '已保存到你的账号，可随时登录查看。'}
+                {skuId === 'member_monthly' || skuId === 'member_yearly'
+                  ? '会员权益已生效，可随时在「会员中心」自助取消自动续费。'
+                  : skuId === 'fatebook'
+                    ? '命书已永久保存到你的账号，可随时登录查看。'
+                    : '已保存到你的账号，可随时登录查看。'}
               </p>
               <div className="space-y-3">
                 <Link

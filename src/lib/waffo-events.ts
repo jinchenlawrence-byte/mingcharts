@@ -2,9 +2,13 @@
 // Waffo 支付的纯业务逻辑（不含 SDK / Supabase 具体实现，便于离线行为断言）
 //   · 业务单号 MC-<userId>-<ts> 的生成与解析（越权校验依据）
 //   · order.completed → payments 行的构造与幂等处理
+//   · subscription.* → 会员权益（profiles）与订阅扣款（payments）的构造与幂等处理（档 C）
 //   · verify-payment 的兜底对账（快路径 + GraphQL 反查补写）
 // ─────────────────────────────────────────────────────────────
 import type { WebhookEvent, WebhookEventData } from '@waffo/pancake-ts'
+// ★ 套餐定义单一事实源（membership.ts → pricing.ts）：用于渠道未给周期末时的天数兜底。
+//   仅值导入 PLANS（服务端离线可用，无 supabase/密钥依赖）；类型导入 PlanId。
+import { PLANS, type PlanId } from './membership'
 
 // ── 业务单号 ─────────────────────────────────────────────────
 // 长度：MC-(3+1+36+1+13) = 54 字符，远小于 SDK 的 128 上限。
@@ -41,12 +45,30 @@ export interface PaidPaymentRow {
   //   取值 = checkout 时写入 metadata 的 sku（pricing.ts 的 SkuId）。
   //   空串 = 迁移前的老流水（均为命书单），归集层按历史行为兜底为 fatebook。
   sku: string
-  payment_type: 'single'
+  // ★ 档 C（2026-10-18）：订阅扣款为 'monthly' | 'yearly'（会员），一次性订单仍为 'single'。
+  //   与 schema.sql 的 CHECK (payment_type IN ('single','monthly','yearly','lifetime')) 对齐。
+  payment_type: 'single' | 'monthly' | 'yearly'
   payment_method: 'card'
   status: 'paid'
   transaction_id: string // ★ Waffo 真实支付单号 PAY_xxx；绝不能是 MOCK_ 前缀
   order_merchant_external_id: string // ★ 兜底对账快路径 + 反查用户共同依赖
   paid_at: string // ISO 时间
+  // ★ 订阅单号 ORD_xxx（档 C，仅审计；一次性订单为 null）。
+  //   不参与判重——判重仍只靠 payments.transaction_id UNIQUE。
+  order_id?: string | null
+}
+
+// ★ 会员列写入补丁（档 C，2026-10-18）。
+//   契约：字段【省略 = 保持不变】，显式 null = 清空。
+//   is_member 不在此列 —— 由仓库实现恒置 true（本表只在订阅【处于有效态】时写入：
+//   激活 / 续期 / 已请求取消（本期内仍有效） / 已恢复）；失效由 member_expire_at 自然表达，
+//   故 canceled 不清 is_member（详见 subscriptionStateFromEvent 的陷阱注释）。
+export interface MembershipPatch {
+  plan?: PlanId
+  orderId?: string | null
+  expireAt?: string | null
+  autoRenew?: boolean
+  cancelAt?: string | null
 }
 
 // 仓储接口：生产实现见 waffo-repo.ts；测试用内存实现镜像数据库唯一约束。
@@ -69,6 +91,11 @@ export interface WaffoPaymentRepository {
    * 声明为可选 —— 测试内存实现不必实现它（未实现时 reconcile 跳过回填，行为退化为原样）。
    */
   updatePaymentSku?(externalId: string, sku: string): Promise<void>
+  // ★ 档 C（2026-10-18）会员写入，两件套：
+  //   ① 读当前到期时间 —— 仅供 renew 的 extendMemberExpiry【取 max】用（不是判重，不是先查后写）
+  findMemberExpiry(userId: string): Promise<string | null>
+  //   ② 写会员列（service_role，绕 RLS）。is_member 恒置 true（见 MembershipPatch 契约）。
+  patchMembership(userId: string, patch: MembershipPatch): Promise<void>
 }
 
 // GraphQL 反查得到的标准化支付节点（字段由 route 层从原始响应映射进来）
@@ -95,7 +122,10 @@ export type HandleEventResult =
   | { kind: 'payment_conflict' } // transaction_id UNIQUE 命中（不同 eventId 的重投）
   | { kind: 'ignored_missing_user' } // metadata 与单号都拿不到 userId：记日志、返 200
   | { kind: 'ignored_invalid_payload'; reason: string } // 金额/单号异常：记日志、返 200
-  | { kind: 'ignored_event'; eventType: string } // 订阅/退款/未知事件：本轮只记日志
+  | { kind: 'ignored_event'; eventType: string } // 订阅/退款/未知事件中【无需动库】者：只记日志
+  // ★ 档 C（2026-10-18）订阅事件动库的两种结果：
+  | { kind: 'membership_updated'; eventType: string; userId: string; action: 'activate' | 'renew' | 'canceling' | 'uncanceled' } // 写了 profiles 会员列
+  | { kind: 'membership_recorded'; eventType: string; userId: string; plan: PlanId } // 订阅扣款已落 payments
 
 // ★ chartId 形态校验（HANDOFF-命书一份一付 §3.2，§8.6.2 依据分级：不直接信任 metadata）：
 //   是 string · 非空 · 长度合理（≤64，UUID 36 字符绰绰有余）→ 原样返回；否则 null。
@@ -163,6 +193,268 @@ export function buildPaidPaymentRow(
   }
 }
 
+// ── 会员订阅（档 C，2026-10-18）：纯函数 + 事件分支 ───────────
+// 设计要点：webhook 只管【把渠道事实写进 profiles/payments】；有效期判定仍是
+// getMembership 按 member_expire_at 比对当下时间——所以「取消请求」与「终止」
+// 都不需要（也不允许）改 is_member，避免把「本期内仍可用」错杀成失效。
+
+/** 从 metadata.sku 判套餐：'member_monthly' → 'monthly'，'member_yearly' → 'yearly'。 */
+export function planFromSku(sku: unknown): PlanId | null {
+  if (sku === 'member_monthly') return 'monthly'
+  if (sku === 'member_yearly') return 'yearly'
+  return null
+}
+
+/** 从渠道计费周期判套餐；weekly/quarterly 未开售 → null（不臆断）。 */
+export function planFromBillingPeriod(bp: unknown): PlanId | null {
+  if (bp === 'monthly') return 'monthly'
+  if (bp === 'yearly') return 'yearly'
+  return null
+}
+
+/**
+ * ★ 套餐判定单一事实源：① 首选 orderMetadata.sku（我方 checkout 自己写入，最可靠）；
+ *   ② 兜底 billingPeriod（渠道字段）。都判不出 → null（调用方按 noop 记日志，不猜）。
+ */
+export function resolvePlan(data: WebhookEventData): PlanId | null {
+  return planFromSku(data.orderMetadata?.sku) ?? planFromBillingPeriod(data.billingPeriod)
+}
+
+/**
+ * ★ 订阅扣款的 payments 行（payment_succeeded 事件）。
+ *   · payment_type = 'monthly' | 'yearly'（不再是 'single'）——会员续期与一次性购买可区分
+ *   · sku = 会员 SKU —— 权益归集的唯一依据
+ *   · transaction_id = PAY_xxx —— 幂等仍靠 payments.transaction_id UNIQUE
+ *   · chart_id = null —— 订阅与单个命盘无关
+ */
+export function buildSubscriptionPaymentRow(
+  data: WebhookEventData,
+  plan: PlanId,
+  nowIso: string = new Date().toISOString(),
+): PaidPaymentRow | null {
+  const transactionId = data.paymentId
+  if (typeof transactionId !== 'string' || !transactionId.startsWith('PAY_')) return null
+
+  const amount = Number(data.chargedAmount)
+  if (!Number.isFinite(amount) || amount < 0) return null
+
+  const userId = eventUserId(data)
+  if (!userId) return null
+
+  // 业务单号：订阅事件通常继承订单的 MC-<userId>-<ts>；异常缺失时用当前时间兜底，
+  // 使这一行仍是【可审计的完整流水】（该列对订阅只作审计，reconcile 只用一次性订单的 ref）。
+  const externalId = data.orderMerchantExternalId?.trim() || makeMerchantOrderId(userId)
+
+  return {
+    user_id: userId,
+    chart_id: null,
+    amount,
+    sku: plan === 'monthly' ? 'member_monthly' : 'member_yearly',
+    payment_type: plan,
+    payment_method: 'card',
+    status: 'paid',
+    transaction_id: transactionId,
+    order_merchant_external_id: externalId,
+    paid_at: data.paymentDate || nowIso,
+    order_id: data.orderId ?? null,
+  }
+}
+
+/**
+ * ★ 续期到期时间：取 max(现有到期, 本次周期末)，**不**无条件 +30/+365。
+ *   理由：renewed 可能被重复投递，加法会二次叠加（用户白赚一期）；
+ *   currentPeriodEnd 由渠道给出，已是权威的「本期末」，取 max 幂等且单调。
+ *   注意：渠道给的是 ISO【日期】串（如 "2026-05-01"），不可解析时保留现有值（不降级为 null 清空）。
+ */
+export function extendMemberExpiry(
+  currentIso: string | null,
+  periodEndIso: string | null,
+): string | null {
+  const cur = currentIso ? new Date(currentIso).getTime() : NaN
+  const next = periodEndIso ? new Date(periodEndIso).getTime() : NaN
+  const curOk = Number.isFinite(cur)
+  const nextOk = Number.isFinite(next)
+  if (!curOk && !nextOk) return null
+  if (!curOk) return new Date(next).toISOString()
+  if (!nextOk) return new Date(cur).toISOString()
+  return new Date(Math.max(cur, next)).toISOString()
+}
+
+// 订阅事件要做的动作（纯判定，不做 IO；由 applySubscriptionAction 落库）
+export type SubscriptionAction =
+  | { kind: 'activate'; plan: PlanId; orderId: string | null; periodEnd: string | null }
+  | { kind: 'renew'; plan: PlanId; orderId: string | null; periodEnd: string | null }
+  | { kind: 'record_payment'; plan: PlanId }
+  | { kind: 'canceling'; canceledAt: string | null }
+  | { kind: 'uncanceled' }
+  | { kind: 'noop'; reason: string }
+
+/**
+ * 事件 → 动作。这是订阅行为的【唯一判定处】（纯函数，可离线逐条断言）。
+ *
+ * ★★ 两个陷阱（任务书 §3.4，官方文档原文要点）：
+ *   1) 首期款会【双发】subscription.activated（挂订单，授权益）与
+ *      subscription.payment_succeeded（挂扣款，记账），两者独立投递、都可能重投：
+ *      授权益看 activated，记账看 payment_succeeded，各自做幂等，别重复授予。
+ *   2) subscription.canceling 只是「请求取消、本期内仍有效」→ 只记录【不撤销】；
+ *      只有 subscription.canceled（约在 currentPeriodEnd 才到达）才撤销。
+ *      refund.failed 表示退款未完成 → 同样【不撤销】。
+ */
+export function subscriptionStateFromEvent(
+  eventType: string,
+  data: WebhookEventData,
+): SubscriptionAction {
+  switch (eventType) {
+    case 'subscription.activated': {
+      const plan = resolvePlan(data)
+      if (!plan) return { kind: 'noop', reason: '无法从 sku/billingPeriod 判定套餐' }
+      return {
+        kind: 'activate',
+        plan,
+        orderId: data.orderId ?? null,
+        periodEnd: data.currentPeriodEnd ?? null,
+      }
+    }
+    // renewed = 本期滚动续费；recovered = 逾期后重试扣款成功（本期同样已滚动）→ 同语义
+    case 'subscription.renewed':
+    case 'subscription.recovered': {
+      const plan = resolvePlan(data)
+      if (!plan) return { kind: 'noop', reason: '无法从 sku/billingPeriod 判定套餐' }
+      return {
+        kind: 'renew',
+        plan,
+        orderId: data.orderId ?? null,
+        periodEnd: data.currentPeriodEnd ?? null,
+      }
+    }
+    // ★ 纯扣款事件：不含 orderStatus/currentPeriodEnd（d.ts 明示）→ 只记账，不碰会员有效期
+    case 'subscription.payment_succeeded': {
+      const plan = resolvePlan(data)
+      if (!plan) return { kind: 'noop', reason: '无法从 sku/billingPeriod 判定套餐' }
+      return { kind: 'record_payment', plan }
+    }
+    // ★ 陷阱 2：只记录「已请求取消」，本期内仍有效 → 不动 is_member
+    case 'subscription.canceling':
+      return { kind: 'canceling', canceledAt: data.canceledAt ?? null }
+    case 'subscription.uncanceled':
+      return { kind: 'uncanceled' }
+    // 终止：到期自然失效（getMembership 按 member_expire_at 判），不清 is_member
+    case 'subscription.canceled':
+      return { kind: 'noop', reason: '订阅终止：到期自然失效，仅记日志' }
+    case 'subscription.past_due':
+      return { kind: 'noop', reason: '续费失败：等渠道重试/恢复事件，仅记日志' }
+    default:
+      // refund.succeeded / refund.failed（★ 退款未完成不撤销，陷阱 2）/ plan_changed 系列
+      return { kind: 'noop', reason: '非会员状态事件：仅记日志' }
+  }
+}
+
+// 订阅事件的归属用户：优先 orderMetadata.userId（我方 checkout 写入），缺失时从业务单号兜底解析
+function eventUserId(data: WebhookEventData): string {
+  const fromMeta = data.orderMetadata?.userId?.trim() || ''
+  if (fromMeta) return fromMeta
+  return parseMerchantOrderId(data.orderMerchantExternalId ?? '')?.userId ?? ''
+}
+
+// ISO/日期串规范化；不可解析 → null
+function toIsoOrNull(raw: string | null | undefined): string | null {
+  if (!raw) return null
+  const ms = new Date(raw).getTime()
+  return Number.isFinite(ms) ? new Date(ms).toISOString() : null
+}
+
+const DAY_MS = 24 * 60 * 60 * 1000
+
+// ★★ 开通到期时间（含兜底）：渠道 currentPeriodEnd 是【可选】字段——
+//   若事件里缺失/不可解析，退回套餐天数（否则会出现「已扣款却无任何会员权益」）。
+function activateExpiryIso(plan: PlanId, periodEnd: string | null): string | null {
+  const fromChannel = toIsoOrNull(periodEnd)
+  if (fromChannel) return fromChannel
+  const days = PLANS[plan]?.days ?? 0
+  return days > 0 ? new Date(Date.now() + days * DAY_MS).toISOString() : null
+}
+
+// ★★ 续期到期时间（含兜底 + 取 max）：渠道给了周期末 → extendMemberExpiry 取 max（防重复叠加）；
+//   渠道未给 → 从 max(现有到期, 现在) 顺延套餐天数（否则「扣了钱却不续期」）。
+function renewExpiryIso(current: string | null, plan: PlanId, periodEnd: string | null): string | null {
+  const fromChannel = toIsoOrNull(periodEnd)
+  if (fromChannel) return extendMemberExpiry(current, fromChannel)
+  const days = PLANS[plan]?.days ?? 0
+  if (days <= 0) return current
+  const curMs = current ? new Date(current).getTime() : NaN
+  const base = Number.isFinite(curMs) ? Math.max(curMs, Date.now()) : Date.now()
+  return new Date(base + days * DAY_MS).toISOString()
+}
+
+// 把订阅动作落库（幂等闸口与一次性链路共用 processed_webhooks）
+async function applySubscriptionAction(
+  event: WebhookEvent<WebhookEventData>,
+  action: SubscriptionAction,
+  repo: WaffoPaymentRepository,
+  nowIso: string,
+): Promise<HandleEventResult> {
+  const { eventType, eventId } = event
+  const userId = eventUserId(event.data)
+  if (!userId) return { kind: 'ignored_missing_user' }
+
+  // 幂等闸口 (a)：先插 processed_webhooks，主键冲突即重复投递——不做任何后续动作。
+  const firstTime = await repo.markEventProcessed(eventType, eventId)
+  if (!firstTime) return { kind: 'duplicate' }
+
+  switch (action.kind) {
+    case 'activate': {
+      // 首期开通：到期时间以渠道 currentPeriodEnd 为准（权威值，不做加法；缺失则天数兜底）
+      const patch: MembershipPatch = {
+        plan: action.plan,
+        expireAt: activateExpiryIso(action.plan, action.periodEnd),
+        autoRenew: true,
+        cancelAt: null,
+      }
+      // ★ 订阅单号只在【真的有】时写入：契约「省略=保持不变」，故不得用 null 覆盖已存的 ORD_
+      if (action.orderId) patch.orderId = action.orderId
+      await repo.patchMembership(userId, patch)
+      return { kind: 'membership_updated', eventType, userId, action: 'activate' }
+    }
+
+    case 'renew': {
+      // ★ 取 max，防重复投递的 renewed 二次叠加；auto_renew / cancel_at 保持不动
+      const current = await repo.findMemberExpiry(userId)
+      const patch: MembershipPatch = {
+        plan: action.plan,
+        expireAt: renewExpiryIso(current, action.plan, action.periodEnd),
+      }
+      if (action.orderId) patch.orderId = action.orderId
+      await repo.patchMembership(userId, patch)
+      return { kind: 'membership_updated', eventType, userId, action: 'renew' }
+    }
+
+    case 'record_payment': {
+      const row = buildSubscriptionPaymentRow(event.data, action.plan, nowIso)
+      if (!row) return { kind: 'ignored_invalid_payload', reason: '订阅扣款 paymentId/chargedAmount 异常' }
+      // 幂等闸口 (b)：transaction_id UNIQUE，冲突即已记过账
+      const inserted = await repo.insertPaidPayment(row)
+      return inserted
+        ? { kind: 'membership_recorded', eventType, userId, plan: action.plan }
+        : { kind: 'payment_conflict' }
+    }
+
+    case 'canceling':
+      // ★ 只记录取消请求：本期内仍有效，不得撤销 is_member（陷阱 2）
+      await repo.patchMembership(userId, {
+        autoRenew: false,
+        cancelAt: toIsoOrNull(action.canceledAt),
+      })
+      return { kind: 'membership_updated', eventType, userId, action: 'canceling' }
+
+    case 'uncanceled':
+      await repo.patchMembership(userId, { autoRenew: true, cancelAt: null })
+      return { kind: 'membership_updated', eventType, userId, action: 'uncanceled' }
+
+    case 'noop':
+      return { kind: 'ignored_event', eventType }
+  }
+}
+
 // 处理一个【已验签】的 webhook 事件。路由层必须先验签再调本函数。
 export async function handleWaffoEvent(
   event: WebhookEvent<WebhookEventData>,
@@ -171,16 +463,11 @@ export async function handleWaffoEvent(
 ): Promise<HandleEventResult> {
   const { eventType, eventId } = event
 
+  // ── 订阅域（档 C）：先纯判定要不要动库；无需动库的（退款/终止/逾期…）只留给路由层记日志 ──
   if (eventType !== 'order.completed') {
-    // ── 本轮不做订阅/退款业务，但每个分支都要留痕（日志由路由层按 result 打印）──
-    // ★★ 给下一轮（会员订阅）的两个陷阱（任务书 §3.4，官方文档原文要点）：
-    //   1) 首期款会【双发】subscription.activated（挂订单）与
-    //      subscription.payment_succeeded（挂扣款），两者独立投递、都可能重投：
-    //      授权益看 activated，记账看 payment_succeeded，各自做幂等，别重复授予。
-    //   2) subscription.canceling 只是「请求取消、本期内仍有效」→ 只记录【不撤销】；
-    //      只有 subscription.canceled（约在 currentPeriodEnd 才到达）才撤销。
-    //      refund.failed 表示退款未完成 → 同样【不撤销】。
-    return { kind: 'ignored_event', eventType }
+    const action = subscriptionStateFromEvent(eventType, event.data)
+    if (action.kind === 'noop') return { kind: 'ignored_event', eventType }
+    return applySubscriptionAction(event, action, repo, nowIso)
   }
 
   // 幂等闸口 (a)：先插 processed_webhooks，主键冲突即重复投递——不做任何后续动作。
