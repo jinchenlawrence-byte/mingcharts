@@ -154,7 +154,7 @@ export async function getEntitlements(
   admin: SupabaseClient,
   userId: string
 ): Promise<Entitlements> {
-  const [{ data: profile }, { data: pays }] = await Promise.all([
+  const [{ data: profile, error: profileError }, { data: pays, error: paysError }] = await Promise.all([
     admin
       .from('profiles')
       .select('is_member, member_plan, member_expire_at')
@@ -165,6 +165,12 @@ export async function getEntitlements(
       .select('payment_type, status, transaction_id, sku')
       .eq('user_id', userId)
   ])
+
+  // ★ 读路径必须暴露错误（2026-10-19 修复）：旧实现忽略 error，schema 漂移（如生产库缺
+  //   member_plan 列 → 42703）时 profile=null → 静默判「无任何权益」，全站权益无声失效
+  //   （真实事故：一次迁移漏跑 = 所有付费用户都拿不到权益）。现直接抛错，调用方返 500 让问题可见。
+  if (profileError) throw new Error(`profiles 权益查询失败: ${profileError.code} ${profileError.message}`)
+  if (paysError) throw new Error(`payments 权益查询失败: ${paysError.code} ${paysError.message}`)
 
   return entitlementsFromRows(pays as PaymentRow[] | null, profile as ProfileRow | null)
 }

@@ -9,7 +9,7 @@ import { SKUS, type SkuId } from '@/lib/pricing'
 // 支付成功回跳页。
 // ★★★ 不能假设付款已确认：从收银台跳回时 webhook 可能还在路上，也可能最终丢失。
 //   ① ref 以 URL ?ref= 为准（跨设备也在），sessionStorage 仅补充
-//   ② 每 2 秒轮询权益，最多 15 次（覆盖 webhook 正常到达，通常几秒内）
+//   ② 每 2 秒轮询权益，最多 6 次（≈12 秒；webhook 正常几秒内到达，见下 2026-10-19 缩短说明）
 //   ③ 仍无 → 调 verify-payment 兜底反查补写（覆盖 webhook 丢失）
 //   ④ 仍无 → 明确文案 + 业务单号 + 客服邮箱，绝不让用户以为被骗
 // 2026-10-17 风格统一：接入 hw- 设计语言（白卡居中壳），轮询逻辑与文案零改动
@@ -18,7 +18,10 @@ import { SKUS, type SkuId } from '@/lib/pricing'
 type Phase = 'preparing' | 'polling' | 'verifying' | 'unlocked' | 'pending' | 'no_ref' | 'no_login'
 
 const POLL_INTERVAL_MS = 2000
-const POLL_MAX_TIMES = 15
+// ★ 2026-10-19 缩短：原 15 次 × 2 秒 = 30 秒预算，实测在每次请求有 1–6 秒延迟时会被拖成
+//   近 1 分钟（用户以为卡死）。webhook 正常几秒内到达，6 次（≈12 秒）足够覆盖正常态；
+//   更慢的情况立即转 verify-payment 主动反查，比继续干等更快解锁。
+const POLL_MAX_TIMES = 6
 
 // ★ 未带 returnTo 时的默认落点（2026-10-18）：修「买完紫微被扔去 /chart」——
 //   按【本次购买的 SKU】决定去哪、文案说什么，不再一律当命书。

@@ -77,6 +77,12 @@ export interface WaffoPaymentRepository {
   // 幂等方案 (a) 辅：processed_webhooks 主键 (event_type,event_id)。
   // 返回 true=首次插入；false=重复投递。
   markEventProcessed(eventType: string, eventId: string): Promise<boolean>
+  // ★ 撤回幂等占位（2026-10-19「先打标后干活」顺序缺陷修复）：工作失败时删掉
+  //   (event_type,event_id) 行，使渠道重试能【真正重做】——否则一次 DB 抖动就让重试撞上
+  //   duplicate → 200，权益/流水永久丢失（真实事故：生产库缺 member_plan 列 → 抛 42703）。
+  //   不能改成「先干活后打标」：renew 的「渠道未给周期末」兜底按当下时间顺延，天然不幂等，
+  //   重投会二次叠加。故保持「先占位、失败即撤回」，见 gatedWork。
+  unmarkEventProcessed(eventType: string, eventId: string): Promise<void>
   // 幂等方案 (b) 主：payments.transaction_id UNIQUE。
   // 返回 true=首次插入；false=唯一约束冲突（重复授予）。
   insertPaidPayment(row: PaidPaymentRow): Promise<boolean>
@@ -386,6 +392,40 @@ function renewExpiryIso(current: string | null, plan: PlanId, periodEnd: string 
   return new Date(base + days * DAY_MS).toISOString()
 }
 
+// ★★ 幂等闸口 + 工作单元（2026-10-19 修复「先打标后干活」的顺序缺陷）。
+//
+//   背景（真实事故）：processed_webhooks 先占位、再干活。若干活时抛错（如生产库缺
+//   profiles.member_plan 列 → patchMembership 抛 42703），webhook 返 500；渠道重试时
+//   占位已在 → duplicate → 200 —— 该事件【永远不会被真正处理】，权益永久丢失。
+//
+//   修法：工作失败时【撤回占位】再抛错，渠道重试即可真正重做（幂等闸口本身不变）。
+//   ★ 不改成「先干活后打标」的原因：renew 的「渠道未给周期末」兜底按当下时间顺延，
+//     天然不幂等，重投会二次叠加（用户白赚一期）。故仍「先占位、失败即撤回」。
+//   · 撤回本身失败：吞掉（best-effort）并抛原错 —— 渠道重试撞上残留占位会走 duplicate，
+//     属降级路径，但绝不静默吞掉原始错误。
+//   ★ 牙口锚点：删掉 catch 里的 unmarkEventProcessed → test-subscription-accept ③
+//     「工作失败后可重做」精确翻红（重试被 duplicate 挡掉、权益永久丢失）。
+async function gatedWork(
+  eventType: string,
+  eventId: string,
+  repo: WaffoPaymentRepository,
+  work: () => Promise<HandleEventResult>,
+): Promise<HandleEventResult> {
+  // 幂等闸口 (a)：先插 processed_webhooks，主键冲突即重复投递——不做任何后续动作。
+  const firstTime = await repo.markEventProcessed(eventType, eventId)
+  if (!firstTime) return { kind: 'duplicate' }
+  try {
+    return await work()
+  } catch (err) {
+    try {
+      await repo.unmarkEventProcessed(eventType, eventId)
+    } catch {
+      // best-effort：撤回失败不影响原始错误上抛（渠道仍会重试）
+    }
+    throw err
+  }
+}
+
 // 把订阅动作落库（幂等闸口与一次性链路共用 processed_webhooks）
 async function applySubscriptionAction(
   event: WebhookEvent<WebhookEventData>,
@@ -397,62 +437,61 @@ async function applySubscriptionAction(
   const userId = eventUserId(event.data)
   if (!userId) return { kind: 'ignored_missing_user' }
 
-  // 幂等闸口 (a)：先插 processed_webhooks，主键冲突即重复投递——不做任何后续动作。
-  const firstTime = await repo.markEventProcessed(eventType, eventId)
-  if (!firstTime) return { kind: 'duplicate' }
-
-  switch (action.kind) {
-    case 'activate': {
-      // 首期开通：到期时间以渠道 currentPeriodEnd 为准（权威值，不做加法；缺失则天数兜底）
-      const patch: MembershipPatch = {
-        plan: action.plan,
-        expireAt: activateExpiryIso(action.plan, action.periodEnd),
-        autoRenew: true,
-        cancelAt: null,
+  // ★ 幂等闸口 + 工作单元：失败即撤回占位，渠道重试可重做（见 gatedWork）
+  return gatedWork(eventType, eventId, repo, async () => {
+    switch (action.kind) {
+      case 'activate': {
+        // 首期开通：到期时间以渠道 currentPeriodEnd 为准（权威值，不做加法；缺失则天数兜底）
+        const patch: MembershipPatch = {
+          plan: action.plan,
+          expireAt: activateExpiryIso(action.plan, action.periodEnd),
+          autoRenew: true,
+          cancelAt: null,
+        }
+        // ★ 订阅单号只在【真的有】时写入：契约「省略=保持不变」，故不得用 null 覆盖已存的 ORD_
+        if (action.orderId) patch.orderId = action.orderId
+        await repo.patchMembership(userId, patch)
+        return { kind: 'membership_updated', eventType, userId, action: 'activate' }
       }
-      // ★ 订阅单号只在【真的有】时写入：契约「省略=保持不变」，故不得用 null 覆盖已存的 ORD_
-      if (action.orderId) patch.orderId = action.orderId
-      await repo.patchMembership(userId, patch)
-      return { kind: 'membership_updated', eventType, userId, action: 'activate' }
-    }
 
-    case 'renew': {
-      // ★ 取 max，防重复投递的 renewed 二次叠加；auto_renew / cancel_at 保持不动
-      const current = await repo.findMemberExpiry(userId)
-      const patch: MembershipPatch = {
-        plan: action.plan,
-        expireAt: renewExpiryIso(current, action.plan, action.periodEnd),
+      case 'renew': {
+        // ★ 取 max，防重复投递的 renewed 二次叠加；auto_renew / cancel_at 保持不动
+        const current = await repo.findMemberExpiry(userId)
+        const patch: MembershipPatch = {
+          plan: action.plan,
+          expireAt: renewExpiryIso(current, action.plan, action.periodEnd),
+        }
+        if (action.orderId) patch.orderId = action.orderId
+        await repo.patchMembership(userId, patch)
+        return { kind: 'membership_updated', eventType, userId, action: 'renew' }
       }
-      if (action.orderId) patch.orderId = action.orderId
-      await repo.patchMembership(userId, patch)
-      return { kind: 'membership_updated', eventType, userId, action: 'renew' }
+
+      case 'record_payment': {
+        const row = buildSubscriptionPaymentRow(event.data, action.plan, nowIso)
+        if (!row) return { kind: 'ignored_invalid_payload', reason: '订阅扣款 paymentId/chargedAmount 异常' }
+        // 幂等闸口 (b)：transaction_id UNIQUE，冲突即已记过账
+        const inserted = await repo.insertPaidPayment(row)
+        return inserted
+          ? { kind: 'membership_recorded', eventType, userId, plan: action.plan }
+          : { kind: 'payment_conflict' }
+      }
+
+      case 'canceling':
+        // ★ 只记录取消请求：本期内仍有效，不得撤销 is_member（陷阱 2）
+        await repo.patchMembership(userId, {
+          autoRenew: false,
+          cancelAt: toIsoOrNull(action.canceledAt),
+        })
+        return { kind: 'membership_updated', eventType, userId, action: 'canceling' }
+
+      case 'uncanceled':
+        await repo.patchMembership(userId, { autoRenew: true, cancelAt: null })
+        return { kind: 'membership_updated', eventType, userId, action: 'uncanceled' }
+
+      case 'noop':
+        return { kind: 'ignored_event', eventType }
     }
-
-    case 'record_payment': {
-      const row = buildSubscriptionPaymentRow(event.data, action.plan, nowIso)
-      if (!row) return { kind: 'ignored_invalid_payload', reason: '订阅扣款 paymentId/chargedAmount 异常' }
-      // 幂等闸口 (b)：transaction_id UNIQUE，冲突即已记过账
-      const inserted = await repo.insertPaidPayment(row)
-      return inserted
-        ? { kind: 'membership_recorded', eventType, userId, plan: action.plan }
-        : { kind: 'payment_conflict' }
-    }
-
-    case 'canceling':
-      // ★ 只记录取消请求：本期内仍有效，不得撤销 is_member（陷阱 2）
-      await repo.patchMembership(userId, {
-        autoRenew: false,
-        cancelAt: toIsoOrNull(action.canceledAt),
-      })
-      return { kind: 'membership_updated', eventType, userId, action: 'canceling' }
-
-    case 'uncanceled':
-      await repo.patchMembership(userId, { autoRenew: true, cancelAt: null })
-      return { kind: 'membership_updated', eventType, userId, action: 'uncanceled' }
-
-    case 'noop':
-      return { kind: 'ignored_event', eventType }
-  }
+  })
 }
 
 // 处理一个【已验签】的 webhook 事件。路由层必须先验签再调本函数。
@@ -470,30 +509,30 @@ export async function handleWaffoEvent(
     return applySubscriptionAction(event, action, repo, nowIso)
   }
 
-  // 幂等闸口 (a)：先插 processed_webhooks，主键冲突即重复投递——不做任何后续动作。
-  const firstTime = await repo.markEventProcessed(eventType, eventId)
-  if (!firstTime) return { kind: 'duplicate' }
+  // ★ 幂等闸口 + 工作单元：失败即撤回占位，渠道重试可重做（见 gatedWork）。
+  //   一次性链路同型缺陷一并修（原先也让「先打标后干活」的一次性订单在 DB 抖动时丢流水）。
+  return gatedWork(eventType, eventId, repo, async () => {
+    const row = buildPaidPaymentRow(event.data, nowIso)
+    if (!row) {
+      // metadata 缺失/单号非法/金额异常：不抛错（抛错只会触发无意义重试），
+      // 返 200 并依赖日志告警 → 人工补单。事件已在 processed_webhooks 留痕。
+      const hasUser =
+        (event.data.orderMetadata?.userId ?? '').length > 0 ||
+        parseMerchantOrderId(event.data.orderMerchantExternalId ?? '') !== null
+      return hasUser
+        ? { kind: 'ignored_invalid_payload', reason: 'paymentId/chargedAmount/externalId 异常' }
+        : { kind: 'ignored_missing_user' }
+    }
 
-  const row = buildPaidPaymentRow(event.data, nowIso)
-  if (!row) {
-    // metadata 缺失/单号非法/金额异常：不抛错（抛错只会触发无意义重试），
-    // 返 200 并依赖日志告警 → 人工补单。事件已在 processed_webhooks 留痕。
-    const hasUser =
-      (event.data.orderMetadata?.userId ?? '').length > 0 ||
-      parseMerchantOrderId(event.data.orderMerchantExternalId ?? '') !== null
-    return hasUser
-      ? { kind: 'ignored_invalid_payload', reason: 'paymentId/chargedAmount/externalId 异常' }
-      : { kind: 'ignored_missing_user' }
-  }
+    // ★ 命盘归属校验（HANDOFF-命书一份一付 §3.2 安全点）：metadata.chartId 必须属于该买家，
+    //   否则写 NULL 不报错（单一事实源 resolveChartIdForUser；断言②有牙口守护）。
+    const chartId = await resolveChartIdForUser(repo, event.data.orderMetadata?.chartId, row.user_id)
+    const rowOwned: PaidPaymentRow = { ...row, chart_id: chartId }
 
-  // ★ 命盘归属校验（HANDOFF-命书一份一付 §3.2 安全点）：metadata.chartId 必须属于该买家，
-  //   否则写 NULL 不报错（单一事实源 resolveChartIdForUser；断言②有牙口守护）。
-  const chartId = await resolveChartIdForUser(repo, event.data.orderMetadata?.chartId, row.user_id)
-  const rowOwned: PaidPaymentRow = { ...row, chart_id: chartId }
-
-  // 幂等闸口 (b)：transaction_id UNIQUE，冲突即已授过权益。
-  const inserted = await repo.insertPaidPayment(rowOwned)
-  return inserted ? { kind: 'inserted', userId: row.user_id, chartId } : { kind: 'payment_conflict' }
+    // 幂等闸口 (b)：transaction_id UNIQUE，冲突即已授过权益。
+    const inserted = await repo.insertPaidPayment(rowOwned)
+    return inserted ? { kind: 'inserted', userId: row.user_id, chartId } : { kind: 'payment_conflict' }
+  })
 }
 
 // ── 兜底对账（/api/verify-payment）──────────────────────────

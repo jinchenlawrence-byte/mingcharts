@@ -86,6 +86,10 @@ function createMemRepo() {
       eventKeys.add(key)
       return true
     },
+    // ★ 撤回占位（2026-10-19「先打标后干活」修复）：工作失败时删掉痕迹，重试可重做
+    async unmarkEventProcessed(eventType, eventId) {
+      eventKeys.delete(eventType + '|' + eventId)
+    },
     async insertPaidPayment(row) {
       if (payments.some((p) => p.transaction_id === row.transaction_id)) return false
       payments.push({ ...row })
@@ -233,7 +237,7 @@ assert(verifyRoute.includes("status: 403") || verifyRoute.includes('{ status: 40
 const successPage = read('../src/app/checkout/success/page.tsx')
 assert(successPage.includes("searchParams.get('ref')"), '成功页以 URL ?ref= 为主来源')
 assert(successPage.includes('waffo_checkout_ref'), '成功页保留 sessionStorage 补充来源')
-assert(successPage.includes('POLL_MAX_TIMES = 15'), '成功页轮询上限 15 次')
+assert(successPage.includes('POLL_MAX_TIMES = 6'), '成功页轮询上限 6 次（≈12 秒，2026-10-19 从 15 次缩短）')
 assert(successPage.includes('POLL_INTERVAL_MS = 2000'), '成功页轮询间隔 2 秒')
 assert(successPage.includes('hello@mingcharts.com'), '终态文案含客服邮箱')
 assert(successPage.includes('href="/"') && successPage.includes('href="/pricing"'), '终态含返回首页/价格页链接')

@@ -36,11 +36,17 @@ const DAY_MS = 24 * 60 * 60 * 1000
  * 用 service_role 客户端调用，绕过 RLS。
  */
 export async function getMembership(admin: SupabaseClient, userId: string): Promise<MembershipStatus> {
-  const { data } = await admin
+  const { data, error } = await admin
     .from('profiles')
     .select('is_member, member_plan, member_expire_at')
     .eq('id', userId)
     .maybeSingle()
+
+  // ★ 读路径必须暴露错误（2026-10-19 修复）：旧实现忽略 error，schema 漂移（如生产库缺
+  //   member_plan 列 → 42703）时 data=null → 静默恒判「非会员」，全站会员权益无声失效
+  //   （真实事故：一次迁移漏跑 = 所有会员都被当成非会员）。现直接抛错，调用方返 500 让问题可见。
+  //   ★ 注意「无此行」是合法情形：data=null 且 error=null（未开通会员）→ 下面仍按非会员返回。
+  if (error) throw new Error(`profiles 会员状态查询失败: ${error.code} ${error.message}`)
 
   const isMember = data?.is_member === true
   const expireMs = data?.member_expire_at ? new Date(data.member_expire_at).getTime() : NaN

@@ -23,6 +23,17 @@ export function createWaffoRepo(admin: SupabaseClient): WaffoPaymentRepository {
       throw new Error(`processed_webhooks 写入失败: ${error.code} ${error.message}`)
     },
 
+    // ★ 撤回幂等占位（2026-10-19「先打标后干活」顺序缺陷修复）：
+    //   工作失败时删掉这一行，使渠道重试能真正重做（见 waffo-events.ts 的 gatedWork）。
+    async unmarkEventProcessed(eventType: string, eventId: string): Promise<void> {
+      const { error } = await admin
+        .from('processed_webhooks')
+        .delete()
+        .eq('event_type', eventType)
+        .eq('event_id', eventId)
+      if (error) throw new Error(`processed_webhooks 撤回失败: ${error.code} ${error.message}`)
+    },
+
     async insertPaidPayment(row: PaidPaymentRow): Promise<boolean> {
       const { error } = await admin.from('payments').insert({
         user_id: row.user_id,

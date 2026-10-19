@@ -18,6 +18,8 @@
 //     → ③「renewed 取 max，不二次叠加」精确翻红（用户白赚一期）
 //   B subscriptionStateFromEvent 的 canceling 分支改为返回 activate 同等语义（清 is_member）
 //     → ③「canceling 不撤销会员」精确翻红（本期内用户被误杀）
+//   C waffo-events.ts 的 gatedWork 删掉 catch 里的 repo.unmarkEventProcessed
+//     → ③「失败后撤回占位 / 重试可重做」精确翻红（重试撞 duplicate，权益永久丢失）
 import { readFileSync, existsSync } from 'node:fs'
 import {
   planFromSku,
@@ -69,11 +71,16 @@ function createMemRepo() {
   return {
     _payments: payments,
     _members: members,
+    _eventKeys: eventKeys,
     async markEventProcessed(eventType, eventId) {
       const key = eventType + '|' + eventId
       if (eventKeys.has(key)) return false
       eventKeys.add(key)
       return true
+    },
+    // ★ 撤回占位（2026-10-19「先打标后干活」修复）：工作失败时删掉痕迹，重试可重做
+    async unmarkEventProcessed(eventType, eventId) {
+      eventKeys.delete(eventType + '|' + eventId)
     },
     async insertPaidPayment(row) {
       if (payments.some((p) => p.transaction_id === row.transaction_id)) return false
@@ -403,6 +410,27 @@ console.log('—— ③ 订阅事件落库行为（内存仓储镜像唯一约�
     }), repo)
     assert(r2.kind === 'ignored_event', '套餐不可判的订阅事件 → ignored_event（绝不臆断授予权益）')
     assert(repo._members.size === 0 && repo._payments.length === 0, '归属/套餐异常的订阅事件不写任何表')
+  }
+
+  // ★ 2026-10-19「先打标后干活」顺序缺陷修复：工作失败 → 撤回占位 → 渠道重试能真正重做
+  {
+    const repo = createMemRepo()
+    // 注入一次故障：patchMembership 首次抛错（模拟生产库缺 profiles.member_plan 列 → 42703，
+    // 即本次真实事故：先插 processed_webhooks 再写会员，写失败后重试撞 duplicate → 权益永久丢）
+    const realPatch = repo.patchMembership.bind(repo)
+    let boom = true
+    repo.patchMembership = async (userId, patch) => {
+      if (boom) { boom = false; throw new Error('profiles 会员写入失败: 42703 column "member_plan" does not exist') }
+      return realPatch(userId, patch)
+    }
+    const evt = () => subEvent({ eventType: 'subscription.activated', eventId: 'EVT_R', periodEnd: '2026-11-18' })
+    let threw = false
+    try { await handleWaffoEvent(evt(), repo) } catch { threw = true }
+    assert(threw, '工作抛错时向上抛出（路由层返 500，触发渠道重试）')
+    assert(!repo._eventKeys.has('subscription.activated|EVT_R'), '★ 失败后撤回幂等占位（重试不被 duplicate 挡掉）')
+    const retry = await handleWaffoEvent(evt(), repo)
+    assert(retry.kind === 'membership_updated' && retry.action === 'activate' && activeNow(repo._members.get(UID_A)),
+      '★ 重试真正重做并授予权益（不再「重试撞 duplicate → 权益永久丢失」）')
   }
 
   // 一次性链路未受影响（同仓储真调 order.completed）

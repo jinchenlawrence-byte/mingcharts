@@ -150,6 +150,10 @@ function createMemRepo() {
       eventKeys.add(key)
       return true
     },
+    // ★ 撤回占位（2026-10-19「先打标后干活」修复）：工作失败时删掉痕迹，重试可重做
+    async unmarkEventProcessed(eventType, eventId) {
+      eventKeys.delete(eventType + '|' + eventId)
+    },
     async insertPaidPayment(row) {
       if (payments.some((p) => p.transaction_id === row.transaction_id)) return false
       payments.push({ ...row })
