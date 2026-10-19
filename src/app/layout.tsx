@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
+import PwaRegister from "@/components/PwaRegister";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -26,6 +27,7 @@ export const metadata: Metadata = {
   },
   description:
     "专业八字命理平台：免费四柱排盘、十神格局分析，命书报告万字详批（八字总览、性格、用神、格局、调候、大运、事业、婚姻、子女、健康），生肖运势与命理知识大全。",
+  manifest: "/manifest.webmanifest",
   openGraph: {
     title: "明理 · 免费八字排盘，一眼就看懂",
     description:
@@ -40,6 +42,14 @@ export const metadata: Metadata = {
   },
 };
 
+// ★ Next 16：themeColor 属 viewport（放 metadata 会告警）
+export const viewport: Viewport = {
+  themeColor: "#A62B1F",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+};
+
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
@@ -48,6 +58,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col bg-paper text-ink">
         {children}
+        {/* PWA：注册 Service Worker（仅 https/localhost 生效，静默失败） */}
+        <PwaRegister />
         {/* GeoNames 署名（CC BY 4.0 要求）：全球城市数据来自 geonames.org */}
         <footer className="mt-auto border-t border-gold/20 py-4 text-center text-[11px] text-ink/40">
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">

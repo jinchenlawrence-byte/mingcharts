@@ -209,3 +209,36 @@ CREATE TABLE IF NOT EXISTS processed_webhooks (
 );
 -- 仅 service_role（Webhook 处理器）读写；不向客户端开放任何策略
 ALTER TABLE processed_webhooks ENABLE ROW LEVEL SECURITY;
+
+-- ─────────────────────────────────────────────────────────────
+-- Web Push 推送（PWA + Web Push，2026-10-19；与 supabase/push.sql 同段）
+-- 【已有数据库】在 SQL Editor 补跑 supabase/push.sql。
+-- ★ endpoint 是可发推凭据 → 两表零 RLS 策略，仅 service_role 读写。
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  endpoint TEXT NOT NULL,
+  p256dh TEXT NOT NULL,
+  auth TEXT NOT NULL,
+  user_agent TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  last_ok_at TIMESTAMPTZ,
+  disabled_at TIMESTAMPTZ
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_push_subs_endpoint ON push_subscriptions(endpoint);
+CREATE INDEX IF NOT EXISTS idx_push_subs_user ON push_subscriptions(user_id);
+ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS push_logs (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  kind TEXT NOT NULL,
+  dedupe_key TEXT NOT NULL,
+  status TEXT NOT NULL,
+  http_status INT,
+  error TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_push_logs_dedupe ON push_logs(user_id, kind, dedupe_key);
+ALTER TABLE push_logs ENABLE ROW LEVEL SECURITY;

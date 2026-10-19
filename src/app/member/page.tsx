@@ -6,8 +6,12 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
+import PushOptIn from '@/components/PushOptIn'
 import { GRANT_LABELS } from '@/lib/grantLabels'
 import { getSupabase } from '@/lib/supabase'
+import { SKUS, formatPriceUSD } from '@/lib/pricing'
+// 客户付款门户（改卡 / 查账单）——公开链接、非密钥，客户端可安全引用
+import { WAFFO_PORTAL_URL } from '@/lib/waffo-products'
 
 type Section = { locked: boolean; data: any }
 interface Summary {
@@ -19,9 +23,28 @@ interface Summary {
   multiChart: { count: number; limit: number }
 }
 
+// ★ 档 C：订阅自助管理所需字段（/api/membership GET 返回；不含渠道订阅单号 ORD_）
+interface SubStatus {
+  active: boolean
+  plan: 'monthly' | 'yearly' | null
+  expiresAt: string | null
+  autoRenew: boolean
+  canceling: boolean
+  cancelAt: string | null
+  nextBillingAt: string | null
+}
+
+const EMPTY_SUB: SubStatus = {
+  active: false, plan: null, expiresAt: null,
+  autoRenew: false, canceling: false, cancelAt: null, nextBillingAt: null,
+}
+
 export default function MemberPage() {
   const [data, setData] = useState<Summary | null>(null)
+  const [sub, setSub] = useState<SubStatus>(EMPTY_SUB)
   const [loading, setLoading] = useState(true)
+  // 订阅操作后自增 → 触发一次重新拉取（会员状态与订阅字段一起刷新）
+  const [reloadKey, setReloadKey] = useState(0)
 
   useEffect(() => {
     ;(async () => {
@@ -29,17 +52,35 @@ export default function MemberPage() {
         const supabase = getSupabase()
         const { data: { session } } = await supabase.auth.getSession()
         const token = session?.access_token
-        const url = `/api/member/summary${token ? `?token=${encodeURIComponent(token)}` : ''}`
-        const res = await fetch(url)
-        const json = await res.json()
+        const q = token ? `?token=${encodeURIComponent(token)}` : ''
+        // 一次鉴权、两个只读接口并行（会员中心内容 + 订阅管理状态）
+        const [sumRes, subRes] = await Promise.all([
+          fetch(`/api/member/summary${q}`),
+          fetch(`/api/membership${q}`),
+        ])
+        const json = await sumRes.json()
         if (json.success) setData(json.data)
+        const subJson = await subRes.json().catch(() => null)
+        if (subJson?.success) {
+          setSub({
+            active: subJson.data.active === true,
+            plan: subJson.data.plan ?? null,
+            expiresAt: subJson.data.expiresAt ?? null,
+            autoRenew: subJson.data.autoRenew === true,
+            canceling: subJson.data.canceling === true,
+            cancelAt: subJson.data.cancelAt ?? null,
+            nextBillingAt: subJson.data.nextBillingAt ?? null,
+          })
+        } else {
+          setSub(EMPTY_SUB)
+        }
       } catch {
         // 静默：会员中心加载失败不影响其它页面
       } finally {
         setLoading(false)
       }
     })()
-  }, [])
+  }, [reloadKey])
 
   if (loading) {
     return (
@@ -76,6 +117,9 @@ export default function MemberPage() {
                 </Link>
               </p>
             </div>
+            {/* ★ 档 C：没有命盘的在期会员也必须能自助取消（合规），故此处同样展示管理卡 */}
+            <SubscriptionCard sub={sub} onChanged={() => setReloadKey((k) => k + 1)} />
+            <PushOptIn />
           </div>
         </div>
       </main>
@@ -94,6 +138,12 @@ export default function MemberPage() {
               以下内容结合你的命盘持续更新。深度报告（命书 / 年运等）仍需按次单独购买，不含在会员内。
             </p>
           </header>
+
+          {/* ★ 档 C：订阅自助管理（下次续费日 / 自动续费状态 / 一键取消或恢复） */}
+          <SubscriptionCard sub={sub} onChanged={() => setReloadKey((k) => k + 1)} />
+
+          {/* Web Push：每日日运提醒开关（会员在手机上及时收到更新） */}
+          <PushOptIn />
 
           <LiuYueSection s={data.liuyue} />
           <JiaoYunSection s={data.jiaoyun} />
@@ -124,6 +174,120 @@ export default function MemberPage() {
         </div>
       </div>
     </main>
+  )
+}
+
+/**
+ * 订阅自助管理卡（档 C，2026-10-18）。
+ *   未开通：只给一句中性的开通引导（不催单）。
+ *   在期：显示套餐 / 下次续费日 / 自动续费状态 + 一键取消；已请求取消则给「恢复订阅」。
+ * ★ 一切渠道调用都在服务端（/api/membership/cancel）：本组件只收 boolean 与日期，
+ *   渠道订阅单号 ORD_ 不出现在任何响应里。
+ */
+function SubscriptionCard({ sub, onChanged }: { sub: SubStatus; onChanged: () => void }) {
+  const [busy, setBusy] = useState(false)
+  const [msg, setMsg] = useState('')
+
+  if (!sub.active && !sub.canceling) {
+    return (
+      <section className="hw-c-box text-center">
+        <h2 className="font-bold text-ink">会员订阅</h2>
+        <p className="text-sm text-ink-light mt-2">当前不是会员，开通后可查看上方全部专属内容。</p>
+        <Link href="/pricing" className="hw-c-blue inline-block text-sm mt-3 hover:brightness-110">
+          查看会员权益与开通 →
+        </Link>
+      </section>
+    )
+  }
+
+  const planName = sub.plan
+    ? SKUS[sub.plan === 'monthly' ? 'member_monthly' : 'member_yearly'].name
+    : '会员'
+  const planPrice = sub.plan
+    ? SKUS[sub.plan === 'monthly' ? 'member_monthly' : 'member_yearly'].priceUSD
+    : 0
+  const periodText = sub.plan === 'yearly' ? '年' : '月'
+  const day = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString('zh-CN') : '—')
+
+  const act = async (action: 'cancel' | 'reactivate') => {
+    if (action === 'cancel' && !window.confirm(
+      `确认取消自动续费？取消后在 ${day(sub.expiresAt)} 之前仍可使用会员权益，到期自动失效且不再扣费。`
+    )) return
+
+    setBusy(true)
+    setMsg('')
+    try {
+      const supabase = getSupabase()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) throw new Error('登录已过期，请重新登录')
+      const res = await fetch('/api/membership/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: session.access_token, action }),
+      })
+      const json = await res.json()
+      if (!res.ok || !json.success) throw new Error(json.error || '操作失败')
+      setMsg(action === 'cancel' ? '已取消自动续费（本期内仍可使用）。' : '已恢复自动续费。')
+      onChanged() // 重新拉取权威状态（以渠道 webhook 为准）
+    } catch (e) {
+      setMsg(e instanceof Error ? e.message : '操作失败，请稍后重试')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <section className="hw-c-box">
+      <h2 className="font-bold text-ink mb-1">会员订阅</h2>
+      <div className="text-sm text-ink/70 space-y-1.5">
+        <p>
+          当前套餐：<span className="font-semibold text-ink">{planName}</span>
+          {planPrice > 0 && <> · {formatPriceUSD(planPrice)}/{periodText}</>}
+        </p>
+        <p>
+          {sub.canceling ? '会员到期日：' : '下次续费日：'}
+          <span className="font-semibold text-ink">{day(sub.nextBillingAt ?? sub.expiresAt)}</span>
+          {sub.canceling && <>（已取消自动续费，到期自动失效）</>}
+        </p>
+        <p className="text-xs text-ink-light/70">
+          自动续费：{sub.autoRenew ? '已开启' : '已关闭'}
+          {sub.cancelAt && <> · 取消申请于 {day(sub.cancelAt)}</>}
+        </p>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-3 mt-4">
+        {sub.canceling ? (
+          <button
+            onClick={() => act('reactivate')}
+            disabled={busy}
+            className="rounded-full bg-ink px-4 py-2 text-sm font-bold text-white transition hover:brightness-110 disabled:opacity-60"
+          >
+            {busy ? '处理中…' : '恢复自动续费'}
+          </button>
+        ) : (
+          <button
+            onClick={() => act('cancel')}
+            disabled={busy}
+            className="rounded-full border border-[#dedcf0] px-4 py-2 text-sm font-semibold text-ink transition hover:bg-paper-dark/40 disabled:opacity-60"
+          >
+            {busy ? '处理中…' : '取消订阅'}
+          </button>
+        )}
+        <a
+          href={WAFFO_PORTAL_URL}
+          target="_blank"
+          rel="noreferrer"
+          className="text-xs text-ink-light/70 hover:underline"
+        >
+          改卡 / 查账单 →
+        </a>
+        <Link href="/terms" className="text-xs text-ink-light/70 hover:underline">
+          退款政策
+        </Link>
+      </div>
+
+      {msg && <p className="text-xs mt-3 text-ink-light">{msg}</p>}
+    </section>
   )
 }
 

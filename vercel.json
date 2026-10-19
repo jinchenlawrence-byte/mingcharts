@@ -4,5 +4,11 @@
       "source": "/supabase-api/:path*",
       "destination": "https://zvqjjmyhisuotylhjjjz.supabase.co/:path*"
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/daily-push",
+      "schedule": "0 0 * * *"
+    }
   ]
 }

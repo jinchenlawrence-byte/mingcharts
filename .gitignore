@@ -46,5 +46,7 @@ next-env.d.ts
 temp/
 .geonames-cache/
 
-# AI ¹¤¾ßÄ¿Â¼£¨TraeCode µÄ plan ÎÄµµµÈ£¬²»Èë¿â£©
+# AI ï¿½ï¿½ï¿½ï¿½Ä¿Â¼ï¿½ï¿½TraeCode ï¿½ï¿½ plan ï¿½Äµï¿½ï¿½È£ï¿½ï¿½ï¿½ï¿½ï¿½â£©
 .trae/
+.vercel
+.env*
