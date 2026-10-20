@@ -84,9 +84,6 @@ export default function Nav() {
               <Link href="/reports" className={linkCls('md')}>
                 我的报告
               </Link>
-              <Link href="/account" className="whitespace-nowrap text-ink/60 transition-colors hover:text-ink">
-                账号设置
-              </Link>
               <span className="max-w-[160px] truncate text-ink/40 hidden sm:inline">
                 {email}
               </span>
@@ -99,7 +96,14 @@ export default function Nav() {
             </>
           ) : null}
         </div>
-        {!email && (
+        {/* ★ 账号入口钉在横滑条带【之外】（2026-10-20 用户实测：登录后「账号设置」被挤出屏幕）。
+            与登出态的「登录 / 注册」同款处理 —— shrink-0 让它永不随内容横滑跑出可视区。
+            注意：此链接不得加「响应式隐藏」类（test-account-auth 守护：移动端必须可点）。 */}
+        {email ? (
+          <Link href="/account" className="shrink-0 whitespace-nowrap text-ink/60 transition-colors hover:text-ink">
+            账号设置
+          </Link>
+        ) : (
           <Link
             href="/auth"
             className="shrink-0 rounded-full bg-ink px-3.5 py-2 text-[13px] font-bold text-white transition hover:brightness-110 sm:px-5 sm:text-[15px]"
