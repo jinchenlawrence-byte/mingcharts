@@ -11,7 +11,7 @@ export type SkuId =
   | 'bundle3'         // 命书 ＋ 紫微 ＋ 地理
   | 'member_monthly'  // 月度会员
   | 'member_yearly'   // 年度会员（★主推）
-  | 'ask_pack'        // 追问 15 次（V2，先占位）
+  | 'ask_pack'        // 追问包（次数见 ASK_PACK_SIZE，单一事实源）
 
 /**
  * 可访问的能力（GrantId）—— ★ 与「可购买的东西」（SkuId）刻意分离。
@@ -57,6 +57,13 @@ export const SUBSCRIPTION_GRANTS: GrantId[] =
  *   取上限值 5 匹配「3–5 个」文案上限；上限判定统一走 entitlement.chartLimitFor（单一事实源）。
  */
 export const MULTI_CHART_LIMIT = { free: 1, member: 5 } as const
+
+/**
+ * ★ 追问包次数（ask_pack 每次购买可追问的条数）—— 单一事实源，只此一处定义。
+ *   消费方：SKUS.ask_pack.desc、grantLabels 的 ask 标签、entitlement.askCreditsFromRows。
+ *   改次数只动这一处（route/组件不得各自写「15」）。
+ */
+export const ASK_PACK_SIZE = 15
 
 export const SKUS: Record<SkuId, Sku> = {
   fatebook: {
@@ -111,7 +118,8 @@ export const SKUS: Record<SkuId, Sku> = {
   },
   ask_pack: {
     id: 'ask_pack', name: '追问包',
-    desc: '追问 15 次（V2）',
+    // ★ 次数由 ASK_PACK_SIZE 派生（单一事实源）：改次数只动上面那一处，本行自动跟随。
+    desc: `追问 ${ASK_PACK_SIZE} 次`,
     priceUSD: 4.99, kind: 'pack',
     grants: ['ask']
   }

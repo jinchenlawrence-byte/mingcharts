@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase'
+import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RULES } from '@/lib/rateLimit'
+import { checkAiBudget } from '@/lib/aiBudget'
 import { generateAnalysis, type AnalyzableChart } from '@/lib/analysis'
 import { generateAIAnalysis } from '@/lib/aiAnalysis'
 import { searchSimilarCases } from '@/lib/caseSearch'
@@ -92,11 +94,20 @@ export async function POST(request: NextRequest) {
       })
     }
 
+    // ★ 速率限制（token 防盗用第二档）：默认关闭（内测放行）；开启后按 u:<id> 固定窗口计数，超限返 429。
+    //   放在【已解锁快路径之后、AI 生成之前】—— 回看（命中存量全文）不计数，只有真要生成命书才算额度。
+    const rl = await checkRateLimit(admin, clientKey(user.id, request), USER_RULES)
+    if (!rl.allowed) return NextResponse.json(rateLimitedBody(rl), { status: 429 })
+
+    // ★★ 全局日预算熔断（token 防盗用第三档）：超额 → 当日跳过 AI、回退规则引擎（200 非 429，次日恢复）。
+    const budget = await checkAiBudget(admin, Date.now())
+    const aiBlocked = budget.exhausted
+
     // 优先 AI 深度解读，失败（未配置密钥/超时/格式异常）自动回退规则引擎
     const analyzable = chart as AnalyzableChart
     // 规则引擎始终先跑：其结构化岁运（大运/流年/流月）确定性计算，AI 不参与
     const rulePaid = generateAnalysis(analyzable)
-    const aiPaid = await generateAIAnalysis(analyzable)
+    const aiPaid = aiBlocked ? null : await generateAIAnalysis(analyzable)
     const similarCases = searchSimilarCases(analyzable)
     const paid = aiPaid
       ? { ...aiPaid, luckCycles: rulePaid.luckCycles, similarCases }

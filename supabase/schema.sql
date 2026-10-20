@@ -242,3 +242,63 @@ CREATE TABLE IF NOT EXISTS push_logs (
 );
 CREATE UNIQUE INDEX IF NOT EXISTS idx_push_logs_dedupe ON push_logs(user_id, kind, dedupe_key);
 ALTER TABLE push_logs ENABLE ROW LEVEL SECURITY;
+
+-- ─────────────────────────────────────────────────────────────
+-- AI 追问（ask_pack）问答记录（2026-10-20；与 supabase/ask.sql 同段）
+-- 【已有数据库】在 SQL Editor 补跑 supabase/ask.sql。
+-- ★ 额度为【派生】：已授予 = 已支付 ask_pack 流水数 × ASK_PACK_SIZE（见 entitlement.askCreditsFromRows）；
+--   本表【只记录成功回答的行】，剩余 = 已授予 − 本表行数。
+--   拒答/失败不落行（不扣额），故行数 === 已消耗次数。
+-- ★ 写入走 service_role（/api/ask 服务端）；客户端会话仅可 SELECT 自己的历史（下方策略）。
+--   额度判定不读本表做权威判定，仅计数——单一判定仍在 entitlement.ts。
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS ask_messages (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
+  -- ★ 追问常围绕某份命盘；命盘删除时置空，不连带删问答
+  chart_id UUID REFERENCES charts(id) ON DELETE SET NULL,
+  question TEXT NOT NULL,
+  answer TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_ask_messages_user ON ask_messages(user_id);
+CREATE INDEX IF NOT EXISTS idx_ask_messages_created ON ask_messages(created_at DESC);
+
+ALTER TABLE ask_messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own ask messages" ON ask_messages
+  FOR SELECT USING (auth.uid() = user_id);
+
+-- ─────────────────────────────────────────────────────────────
+-- 速率限制计数（token 防盗用第二档，2026-10-20；与 supabase/rate-limits.sql 同段）
+-- 【已有数据库】在 SQL Editor 补跑 supabase/rate-limits.sql。
+-- ★ 固定窗口计数：bucket=端点/维度名，key=u:<userId> 或 ip:<hash>，window_start=窗口起点。
+--   计数与判定唯一入口在 src/lib/rateLimit.ts（checkRateLimit）；本表仅作存储。
+-- ★ 写入走 service_role（RLS 开启且【无策略】⇒ anon/authenticated 不可读写；service_role 绕过 RLS）。
+-- ★ 行会随窗口累积：可定期清理 window_start 早于保留期的行（见 rate-limits.sql 末尾提示）。
+-- ─────────────────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS rate_limits (
+  bucket TEXT NOT NULL,
+  key TEXT NOT NULL,
+  window_start TIMESTAMPTZ NOT NULL,
+  count INT NOT NULL DEFAULT 0,
+  PRIMARY KEY (bucket, key, window_start)
+);
+
+CREATE INDEX IF NOT EXISTS idx_rate_limits_window ON rate_limits(window_start);
+
+ALTER TABLE rate_limits ENABLE ROW LEVEL SECURITY;
+
+-- ★ 原子自增（upsert + 返回新计数，单次往返）：供 checkRateLimit 调用
+CREATE OR REPLACE FUNCTION bump_rate_limit(p_bucket text, p_key text, p_window_start timestamptz)
+RETURNS integer
+LANGUAGE sql
+SET search_path = public
+AS $$
+  INSERT INTO rate_limits (bucket, key, window_start, count)
+  VALUES (p_bucket, p_key, p_window_start, 1)
+  ON CONFLICT (bucket, key, window_start)
+  DO UPDATE SET count = rate_limits.count + 1
+  RETURNING count;
+$$;

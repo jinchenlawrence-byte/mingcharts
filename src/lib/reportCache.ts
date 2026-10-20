@@ -145,6 +145,34 @@ export function resolveCachedHit(
   return { reportId: hit.reportId, data }
 }
 
+/**
+ * ★ 真·AI 结果标记：只有 aiSource 等于它的缓存才允许被【短路读取】。
+ *   规则兜底（AI 失败 / 当日预算熔断降级）写出的内容虽 ai≠null，但属【降级内容】；
+ *   若也短路读取，预算熔断当天写下的规则版会被后续请求永久读走，AI 恢复后用户仍拿降级版——
+ *   故这类缓存一律视为未命中 → 调用方重新生成并覆盖（与「试吃空内容」同样的自愈路径）。
+ */
+export const GENUINE_AI_SOURCE = 'AI 深度解读'
+
+/**
+ * ★ 通用报告模块（紫微/合婚/地理）的缓存命中处置：与年运 resolveCachedHit 同源，但无需 targetYear。
+ *   判可用（ai 非空）→ 判【真·AI 结果】（aiSource 为 GENUINE_AI_SOURCE）→ 按当前权益重算
+ *   locked/ai/aiSource 组装响应；任一不满足返回 null（走重生成，缓存自愈）。
+ *   牙口注入点：去掉「aiSource 判真」这一行 → 断言⑩（降级内容不短路）翻红。
+ */
+export function resolveModuleCachedHit(
+  hit: ReportCacheHit,
+  opts: { unlocked: boolean; skus: string[]; lockedPreview: string }
+): { reportId: string; data: Record<string, unknown> } | null {
+  if (!isCacheContentUsable(hit.content)) return null
+  if (hit.content.aiSource !== GENUINE_AI_SOURCE) return null
+  const data = recomputeEntitlementFields(hit.content, {
+    unlocked: opts.unlocked,
+    skus: opts.skus,
+    lockedPreview: opts.lockedPreview
+  })
+  return { reportId: hit.reportId, data }
+}
+
 /** 读取缓存（service_role 客户端由调用方传入；查不到/出错一律返回 null，不阻断主流程） */
 export async function readReportCache(
   admin: SupabaseClient,

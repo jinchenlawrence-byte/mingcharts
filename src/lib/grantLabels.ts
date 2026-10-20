@@ -2,6 +2,7 @@
 // 消费方：app/pricing/page.tsx、app/member/page.tsx。
 // ★ 仅作展示：权益事实只认 pricing.ts 的 SUBSCRIPTION_GRANTS / REPORT_GRANTS，本表不得被当作判据。
 import type { GrantId } from './pricing'
+import { ASK_PACK_SIZE } from './pricing'
 
 export const GRANT_LABELS: Record<GrantId, string> = {
   fatebook: '万字命书详批（十大板块）',
@@ -15,5 +16,5 @@ export const GRANT_LABELS: Record<GrantId, string> = {
   multi_chart: '多命盘管理（3–5 个）',
   similar_cases: '相似古籍命例对照',
   history: '历史日运回看',
-  ask: '追问 15 次（V2）',
+  ask: `追问 ${ASK_PACK_SIZE} 次`,
 }

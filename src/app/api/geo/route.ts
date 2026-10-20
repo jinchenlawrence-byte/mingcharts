@@ -9,9 +9,15 @@ import { generateAIGeo, fallbackGeoText } from '@/lib/aiGeo'
 import { tiaoHouWuxing } from '@/lib/analysis'
 import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
 import { createServerSupabase } from '@/lib/supabase'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RULES } from '@/lib/rateLimit'
+import { checkAiBudget } from '@/lib/aiBudget'
 import { saveReport, deriveReportTitle } from '@/lib/reportSave'
-import { stripEntitlementState, reportCacheKey, GEO_CACHE_VERSION } from '@/lib/reportCache'
+import { stripEntitlementState, reportCacheKey, readReportCache, resolveModuleCachedHit, GEO_CACHE_VERSION } from '@/lib/reportCache'
 import type { WX } from '@/lib/geo'
+
+/** 未解锁时的 preview（入库剥离、命中重算时共用，避免两处文案漂移） */
+const GEO_LOCKED_PREVIEW = '方位总论 · 现居城市影响 · 财富/事业/贵/安居/才华五城解读 · 迁居开运建议（AI 深度解读，共 8 节）解锁后可见。'
 
 export async function POST(request: NextRequest) {
   try {
@@ -83,6 +89,51 @@ export async function POST(request: NextRequest) {
       if (currentRef) currentCity = { name: currentRef.name, lat: currentRef.lat, lng: currentRef.lng }
     }
 
+    // ★ 身份/门禁先解析（§8.5.1 单一判定）——先于 AI 调用，供下方成本护栏使用。
+    // ENFORCE=false → unlocked 恒 true → 内测期【登录用户】行为与现在完全一致 ✓
+    const token = typeof body.token === 'string' ? body.token : ''
+    let ent = EMPTY_ENTITLEMENTS
+    let userId: string | null = null
+    let admin: SupabaseClient | null = null
+    if (token) {
+      admin = createServerSupabase()
+      const { data: { user } } = await admin.auth.getUser(token)
+      if (user) { userId = user.id; ent = await getEntitlements(admin, user.id) }
+    }
+    const unlocked = canView(ent, 'geo')
+
+    // ★ 报告缓存短路读取（token 防盗用第三档）：登录用户的【同参数重复请求】直接命中存量全文，
+    //   零 AI、零限流、零预算（必须放在限流/预算/AI 之前）。命中处置全在纯函数 resolveModuleCachedHit：
+    //   只短路【真·AI 结果】（aiSource='AI 深度解读'）—— AI 失败/当日预算熔断写下的规则兜底视为未命中，
+    //   重新生成并覆盖（缓存自愈），绝不把降级内容永久留给用户（否则「继续做」会伤到用户）。
+    //   ★ 出生地与现居城市入键（原则②）：地理报告依赖两者，键不入会互相覆盖（丢报告）。
+    const reportInput = {
+      year, month, day, hour, minute, gender,
+      birthZone: ref?.zone ?? null,
+      birthLng: ref?.lng ?? null,
+      birthCity: city?.name ?? null,
+      currentCity: currentCity?.name ?? null
+    }
+    const cacheKey = reportCacheKey('geo', GEO_CACHE_VERSION, reportInput)
+    if (userId && admin) {
+      const hit = await readReportCache(admin, userId, 'geo', cacheKey)
+      const resolved = hit
+        ? resolveModuleCachedHit(hit, { unlocked, skus: ['geo'], lockedPreview: GEO_LOCKED_PREVIEW })
+        : null
+      if (resolved) {
+        return NextResponse.json({ success: true, data: resolved.data, reportId: resolved.reportId, cached: true })
+      }
+    }
+
+    // ★ 速率限制（token 防盗用第二档）：默认关闭（内测放行）；开启后按 u:<id>/ip:<hash> 固定窗口计数，
+    //   超限返 429。放在 AI 生成【之前】—— 只有真要生成时才算额度（借阅见下 unlocked/userId 守卫）。
+    const rl = await checkRateLimit(
+      admin ?? (RATE_LIMIT_ENFORCE ? createServerSupabase() : null),
+      clientKey(userId, request),
+      USER_RULES
+    )
+    if (!rl.allowed) return NextResponse.json(rateLimitedBody(rl), { status: 429 })
+
     // 规则引擎 → AI 解读（失败回退规则版）
     const analysis = analyzeGeo({
       dayMaster: chart.dayMaster,
@@ -92,22 +143,23 @@ export async function POST(request: NextRequest) {
       birthplace,
       currentCity
     })
-    const aiReport = await generateAIGeo(analysis)
+    // ★★ 全局日预算熔断（token 防盗用第三档）：仅【真要生成 AI】时检查（不生成则不计、不拦）。
+    //   超额 → 全站当日降级为规则版（200 无 AI 文本，区别于限流的 429），次日恢复；
+    //   基建故障（计数/DAU 查询失败）→ 放行（fail-open，不因基建故障阻断业务）。
+    const budget = userId ? await checkAiBudget(admin, Date.now()) : null
+    const aiBlocked = budget?.exhausted ?? false
+    // ★★ 成本护栏（token 防盗用第一档）：仅【登录用户】才生成 AI ——
+    //   匿名（含外部脚本）不再触发本端点的 AI 调用（无账号、命中不了缓存，是最大敞口）；
+    //   登录用户照常全量生成并入库全文，回看者必然已登录 ⇒ 不触「回看读到锁定版」事故。
+    const aiReport = userId && !aiBlocked ? await generateAIGeo(analysis) : null
 
-    // ★ 门禁判定统一走 entitlement（§8.5.1），不得在本路由另写判断
-    // ENFORCE=false → unlocked 恒 true → 内测期行为与现在完全一致 ✓
-    const token = typeof body.token === 'string' ? body.token : ''
-    let ent = EMPTY_ENTITLEMENTS
-    if (token) {
-      const admin = createServerSupabase()
-      const { data: { user } } = await admin.auth.getUser(token)
-      if (user) ent = await getEntitlements(admin, user.id)
-    }
-    const unlocked = canView(ent, 'geo')
-    // ★ 全量 AI 文本（无条件生成，见上）；门禁只作用于【响应】，不作用于【入库】——
-    //   入库置空会让付费用户回看「我的报告」永远读到锁定版（2026-10-18 真实事故）。
+    // ★ 入库只存【内容】（locked 剥掉、ai 存全量全文）；门禁只作用于【响应】——
+    //   读取侧按当前权益重算（详情页 reportGate），试吃→付费即刻生效。
     const rawAi = aiReport || fallbackGeoText(analysis)
-    const rawAiSource = aiReport ? 'AI 深度解读' : '规则版（AI结果未过合规校验）'
+    const rawAiSource = aiReport ? 'AI 深度解读'
+      : aiBlocked ? '规则版（当日 AI 额度已用尽，次日恢复）'
+      : userId ? '规则版（AI结果未过合规校验）'
+      : '规则版（登录后可见 AI 深度解读）'
     // ★ free 层保留结构化城市推荐与指数（试吃本意）；ai 在未解锁时为 null
     const ai = unlocked ? rawAi : null
     const aiSource = !unlocked ? '未解锁' : rawAiSource
@@ -123,7 +175,7 @@ export async function POST(request: NextRequest) {
       // ★★ locked 在已解锁时为 null（与现在一致 ✓）；未解锁时给 preview 与 skus
       locked: unlocked ? null : {
         skus: ['geo'],
-        preview: '方位总论 · 现居城市影响 · 财富/事业/贵/安居/才华五城解读 · 迁居开运建议（AI 深度解读，共 8 节）解锁后可见。'
+        preview: GEO_LOCKED_PREVIEW
       },
       trueSolar: ref
         ? {
@@ -141,20 +193,13 @@ export async function POST(request: NextRequest) {
     // 登录用户：报告作为账户资产自动保存（静默降级，不阻断主流程）
     // ★ 入库只存【内容】（2026-10-18）：locked 剥掉、ai 存全量全文 ——
     //   读取侧按当前权益重算（详情页 reportGate.gateReportForDetail），试吃→付费即刻生效。
-    // ★ 出生地与现居城市入键（原则②）：地理报告依赖这两者，键不入会互相覆盖（丢报告）
-    const reportInput = {
-      year, month, day, hour, minute, gender,
-      birthZone: ref?.zone ?? null,
-      birthLng: ref?.lng ?? null,
-      birthCity: city?.name ?? null,
-      currentCity: currentCity?.name ?? null
-    }
+    // ★ reportInput / cacheKey 已在读取短路前构造（出生地与现居城市入键，原则②）。
     const reportId = await saveReport(token || undefined, {
       kind: 'geo',
       title: deriveReportTitle('geo', reportInput),
       input: reportInput,
       result: { ...stripEntitlementState(data), ai: rawAi, aiSource: rawAiSource } as never,
-      cacheKey: reportCacheKey('geo', GEO_CACHE_VERSION, reportInput)
+      cacheKey
     })
 
     return NextResponse.json({ success: true, data, reportId })

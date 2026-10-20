@@ -1,0 +1,200 @@
+'use client'
+
+// AI 追问面板（内嵌 /chart 结果页解锁区）—— ask_pack 额度的前端消费方。
+// ★ 额度判定不在此自判：展示剩余次数、额度耗尽时给出购买入口；权威判定在 /api/ask（entitlement 单一事实源）。
+// ★ 合规展示：拒答提示、每条回答的免责句均由服务端返回并原样呈现（前端不生成命理内容）。
+import { useEffect, useRef, useState } from 'react'
+import { getSupabase } from '@/lib/supabase'
+import CheckoutButton from '@/components/CheckoutButton'
+import { waffoProductId } from '@/lib/waffo-products'
+import { SKUS, formatPriceUSD } from '@/lib/pricing'
+
+interface AskMessage {
+  role: 'user' | 'assistant'
+  text: string
+  /** 服务端标记：本条为硬拒答 */
+  refused?: boolean
+  /** 服务端标记：本条为 AI 失败兜底 */
+  failed?: boolean
+  /** 免责句（回答类消息附带） */
+  disclaimer?: string
+}
+
+export default function AskPanel({
+  chartId,
+  chart,
+}: {
+  /** 当前命盘 id（随问答落库作 chart_id；可为空） */
+  chartId?: string | null
+  /** 整份命盘数据（服务端据此复用命盘事实，防 AI 编造） */
+  chart: object
+}) {
+  const [messages, setMessages] = useState<AskMessage[]>([])
+  const [input, setInput] = useState('')
+  const [sending, setSending] = useState(false)
+  const [remaining, setRemaining] = useState<number | null>(null)
+  const [error, setError] = useState('')
+  const [exhausted, setExhausted] = useState(false)
+  const listRef = useRef<HTMLDivElement>(null)
+
+  // 挂载时取剩余次数（服务端权威值；取不到则不显示，不影响提问）
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const supabase = getSupabase()
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) return
+        const res = await fetch(`/api/ask?token=${encodeURIComponent(session.access_token)}`)
+        if (!res.ok) return
+        const data = await res.json().catch(() => null)
+        if (!cancelled && typeof data?.remaining === 'number') setRemaining(data.remaining)
+      } catch {
+        // 忽略：仅影响剩余次数的展示
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  useEffect(() => {
+    listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: 'smooth' })
+  }, [messages, sending])
+
+  const send = async () => {
+    const q = input.trim()
+    if (!q || sending) return
+    setError('')
+    setMessages((m) => [...m, { role: 'user', text: q }])
+    setInput('')
+    setSending(true)
+    try {
+      const supabase = getSupabase()
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) {
+        setError('登录状态已失效，请重新登录。')
+        setSending(false)
+        return
+      }
+      const res = await fetch('/api/ask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token: session.access_token, chartId: chartId ?? undefined, chart, question: q }),
+      })
+      const data = await res.json().catch(() => null)
+      if (!res.ok) {
+        if (data?.code === 'ASK_QUOTA_EXHAUSTED') {
+          setExhausted(true)
+          if (typeof data?.remaining === 'number') setRemaining(data.remaining)
+          setError(data?.error ?? '追问次数已用完')
+        } else {
+          setError(data?.error ?? '追问失败，请稍后再试')
+        }
+        setSending(false)
+        return
+      }
+      setMessages((m) => [...m, {
+        role: 'assistant',
+        text: data?.answer ?? '（无内容）',
+        refused: !!data?.refused,
+        failed: !!data?.failed,
+        disclaimer: data?.disclaimer,
+      }])
+      if (typeof data?.remaining === 'number') setRemaining(data.remaining)
+      if (typeof data?.remaining === 'number' && data.remaining <= 0) setExhausted(true)
+    } catch (e) {
+      setError(e instanceof Error ? e.message : '网络异常，请稍后再试')
+    }
+    setSending(false)
+  }
+
+  const askPrice = formatPriceUSD(SKUS.ask_pack.priceUSD)
+
+  return (
+    <div className="hw-c-box" style={{ marginTop: 20 }}>
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <h3 className="hw-c-secTitle" style={{ margin: 0 }}>追问命理师</h3>
+        {remaining !== null && (
+          <span className="text-xs text-ink-light/70">剩余追问次数：<b className="text-ink">{remaining}</b></span>
+        )}
+      </div>
+      <p className="text-xs text-ink-light/60 mt-2 mb-3">
+        就你的命盘追问具体问题（如「今年事业上有哪些需要留意的地方」）。涉医疗、法律、投资、生死与重大取舍的
+        「该不该」类问题，命理不作判决——只讲倾向，供你自行权衡。
+      </p>
+
+      {/* 对话区 */}
+      {messages.length > 0 && (
+        <div ref={listRef} className="max-h-96 overflow-y-auto space-y-3 mb-3 rounded-2xl bg-paper-dark/20 p-3">
+          {messages.map((m, i) => (
+            <div key={i} className={m.role === 'user' ? 'flex justify-end' : 'flex justify-start'}>
+              <div
+                className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap ${
+                  m.role === 'user'
+                    ? 'bg-[#3a66ff] text-white'
+                    : m.refused
+                      ? 'bg-gold/5 border border-gold/20 text-ink/80'
+                      : 'bg-white border border-[#dedcf0] text-ink/80'
+                }`}
+              >
+                {m.refused && (
+                  <div className="text-xs font-semibold text-amber-600 mb-1">此类问题不以命理作判决</div>
+                )}
+                {m.text}
+                {m.disclaimer && (
+                  <div className="text-[11px] text-ink-light/50 mt-2 pt-2 border-t border-black/5">{m.disclaimer}</div>
+                )}
+              </div>
+            </div>
+          ))}
+          {sending && (
+            <div className="flex justify-start">
+              <div className="rounded-2xl px-3 py-2 text-sm bg-white border border-[#dedcf0] text-ink-light/60">
+                命理师正在作答…
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
+
+      {/* 额度耗尽 / 未购：购买入口（未登记 productId 时 CheckoutButton 显示「即将推出」） */}
+      {exhausted && (
+        <div className="mb-3 rounded-2xl bg-gold/5 border border-gold/20 p-3">
+          <p className="text-sm text-ink/80 mb-2">
+            追问次数已用完。可购买追问包（{SKUS.ask_pack.desc} · {askPrice}）继续提问。
+          </p>
+          <CheckoutButton
+            sku="ask_pack"
+            available={waffoProductId('ask_pack') !== null}
+            requireChart={false}
+            returnTo="/chart"
+          >
+            购买追问包 · {askPrice}
+          </CheckoutButton>
+        </div>
+      )}
+
+      {/* 输入区 */}
+      <div className="flex gap-2">
+        <input
+          type="text"
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => { if (e.key === 'Enter') send() }}
+          placeholder="输入你的问题…"
+          maxLength={300}
+          className="flex-1 rounded-full border border-[#dedcf0] px-4 py-2 text-sm outline-none focus:border-[#3a66ff]"
+        />
+        <button
+          type="button"
+          onClick={send}
+          disabled={sending || !input.trim()}
+          className="shrink-0 rounded-full bg-ink text-white px-5 py-2 text-sm font-semibold transition hover:brightness-110 disabled:opacity-60"
+        >
+          {sending ? '追问中…' : '追问'}
+        </button>
+      </div>
+    </div>
+  )
+}

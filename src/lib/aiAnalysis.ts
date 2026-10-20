@@ -259,6 +259,8 @@ export async function generateAIAnalysis(chart: AnalyzableChart): Promise<(AIPai
         },
         body: JSON.stringify({
           model: AI_MODEL,
+          // ★ 单次输出上限（token 防盗用第一档）：本模块每板块单独调用，2000 远高于单板块所需（≤700 字），不截断
+          max_tokens: 2000,
           temperature: 0.7,
           response_format: { type: 'json_object' },
           messages

@@ -211,6 +211,8 @@ export async function generateAILiunian(
         },
         body: JSON.stringify({
           model: AI_MODEL,
+          // ★ 单次输出上限（token 防盗用第一档）：一次调用产出全部板块，3000 留足余量不截断
+          max_tokens: 3000,
           temperature: 0.7,
           response_format: { type: 'json_object' },
           messages

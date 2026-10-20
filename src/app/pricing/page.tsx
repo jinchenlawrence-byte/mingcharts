@@ -9,6 +9,7 @@ import {
   MEMBER_SKUS,
   formatPriceUSD,
   ONE_TIME_SKUS,
+  ASK_PACK_SIZE,
   type GrantId,
   type SkuId,
 } from '@/lib/pricing'
@@ -312,6 +313,37 @@ export default function PricingPage() {
           <p className="text-xs text-ink-light/60 text-center mt-4">
             购买后报告永久保存，可随时反复查看（会员订阅不含单项报告）。
           </p>
+        </section>
+
+        {/* ★ 追问包（ask_pack）：解锁命书后就命盘追问 AI 命理师；价格/描述取自 SKUS 单一事实源 */}
+        <section className="mb-14">
+          <h2 className="hw-c-h2 hw-c-h2C">追问包</h2>
+          <p className="text-sm text-ink-light text-center mb-6">
+            解锁命书后，可就你的命盘向 AI 命理师追问具体问题；追问包按次计，用完可续购。
+          </p>
+          <div className="hw-c-box flex flex-col gap-4 max-w-3xl mx-auto">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="font-bold text-ink">{SKUS.ask_pack.name}</h3>
+                <p className="text-sm text-ink-light mt-1">{SKUS.ask_pack.desc}</p>
+                <p className="text-xs text-ink-light/60 mt-2">
+                  涉医疗、法律、投资、生死与重大取舍的「该不该」类问题不作判决，只讲命局倾向；每条回答均附免责说明。
+                </p>
+              </div>
+              <div className="text-right shrink-0">
+                <div className="text-2xl font-bold text-ink">{formatPriceUSD(SKUS.ask_pack.priceUSD)}</div>
+                <div className="text-xs text-ink-light/60 mt-1">/ {ASK_PACK_SIZE} 次</div>
+              </div>
+            </div>
+            {/* 未登记 productId 时 CheckoutButton 自动显示「即将推出」（见 waffo-products.ts） */}
+            <CheckoutButton
+              sku="ask_pack"
+              available={waffoProductId('ask_pack') !== null}
+              requireChart={false}
+            >
+              购买追问包
+            </CheckoutButton>
+          </div>
         </section>
 
         {/* 命书报告包含的十大板块 */}

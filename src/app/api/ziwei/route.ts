@@ -5,8 +5,14 @@ import { checkDSTTransition } from '@/lib/solarTime'
 import { resolveBirthFromBody } from '@/lib/birthRequest'
 import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
 import { createServerSupabase } from '@/lib/supabase'
+import type { SupabaseClient } from '@supabase/supabase-js'
+import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RULES } from '@/lib/rateLimit'
+import { checkAiBudget } from '@/lib/aiBudget'
 import { saveReport, deriveReportTitle } from '@/lib/reportSave'
-import { stripEntitlementState, reportCacheKey, ZIWEI_CACHE_VERSION } from '@/lib/reportCache'
+import { stripEntitlementState, reportCacheKey, readReportCache, resolveModuleCachedHit, ZIWEI_CACHE_VERSION } from '@/lib/reportCache'
+
+/** 未解锁时的 preview（入库剥离、命中重算时共用，避免两处文案漂移） */
+const ZIWEI_LOCKED_PREVIEW = '紫微十二宫深度解读（命格、性格、十二宫导读、事业、财运、婚姻、健康、生年四化、格局成败、大限十年、流年流月、趋避建议）解锁后可见。'
 
 export async function POST(request: NextRequest) {
   try {
@@ -53,22 +59,67 @@ export async function POST(request: NextRequest) {
       birthLng: ref?.lng,
       birthZone: ref?.zone
     })
-    const analysis = analyzeZiwei(chart, new Date())
-    const aiReport = await generateAIZiwei(chart, analysis)
-
-    // ★ 门禁判定统一走 entitlement（§8.5.1）
+    // ★ 身份/门禁先解析（§8.5.1 单一判定）——先于 AI 调用，供下方成本护栏使用。
+    // ENFORCE=false → unlocked 恒 true → 内测期【登录用户】行为与现在完全一致 ✓
     const token = typeof body.token === 'string' ? body.token : ''
     let ent = EMPTY_ENTITLEMENTS
+    let userId: string | null = null
+    let admin: SupabaseClient | null = null
     if (token) {
-      const admin = createServerSupabase()
+      admin = createServerSupabase()
       const { data: { user } } = await admin.auth.getUser(token)
-      if (user) ent = await getEntitlements(admin, user.id)
+      if (user) { userId = user.id; ent = await getEntitlements(admin, user.id) }
     }
     const unlocked = canView(ent, 'ziwei_deep')
-    // ★ 全量 AI 文本（无条件生成，见上）；门禁只作用于【响应】，不作用于【入库】——
-    //   入库置空会让付费用户回看「我的报告」永远读到锁定版（2026-10-18 真实事故）。
+
+    // ★ 报告缓存短路读取（token 防盗用第三档）：登录用户的【同参数重复请求】直接命中存量全文，
+    //   零 AI、零限流、零预算（放在限流/预算/AI 之前）。命中处置全在 resolveModuleCachedHit：
+    //   只短路【真·AI 结果】—— AI 失败/预算熔断的规则兜底视为未命中 → 重生成覆盖（缓存自愈）。
+    //   ★ 本模块每盘 12 次 AI 调用，是缓存收益最大、也最该保护的路径。
+    // ★ 出生地/城市入键（原则②）：真太阳时与城市不同则内容不同，键不入会互相覆盖（丢报告）。
+    const reportInput = {
+      year, month, day, hour, minute, gender,
+      birthZone: ref?.zone ?? null,
+      birthLng: ref?.lng ?? null,
+      birthCity: city?.name ?? null
+    }
+    const cacheKey = reportCacheKey('ziwei', ZIWEI_CACHE_VERSION, reportInput)
+    if (userId && admin) {
+      const hit = await readReportCache(admin, userId, 'ziwei', cacheKey)
+      const resolved = hit
+        ? resolveModuleCachedHit(hit, { unlocked, skus: ['ziwei_deep'], lockedPreview: ZIWEI_LOCKED_PREVIEW })
+        : null
+      if (resolved) {
+        return NextResponse.json({ success: true, data: resolved.data, reportId: resolved.reportId, cached: true })
+      }
+    }
+
+    // ★ 速率限制（token 防盗用第二档）：默认关闭（内测放行）；开启后按 u:<id>/ip:<hash> 固定窗口计数，
+    //   超限返 429。放在 AI 生成【之前】（本模块每盘 12 次调用，是最贵的路径之一）。
+    const rl = await checkRateLimit(
+      admin ?? (RATE_LIMIT_ENFORCE ? createServerSupabase() : null),
+      clientKey(userId, request),
+      USER_RULES
+    )
+    if (!rl.allowed) return NextResponse.json(rateLimitedBody(rl), { status: 429 })
+
+    const analysis = analyzeZiwei(chart, new Date())
+    // ★★ 全局日预算熔断（token 防盗用第三档）：仅【真要生成 AI】时检查（不生成则不计、不拦）。
+    //   超额 → 全站当日降级为规则版（200 无 AI 文本，区别于限流的 429），次日恢复；
+    //   基建故障 → 放行（fail-open）。本模块每盘 12 次调用，是预算熔断的重点保护对象。
+    const budget = userId ? await checkAiBudget(admin, Date.now()) : null
+    const aiBlocked = budget?.exhausted ?? false
+    // ★★ 成本护栏（token 防盗用第一档）：仅【登录用户】才生成 AI（本模块每盘 12 次调用）——
+    //   匿名（含外部脚本）不再触发；登录用户照常全量生成并入库，回看者必然已登录 ⇒ 不触回看事故。
+    const aiReport = userId && !aiBlocked ? await generateAIZiwei(chart, analysis) : null
+
+    // ★ 入库只存【内容】（locked 剥掉、ai 存全量全文）；门禁只作用于【响应】——
+    //   读取侧按当前权益重算（详情页 reportGate），试吃→付费即刻生效。
     const rawAi = aiReport || fallbackZiweiText(chart, analysis)
-    const rawAiSource = aiReport ? 'AI 深度解读' : '规则版（AI结果未过合规校验）'
+    const rawAiSource = aiReport ? 'AI 深度解读'
+      : aiBlocked ? '规则版（当日 AI 额度已用尽，次日恢复）'
+      : userId ? '规则版（AI结果未过合规校验）'
+      : '规则版（登录后可见 AI 深度解读）'
     const ai = unlocked ? rawAi : null
     const aiSource = !unlocked ? '未解锁' : rawAiSource
     const dstNotice = ref ? checkDSTTransition(ref.zone, { year, month, day, hour, minute }) : null
@@ -80,7 +131,7 @@ export async function POST(request: NextRequest) {
       free: { chart, analysis },
       locked: unlocked ? null : {
         skus: ['ziwei_deep'],
-        preview: '紫微十二宫深度解读（命格、性格、十二宫导读、事业、财运、婚姻、健康、生年四化、格局成败、大限十年、流年流月、趋避建议）解锁后可见。'
+        preview: ZIWEI_LOCKED_PREVIEW
       },
       ai,
       aiSource,
@@ -99,19 +150,13 @@ export async function POST(request: NextRequest) {
     // ★ 入库只存【内容】（2026-10-18）：locked 剥掉、ai 存全量全文 ——
     //   读取侧按当前权益重算（详情页 reportGate.gateReportForDetail），试吃→付费即刻生效。
     //   cacheKey 覆盖写：同一 (user_id, kind, cache_key) 只保留一行，重复点击不堆积。
-    // ★ 出生地/城市入键（原则②）：真太阳时与城市不同则内容不同，键不入会互相覆盖（丢报告）
-    const reportInput = {
-      year, month, day, hour, minute, gender,
-      birthZone: ref?.zone ?? null,
-      birthLng: ref?.lng ?? null,
-      birthCity: city?.name ?? null
-    }
+    // ★ reportInput / cacheKey 已在读取短路前构造（出生地/城市入键，原则②）。
     const reportId = await saveReport(token || undefined, {
       kind: 'ziwei',
       title: deriveReportTitle('ziwei', reportInput),
       input: reportInput,
       result: { ...stripEntitlementState(data), ai: rawAi, aiSource: rawAiSource } as never,
-      cacheKey: reportCacheKey('ziwei', ZIWEI_CACHE_VERSION, reportInput)
+      cacheKey
     })
 
     return NextResponse.json({ success: true, data, reportId })

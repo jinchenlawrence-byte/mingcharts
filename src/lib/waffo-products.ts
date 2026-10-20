@@ -31,6 +31,10 @@ export const WAFFO_PRODUCTS: Partial<Record<SkuId, string>> = {
   //   ★ 登记即开闸：购买入口由「即将推出」切换为可购，POST /api/membership 改为创建真实收银台会话。
   member_monthly: 'PROD_0BmnFGAMCcVqmxmhTKbqfZ',  // 月度会员 9.90 USD / monthly
   member_yearly: 'PROD_2SKD8c2E4RmOD7I0NdebXq',   // 年度会员 49.00 USD / yearly
+  // ★ 追问包（ask_pack，$4.99 / ASK_PACK_SIZE 次）—— 2026-10-20 登记：由
+  //   scripts/create-onetime-products.mjs 创建并发布（onetimeProducts.create + publish）。
+  //   登记即开闸：pricing 页与 /chart 追问面板的购买入口由「即将推出」切换为可购。
+  ask_pack: 'PROD_46MgOElCSTRpOGA3eJCJh0',        // 追问包 4.99 USD 一次性
 }
 
 // 返回某 SKU 对应的 Waffo productId；未登记则返回 null（购买入口据此显示「即将推出」）

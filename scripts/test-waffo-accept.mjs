@@ -554,7 +554,17 @@ console.log('—— ⑥ 单号规则 / buildCheckoutParams / SKU 映射 ——')
     assert(typeof id === 'string' && id.startsWith('PROD_'),
       `${sku} 已登记 productId（PROD_ 前缀，购买入口可用）`)
   }
-  assert(waffoProductId('ask_pack') === null, '未登记 SKU（额度类）→ null（购买入口显示即将推出）')
+  // ★ 追问包（2026-10-20 登记 PROD_）：与会员订阅同口径 —— 登记一致性断言，
+  //   而非固定 null。未登记→null（入口显示即将推出）；已登记→PROD_ 前缀（入口可购）。
+  //   （原断言「ask_pack === null」写于未登记时期；登记真实单号后前提失效，
+  //     按 §8.6.2 期望值跟随事实更新。）
+  {
+    const id = waffoProductId('ask_pack')
+    assert(
+      id === null || id.startsWith('PROD_'),
+      `ask_pack 登记一致性：未登记→null / 已登记→PROD_ 前缀（当前 ${id === null ? '未登记' : '已登记'}）`,
+    )
+  }
   // ★ 档 C（2026-10-18）：会员订阅 SKU 采用「登记一致性」断言，而非固定 null ——
   //   PROD_ 登记是人工步骤（scripts/create-subscription-products.mjs 跑完粘贴），
   //   故此处只要求「登记值与开闸态自洽」：未登记→null（入口显示即将推出）；

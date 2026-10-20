@@ -200,10 +200,10 @@ if (tooth) {
     process.exit(red ? 1 : 2)
   }
   if (tooth === 'aiguard') {
-    // 注入点：route 的「const aiReport = unlocked ? await generateAILiunian(…)」去掉守卫 → 断言⑨翻红
+    // 注入点：route 的「const aiReport = unlocked(&& userId) ? await generateAILiunian(…)」去掉守卫 → 断言⑨翻红
     const { readFileSync } = await import('node:fs')
     const src = readFileSync(new URL('../src/app/api/liunian/route.ts', import.meta.url), 'utf8')
-    const guarded = /const aiReport = unlocked \? await generateAILiunian/.test(src)
+    const guarded = /const aiReport = unlocked(?: && userId)?(?: && !aiBlocked)? \? await generateAILiunian/.test(src)
     console.log(`  [证据] 注入后 route 的 AI 调用是否仍受 unlocked 守卫：${guarded ? '是（注入无效）' : '否（守卫已移除，未解锁也会调 AI）'}`)
     const red = !guarded
     console.log(red ? '  ✓ 注入有效：AI 调用失去 unlocked 守卫（断言⑨结构判据变坏）' : '  ✗ 注入无效 → 中止')
@@ -344,8 +344,8 @@ console.log('—— ⑤ 时区/经度入键（补填出生地后必须重新生�
   console.log('  ✓ 时区/经度/分钟/nowYear 全量入键：补填出生地不会命中错误缓存')
 }
 
-// ---------- 未登录用户：无缓存（saveReport 无 token 返回 null，保持一致） ----------
-console.log('—— ⑥ 未登录用户不走缓存（每次重算）——')
+// ---------- 未登录用户：零 AI 成本 + 无缓存（saveReport 无 token 返回 null；token 防盗用第一档） ----------
+console.log('—— ⑥ 未登录用户：零 AI 调用、不走缓存、不落库 ——')
 {
   const { admin, db } = makeMockAdmin(USER_ID)
   setServerSupabaseForTest(admin)
@@ -353,10 +353,13 @@ console.log('—— ⑥ 未登录用户不走缓存（每次重算）——')
   const noTok = { ...BASE }; delete noTok.token
   const r1 = await call(noTok)
   const r2 = await call(noTok)
-  if (aiCalls.length !== 2) fail(`未登录两次请求 AI 计数 ${aiCalls.length} ≠ 2（未登录不应有缓存）`)
+  // ★ token 防盗用第一档（2026-10-20）：未登录不再触发 AI —— 匿名（含外部脚本）无账号、
+  //   命中不了缓存（缓存读/写均需 userId），最容易被刷；故 route 以 unlocked && userId 守卫。
+  //   旧断言「AI 计数 2（每次重算）」写于无守卫时期，前提已变，按事实更新为 0。
+  if (aiCalls.length !== 0) fail(`未登录两次请求 AI 计数 ${aiCalls.length} ≠ 0（未登录应零 AI 成本）`)
   if (r1.json.reportId !== null || r2.json.reportId !== null) fail('未登录不应返回 reportId')
   if (rowsOf(db).length !== 0) fail('未登录不应写入 reports')
-  console.log('  ✓ 未登录：每次重算（AI 2 次）、不落库、无 reportId——与 saveReport 无 token 返回 null 一致')
+  console.log('  ✓ 未登录：零 AI 调用（成本护栏）、不落库、无 reportId——与 saveReport 无 token 返回 null 一致')
 }
 
 // ---------- 断言 ⑦ 权益重算接线方向（REPLY-23 发现①：resolveCachedHit 端到端安全方向） ----------
@@ -438,13 +441,77 @@ console.log('—— ⑧ 覆盖写并发安全（先 SELECT 再 INSERT 的并发�
 console.log('—— ⑨ 未解锁不调 AI（route 的 unlocked 三元守卫）——')
 {
   // ★ ENFORCE=false → 路由造不出未解锁请求，此分支只能靠结构断言守护接线：
-  //   generateAILiunian 必须受 unlocked 三元守卫——未解锁试吃用户零 AI 成本，
-  //   否则「试吃」成为最贵路径且缓存永远建立不起来（ai=null → 下次未命中 → 再调）。
+  //   generateAILiunian 必须受 unlocked(&& userId) 守卫——未解锁试吃用户零 AI 成本（发现③），
+  //   匿名（含外部脚本，ENFORCE=false 下 unlocked 恒 true）同样零成本（token 防盗用第一档）。
   const { readFileSync } = await import('node:fs')
   const routeSrc = readFileSync(new URL('../src/app/api/liunian/route.ts', import.meta.url), 'utf8')
-  const guarded = /const aiReport = unlocked \? await generateAILiunian/.test(routeSrc)
-  if (!guarded) fail('route 的 AI 调用未受 unlocked 守卫——未解锁试吃每次点击都在花 AI 钱（发现③）')
-  else console.log('  ✓ 结构守护：generateAILiunian 受 unlocked 三元守卫（未解锁 → null，零 AI 成本）')
+  // ★ 预算熔断（第三档）在守卫末尾追加「&& !aiBlocked」；正则兼容旧形态（可选段）。
+  const guarded = /const aiReport = unlocked(?: && userId)?(?: && !aiBlocked)? \? await generateAILiunian/.test(routeSrc)
+  if (!guarded) fail('route 的 AI 调用未受 unlocked(&& userId) 守卫——未解锁/匿名每次点击都在花 AI 钱（发现③）')
+  else console.log('  ✓ 结构守护：generateAILiunian 受 unlocked(&& userId) 守卫（未解锁/匿名 → null，零 AI 成本）')
+}
+
+// ---------- 断言 ⑩ 通用模块缓存短路（token 防盗用第三档：geo/ziwei/hemun 重复请求零 AI） ----------
+console.log('—— ⑩ 通用模块缓存短路（只短路真·AI 结果；降级内容自愈）——')
+{
+  let f = 0
+  const { readFileSync } = await import('node:fs')
+  // 注释剥离（防注释里提到的函数名被 includes/indexOf 误判）
+  const strip = (s) => s.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
+  const { resolveModuleCachedHit, GENUINE_AI_SOURCE } = await import('../src/lib/reportCache.ts')
+  const eq = (got, want, label) => { if (JSON.stringify(got) !== JSON.stringify(want)) { f++; fail(`${label}：期望 ${JSON.stringify(want)}，实得 ${JSON.stringify(got)}`) } }
+  const OPTS = { unlocked: true, skus: ['geo'], lockedPreview: 'PREVIEW' }
+  const FULL = { chart: {}, geo: {}, ai: '先前的 AI 全文', aiSource: 'AI 深度解读' }
+
+  // ① 真·AI 结果 + 已解锁 → 命中，下全文、locked=null
+  {
+    const r = resolveModuleCachedHit({ reportId: 'r1', content: { ...FULL } }, OPTS)
+    eq(r?.reportId, 'r1', '真 AI 结果命中 reportId')
+    eq(r?.data.ai, '先前的 AI 全文', '已解锁 → 下全文')
+    eq(r?.data.locked, null, '已解锁 → locked=null')
+    eq(r?.data.aiSource, 'AI 深度解读', '已解锁 → aiSource 原样')
+  }
+  // ② 真·AI 结果 + 未解锁 → 命中但 ai 置空、locked 给 preview（付费全文不外泄）
+  {
+    const r = resolveModuleCachedHit({ reportId: 'r2', content: { ...FULL } }, { ...OPTS, unlocked: false })
+    eq(r?.data.ai, null, '未解锁 → ai 置空（缓存里的付费全文不外泄）')
+    eq(r?.data.locked?.preview, 'PREVIEW', '未解锁 → locked.preview 用传入文案')
+    eq(r?.data.aiSource, '未解锁', '未解锁 → aiSource=未解锁')
+  }
+  // ③ 降级内容（预算熔断/失败写下的规则兜底）→ 不短路（否则 AI 恢复后用户永久拿降级版）
+  {
+    const degraded = { ...FULL, aiSource: '规则版（当日 AI 额度已用尽，次日恢复）', ai: '规则兜底文本' }
+    eq(resolveModuleCachedHit({ reportId: 'r3', content: degraded }, OPTS), null, '降级内容不短路（走重生成覆盖）')
+    const degraded2 = { ...FULL, aiSource: '规则版（AI结果未过合规校验）' }
+    eq(resolveModuleCachedHit({ reportId: 'r3b', content: degraded2 }, OPTS), null, '合规回退内容不短路')
+  }
+  // ④ 空内容（试吃期 ai=null）→ 不短路（自愈）
+  {
+    eq(resolveModuleCachedHit({ reportId: 'r4', content: { ...FULL, ai: null } }, OPTS), null, '空内容不短路（自愈）')
+  }
+  eq(GENUINE_AI_SOURCE, 'AI 深度解读', 'GENUINE_AI_SOURCE 常量')
+
+  // ⑤ 三条 route 接线：缓存读在限流/预算之前，且用 resolveModuleCachedHit
+  for (const [p, kind] of [['../src/app/api/geo/route.ts', 'geo'], ['../src/app/api/ziwei/route.ts', 'ziwei'], ['../src/app/api/hemun/route.ts', 'hemun']]) {
+    const src = strip(readFileSync(new URL(p, import.meta.url), 'utf8'))
+    if (!src.includes('resolveModuleCachedHit(')) { f++; fail(`${kind} route 未接 resolveModuleCachedHit`) }
+    if (!src.includes('readReportCache(')) { f++; fail(`${kind} route 未调 readReportCache`) }
+    const iRead = src.indexOf('readReportCache(')
+    const iRl = src.indexOf('checkRateLimit(')
+    const iBud = src.indexOf('checkAiBudget(')
+    if (!(iRead >= 0 && iRead < iRl && iRl < iBud)) {
+      f++; fail(`${kind} route 顺序错误：缓存读应早于 限流/预算（iRead=${iRead}, iRl=${iRl}, iBud=${iBud}）`)
+    }
+  }
+  // ⑥ 三个 preview 常量共用（避免入库剥离与命中重算文案漂移）
+  for (const [p, c] of [['../src/app/api/geo/route.ts', 'GEO_LOCKED_PREVIEW'], ['../src/app/api/ziwei/route.ts', 'ZIWEI_LOCKED_PREVIEW'], ['../src/app/api/hemun/route.ts', 'HEMUN_LOCKED_PREVIEW']]) {
+    const src = readFileSync(new URL(p, import.meta.url), 'utf8')
+    const n = (src.match(new RegExp(c, 'g')) || []).length
+    if (n < 2) { f++; fail(`${p} 未共用 ${c}（出现 ${n} 次，应 ≥2：定义+引用）`) }
+  }
+  console.log(f === 0
+    ? '✓ 缓存短路：只短路真·AI 结果（降级/空内容自愈）；三条 route 缓存读早于限流/预算'
+    : `✗ 缓存短路断言失败 ${f} 处`)
 }
 
 console.log('\n' + (allPass ? 'LIUNIAN_CACHE_PASS' : 'LIUNIAN_CACHE_FAIL'))

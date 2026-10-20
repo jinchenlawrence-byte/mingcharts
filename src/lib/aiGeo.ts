@@ -182,6 +182,8 @@ export async function generateAIGeo(a: GeoAnalysis): Promise<(GeoAIReport & { _u
         },
         body: JSON.stringify({
           model: AI_MODEL,
+          // ★ 单次输出上限（token 防盗用第一档）：一次调用产出全部 8 节，4000 留足余量不截断
+          max_tokens: 4000,
           messages,
           temperature: 0.8,
           response_format: { type: 'json_object' }

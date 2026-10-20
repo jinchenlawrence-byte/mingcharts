@@ -13,6 +13,7 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 import SaveChart from '@/components/SaveChart'
 import CheckoutButton from '@/components/CheckoutButton'
+import AskPanel from '@/components/AskPanel'
 import { getSupabase } from '@/lib/supabase'
 import { waffoProductId } from '@/lib/waffo-products'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
@@ -622,6 +623,9 @@ export default function ChartPage() {
                 </div>
               </div>
             )}
+
+            {/* ★ AI 追问（ask_pack）：解锁后围绕本命盘追问，内嵌于此（不做独立 /ask 页） */}
+            <AskPanel chartId={screenChartId} chart={chart} />
           </div>
         )}
       </div>

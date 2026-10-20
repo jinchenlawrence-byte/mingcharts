@@ -2,7 +2,7 @@
 // 全局面禁只此一处：route/页面不得各自写判定（§8.5.1 同型错误）。
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { SkuId, GrantId } from './pricing'
-import { SKUS, MULTI_CHART_LIMIT } from './pricing'
+import { SKUS, MULTI_CHART_LIMIT, ASK_PACK_SIZE } from './pricing'
 
 /**
  * ★★★★★ 付费墙总开关（26号任务书 §二 方案 B，2026-10-13：由写死 false 改为 env 可控）。
@@ -241,4 +241,52 @@ function fatebookPaidRow(row: { sku?: string | null }): boolean {
   const sku = (row.sku ?? '').trim()
   if (!sku) return true // ★ 历史兼容：payments.sku 列上线前落库的老流水均为命书单
   return SKUS[sku as SkuId]?.grants.includes('fatebook') ?? false
+}
+
+/**
+ * ★ 追问额度「单一判定」（AI 追问功能）。规模【派生】，不新增可变计数器：
+ *   已授予 = 已支付【真实】ask_pack 流水数 × ASK_PACK_SIZE（次数只在 pricing.ts 定义）。
+ *   已消耗 = ask_messages 行数（本表只落「AI 成功且过合规」的行，拒答/失败不落行）。
+ *   剩余   = max(0, 已授予 − 已消耗)。
+ * ★ 纯函数：与 entitlementsFromRows / chartLimitFor 同族，断言可喂数据真跑生产逻辑。
+ * ★ 排除模拟流水（'MOCK_' 前缀）——与 entitlementsFromRows 同口径，不是真实购买不授予次数。
+ */
+export function askCreditsFromRows(pays: PaymentRow[] | null, usedCount: number): number {
+  const granted = (pays ?? []).filter(isPaidAskPackRow).length * ASK_PACK_SIZE
+  const used = Math.max(0, Math.floor(usedCount || 0))
+  return Math.max(0, granted - used)
+}
+
+/** 一行流水是否为「已支付的真实 ask_pack 购买」（授予次数的唯一依据） */
+function isPaidAskPackRow(p: PaymentRow): boolean {
+  if (p.status !== 'paid') return false
+  if (typeof p.transaction_id === 'string' && p.transaction_id.startsWith('MOCK_')) return false
+  if (p.payment_type !== 'single') return false
+  return (p.sku ?? '').trim() === 'ask_pack'
+}
+
+/**
+ * 读取某用户当前追问剩余次数（服务端用 service_role）。
+ * ★ 只做查库 + 调 askCreditsFromRows —— 逻辑全在纯函数里，断言可直接测。
+ * ★ 读路径必须暴露错误（沿用 getEntitlements 的可见性修复）：schema 漂移时直接抛错，
+ *   调用方返 500 让问题可见，绝不静默判「0 次」（否则付费用户无声失去额度）。
+ */
+export async function getAskRemaining(
+  admin: SupabaseClient,
+  userId: string
+): Promise<number> {
+  const [{ data: pays, error: paysError }, { count, error: countError }] = await Promise.all([
+    admin
+      .from('payments')
+      .select('payment_type, status, transaction_id, sku')
+      .eq('user_id', userId)
+      .eq('sku', 'ask_pack'),
+    admin
+      .from('ask_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId),
+  ])
+  if (paysError) throw new Error(`ask_pack 流水查询失败: ${paysError.code} ${paysError.message}`)
+  if (countError) throw new Error(`ask_messages 计数失败: ${countError.code} ${countError.message}`)
+  return askCreditsFromRows(pays as PaymentRow[] | null, count ?? 0)
 }

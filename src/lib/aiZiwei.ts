@@ -287,6 +287,8 @@ export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis): 
         },
         body: JSON.stringify({
           model: AI_MODEL,
+          // ★ 单次输出上限（token 防盗用第一档）：每板块单独调用，2000 远高于单板块所需（≤700 字），不截断
+          max_tokens: 2000,
           messages,
           temperature: 0.8,
           response_format: { type: 'json_object' }

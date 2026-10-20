@@ -145,5 +145,117 @@ console.log('—— 附加⑤ .env.local 未被 git 跟踪 ——')
   assert(tracked === '', `.env.local 未入库（git ls-files 输出 "${tracked || '空'}"，要求空；§六-14）`)
 }
 
+// ─────────────────────────────────────────────────────────────
+console.log('—— 守护⑥ RATE_LIMIT_ENFORCE 同规格守护（前缀/默认 false/example 注释）——')
+{
+  const nPub = (srcAll.match(/NEXT_PUBLIC_RATE_LIMIT_ENFORCE/g) || []).length
+  assert(nPub === 0, `src 去注释后 NEXT_PUBLIC_RATE_LIMIT_ENFORCE 命中 ${nPub}（要求 0，防进客户端 bundle）`)
+
+  const rlSrc = stripComments(read('src/lib/rateLimit.ts'))
+  const structPat = /export const RATE_LIMIT_ENFORCE = process\.env\.RATE_LIMIT_ENFORCE === 'true'/
+  const nStruct = (rlSrc.match(structPat) || []).length
+  assert(nStruct === 1, `结构：rateLimit.ts 常量为 env 判等式（命中 ${nStruct}，要求 1）`)
+
+  // 运行时：子进程真 import 生产模块评估常量（delete env 基线 + 正向对照）
+  const tmpDir = path.join(root, 'temp')
+  const tmpFile = path.join(tmpDir, '__ratelimit_eval.mts')
+  mkdirSync(tmpDir, { recursive: true })
+  writeFileSync(tmpFile, [
+    "const m = await import('../src/lib/rateLimit.ts')",
+    "console.log('RL_EVAL:' + m.RATE_LIMIT_ENFORCE)",
+  ].join('\n'))
+  const runEval = (envOverride) => {
+    const env = { ...process.env }
+    delete env.RATE_LIMIT_ENFORCE // ★ 基线：显式删掉，模拟"生产不设"
+    Object.assign(env, envOverride)
+    const r = spawnSync('npx', ['tsx', 'temp/__ratelimit_eval.mts'], {
+      cwd: root, env, encoding: 'utf8', shell: process.platform === 'win32',
+    })
+    const out = (r.stdout || '').trim()
+    const line = out.split('\n').find((l) => l.startsWith('RL_EVAL:')) || ''
+    return line.slice('RL_EVAL:'.length) || `（无输出：${out || r.stderr}）`
+  }
+  try {
+    const vOff = runEval({})
+    assert(vOff === 'false', `运行时：不设 env ⇒ false（got=${vOff}，即生产恒定关闭、不查库）`)
+    const vOn = runEval({ RATE_LIMIT_ENFORCE: 'true' })
+    assert(vOn === 'true', `运行时：显式设 true ⇒ true（got=${vOn}，正向对照：开关真的可开）`)
+  } finally {
+    rmSync(tmpFile, { force: true })
+  }
+
+  // .env.example：注释掉 + 注明生产不设 + 无未注释赋值/无前缀
+  const envSrc = read('.env.example')
+  const nCommented = (envSrc.match(/^#\s*RATE_LIMIT_ENFORCE=true\s*$/gm) || []).length
+  const nActive = (envSrc.match(/^RATE_LIMIT_ENFORCE=/gm) || []).length
+  assert(nCommented >= 1, `.env.example 含注释行「# RATE_LIMIT_ENFORCE=true」（命中 ${nCommented}）`)
+  assert(nActive === 0, `.env.example 无未注释的 RATE_LIMIT_ENFORCE= 行（命中 ${nActive}，要求 0）`)
+}
+
+// ─────────────────────────────────────────────────────────────
+console.log('—— 附加⑦ 源码不得硬编码 RATE_LIMIT_ENFORCE = true ——')
+{
+  const pats = [/RATE_LIMIT_ENFORCE\s*=\s*true\b/g, /RATE_LIMIT_ENFORCE\s*=\s*'true'/g]
+  const counts = pats.map((p) => (srcAll.match(p) || []).length)
+  const total = counts.reduce((a, b) => a + b, 0)
+  assert(total === 0, `src 硬编码 true 两模式命中 [${counts.join(', ')}]（要求 [0, 0]）`)
+}
+
+// ─────────────────────────────────────────────────────────────
+console.log('—— 守护⑧ AI_BUDGET_ENFORCE 同规格守护（前缀/默认 false/example 注释）——')
+{
+  const nPub = (srcAll.match(/NEXT_PUBLIC_AI_BUDGET_ENFORCE/g) || []).length
+  assert(nPub === 0, `src 去注释后 NEXT_PUBLIC_AI_BUDGET_ENFORCE 命中 ${nPub}（要求 0，防进客户端 bundle）`)
+
+  const abSrc = stripComments(read('src/lib/aiBudget.ts'))
+  const structPat = /export const AI_BUDGET_ENFORCE = process\.env\.AI_BUDGET_ENFORCE === 'true'/
+  const nStruct = (abSrc.match(structPat) || []).length
+  assert(nStruct === 1, `结构：aiBudget.ts 常量为 env 判等式（命中 ${nStruct}，要求 1）`)
+
+  // 运行时：子进程真 import 生产模块评估常量（delete env 基线 + 正向对照）
+  const tmpDir = path.join(root, 'temp')
+  const tmpFile = path.join(tmpDir, '__aibudget_eval.mts')
+  mkdirSync(tmpDir, { recursive: true })
+  writeFileSync(tmpFile, [
+    "const m = await import('../src/lib/aiBudget.ts')",
+    "console.log('AB_EVAL:' + m.AI_BUDGET_ENFORCE)",
+  ].join('\n'))
+  const runEval = (envOverride) => {
+    const env = { ...process.env }
+    delete env.AI_BUDGET_ENFORCE // ★ 基线：显式删掉，模拟"生产不设"
+    Object.assign(env, envOverride)
+    const r = spawnSync('npx', ['tsx', 'temp/__aibudget_eval.mts'], {
+      cwd: root, env, encoding: 'utf8', shell: process.platform === 'win32',
+    })
+    const out = (r.stdout || '').trim()
+    const line = out.split('\n').find((l) => l.startsWith('AB_EVAL:')) || ''
+    return line.slice('AB_EVAL:'.length) || `（无输出：${out || r.stderr}）`
+  }
+  try {
+    const vOff = runEval({})
+    assert(vOff === 'false', `运行时：不设 env ⇒ false（got=${vOff}，即生产恒定关闭、不查库）`)
+    const vOn = runEval({ AI_BUDGET_ENFORCE: 'true' })
+    assert(vOn === 'true', `运行时：显式设 true ⇒ true（got=${vOn}，正向对照：开关真的可开）`)
+  } finally {
+    rmSync(tmpFile, { force: true })
+  }
+
+  // .env.example：注释掉 + 无未注释赋值
+  const envSrc = read('.env.example')
+  const nCommented = (envSrc.match(/^#\s*AI_BUDGET_ENFORCE=true\s*$/gm) || []).length
+  const nActive = (envSrc.match(/^AI_BUDGET_ENFORCE=/gm) || []).length
+  assert(nCommented >= 1, `.env.example 含注释行「# AI_BUDGET_ENFORCE=true」（命中 ${nCommented}）`)
+  assert(nActive === 0, `.env.example 无未注释的 AI_BUDGET_ENFORCE= 行（命中 ${nActive}，要求 0）`)
+}
+
+// ─────────────────────────────────────────────────────────────
+console.log('—— 附加⑨ 源码不得硬编码 AI_BUDGET_ENFORCE = true ——')
+{
+  const pats = [/AI_BUDGET_ENFORCE\s*=\s*true\b/g, /AI_BUDGET_ENFORCE\s*=\s*'true'/g]
+  const counts = pats.map((p) => (srcAll.match(p) || []).length)
+  const total = counts.reduce((a, b) => a + b, 0)
+  assert(total === 0, `src 硬编码 true 两模式命中 [${counts.join(', ')}]（要求 [0, 0]）`)
+}
+
 console.log('\n' + (allPass ? 'ENFORCE_GUARD_PASS' : 'ENFORCE_GUARD_FAIL'))
 if (!allPass) process.exit(1)

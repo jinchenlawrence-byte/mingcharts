@@ -8,6 +8,8 @@ import { checkDSTTransition } from '@/lib/solarTime'
 import { resolveBirthFromBody } from '@/lib/birthRequest'
 import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
 import { createServerSupabase } from '@/lib/supabase'
+import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RULES, FORCE_RULES } from '@/lib/rateLimit'
+import { checkAiBudget } from '@/lib/aiBudget'
 import { saveReport, deriveReportTitle } from '@/lib/reportSave'
 import {
   annualCacheKey, stripEntitlementState, resolveCachedHit, readReportCache,
@@ -123,21 +125,39 @@ export async function POST(request: NextRequest) {
     // 夏令时切换点检测（gap/重复时刻），仅作提示
     const dstNotice = ref ? checkDSTTransition(ref.zone, { year, month, day, hour, minute }) : null
 
+    // ★ 速率限制（token 防盗用第二档）：默认关闭（内测放行）；开启后按 u:<id>/ip:<hash> 固定窗口计数，
+    //   超限返 429。放在【缓存读取之后、AI 生成之前】—— 命中缓存不计数，只有真要重算才算额度。
+    //   force=true（绕过缓存重算）叠加 FORCE_RULES（3/时 + 10/日），比普通请求收紧。
+    const rl = await checkRateLimit(
+      admin ?? (RATE_LIMIT_ENFORCE ? createServerSupabase() : null),
+      clientKey(userId, request),
+      force ? [...FORCE_RULES, ...USER_RULES] : USER_RULES
+    )
+    if (!rl.allowed) return NextResponse.json(rateLimitedBody(rl), { status: 429 })
+
+    // ★★ 全局日预算熔断（token 防盗用第三档）：仅【真要生成 AI】时检查（不生成则不计、不拦）。
+    //   超额 → 全站当日降级为规则版（200 无 AI 文本，区别于限流的 429），次日恢复；基建故障 → 放行。
+    const budget = unlocked && userId ? await checkAiBudget(admin, Date.now()) : null
+    const aiBlocked = budget?.exhausted ?? false
+
     // AI 深度文字解读；失败回退规则版（流月仅当年提供）
     // ★ 当年读 luck.currentYear 显式字段，严禁 luck.liuNian[0]（首位是 8 年前；复核 2026-10-10）
     const liuYue = targetYear === luck.currentYear ? luck.liuYue : null
     const favorSets = getFavorSets(analyzable)
     // ★ 未解锁不调 AI（REPLY-23 复核 发现③(a)）：试吃用户拿不到 AI 文本，调了也是丢弃——
     //   无条件调用会让「试吃」成为最贵路径且缓存永远建立不起来（ai=null → 下次未命中 → 再调）。
-    //   未解锁时零 AI 成本；free 层结构化事实由规则引擎照常计算（不花钱）。
-    //   牙口注入点：去掉 unlocked 三元守卫 → 断言⑨结构断言翻红。
-    const aiReport = unlocked ? await generateAILiunian(analyzable, luck, targetYear) : null
+    // ★ 成本护栏叠加（token 防盗用第一档）：再要求【登录】—— ENFORCE=false 下 unlocked 恒 true，
+    //   仅 unlocked 挡不住匿名；匿名又命中不了缓存（缓存读需 userId），最容易被脚本刷。
+    // ★ 预算熔断叠加（第三档）：!aiBlocked。牙口注入点：去掉 unlocked(&& userId) 守卫 → 断言⑨结构断言翻红。
+    const aiReport = unlocked && userId && !aiBlocked ? await generateAILiunian(analyzable, luck, targetYear) : null
 
     // ★ free 层保留结构化岁运事实（试吃本意）；ai 在未解锁时为 null
     const ai = unlocked ? (aiReport || fallbackLiunianText(targetYear, target, liuYue, favorSets)) : null
     const aiSource = !unlocked ? '未解锁'
+      : aiBlocked ? '规则版（当日 AI 额度已用尽，次日恢复）'
       : aiReport ? 'AI 深度解读'
-      : '规则版（AI结果未过合规校验）'
+      : userId ? '规则版（AI结果未过合规校验）'
+      : '规则版（登录后可见 AI 深度解读）'
 
     const curDaYun = luck.daYun.find(d => d.current) || null
     const data = {
