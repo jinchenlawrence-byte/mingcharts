@@ -87,6 +87,21 @@ export async function POST(request: NextRequest) {
         //    refund.failed 不撤销 —— 三条陷阱均有注释与断言守护）。
         console.info(`[waffo-webhook] 未处理事件类型，仅记录 ${eventType}/${eventId} order=${orderId}`)
         break
+      case 'payment_refunded': {
+        // ★ 2026-10-21 退款域：一次性流水已置 refunded → 权益自动失效。
+        //   affected=0 需人工核查：可能是订阅扣款的退款（不撤会员，属预期），
+        //   或退款事件早于 order.completed 到达（渠道乱序，需补处理）。
+        if (result.affected > 0) {
+          console.info(
+            `[waffo-webhook] 退款已撤销权益 ${eventType}/${eventId} affected=${result.affected} order=${orderId}`,
+          )
+        } else {
+          console.warn(
+            `[waffo-webhook] ★退款未匹配到一次性流水（可能为订阅退款或事件乱序） ${eventType}/${eventId} order=${orderId}`,
+          )
+        }
+        break
+      }
       // ★ 档 C（2026-10-18）订阅事件动库结果
       case 'membership_updated':
         console.info(

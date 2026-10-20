@@ -96,6 +96,26 @@ export function createWaffoRepo(admin: SupabaseClient): WaffoPaymentRepository {
       if (error) throw new Error(`payments sku 回填失败: ${error.code} ${error.message}`)
     },
 
+    // ★ 退款到账（2026-10-21）：一次性流水置 'refunded' → 权益自动失效（判定只认 'paid'）。
+    //   只改 payment_type='single'（会员失效由 subscription.canceled 决定，见接口注释）。
+    //   不写 status='paid' 前置条件：重复投递仍能命中（天然幂等），避免把「已退款」误报成「找不到」。
+    async markPaymentRefunded(match: {
+      transactionId: string | null
+      orderMerchantExternalId: string | null
+    }): Promise<number> {
+      let q = admin
+        .from('payments')
+        .update({ status: 'refunded' })
+        .eq('payment_type', 'single')
+      if (match.transactionId) q = q.eq('transaction_id', match.transactionId)
+      else if (match.orderMerchantExternalId) q = q.eq('order_merchant_external_id', match.orderMerchantExternalId)
+      else return 0
+      // select('id') 拿回受影响行数（PostgREST 的 update 默认不返回 body）
+      const { data, error } = await q.select('id')
+      if (error) throw new Error(`payments 退款标记失败: ${error.code} ${error.message}`)
+      return data?.length ?? 0
+    },
+
     // ★ 命盘归属校验（HANDOFF-命书一份一付 §3.2）：查 charts 表该行的 user_id；不存在 → null
     async findChartUserId(chartId: string): Promise<string | null> {
       const { data, error } = await admin

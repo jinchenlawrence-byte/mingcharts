@@ -98,6 +98,20 @@ function createMemRepo() {
     async findPaidByExternalId(externalId) {
       return payments.find((p) => p.order_merchant_external_id === externalId) ?? null
     },
+    // ★ 2026-10-21 退款域：镜像生产实现（只动 single；按 PAY_ 优先、MC- 兜底；返回受影响行数）
+    async markPaymentRefunded(match) {
+      let hit = 0
+      for (const p of payments) {
+        if (p.payment_type !== 'single') continue
+        const ok = match.transactionId
+          ? p.transaction_id === match.transactionId
+          : p.order_merchant_external_id === match.orderMerchantExternalId
+        if (!ok) continue
+        p.status = 'refunded'
+        hit++
+      }
+      return hit
+    },
     async findChartUserId(chartId) {
       return charts.find((c) => c.id === chartId)?.user_id ?? null
     },
@@ -135,6 +149,80 @@ function paidEvent({
       paymentDate,
     },
   }
+}
+
+// ════════════════ 退款域：refund.succeeded 撤销一次性权益（2026-10-21）════════════════
+console.log('—— 退款域：refund.succeeded 撤销权益 / refund.failed 不撤销 ——')
+{
+  // 先落一笔正常支付，再投退款事件（真实顺序：order.completed → refund.succeeded）
+  const repo = createMemRepo()
+  await handleWaffoEvent(paidEvent(), repo)
+  assert(repo._payments[0].status === 'paid', '前置：一次性支付已落账 paid')
+
+  const refund = await handleWaffoEvent(
+    paidEvent({ eventType: 'refund.succeeded', eventId: 'EVT_R1', externalId: `MC-${UID_A}-1760000000000` }),
+    repo,
+  )
+  assert(refund.kind === 'payment_refunded' && refund.affected === 1, 'refund.succeeded → 命中 1 条流水')
+  assert(repo._payments[0].status === 'refunded', '退款成功 → status 由 paid 变 refunded（权益随之失效）')
+
+  // ★ 幂等：同事件重投 → duplicate，不再重复动库
+  const again = await handleWaffoEvent(
+    paidEvent({ eventType: 'refund.succeeded', eventId: 'EVT_R1', externalId: `MC-${UID_A}-1760000000000` }),
+    repo,
+  )
+  assert(again.kind === 'duplicate', '同一退款事件重投 → duplicate')
+
+  // ★ 不同 eventId 的重投：仍然命中并幂等（update 同值，不报错、不产生副作用）
+  const replay = await handleWaffoEvent(
+    paidEvent({ eventType: 'refund.succeeded', eventId: 'EVT_R2', externalId: `MC-${UID_A}-1760000000000` }),
+    repo,
+  )
+  assert(replay.kind === 'payment_refunded' && replay.affected === 1, '不同 eventId 的退款重投仍可幂等命中')
+
+  // ★ refund.failed（退款未完成）→ 不撤销（陷阱 2 同型）
+  const repoF = createMemRepo()
+  await handleWaffoEvent(paidEvent({ eventId: 'EVT_F1' }), repoF)
+  const failed = await handleWaffoEvent(
+    paidEvent({ eventType: 'refund.failed', eventId: 'EVT_F2', externalId: `MC-${UID_A}-1760000000000` }),
+    repoF,
+  )
+  assert(failed.kind === 'ignored_event', 'refund.failed → ignored_event（不撤销权益）')
+  assert(repoF._payments[0].status === 'paid', '退款失败后流水仍为 paid（客户不因退款失败失去内容）')
+
+  // ★ 缺两个单号 → invalid payload（记日志人工核对），不猜着乱改
+  const repoX = createMemRepo()
+  await handleWaffoEvent(paidEvent({ eventId: 'EVT_X1' }), repoX)
+  const noRef = await handleWaffoEvent(
+    { eventType: 'refund.succeeded', eventId: 'EVT_X2', data: { orderId: 'ORD_1' } },
+    repoX,
+  )
+  assert(noRef.kind === 'ignored_invalid_payload', '退款事件缺 paymentId 与 MC- 单号 → ignored_invalid_payload')
+  assert(repoX._payments[0].status === 'paid', '单号缺失时不得误撤任何权益')
+
+  // ★ 订阅扣款的退款不在此处撤会员（只动 payment_type='single'）
+  const repoSub = createMemRepo()
+  repoSub._payments.push({
+    user_id: UID_A, chart_id: null, amount: 9.9, sku: 'member_monthly',
+    payment_type: 'monthly', payment_method: 'card', status: 'paid',
+    transaction_id: 'PAY_SUB1', order_merchant_external_id: `MC-${UID_A}-1760000000999`, paid_at: null,
+  })
+  const subRefund = await handleWaffoEvent(
+    paidEvent({ eventType: 'refund.succeeded', eventId: 'EVT_R3', paymentId: 'PAY_SUB1' }),
+    repoSub,
+  )
+  assert(subRefund.kind === 'payment_refunded' && subRefund.affected === 0, '订阅扣款退款不影响 single 之外的行')
+  assert(repoSub._payments[0].status === 'paid', '订阅扣款流水不被退款域改动（会员失効走 subscription.canceled）')
+
+  // ★ 源码守护：退款域必须在订阅域【之前】截获（否则永远走 noop，真实事故复现）
+  const evSrc = stripComments(read('../src/lib/waffo-events.ts'))
+  const iRefund = evSrc.indexOf("eventType === 'refund.succeeded'")
+  const iSub = evSrc.indexOf("if (eventType !== 'order.completed')")
+  assert(iRefund > 0 && iSub > 0 && iRefund < iSub, '退款域在订阅域之前截获（顺序守护）')
+  assert(
+    /repo\.markPaymentRefunded\(/.test(evSrc) && /eq\('payment_type', 'single'\)/.test(stripComments(read('../src/lib/waffo-repo.ts'))),
+    '仓库实现只动 payment_type=single（守护：不得波及订阅流水）',
+  )
 }
 
 // ════════════════ ① 配置 / 源码断言 ════════════════

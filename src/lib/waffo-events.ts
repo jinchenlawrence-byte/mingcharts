@@ -97,6 +97,21 @@ export interface WaffoPaymentRepository {
    * 声明为可选 —— 测试内存实现不必实现它（未实现时 reconcile 跳过回填，行为退化为原样）。
    */
   updatePaymentSku?(externalId: string, sku: string): Promise<void>
+  /**
+   * ★ 退款到账（2026-10-21）：把命中的【一次性】流水置为 'refunded'，返回受影响行数。
+   *   权益判定只认 status='paid'（entitlement.ts），故置为 refunded 即自动撤销对应权益。
+   *   · 只动 payment_type='single'：订阅扣款的退款不在此处撤会员——
+   *     会员失效由 subscription.canceled 决定（见 subscriptionStateFromEvent 陷阱 2）。
+   *   · 匹配优先 transaction_id（PAY_xxx），无则退到 order_merchant_external_id（MC-…）——
+   *     退款事件不保证带 paymentId（SDK d.ts：paymentId? 可选）。
+   *   · 天然幂等：重复执行只是再写一次同样的值，不依赖先查后写。
+   *   · 返回 0 表示没有对应流水：可能是订阅退款、或退款事件早于 order.completed 到达
+   *     （渠道乱序），路由层按告警记录，不入库占位以外的任何状态。
+   */
+  markPaymentRefunded(match: {
+    transactionId: string | null
+    orderMerchantExternalId: string | null
+  }): Promise<number>
   // ★ 档 C（2026-10-18）会员写入，两件套：
   //   ① 读当前到期时间 —— 仅供 renew 的 extendMemberExpiry【取 max】用（不是判重，不是先查后写）
   findMemberExpiry(userId: string): Promise<string | null>
@@ -132,6 +147,8 @@ export type HandleEventResult =
   // ★ 档 C（2026-10-18）订阅事件动库的两种结果：
   | { kind: 'membership_updated'; eventType: string; userId: string; action: 'activate' | 'renew' | 'canceling' | 'uncanceled' } // 写了 profiles 会员列
   | { kind: 'membership_recorded'; eventType: string; userId: string; plan: PlanId } // 订阅扣款已落 payments
+  // ★ 2026-10-21 退款域：refund.succeeded → 一次性流水置 refunded（权益自动失效）
+  | { kind: 'payment_refunded'; eventType: string; affected: number }
 
 // ★ chartId 形态校验（HANDOFF-命书一份一付 §3.2，§8.6.2 依据分级：不直接信任 metadata）：
 //   是 string · 非空 · 长度合理（≤64，UUID 36 字符绰绰有余）→ 原样返回；否则 null。
@@ -350,7 +367,9 @@ export function subscriptionStateFromEvent(
     case 'subscription.past_due':
       return { kind: 'noop', reason: '续费失败：等渠道重试/恢复事件，仅记日志' }
     default:
-      // refund.succeeded / refund.failed（★ 退款未完成不撤销，陷阱 2）/ plan_changed 系列
+      // ★ 退款事件已由 handleWaffoEvent 的退款域提前截获（见 applyRefund）：
+      //   refund.succeeded 撤销一次性权益、refund.failed 不撤销；不会走到这里。
+      //   其余（plan_changed 系列等）仅记日志。
       return { kind: 'noop', reason: '非会员状态事件：仅记日志' }
   }
 }
@@ -494,6 +513,32 @@ async function applySubscriptionAction(
   })
 }
 
+// ★ 退款域（2026-10-21）：refund.succeeded → 撤销一次性权益。
+//   为什么必须动库：权益判定只认 payments.status='paid'，只记日志的话
+//   【客户退款后仍永久保留付费内容访问权】——退款只退钱、不退权益。
+//   为什么只处理 succeeded：refund.failed 表示退款没完成（陷阱 2 同型），不得撤销。
+//   为什么只动 payment_type='single'：会员的失效由 subscription.canceled 决定，
+//   退款单笔扣款不等于会员终止（渠道可能下期照常扣款/或客户仅要求退一期）。
+//   部分退款同样撤销（保守处理：宁可收回内容，也不白送全文）。
+async function applyRefund(
+  event: WebhookEvent<WebhookEventData>,
+  repo: WaffoPaymentRepository,
+): Promise<HandleEventResult> {
+  const { eventType, eventId } = event
+  const data = event.data
+  const transactionId = data.paymentId ?? null
+  const orderMerchantExternalId = data.orderMerchantExternalId ?? null
+  // 两个单号都拿不到 → 无法定位流水，记日志人工核对（不抛错，避免无意义重试）
+  if (!transactionId && !orderMerchantExternalId) {
+    return { kind: 'ignored_invalid_payload', reason: '退款事件缺少 paymentId 与 orderMerchantExternalId' }
+  }
+  // ★ 幂等闸口：与一次性/订阅链路共用 processed_webhooks（PD 事件可能重投）
+  return gatedWork(eventType, eventId, repo, async () => {
+    const affected = await repo.markPaymentRefunded({ transactionId, orderMerchantExternalId })
+    return { kind: 'payment_refunded', eventType, affected }
+  })
+}
+
 // 处理一个【已验签】的 webhook 事件。路由层必须先验签再调本函数。
 export async function handleWaffoEvent(
   event: WebhookEvent<WebhookEventData>,
@@ -502,7 +547,11 @@ export async function handleWaffoEvent(
 ): Promise<HandleEventResult> {
   const { eventType, eventId } = event
 
-  // ── 订阅域（档 C）：先纯判定要不要动库；无需动库的（退款/终止/逾期…）只留给路由层记日志 ──
+  // ── 退款域（2026-10-21）：成功退款撤销一次性权益；失败退款不动（陷阱 2） ──
+  if (eventType === 'refund.succeeded') return applyRefund(event, repo)
+  if (eventType === 'refund.failed') return { kind: 'ignored_event', eventType }
+
+  // ── 订阅域（档 C）：先纯判定要不要动库；无需动库的（终止/逾期…）只留给路由层记日志 ──
   if (eventType !== 'order.completed') {
     const action = subscriptionStateFromEvent(eventType, event.data)
     if (action.kind === 'noop') return { kind: 'ignored_event', eventType }
