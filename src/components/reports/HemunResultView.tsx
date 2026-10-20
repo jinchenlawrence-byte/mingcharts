@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 // 合婚结果渲染（生成页与 /reports/[id] 回看页共用）
 // 纯展示组件：数据进来渲染，不含请求逻辑
@@ -22,7 +22,7 @@ const BASIS_STYLE: Record<string, string> = {
   '典籍': 'bg-amber-700 text-white border border-amber-700',
   '古法': 'bg-gold/10 text-ink border border-amber-300',
   '民俗': 'bg-white text-ink-light border border-gold/20',
-  '产品设定': 'bg-white text-ink-light/40 border border-dashed border-gold/20',
+  '产品设定': 'bg-white text-ink-light/60 border border-dashed border-gold/20',
 }
 
 // ───────── 命盘摘要 ─────────
@@ -33,18 +33,18 @@ function ChartBriefCard({ title, b, color, dstNotice }: {
   dstNotice?: string | null
 }) {
   return (
-    <div className="paper-card rounded-lg p-4">
-      <h3 className={`font-semibold mb-2 ${color}`}>{title}</h3>
+    <div className="hw-c-box hw-c-boxLg">
+      <h3 className={`hw-c-h3 ${color}`}>{title}</h3>
       <div className="grid grid-cols-4 gap-1 text-center text-sm mb-2">
         {(['year', 'month', 'day', 'hour'] as const).map((k, i) => (
           <div key={k} className="bg-gold/5 rounded py-1.5">
-            <div className="text-[10px] text-ink-light/40">{['年柱','月柱','日柱','时柱'][i]}</div>
+            <div className="text-[10px] text-ink-light/60">{['年柱','月柱','日柱','时柱'][i]}</div>
             <div className="font-bold text-ink">{b.ganZhi[k]}</div>
           </div>
         ))}
       </div>
       <div className="text-xs text-ink-light space-y-0.5">
-        <div>日主：<span className="font-medium text-gray-800">{b.dayMaster}</span>　旺衰：{b.wangShuai}　格局：{b.geJu}</div>
+        <div>日主：<span className="font-medium text-ink">{b.dayMaster}</span>　旺衰：{b.wangShuai}　格局：{b.geJu}</div>
         <div>年柱纳音：{b.yearNaYin}</div>
       </div>
       {dstNotice && (
@@ -77,9 +77,9 @@ export default function HemunResultView({ data, onRegen, regenBusy }: {
   return (
     <div className="space-y-6">
       {/* 总观感（主展示，非分数） */}
-      <div className="bg-white rounded-xl shadow p-6 text-center">
-        <div className="text-xs text-ink-light/40 mb-1">合婚总观感</div>
-        <div className="text-2xl font-bold text-ink">{r.overall}</div>
+      <div className="bg-white rounded-[26px] shadow-sm border border-gold/15 p-6 text-center">
+        <div className="text-xs text-ink-light/60 mb-1">合婚总观感</div>
+        <div className="hw-c-h1">{r.overall}</div>
         {r.keyTags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-3 justify-center">
             {r.keyTags.map(t => (
@@ -89,10 +89,10 @@ export default function HemunResultView({ data, onRegen, regenBusy }: {
             ))}
           </div>
         )}
-        <div className="text-xs text-ink-light/40 mt-3">
+        <div className="text-xs text-ink-light/60 mt-3">
           内部算法参考分 {r.totalScore}（非命理定论，仅供排序调试）
         </div>
-        <div className="text-xs text-ink-light/40 mt-1">
+        <div className="text-xs text-ink-light/60 mt-1">
           当前大运：男 {r.currentLuck.male} ／ 女 {r.currentLuck.female}
         </div>
       </div>
@@ -107,7 +107,7 @@ export default function HemunResultView({ data, onRegen, regenBusy }: {
 
       {/* 维度卡片（分项展示，依据分级） */}
       <div className="space-y-3">
-        <h2 className="text-lg font-semibold text-ink">
+        <h2 className="hw-c-h3">
           分项维度（{r.dimensions.length} 项 · 依据分级如实标注）
         </h2>
         {r.dimensions.map(d => {
@@ -117,11 +117,11 @@ export default function HemunResultView({ data, onRegen, regenBusy }: {
               ? 'bg-red-50 border-red-200 text-red-700'
               : 'bg-paper-dark/30 border-gold/15 text-ink-light/60'
           return (
-            <div key={d.key} className="paper-card rounded-lg p-4">
+            <div key={d.key} className="hw-c-box hw-c-boxLg">
               <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
-                <span className="font-semibold text-gray-800">{d.name}</span>
+                <span className="font-semibold text-ink">{d.name}</span>
                 {d.key === 'dayun' && (
-                  <span className="text-[11px] text-ink-light/40 font-normal">· 仅示当前节奏，不参与总评</span>
+                  <span className="text-[11px] text-ink-light/60 font-normal">· 仅示当前节奏，不参与总评</span>
                 )}
                 <div className="flex items-center gap-1.5">
                   <span className={`text-[11px] rounded px-2 py-0.5 ${BASIS_STYLE[d.basis] || ''}`}>
@@ -132,7 +132,7 @@ export default function HemunResultView({ data, onRegen, regenBusy }: {
                   </span>
                 </div>
               </div>
-              <p className="text-sm text-gray-800 mb-2">{d.verdict}</p>
+              <p className="text-sm text-ink mb-2">{d.verdict}</p>
               {d.tags.length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-2">
                   {d.tags.map(t => (
@@ -146,7 +146,7 @@ export default function HemunResultView({ data, onRegen, regenBusy }: {
                 {d.facts.map((f, i) => <li key={i}>{f}</li>)}
               </ul>
               {d.citations && d.citations.length > 0 && (
-                <p className="text-[11px] text-ink-light/40 mt-2">依据：{d.citations.join('；')}</p>
+                <p className="text-[11px] text-ink-light/60 mt-2">依据：{d.citations.join('；')}</p>
               )}
             </div>
           )
@@ -155,7 +155,7 @@ export default function HemunResultView({ data, onRegen, regenBusy }: {
 
       {/* AI 深度解读：未解锁时显示 preview 与解锁引导（§8.5.1 门禁消费） */}
       {data.locked && (
-        <div className="bg-paper-dark/40 rounded-lg p-6 text-center">
+        <div className="hw-c-box hw-c-boxLg text-center">
           <p className="text-sm text-ink-light mb-4">{data.locked.preview}</p>
           {data.locked.skus.map((skuId) => {
             const sku = SKUS[skuId as keyof typeof SKUS]
@@ -174,8 +174,8 @@ export default function HemunResultView({ data, onRegen, regenBusy }: {
       {data.ai && (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-ink">合婚深度解读</h2>
-          <span className="text-xs text-ink-light/40">文字来源：{data.aiSource}</span>
+          <h2 className="hw-c-h3">合婚深度解读</h2>
+          <span className="text-xs text-ink-light/60">文字来源：{data.aiSource}</span>
         </div>
         {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
         {ruleVersion && onRegen && (
@@ -192,8 +192,8 @@ export default function HemunResultView({ data, onRegen, regenBusy }: {
           </div>
         )}
         {AI_SECTIONS.map(s => (
-          <div key={s.key} className="paper-card rounded-lg p-4">
-            <h3 className="font-semibold text-ink mb-2">{s.name}</h3>
+          <div key={s.key} className="hw-c-box hw-c-boxLg">
+            <h3 className="hw-c-h3">{s.name}</h3>
             <div className="text-sm text-ink/70 leading-relaxed whitespace-pre-line">
               {data.ai![s.key]}
             </div>
@@ -203,7 +203,7 @@ export default function HemunResultView({ data, onRegen, regenBusy }: {
       )}
 
       {/* 免责声明 */}
-      <p className="text-xs text-ink-light/40 text-center leading-relaxed border-t border-gray-100 pt-4">
+      <p className="text-xs text-ink-light/60 text-center leading-relaxed border-t border-gold/15 pt-4">
         合婚分析为传统命理参考，仅供了解双方性格与相处模式之用。<br />
         婚姻成败在于双方经营，与任何单一命理指标无关。
       </p>

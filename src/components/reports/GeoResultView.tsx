@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 // 地理方位结果渲染（生成页与 /reports/[id] 回看页共用）
 // 纯展示组件：含离线 SVG 地图、城市卡与 AI 解读；表单相关组件留在页面
@@ -47,7 +47,7 @@ function PopupCard({ p, onClose }: { p: PopupState; onClose: () => void }) {
   const cat = hit.cat
   return (
     <div
-      className="absolute z-10 w-[230px] rounded-lg bg-white shadow-lg border border-gold/15 p-3 text-xs"
+      className="absolute z-10 w-[230px] rounded-[18px] bg-white shadow-md border border-gold/15 p-3 text-xs"
       style={{
         left: x,
         top: y,
@@ -55,7 +55,7 @@ function PopupCard({ p, onClose }: { p: PopupState; onClose: () => void }) {
       }}
     >
       <button onClick={onClose}
-        className="absolute top-1 right-2 text-ink-light/40 hover:text-ink-light">×</button>
+        className="absolute top-1 right-2 text-ink-light/60 hover:text-ink-light">×</button>
       <div className="font-bold pr-4" style={{ color: cat.color }}>
         {cat.icon} {cat.label} · {c.name}
       </div>
@@ -133,7 +133,7 @@ function GeoMap({ geo }: { geo: GeoAnalysis }) {
   }
 
   return (
-    <div ref={wrapRef} className="relative w-full rounded-lg overflow-hidden bg-[#eef4fa]">
+    <div ref={wrapRef} className="relative w-full rounded-[22px] overflow-hidden bg-[#eef4fa] border border-gold/15">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto block">
         <path d={paths.sphere} fill="#eef4fa" />
         <path d={paths.graticule} fill="none" stroke="#d7e3ef" strokeWidth={0.6} />
@@ -169,10 +169,10 @@ function GeoMap({ geo }: { geo: GeoAnalysis }) {
 // ---------- 城市卡片 ----------
 function CategorySection({ cat }: { cat: CategoryResult }) {
   return (
-    <div className="paper-card rounded-lg p-4">
+    <div className="hw-c-box hw-c-boxLg">
       <h3 className="font-semibold mb-3" style={{ color: cat.color }}>
         {cat.icon} {cat.label}
-        <span className="text-xs text-ink-light/40 font-normal ml-2">
+        <span className="text-xs text-ink-light/60 font-normal ml-2">
           目标{cat.targetGod} · {cat.targetWx}
         </span>
       </h3>
@@ -185,8 +185,8 @@ function CategorySection({ cat }: { cat: CategoryResult }) {
         {cat.cities.map((c) => (
           <div key={c.name} className="rounded-md border border-gold/15 p-3">
             <div className="flex flex-wrap items-baseline gap-2">
-              <span className="font-bold text-gray-800">{c.name}</span>
-              <span className="text-xs text-ink-light/40">{c.region}</span>
+              <span className="font-bold text-ink">{c.name}</span>
+              <span className="text-xs text-ink-light/60">{c.region}</span>
               <span className="text-xs px-2 py-0.5 rounded-full text-white ml-auto"
                 style={{ background: cat.color }}>
                 {c.score.toFixed(1)}分 · {c.impact}
@@ -221,7 +221,7 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
   return (
     <div className="space-y-6">
       {/* 喜忌摘要 */}
-      <div className="paper-card rounded-lg p-4">
+      <div className="hw-c-box hw-c-boxLg">
         <div className="grid md:grid-cols-2 gap-3 text-sm">
           <div>
             <span className="text-ink-light/60">日主：</span>
@@ -254,9 +254,9 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
 
       {/* 现居城市影响 */}
       {geo.currentCity && (
-        <div className="paper-card rounded-lg p-4 border-l-4" style={{ borderColor: geo.currentCity.level === '吉' ? '#059669' : geo.currentCity.level === '忌' ? '#dc2626' : '#d97706' }}>
+        <div className="hw-c-box hw-c-boxLg border-l-4" style={{ borderColor: geo.currentCity.level === '吉' ? '#059669' : geo.currentCity.level === '忌' ? '#dc2626' : '#d97706' }}>
           <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-            <h2 className="font-semibold text-sky-800">现居城市 · {geo.currentCity.name}</h2>
+            <h2 className="hw-c-h3">现居城市 · {geo.currentCity.name}</h2>
             <div className="flex items-center gap-1.5">
               <span className={`text-[11px] rounded px-2 py-0.5 border ${
                 geo.currentCity.level === '吉'
@@ -283,7 +283,7 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
                     （{geo.currentCity.favorable ? '喜用' : '忌神'}）
                   </span>
                 </>
-              ) : <span className="text-ink-light/40">资料不足，无法判定</span>}
+              ) : <span className="text-ink-light/60">资料不足，无法判定</span>}
             </div>
             <div className="text-ink-light">
               {geo.currentCity.fangWx
@@ -298,21 +298,21 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
               <div key={i} className="flex gap-1.5"><span className="text-sky-400">·</span><span>{f}</span></div>
             ))}
           </div>
-          <div className="text-xs bg-sky-50 rounded p-2.5 space-y-0.5">
-            <div className="font-medium text-sky-800 mb-1">趋避建议</div>
+          <div className="text-xs bg-gold/5 rounded-[16px] border border-gold/15 p-2.5 space-y-0.5">
+            <div className="font-semibold text-ink mb-1">趋避建议</div>
             {geo.currentCity.advice.map((a, i) => (
-              <div key={i} className="text-sky-900">· {a}</div>
+              <div key={i} className="text-ink/80">· {a}</div>
             ))}
           </div>
-          <p className="text-[11px] text-ink-light/40 mt-2">
+          <p className="text-[11px] text-ink-light/60 mt-2">
             地气影响是长期渐染的过程，以上为趋势参考；福地福人居，心态与努力为本
           </p>
         </div>
       )}
 
       {/* 地图 */}
-      <div className="paper-card rounded-lg p-3 md:p-4">
-        <h2 className="font-semibold text-sky-800 mb-3">命主方位地图</h2>
+      <div className="hw-c-box hw-c-boxLg p-3 md:p-4">
+        <h2 className="hw-c-h3">命主方位地图</h2>
         <GeoMap geo={geo} />
         <div className="flex flex-wrap gap-3 mt-3 text-xs text-ink-light/60">
           {geo.categories.map((c) => (
@@ -334,7 +334,7 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
 
       {/* AI 解读：未解锁时显示 preview 与解锁引导（§8.5.1 门禁消费） */}
       {locked && (
-        <div className="bg-paper-dark/40 rounded-lg p-6 text-center">
+        <div className="hw-c-box hw-c-boxLg text-center">
           <p className="text-sm text-ink-light mb-4">{locked.preview}</p>
           {locked.skus.map((skuId) => {
             const sku = SKUS[skuId as keyof typeof SKUS]
@@ -352,7 +352,7 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
       )}
       {ai && (
         <div className="space-y-4">
-          <h2 className="text-xl font-bold text-sky-900">深度解读 · {aiSource}</h2>
+          <h2 className="hw-c-h1">深度解读 · {aiSource}</h2>
           {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
           {ruleVersion && onRegen && (
             <div className="flex flex-wrap items-center gap-3">
@@ -377,8 +377,8 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
             ['才华之城', ai.talent],
             ['迁居开运', ai.advice]
           ] as [string, string][]).filter(([, text]) => text).map(([title, text]) => (
-            <div key={title} className="paper-card rounded-lg p-4">
-              <h3 className="font-semibold text-sky-800 mb-2">{title}</h3>
+            <div key={title} className="hw-c-box hw-c-boxLg">
+              <h3 className="hw-c-h3">{title}</h3>
               <p className="text-sm text-ink/70 leading-relaxed whitespace-pre-line">{text}</p>
             </div>
           ))}
