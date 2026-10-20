@@ -30,7 +30,10 @@ export async function GET(request: NextRequest) {
     const { data: { user }, error } = await admin.auth.getUser(token)
     if (error || !user) return NextResponse.json({ error: '登录无效，请重新登录' }, { status: 401 })
     const remaining = await getAskRemaining(admin, user.id)
-    return NextResponse.json({ remaining })
+    // ★ enforced 一并下发（2026-10-21）：前端据此决定「剩余 0 时是否显示购买入口」。
+    //   内测期 ENFORCE=false ⇒ 额度为 0 也能照常提问，此时不该催用户买；
+    //   开关口径仍以本文件（服务端）为单一事实源，前端不自行判断 env。
+    return NextResponse.json({ remaining, enforced: ENTITLEMENT_ENFORCE })
   } catch (e) {
     console.error('追问额度查询失败:', e)
     return NextResponse.json({ error: '追问额度查询失败' }, { status: 500 })

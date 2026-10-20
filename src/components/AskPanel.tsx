@@ -33,6 +33,8 @@ export default function AskPanel({
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [remaining, setRemaining] = useState<number | null>(null)
+  /** 服务端下发的额度开关（GET /api/ask 返回）：只有开启时才在 0 次时引导购买 */
+  const [enforced, setEnforced] = useState(false)
   const [error, setError] = useState('')
   const [exhausted, setExhausted] = useState(false)
   const listRef = useRef<HTMLDivElement>(null)
@@ -49,6 +51,7 @@ export default function AskPanel({
         if (!res.ok) return
         const data = await res.json().catch(() => null)
         if (!cancelled && typeof data?.remaining === 'number') setRemaining(data.remaining)
+        if (!cancelled && data?.enforced === true) setEnforced(true)
       } catch {
         // 忽略：仅影响剩余次数的展示
       }
@@ -108,6 +111,11 @@ export default function AskPanel({
   }
 
   const askPrice = formatPriceUSD(SKUS.ask_pack.priceUSD)
+  // ★ 额度耗尽判定（2026-10-21 修复）：原先只有收到 402 后才置 exhausted，
+  //   导致「从没买过 → 剩余 0」的新用户看不到任何购买入口（只能盲点追问换一句 402 文案）。
+  //   enforced 来自服务端（与 POST 里 `ENTITLEMENT_ENFORCE && remaining <= 0` 同一口径）：
+  //   内测期不催买，正式收费时剩余为 0 就直接给购买按钮。
+  const quotaOut = enforced && (exhausted || (remaining !== null && remaining <= 0))
 
   return (
     <div className="hw-c-box" style={{ marginTop: 20 }}>
@@ -158,8 +166,8 @@ export default function AskPanel({
 
       {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
 
-      {/* 额度耗尽 / 未购：购买入口（未登记 productId 时 CheckoutButton 显示「即将推出」） */}
-      {exhausted && (
+      {/* 额度耗尽：购买入口（未登记 productId 时 CheckoutButton 显示「即将推出」） */}
+      {quotaOut && (
         <div className="mb-3 rounded-2xl bg-gold/5 border border-gold/20 p-3">
           <p className="text-sm text-ink/80 mb-2">
             追问次数已用完。可购买追问包（{SKUS.ask_pack.desc} · {askPrice}）继续提问。
@@ -175,21 +183,22 @@ export default function AskPanel({
         </div>
       )}
 
-      {/* 输入区 */}
+      {/* 输入区（额度耗尽时禁用，避免每次点击都白跑一趟 402） */}
       <div className="flex gap-2">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') send() }}
-          placeholder="输入你的问题…"
+          placeholder={quotaOut ? '追问次数已用完，购买追问包后可继续' : '输入你的问题…'}
           maxLength={300}
-          className="flex-1 rounded-full border border-[#dedcf0] px-4 py-2 text-sm outline-none focus:border-[#3a66ff]"
+          disabled={quotaOut}
+          className="flex-1 rounded-full border border-[#dedcf0] px-4 py-2 text-sm outline-none focus:border-[#3a66ff] disabled:bg-paper-dark/30 disabled:cursor-not-allowed"
         />
         <button
           type="button"
           onClick={send}
-          disabled={sending || !input.trim()}
+          disabled={sending || quotaOut || !input.trim()}
           className="shrink-0 rounded-full bg-ink text-white px-5 py-2 text-sm font-semibold transition hover:brightness-110 disabled:opacity-60"
         >
           {sending ? '追问中…' : '追问'}
