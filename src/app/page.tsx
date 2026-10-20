@@ -293,6 +293,16 @@ export default function Home() {
                 <p>每天抽一张，看看今天的运势。</p>
               </div>
             </a>
+            {/* ★ 年运报告卡（2026-10-20 用户反馈：Bento 少这一项）。
+                DOM 顺序刻意放在 b4 与 b5 之间 —— 自动布局下它填满第 3 行空出的 4 列，
+                b5 仍落第 4 行整行（见 globals.css 的 .hw-b5 / .hw-b6 规则）。 */}
+            <a className="hw-card hw-b6 hw-metal" href="/liunian">
+              <span className="hw-z">运</span>
+              <div>
+                <h3>年运报告</h3>
+                <p>流年干支与原局冲合，事业、财运、感情、健康分维度解读。</p>
+              </div>
+            </a>
             <a className="hw-card hw-b5 hw-metal" href="/geo">
               <span className="hw-z">方</span>
               <div>

@@ -232,6 +232,13 @@ h1, h2, h3, .font-serif-sc {
 .hw-page a.bg-ink {
   color: #fff;
 }
+/* ★ 2026-10-20 修复（用户实测：首页「查看完整报告」黑按钮上看不见字）：
+   .hw-btnInk 是【单类】(0,1,0)，被上方 .hw-page a (0,1,1) 的 color:inherit 压过 ——
+   于是它的白字变成继承来的 --hw-ink 深色，与自身深底同色 ⇒ 整颗按钮一片漆黑。
+   用链式 (0,2,1) 接管，与 .hw-c-btnBig 同款做法。 */
+.hw-page a.hw-btnInk {
+  color: #fff;
+}
 .hw-page :focus-visible {
   outline: 3px solid var(--hw-water);
   outline-offset: 3px;
@@ -538,6 +545,11 @@ h1, h2, h3, .font-serif-sc {
   .hw-b5 {
     grid-column: span 6;
   }
+  /* ★ 年运报告卡（2026-10-20）：b4「每日日签」只占 2 列，第 3 行右侧空着 4 列 ——
+     本卡 span 4 恰好填满该行（DOM 里插在 b4 与 b5 之间，故 b5 仍落第 4 行整行）。 */
+  .hw-b6 {
+    grid-column: span 4;
+  }
 }
 .hw-card {
   display: flex;
@@ -583,6 +595,16 @@ h1, h2, h3, .font-serif-sc {
   gap: 20px;
 }
 .hw-b5 .hw-z {
+  font-size: 44px;
+}
+/* ★ 年运报告卡（2026-10-20）：与 b5 同款横向笼罩卡（大字在左、文案在右） */
+.hw-b6 {
+  flex-direction: row;
+  align-items: center;
+  min-height: 0;
+  gap: 20px;
+}
+.hw-b6 .hw-z {
   font-size: 44px;
 }
 .hw-sample {
