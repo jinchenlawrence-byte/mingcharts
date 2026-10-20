@@ -5,7 +5,7 @@
 // 纪律：链接清单与登录态逻辑不变；test-account-auth.mjs ③ 断言
 //   · href="/account" ≥ 1 且所在行不得含 hidden（移动端可点）
 //   · 全部站内 href 必须是真实路由（test-site-audit.mjs ③ 静态检查）
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
@@ -29,6 +29,9 @@ const NAV_LINKS: { href: string; label: string; hide?: 'md' | 'lg' }[] = [
 export default function Nav() {
   const router = useRouter()
   const [email, setEmail] = useState<string | null>(null)
+  // ★ 账号下拉开合（2026-10-20）：已登录的账号入口收成一个菜单，腾出顶栏横向空间
+  const [open, setOpen] = useState(false)
+  const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const supabase = getSupabase()
@@ -43,7 +46,25 @@ export default function Nav() {
     return () => subscription.unsubscribe()
   }, [])
 
+  // ★ 点菜单外部 / 按 Esc 自动收起（防菜单"粘住"）
+  useEffect(() => {
+    if (!open) return
+    const onDown = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDown)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDown)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
   const handleLogout = async () => {
+    setOpen(false)
     await getSupabase().auth.signOut()
     router.push('/')
   }
@@ -73,36 +94,79 @@ export default function Nav() {
               {l.label}
             </Link>
           ))}
-          {email ? (
-            <>
-              <Link href="/member" className={linkCls('md')}>
+        </div>
+        {/* ★ 已登录 → 账号下拉（2026-10-20）：把 6 个账号入口收成一个菜单。
+            背景：顶栏 16 项需约 1300px，而宽度上限 1080px —— 平铺必然有项被挤出屏幕
+            （用户两次实测：先「账号设置」被裁，钉住它之后「我的报告」又被裁）。
+            收起后内容链接一个不动、文字全保留（用户偏好：不以省略文字换空间）。
+            注意：菜单里的 /account 链接单独成行且不带 hidden 类（test-account-auth ③ 守护）。 */}
+        {email ? (
+          <div ref={menuRef} className="relative shrink-0">
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-haspopup="menu"
+              aria-expanded={open}
+              className="flex items-center gap-1.5 whitespace-nowrap rounded-full border border-ink/10 bg-white px-3 py-1.5 text-[13px] font-medium text-ink/70 transition-colors hover:border-ink/25 hover:text-ink sm:text-[15px]"
+            >
+              账号
+              <svg
+                viewBox="0 0 12 8"
+                aria-hidden="true"
+                className={`h-[7px] w-[11px] transition-transform ${open ? 'rotate-180' : ''}`}
+              >
+                <path d="M1 1.5 6 6.5l5-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+            <div
+              role="menu"
+              className={
+                open
+                  ? 'absolute right-0 top-full z-50 mt-2 w-[212px] rounded-2xl border border-ink/10 bg-white py-1.5 shadow-[0_18px_44px_-20px_rgba(27,24,56,0.45)]'
+                  : 'hidden'
+              }
+            >
+              <p className="truncate border-b border-ink/10 px-3.5 pb-2.5 text-[12px] text-ink/40">
+                {email}
+              </p>
+              <Link
+                href="/member"
+                onClick={() => setOpen(false)}
+                className="block px-3.5 py-2 text-[14px] text-ink/70 transition-colors hover:bg-ink/5 hover:text-ink"
+              >
                 会员中心
               </Link>
-              <Link href="/charts" className={linkCls('md')}>
+              <Link
+                href="/charts"
+                onClick={() => setOpen(false)}
+                className="block px-3.5 py-2 text-[14px] text-ink/70 transition-colors hover:bg-ink/5 hover:text-ink"
+              >
                 我的命盘
               </Link>
-              <Link href="/reports" className={linkCls('md')}>
+              <Link
+                href="/reports"
+                onClick={() => setOpen(false)}
+                className="block px-3.5 py-2 text-[14px] text-ink/70 transition-colors hover:bg-ink/5 hover:text-ink"
+              >
                 我的报告
               </Link>
-              <span className="max-w-[160px] truncate text-ink/40 hidden sm:inline">
-                {email}
-              </span>
-              <button
-                onClick={handleLogout}
-                className="whitespace-nowrap text-ink/50 transition-colors hover:text-ink"
+              <Link
+                href="/account"
+                onClick={() => setOpen(false)}
+                className="block px-3.5 py-2 text-[14px] text-ink/70 transition-colors hover:bg-ink/5 hover:text-ink"
               >
-                退出
+                账号设置
+              </Link>
+              <div className="my-1 h-px bg-ink/10" />
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="block w-full px-3.5 py-2 text-left text-[14px] text-ink/50 transition-colors hover:bg-ink/5 hover:text-ink"
+              >
+                退出登录
               </button>
-            </>
-          ) : null}
-        </div>
-        {/* ★ 账号入口钉在横滑条带【之外】（2026-10-20 用户实测：登录后「账号设置」被挤出屏幕）。
-            与登出态的「登录 / 注册」同款处理 —— shrink-0 让它永不随内容横滑跑出可视区。
-            注意：此链接不得加「响应式隐藏」类（test-account-auth 守护：移动端必须可点）。 */}
-        {email ? (
-          <Link href="/account" className="shrink-0 whitespace-nowrap text-ink/60 transition-colors hover:text-ink">
-            账号设置
-          </Link>
+            </div>
+          </div>
         ) : (
           <Link
             href="/auth"
