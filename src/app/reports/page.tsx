@@ -136,11 +136,11 @@ export default function MyReports() {
             合婚、紫微、地理、年运报告生成后自动保存于此，可反复回看；已购的八字命书也会显示在这里
           </p>
 
-          {/* Waffo 客户门户：为后续会员订阅的改卡/取消铺路；本轮订阅未上线，仅放链接 */}
+          {/* Waffo 客户门户：会员订阅的查看账单/更换卡片/取消续费自助入口 */}
           <div className="hw-c-box p-4! mb-6 flex items-center justify-between gap-4">
             <div className="text-sm">
               <span className="font-semibold text-ink">管理订阅</span>
-              <span className="text-ink-light/40 ml-2">（订阅功能开放后可用：查看账单、更换卡片、取消续费）</span>
+              <span className="text-ink-light/40 ml-2">（查看账单、更换卡片、取消续费）</span>
             </div>
             <a
               href={WAFFO_PORTAL_URL}
