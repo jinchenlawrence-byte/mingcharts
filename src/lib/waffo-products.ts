@@ -16,15 +16,16 @@ export const WAFFO_PORTAL_URL = 'https://pancake.waffo.ai/consumer/portal/login'
 // ★ 映射为空的 SKU，购买入口显示「即将推出」（见 waffoProductId 与 pricing 页）。
 // ─────────────────────────────────────────────────────────────
 export const WAFFO_PRODUCTS: Partial<Record<SkuId, string>> = {
-  // 命书报告（29.99 USD 一次性）—— Dashboard 商品 ID
-  fatebook: 'PROD_1H2rQWsIKwlqkHG3xMR01v',
-  // ★ 2026-10-15 KYB 前建齐的 5 个单次商品（一次性 · USD）：
-  //   清掉定价页「即将推出」占位（Waffo 驳回原因之一），同时铺开收费 SKU
-  annual_report: 'PROD_20CtFwrNYJQhg8MzIlSjW7',   // 年运报告 19.99
-  hemun: 'PROD_5kh2QzFYoJe5yT5d1otzNf',           // 合婚详批 29.99
-  ziwei_deep: 'PROD_7GDUSvdGALlj7Qcs14sa4Z',      // 紫微深度 24.99
-  geo: 'PROD_6q01k9z1RWAL6WtmNvTpgp',             // 地理财富之城 19.99
-  bundle3: 'PROD_28gtfik2BVN7O3m6KX2PVG',         // 三合一套餐 59.99
+  // ★ 2026-10-20 生产模式重建：KYB 前用测试凭证建的 6 个一次性商品只存在于测试环境，
+  //   生产环境不可售（生产商品页仅有 3 个）。以下 ID 均由 scripts/create-onetime-products.mjs
+  //   用【生产凭证】创建，create 即在生产环境生效（无 test 版本，publish 报 "No test version found"），
+  //   且返回 status=active。旧的测试期 ID 全部作废，勿再回填。
+  fatebook: 'PROD_270okvTySVw9a1PLgDzztx',        // 命书报告 29.99
+  annual_report: 'PROD_67Q7GKTsYIwM6A6WTIfQY9',   // 年运报告 19.99
+  hemun: 'PROD_1Ur7Ynk5PFHnfdhR7o5zmT',           // 合婚详批 29.99
+  ziwei_deep: 'PROD_4UxLvqRLDWOMXDqfBzvxg8',      // 紫微深度 24.99
+  geo: 'PROD_5vUHNzUwk8s7ZaibCA7RGW',             // 地理财富之城 19.99
+  bundle3: 'PROD_09JkneP2vxlCwL4L0hs31B',         // 三合一套餐 59.99
   // ★ 会员订阅（档 C 2026-10-18 建档，2026-10-19 登记）：由 scripts/create-subscription-products.mjs
   //   创建并发布（subscriptionProducts.create + publish），已向渠道复核价格/周期/状态均为 active。
   //   登记规则不变：productId 只在【本映射这一处】登记。
