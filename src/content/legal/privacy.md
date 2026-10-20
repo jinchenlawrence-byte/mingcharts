@@ -1,6 +1,6 @@
 # Privacy Policy — MingCharts
 
-> **状态**：v0.2 定稿（2026-10-09），**待发布**
+> **状态**：v0.3 定稿（2026-10-20），**待发布**
 > **基座**：Waffo Pancake 官方 [Privacy Policy 模板](https://docs.waffo.ai/mor/account-reviews/privacy-policy)（GDPR/CCPA 感知）
 > **本次修订依据**：Waffo 三份官方清单（我方已取全文并逐条对照）
 > · [Account Reviews 总清单](https://docs.waffo.ai/mor/account-reviews)
@@ -26,6 +26,7 @@
 | 10 | §13 政策变更通知 15 天 → **30 天**（与 ToS 一致） | 两份文件应相互一致 |
 | 11 | 新增 **§15 版本记录** | Waffo Tip：「keep a version log with effective dates」 |
 | 12 | **★ §1 数据控制者写明"自然人、无营业地址"** | 同上 |
+| 13 | **★ §2.1/§5/§10 补 Google 作为第三方登录身份提供方** | 新增「使用 Google 登录」后 Google 会成为认证数据接收方（邮箱、姓名、头像 URL）——如实披露，不漏列第三方 |
 
 **★ 已查实的事实（写入本文）**：
 
@@ -49,7 +50,7 @@
 
 **MingCharts**
 
-Last Updated: 2026-10-09
+Last Updated: 2026-10-20
 
 **Jin Chen (金晨)**, an **individual (natural person)** operating under the laws of the People's Republic of China ("we", "us", or "our"), operates MingCharts and is committed to protecting your privacy. This Privacy Policy ("Policy") explains how we collect, use, store, and share your personal information when you use MingCharts (the "Service"), and the rights available to you.
 
@@ -70,6 +71,7 @@ The data controller for this Service is:
 ### 2.1 Information You Provide Directly
 
 - **Account Information**: email address, password (stored hashed), display name (optional).
+- **Third-Party Sign-In (Google)**: if you choose to sign in with Google, we receive from Google your **email address, name, and profile picture URL**, which we use to create and identify your account. We receive nothing else, and **we never receive your Google password**. You can use email and password instead at any time.
 - **★ Birth Information**: birth date, birth time, birth place (city and, optionally, longitude/time zone), and gender. **We need this information to calculate your chart — the Service cannot function without it.**
 - **Chart & Reading Data**: your calculated charts, generated reports, and daily readings. Reports and readings may include fortune-tier tendency labels (seven tiers, rendered in Chinese as 大吉 through 大凶); these are **tendency descriptions** derived from your chart data, not action recommendations, and they do not predict specific events.
 - **Communications**: emails, support requests, and feedback you send us.
@@ -127,6 +129,7 @@ You can clear cookies and local storage at any time through your browser setting
 
 - **Merchant of Record / Payment Processing**: Payment card data is processed exclusively by our PCI-DSS certified payment processor, **Waffo Pancake**, acting as **Merchant of Record**. Waffo Pancake is the seller of record for your purchase and handles payment processing and applicable tax collection on the transaction. Card data is **never stored on our servers**.
 - **AI Model Provider**: To generate interpretive content, your **input** — which may include your birth information, your chart data, and any question you type — is transmitted to **DeepSeek** (model `deepseek-chat`) for processing. We do **not** transmit your name, email address, account password, or payment information to AI providers.
+- **Third-Party Sign-In Provider (Google)**: if you choose the "Sign in with Google" option, **Google** acts as the identity provider that authenticates you, and we receive only your **email address, name, and profile picture URL** (see Section 2.1). If you do not use that option, no data is shared with Google for this purpose.
 - **Infrastructure Providers**: cloud hosting and database services — **Supabase** (database and authentication) and **Vercel** (website hosting) — bound by confidentiality obligations.
 - **Legal Requirements**: where required by law, court order, or a lawful regulatory request.
 - **Business Transactions**: in a merger, acquisition, or similar event, with advance notice and continued protections.
@@ -188,6 +191,7 @@ If we introduce marketing communications in the future, we will do so only **wit
 | **Vercel** | Website hosting and server functions | **United States** (`iad1`) |
 | **DeepSeek** | AI text generation | **China** |
 | **Waffo Pancake** | Payment processing / Merchant of Record | as required to process payments |
+| **Google** | Third-party sign-in (identity provider) — **only if you choose Google sign-in** | **United States** / global infrastructure |
 
 Our service providers may be located outside your country of residence, so your personal data may be transferred internationally. Where personal data is transferred internationally, we safeguard it through:
 
@@ -234,6 +238,7 @@ We keep a version log so that it is possible to establish which version of this 
 
 | Version | Effective date | Summary of changes |
 |---|---|---|
+| v0.3 | **2026-10-20** | Added disclosure for the optional **"Sign in with Google"** method: Google is named as an identity provider and as a recipient of authentication data (email address, name, profile picture URL) in Sections 2.1, 5, and 10. Email-and-password accounts are unchanged — no new data is collected for them. |
 | v0.2 | **2026-10-09** | First published version. Aligned to Waffo Pancake merchant requirements: named the Merchant of Record; specific AI model disclosure (`deepseek-chat`); storage locations stated (US `us-east-1` / US `iad1` / China); client-side storage documented accurately including `localStorage`; explicit statement that no analytics or advertising trackers are used; retention periods set to real terms; single monitored contact address. |
 | v0.1 | — (unpublished draft) | Initial draft based on the Waffo Pancake privacy policy template. |
 

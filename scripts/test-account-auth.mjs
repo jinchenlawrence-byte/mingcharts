@@ -6,6 +6,8 @@
 //     （提取 handler 块做大括号平衡扫描，锚定「调用在 handler 里」而非「文本在文件里」）
 //   · 两态断言 = reset-password 页同时含「有会话→表单」与「无会话→提示+重新请求」两条分支
 import { readFileSync, existsSync } from 'node:fs'
+// ★ Google 登录（2026-10-20）：safeNext 真调纯函数做【行为断言】，不是文本扫描
+import { safeNext } from '../src/lib/safeNext.ts'
 
 let allPass = true
 const ok = (m) => console.log('  ✓ ' + m)
@@ -255,6 +257,78 @@ console.log('—— ⑤ Turnstile 人机验证接线 ——')
   const tsRaw = read('../src/components/Turnstile.tsx')
   assert(!authTouched.includes('TURNSTILE_SECRET_KEY') && !tsRaw.includes('TURNSTILE_SECRET_KEY'),
     'TURNSTILE_SECRET_KEY 不得出现在前端代码（只填 Supabase 后台）')
+}
+
+// ═══════════════════════════════════════════════════════════
+// ⑥ Google 第三方登录（2026-10-20）：接线级断言 + safeNext 行为断言
+//    §四-2 纪律同款：不只看文案/文件存在，要锚定「调用在手写处理函数体内」。
+// ═══════════════════════════════════════════════════════════
+console.log('—— ⑥ Google 第三方登录 ——')
+
+{
+  // ★ 流型守护：整体保持 implicit（不切 PKCE）——切 PKCE 会让「邮件重置链接在
+  //   另一台设备/另一个浏览器打开」失效（code_verifier 只存在发起登录的浏览器里）。
+  //   牙口：若给 createClient 加 flowType:'pkce' 或 detectSessionInUrl:false → 本断言翻红。
+  const sb = stripComments(read('../src/lib/supabase.ts'))
+  assert(!/flowType\s*:\s*['"]pkce['"]/.test(sb) && !/detectSessionInUrl\s*:\s*false/.test(sb),
+    'supabase.ts 保持 implicit 流（未切 PKCE，邮件重置的跨设备可用性不被破坏）')
+}
+
+{
+  // /auth 页：Google 按钮与处理函数
+  assert(/NEXT_PUBLIC_GOOGLE_AUTH_ENABLED/.test(authCode),
+    '/auth 页由 NEXT_PUBLIC_GOOGLE_AUTH_ENABLED 开关控制（凭据未就绪时按钮不渲染）')
+  assert(/GOOGLE_ENABLED\s*&&/.test(authCode),
+    'Google 块以 GOOGLE_ENABLED && 守卫渲染（关闭时页面上不存在该按钮）')
+
+  const gHandler = extractHandler(authCode, 'handleGoogle')
+  assert(gHandler !== null, '/auth 页存在处理函数 handleGoogle')
+  if (gHandler) {
+    assert(/signInWithOAuth\(/.test(gHandler),
+      'signInWithOAuth( 在 handleGoogle 处理函数体内（接线非文案）')
+    assert(/provider:\s*'google'/.test(gHandler), "provider 为 'google'")
+    assert(/\/auth\/callback/.test(gHandler),
+      'redirectTo 指向 /auth/callback（与邮件确认复用同一路由）')
+    assert(/safeNext\(/.test(gHandler), 'next 经 safeNext 白名单校验（防开放重定向）')
+    assert(!/captchaToken/.test(gHandler),
+      'handleGoogle 不传 captchaToken（OAuth 端点不接受该参数）')
+  }
+  // 既有流程未被扰动：忘记密码防账号枚举结构仍是原样（②已断言，此处只钉子表入口）
+  const aH = extractHandler(authCode, 'handleAuth')
+  assert(aH !== null && (aH.split('options: { captchaToken').length - 1) >= 2,
+    'handleAuth 的 Turnstile 接线未被 Google 改动（仍 ≥2 处 options.captchaToken）')
+}
+
+{
+  // auth/callback 页：三态分派
+  const cb = stripComments(read('../src/app/auth/callback/page.tsx'))
+  assert(/getSession\(/.test(cb), 'auth/callback 读会话（getSession）——OAuth 回流取会话的前提')
+  assert(cb.includes('access_denied'), 'auth/callback 处理用户取消授权（access_denied）')
+  assert(cb.includes('error_description'), 'auth/callback 展示渠道失败原因（error_description）')
+  assert(/safeNext\(/.test(cb), 'auth/callback 用 safeNext 白名单校验 next')
+  assert(/verifyOtp\(\s*\{\s*token_hash/.test(cb) && cb.includes("'/reset-password'"),
+    '邮件确认/重置链路未被 OAuth 分支挤掉（verifyOtp 与 recovery 跳转均在）')
+}
+
+{
+  // ★ safeNext 行为断言（真调纯函数）：开放重定向的每一种绕过写法都必须落回首页
+  assert(safeNext('//evil.com') === '/', 'safeNext 挡协议相对地址 //evil.com')
+  assert(safeNext('https://evil.com') === '/', 'safeNext 挡绝对地址 https://evil.com')
+  assert(safeNext('/\\evil.com') === '/', 'safeNext 挡反斜杠变体 /\\evil.com')
+  assert(safeNext('/%2F%2Fevil.com') === '/', 'safeNext 先解码再校验（挡 %2F%2F 编码绕过）')
+  assert(safeNext('/javascript:alert(1)') === '/', 'safeNext 挡伪协议 /javascript:')
+  assert(safeNext('/member') === '/member', 'safeNext 放行站内路径 /member')
+  assert(safeNext('/daily?x=1') === '/daily?x=1', 'safeNext 放行带查询串的站内路径')
+  assert(safeNext(null) === '/' && safeNext(undefined) === '/', 'safeNext 空值回退首页')
+  assert(safeNext('//evil.com', '/daily') === '/daily', 'safeNext 按调用方指定的 fallback 回退')
+}
+
+{
+  // 隐私政策：新第三方接收方必须如实披露（合规，不能漏列）
+  const priv = read('../src/content/legal/privacy.md')
+  assert(/Sign in with Google/.test(priv), 'privacy.md 披露「Sign in with Google」这一登录方式')
+  assert(/Third-Party Sign-In/i.test(priv), 'privacy.md 列 Google 为第三方登录身份提供方（§2.1/§5）')
+  assert(priv.includes('v0.3'), 'privacy.md 版本记录已加 v0.3（改动可追溯）')
 }
 
 console.log('\n' + (allPass ? 'ACCOUNT_AUTH_PASS' : 'ACCOUNT_AUTH_FAIL'))
