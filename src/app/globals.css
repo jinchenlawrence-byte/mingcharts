@@ -1881,6 +1881,57 @@ h1, h2, h3, .font-serif-sc {
 .hw-page .hw-pv-head {
   margin-bottom: 12px;
 }
+/* 顶部「试读 · 非完整命书」徽章：琥珀底、加粗，先于正文建立「这是节选」的心智 */
+.hw-page .hw-pv-headRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 6px;
+}
+.hw-page .hw-pv-badge {
+  padding: 3px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(181, 131, 44, .35);
+  background: rgba(181, 131, 44, .14);
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .02em;
+  color: var(--hw-earthInk);
+  white-space: nowrap;
+}
+.hw-page .hw-pv-em {
+  color: var(--hw-earthInk);
+  font-weight: 800;
+}
+/* 试读卡末尾：标明本节字数与完整版下限，直接消除「就这些字」的误解 */
+.hw-page .hw-pv-cap {
+  margin: 10px 0 0;
+  padding-top: 8px;
+  border-top: 1px dashed var(--hw-line);
+  font-size: 12px;
+  line-height: 1.7;
+  font-weight: 700;
+  color: var(--hw-earthInk);
+}
+/* 试读区与付费区的分隔条：把「免费」和「完整命书」从视觉上断开 */
+.hw-page .hw-pv-div {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 14px;
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--hw-mute);
+  white-space: nowrap;
+}
+.hw-page .hw-pv-div::before,
+.hw-page .hw-pv-div::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--hw-line);
+}
 .hw-page .hw-pv-card {
   margin-bottom: 12px;
 }

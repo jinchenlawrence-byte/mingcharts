@@ -85,7 +85,7 @@ interface ChartData {
   locked?: { skus: string[]; preview: string } | null
   // ★ 命书试读（2026-10-21）：未解锁时由 /api/paipan 用规则引擎下发，前两卷全文 + 其余八卷短引
   free?: {
-    fatebookPreview?: { free: string[]; rest: string[] } | null
+    fatebookPreview?: { free: string[]; rest: string[]; fullMinChars?: number } | null
   } | null
 }
 
@@ -555,13 +555,21 @@ export default function ChartPage() {
         </div>
 
         {/* ★ 命书试读（2026-10-21）：前两卷规则版全文免费；其余八卷只给短引并做模糊处理。
-            全部由服务端规则引擎按本盘推算，不调用 AI；完整命书仍是 AI 精批。 */}
+            全部由服务端规则引擎按本盘推算，不调用 AI；完整命书仍是 AI 精批。
+            ★ 防误解：顶部「试读 · 规则版简批」徽章 + 每卷末注明「本节 N 字，完整版为 AI 另写」+ 试读/付费分隔条，
+              避免用户把规则版这点字当成命书全文（2026-10-21 用户反馈）。 */}
         {fatebookPreview && (
           <div className="hw-pv">
             <div className="hw-pv-head">
-              <h3 className="hw-c-secTitle">命书试读 · 前两卷</h3>
+              <div className="hw-pv-headRow">
+                <h3 className="hw-c-secTitle">命书试读</h3>
+                <span className="hw-pv-badge">试读 · 规则版简批</span>
+              </div>
               <p className="hw-c-meta">
-                以下由规则引擎按你的四柱直接推算（不调用 AI），可先看文风与判断；完整命书为 AI 精批的万字全文。
+                下面两卷是<b className="hw-pv-em">规则版简批</b>：由规则引擎按你的四柱直接推算，只给结论，不调用 AI，
+                因此篇幅短、没有展开。付费命书是<b className="hw-pv-em">另一套写法</b>——AI 依据同盘逐卷精批
+                {fatebookPreview.fullMinChars ? <>，十卷合计不少于 {fatebookPreview.fullMinChars} 字</> : <>，十卷合计约万字</>}
+                ，并附岁运时间轴与古籍命例。
               </p>
             </div>
 
@@ -569,8 +577,13 @@ export default function ChartPage() {
               <article key={VOLS[i]} className="hw-c-box hw-pv-card">
                 <h4 className="hw-pv-title"><i>卷{CN_NUM[i]}</i>{VOLS[i]}</h4>
                 <p className="hw-c-body">{text}</p>
+                <p className="hw-pv-cap">
+                  规则版简批 · 本节 {text.length} 字；完整命书此卷为 AI 精批版本，非本节扩写
+                </p>
               </article>
             ))}
+
+            <div className="hw-pv-div"><span>试读到此为止 · 以下八卷属完整命书</span></div>
 
             <div className="hw-pv-rest">
               {fatebookPreview.rest.map((text, i) => {
@@ -586,7 +599,7 @@ export default function ChartPage() {
               })}
             </div>
             <p className="hw-pv-note">
-              试读为规则版推断，措辞较简；完整命书由 AI 结合格局、调候与岁运综合撰写（约万字，永久回看）。
+              以上八卷的规则版底稿已按你的命盘算好；解锁后由 AI 逐卷重写精批，与这两卷试读不是同一份文字。
             </p>
           </div>
         )}

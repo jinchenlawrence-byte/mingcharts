@@ -1256,6 +1256,12 @@ export interface FatebookPreview {
   free: [string, string]
   /** 其余八卷短引（每条 1–2 句） */
   rest: string[]
+  /**
+   * 完整命书「十卷合计」的字数下限（取自 aiAnalysis.SECTION_SPECS 求和，由 /api/paipan 注入）。
+   * 用于说明试读只是简批、完整版体量另有多大——不做逐卷字数对比：
+   * 规则版个别卷可能比 AI 版下限还长，逐卷比反而会造成新的误导。
+   */
+  fullMinChars?: number
 }
 
 /** 取首句（长度 >= 24 才当整句，否则退化为 90 字截断），给正文做「可读但成不了篇」的引子 */
