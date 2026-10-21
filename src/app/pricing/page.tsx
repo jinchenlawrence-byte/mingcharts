@@ -10,6 +10,7 @@ import {
   formatPriceUSD,
   ONE_TIME_SKUS,
   ASK_PACK_SIZE,
+  MEMBER_ASK_PER_MONTH,
   type GrantId,
   type SkuId,
 } from '@/lib/pricing'
@@ -18,7 +19,7 @@ import { GRANT_LABELS } from '@/lib/grantLabels'
 
 export const metadata = {
   title: `价格方案：免费排盘 · 命书报告 ${formatPriceUSD(SKUS.fatebook.priceUSD)} · 会员订阅`,
-  description: `八字命理服务价格：免费四柱排盘；${formatPriceUSD(SKUS.fatebook.priceUSD)} 解锁万字命书深度详批（八字总览、性格天赋、用神喜忌、格局成败、调候、大运流年、事业财运、婚姻感情、子女六亲、健康提示）；会员订阅提供日运、流月等持续型内容（即将推出），不含命书等报告。`,
+  description: `八字命理服务价格：免费四柱排盘；${formatPriceUSD(SKUS.fatebook.priceUSD)} 解锁万字命书深度详批（八字总览、性格天赋、用神喜忌、格局成败、调候、大运流年、事业财运、婚姻感情、子女六亲、健康提示）；会员订阅提供日运、流月等持续型内容，另含每月 ${MEMBER_ASK_PER_MONTH} 次追问，不含命书等报告。`,
 }
 
 // ★ 纯展示层：grant → 中文标签已抽到 @/lib/grantLabels（单一事实源，会员中心页共用）。
@@ -113,7 +114,8 @@ const CARDS: PriceCard[] = [
     membership: true,
     // ★ 权益逐项派生自 SUBSCRIPTION_GRANTS：grants 表改了这里自动跟着变，不另写字面量
     features: [
-      ...SUBSCRIPTION_GRANTS.map((g) => `${GRANT_LABELS[g]}（即将推出）`),
+      ...SUBSCRIPTION_GRANTS.map((g) => GRANT_LABELS[g]),
+      `每月 ${MEMBER_ASK_PER_MONTH} 次 AI 追问（解锁命书后使用）`,
       `年度会员 ${formatPriceUSD(SKUS.member_yearly.priceUSD)}/年（主推，更划算）`,
       '命书 / 年运等深度报告需按次单独购买',
     ],
@@ -132,7 +134,7 @@ const FAQS = [
   },
   {
     q: '会员包含命书等报告吗？',
-    a: `不包含。会员是持续型内容订阅，权益为${SUBSCRIPTION_LABELS}（功能陆续上线，现阶段标「即将推出」）；${REPORT_SKU_NAMES}等深度报告均需按次单独购买（命书 ${formatPriceUSD(SKUS.fatebook.priceUSD)}/次）。续费时会员有效期会从原到期日向后叠加。`,
+    a: `不包含。会员是持续型内容订阅，权益为${SUBSCRIPTION_LABELS}，另含每月 ${MEMBER_ASK_PER_MONTH} 次 AI 追问（按自然月重置、不累计，在解锁命书后的命盘页提问）；${REPORT_SKU_NAMES}等深度报告均需按次单独购买（命书 ${formatPriceUSD(SKUS.fatebook.priceUSD)}/次）。续费时会员有效期会从原到期日向后叠加。`,
   },
   {
     q: '购买后可以反复查看吗？',
@@ -160,8 +162,8 @@ interface CompareRow {
   free: boolean
   /** 本行对应的能力；缺省表示免费层自带，两付费列都打勾 */
   grant?: GrantId
-  /** 订阅类能力尚未上线，标签缀「即将推出」 */
-  coming?: boolean
+  /** 会员列单独覆盖（如「追问」为额度型权益，不在 SUBSCRIPTION_GRANTS 内） */
+  member?: boolean
   /** 行尾补充说明（如单项报告的「单项购买 $19.99」） */
   note?: string
 }
@@ -180,14 +182,20 @@ const COMPARE_ROWS: CompareRow[] = [
     note: `单项购买 ${formatPriceUSD(SKUS.annual_report.priceUSD)} · 覆盖今年/明年/后年三年`,
   },
   ...SUBSCRIPTION_GRANTS.map((g) => ({
-    label: GRANT_LABELS[g], free: false, grant: g, coming: true,
+    label: GRANT_LABELS[g], free: false, grant: g,
   })),
+  // ★ 追问为「额度型」权益：会员每月 8 次，非会员/超额走追问包（10 次 / $4.99）。
+  //   次数与价格全部派生自 pricing.ts，不写死数字。
+  {
+    label: 'AI 命理师追问', free: false, grant: 'ask', member: true,
+    note: `解锁命书后使用 · 会员每月 ${MEMBER_ASK_PER_MONTH} 次 · 追问包 ${formatPriceUSD(SKUS.ask_pack.priceUSD)}/${ASK_PACK_SIZE} 次`,
+  },
 ]
 
 function compareCells(row: CompareRow): [boolean, boolean, boolean] {
   // 免费层行（无 grant）两付费列天然包含；其余逐 grants 表现查
   const inFatebook = row.grant ? SKUS.fatebook.grants.includes(row.grant) : true
-  const inMember = row.grant ? SUBSCRIPTION_GRANTS.includes(row.grant) : true
+  const inMember = row.member ?? (row.grant ? SUBSCRIPTION_GRANTS.includes(row.grant) : true)
   return [row.free, inFatebook, inMember]
 }
 
@@ -319,7 +327,8 @@ export default function PricingPage() {
         <section className="mb-14">
           <h2 className="hw-c-h2 hw-c-h2C">追问包</h2>
           <p className="text-sm text-ink-light text-center mb-6">
-            解锁命书后，可就你的命盘向 AI 命理师追问具体问题；追问包按次计，用完可续购。
+            解锁命书后，可就你的命盘向 AI 命理师追问；会员每月含 {MEMBER_ASK_PER_MONTH} 次，
+            超出或非会员可购买追问包，按次计、用完可续购。
           </p>
           <div className="hw-c-box flex flex-col gap-4 max-w-3xl mx-auto">
             <div className="flex items-start justify-between gap-4">
@@ -379,9 +388,6 @@ export default function PricingPage() {
                     <tr key={row.label}>
                       <td>
                         {row.label}
-                        {row.coming && (
-                          <span className="ml-2 text-xs text-[#3a66ff]">即将推出</span>
-                        )}
                         {row.note && (
                           <span className="ml-2 text-xs text-ink-light/40 whitespace-normal">{row.note}</span>
                         )}
