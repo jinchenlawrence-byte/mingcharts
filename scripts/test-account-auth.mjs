@@ -331,5 +331,23 @@ console.log('—— ⑥ Google 第三方登录 ——')
   assert(priv.includes('v0.3'), 'privacy.md 版本记录已加 v0.3（改动可追溯）')
 }
 
+{
+  // ★ 安全守护（2026-10-21）：profiles 不得开放自助 UPDATE。
+  //   原因：is_member / member_expire_at 是权益判定输入（entitlement.ts），
+  //   开放列级不受限的 UPDATE 等于允许用户自行开通会员。
+  //   牙口：把 schema.sql 里那段 DROP/REVOKE 换回 CREATE POLICY → 本段精确翻红。
+  const schema = read('../supabase/schema.sql')
+  assert(!/CREATE POLICY "Users can update own profile"/.test(schema),
+    'schema.sql 不再创建 profiles 自助更新策略（防会员权益自授）')
+  assert(/DROP POLICY IF EXISTS "Users can update own profile" ON profiles/.test(schema),
+    'schema.sql 显式 DROP 旧策略（已有库升级也安全）')
+  assert(/REVOKE UPDATE ON profiles FROM anon, authenticated/.test(schema),
+    'schema.sql 收回 profiles 的表级 UPDATE 权限（双保险）')
+  const mig = read('../supabase/profiles-rls.sql')
+  assert(/DROP POLICY IF EXISTS "Users can update own profile"/.test(mig)
+    && /REVOKE UPDATE ON profiles FROM anon, authenticated/.test(mig),
+    'profiles-rls.sql 迁移与 schema.sql 同源（补跑口径一致）')
+}
+
 console.log('\n' + (allPass ? 'ACCOUNT_AUTH_PASS' : 'ACCOUNT_AUTH_FAIL'))
 if (!allPass) process.exit(1)

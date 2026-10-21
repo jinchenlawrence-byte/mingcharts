@@ -99,12 +99,19 @@ ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE charts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
 
--- profiles: 用户只能查看/更新自己的档案
+-- profiles: 用户只能查看自己的档案
 CREATE POLICY "Users can view own profile" ON profiles
   FOR SELECT USING (auth.uid() = id);
 
-CREATE POLICY "Users can update own profile" ON profiles
-  FOR UPDATE USING (auth.uid() = id);
+-- ★ 安全修复（2026-10-21）：【删除】「用户可更新自己档案」策略。
+--   原策略 `FOR UPDATE USING (auth.uid() = id)` 未限制列，而 profiles.is_member /
+--   member_expire_at 正是权益判定的输入（entitlement.ts → entitlementsFromRows）。
+--   后果：任何免费注册用户都能用公开的 anon key 直接 PATCH 自己的档案，
+--   把 is_member 置 true、member_expire_at 置到 2099 年，白拿会员权益（每天/流月/交运/
+--   多命盘/相似案例/历史）。应用侧从不经客户端更新 profiles（会员写入一律走 service_role），
+--   故删除不影响任何功能。已有数据库补跑 supabase/profiles-rls.sql。
+DROP POLICY IF EXISTS "Users can update own profile" ON profiles;
+REVOKE UPDATE ON profiles FROM anon, authenticated;
 
 -- charts: 用户只能查看/创建自己的命盘
 CREATE POLICY "Users can view own charts" ON charts
