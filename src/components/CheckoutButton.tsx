@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
 import { latestChartIdOf } from '@/lib/entitlement'
+import { track } from '@/lib/track'
 import type { SkuId } from '@/lib/pricing'
 
 // 购买按钮：登录 → 预检命盘 → POST /api/checkout → 跳转 Waffo 托管收银台。
@@ -53,6 +54,8 @@ export default function CheckoutButton({
 
   const handleClick = async () => {
     if (loading) return
+    // 流量漏斗：点击购买（在登录跳转之前记，未登录用户也要算进来）
+    track('pay_click', { sku })
     setError('')
     setNoChart(false)
     setLoading(true)

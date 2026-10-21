@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
 import PwaRegister from "@/components/PwaRegister";
+import TrackPageView from "@/components/TrackPageView";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -58,6 +59,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
     >
       <body className="min-h-full flex flex-col bg-paper text-ink">
         {children}
+        {/* 流量漏斗：每次路由变化上报一条 page_view（不采集命理内容与个人信息） */}
+        <TrackPageView />
         {/* PWA：注册 Service Worker（仅 https/localhost 生效，静默失败） */}
         <PwaRegister />
         {/* GeoNames 署名（CC BY 4.0 要求）：全球城市数据来自 geonames.org */}

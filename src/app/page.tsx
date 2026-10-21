@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
+import { track } from '@/lib/track'
 
 // 示例命盘（壬子日主）：点柱看释义，静态演示不调 API
 const PILLARS: {
@@ -134,6 +135,8 @@ export default function Home() {
       const data = await res.json()
 
       if (data.success) {
+        // 流量漏斗：记录「提交并成功排盘」（失败不记，避免把报错算成转化）
+        track('paipan_submit')
         // 存储到localStorage，跳转到结果页
         localStorage.setItem('currentChart', JSON.stringify(data.data))
         router.push('/chart')
