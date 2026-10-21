@@ -1,9 +1,9 @@
 // AI 追问（ask_pack）验收（docs/追问功能实现方案）
-// 覆盖：① 次数单一事实源（ASK_PACK_SIZE / MEMBER_ASK_PER_MONTH）② 硬拒答分类 ③ 拒答/免责话术自证合规
-//       ④ askQuotaFromRows 派生额度边界（追问包 + 会员每月）⑤ route 接线（拒答先于 AI 调用、额度 402、落库）
-//       ⑥ 合规示范自证（复用 FORBIDDEN_FEWSHOT + 问答场景整句）
+// 覆盖：① 次数单一事实源（ASK_PACK_SIZE / MEMBER_ASK_PER_MONTH / ASK_PER_REPORT）② 硬拒答分类
+//       ③ 拒答/免责话术自证合规 ④ askQuotaFromRows 派生额度边界（追问包 + 报告赠送 + 会员每月）
+//       ⑤ route 接线（付费门槛、拒答先于 AI 调用、额度 402、落库）⑥ 合规示范自证
 import { readFileSync } from 'node:fs'
-import { SKUS, ASK_PACK_SIZE, MEMBER_ASK_PER_MONTH } from '../src/lib/pricing.ts'
+import { SKUS, ASK_PACK_SIZE, MEMBER_ASK_PER_MONTH, ASK_PER_REPORT } from '../src/lib/pricing.ts'
 import { GRANT_LABELS } from '../src/lib/grantLabels.ts'
 import { askQuotaFromRows, askMonthStart } from '../src/lib/entitlement.ts'
 import {
@@ -25,6 +25,7 @@ const strip = (s) => s.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
   let f = 0
   if (ASK_PACK_SIZE !== 10) { f++; fail(`ASK_PACK_SIZE 应为 10，实得 ${ASK_PACK_SIZE}`) }
   if (MEMBER_ASK_PER_MONTH !== 8) { f++; fail(`MEMBER_ASK_PER_MONTH 应为 8，实得 ${MEMBER_ASK_PER_MONTH}`) }
+  if (ASK_PER_REPORT !== 5) { f++; fail(`ASK_PER_REPORT 应为 5，实得 ${ASK_PER_REPORT}`) }
   // desc / 标签必须由常量派生，不得另写字面量
   if (!SKUS.ask_pack.desc.includes(String(ASK_PACK_SIZE))) {
     f++; fail(`ask_pack.desc 未含 ${ASK_PACK_SIZE}（未派生）：${SKUS.ask_pack.desc}`)
@@ -43,7 +44,7 @@ const strip = (s) => s.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
   const grantSrc = strip(read('../src/lib/grantLabels.ts'))
   if (/追问\s*\d|V2/.test(grantSrc)) { f++; fail('grantLabels.ts 的 ask 标签硬编码了数字/V2') }
   console.log(f === 0
-    ? `✓ 单一事实源：ASK_PACK_SIZE=${ASK_PACK_SIZE}，MEMBER_ASK_PER_MONTH=${MEMBER_ASK_PER_MONTH}，desc/标签均派生`
+    ? `✓ 单一事实源：ASK_PACK_SIZE=${ASK_PACK_SIZE}，MEMBER_ASK_PER_MONTH=${MEMBER_ASK_PER_MONTH}，ASK_PER_REPORT=${ASK_PER_REPORT}，desc/标签均派生`
     : '✗ 单一事实源断言失败')
 }
 
@@ -128,13 +129,35 @@ const strip = (s) => s.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
   eq(askQuotaFromRows([], 0, 0, M({ member_expire_at: '2020-01-01T00:00:00Z' })).member, 0, '会员已过期→0')
   eq(askQuotaFromRows([], 0, 0, null).member, 0, '无档案→0')
 
+  // 报告赠送额度（每份单次报告，终身，不重置）——第 6 参数为「已用报告赠送次数」
+  eq(askQuotaFromRows([P({ sku: 'fatebook' })], 0, 0, null).report, ASK_PER_REPORT, '一份命书→赠 5 次')
+  eq(askQuotaFromRows([P({ sku: 'fatebook' }), P({ sku: 'annual_report' })], 0, 0, null).report, 2 * ASK_PER_REPORT, '两份报告→赠 10 次')
+  eq(askQuotaFromRows([P({ sku: 'bundle3' })], 0, 0, null).report, ASK_PER_REPORT, '三合一套餐算一份→赠 5 次')
+  eq(askQuotaFromRows([P({ sku: 'fatebook' })], 0, 0, null, Date.now(), ASK_PER_REPORT).report, 0, '报告赠送用尽→0')
+  eq(askQuotaFromRows([P({ sku: 'fatebook' })], 0, 0, null, Date.now(), ASK_PER_REPORT + 3).report, 0, '报告赠送超额→夹到 0')
+  eq(askQuotaFromRows([P()], 0, 0, null).report, 0, '追问包不赠报告额度')
+  eq(askQuotaFromRows([P({ sku: 'fatebook', transaction_id: 'MOCK_1' })], 0, 0, null).report, 0, 'MOCK_ 报告不授予')
+  eq(askQuotaFromRows([P({ sku: 'fatebook', status: 'pending' })], 0, 0, null).report, 0, '未支付报告不授予')
+  // 付费门槛：买过任意付费内容 allowed=true，否则 false
+  eq(askQuotaFromRows([P({ sku: 'fatebook' })], 0, 0, null).allowed, true, '买过报告→allowed')
+  eq(askQuotaFromRows([P()], 0, 0, null).allowed, true, '买过追问包→allowed')
+  eq(askQuotaFromRows([], 0, 0, M()).allowed, true, '在期会员→allowed')
+  eq(askQuotaFromRows([], 0, 0, null).allowed, false, '没买过→allowed=false')
+  eq(askQuotaFromRows([], 0, 0, M({ member_expire_at: '2020-01-01T00:00:00Z' })).allowed, false, '会员过期且无购买→false')
+
   // 两种额度叠加：合计 = 包剩余 + 会员本月剩余（互不挤占）
   eq(askQuotaFromRows([P()], 4, 3, M()).total, (ASK_PACK_SIZE - 4) + (MEMBER_ASK_PER_MONTH - 3), '包剩余 + 会员剩余')
+  // 三源叠加：会员 5 + 报告 4 + 追问包 6
+  eq(
+    askQuotaFromRows([P(), P({ sku: 'fatebook' })], 4, 3, M(), Date.now(), 1).total,
+    (ASK_PACK_SIZE - 4) + (MEMBER_ASK_PER_MONTH - 3) + (ASK_PER_REPORT - 1),
+    '会员 + 报告赠送 + 追问包 三源合计'
+  )
   // 自然月边界：北京时间 11-01 00:30 属于 11 月；10-31 23:59 属于 10 月
   eq(askMonthStart(new Date('2026-10-31T16:30:00Z').getTime()), '2026-10-31T16:00:00.000Z', '跨月瞬间按北京时间归月（11 月）')
   eq(askMonthStart(new Date('2026-10-31T15:59:59Z').getTime()), '2026-09-30T16:00:00.000Z', '10-31 23:59（北京）仍归 10 月')
   console.log(f === 0
-    ? '✓ 额度派生：追问包终身 + 会员每月 8 次 + 叠加/过期/归月 边界全过'
+    ? '✓ 额度派生：追问包终身 + 报告赠送 + 会员每月 8 次 + 付费门槛 + 叠加/过期/归月 边界全过'
     : '✗ 额度派生断言失败')
 }
 
@@ -151,18 +174,28 @@ const strip = (s) => s.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
   if (!/\.from\(\s*['"]ask_messages['"]\s*\)[\s\S]*?\.insert\(/.test(code)) {
     f++; fail('route 未向 ask_messages 落库')
   }
-  // ★ 扣减来源（2026-10-21）：会员额度优先、其次追问包；落库必须带 credit_source
+  // ★ 扣减来源（2026-10-21）：会员额度 → 报告赠送 → 追问包；落库必须带 credit_source
   if (!code.includes("credit_source")) { f++; fail('route 落库未标记 credit_source（额度来源无法区分）') }
-  if (!/quota\.member\s*>\s*0\s*\?\s*'member'\s*:\s*'pack'/.test(code)) {
-    f++; fail('route 未按「会员额度优先、其次追问包」选择 credit_source')
+  if (!/quota\.member\s*>\s*0\s*\?\s*'member'\s*:\s*quota\.report\s*>\s*0\s*\?\s*'report'\s*:\s*'pack'/.test(code)) {
+    f++; fail('route 未按「会员额度 → 报告赠送 → 追问包」选择 credit_source')
   }
   if (!code.includes('memberRemaining')) { f++; fail('route 未下发 memberRemaining（会员每月额度明细）') }
+  if (!code.includes('reportRemaining')) { f++; fail('route 未下发 reportRemaining（报告赠送额度明细）') }
+  // ★ 付费门槛（2026-10-21）：未买过任何付费内容必须 403，且先于 AI 生成
+  if (!code.includes('ASK_REQUIRES_PAID')) { f++; fail('route 缺 ASK_REQUIRES_PAID（付费门槛 403 码）') }
+  if (!/quota\.allowed/.test(code) || !code.includes('allowed: quota.allowed')) {
+    f++; fail('route 未下发/校验 allowed（追问与付费内容绑定）')
+  }
+  const iGate = code.indexOf('ASK_REQUIRES_PAID')
+  const iGen = code.indexOf('await generateAskAnswer')
+  if (iGate < 0 || iGen < 0 || iGate > iGen) {
+    f++; fail('付费门槛未先于 AI 调用（顺序错误）')
+  }
   // ★ 顺序守卫：拒答判定必须【先于】AI 生成（零成本、不扣额）
   const iRef = code.indexOf('classifyAskQuestion')
-  const iGen = code.indexOf('generateAskAnswer')
   if (iRef < 0 || iGen < 0 || iRef > iGen) { f++; fail('拒答判定未先于 AI 调用（顺序错误）') }
   console.log(f === 0
-    ? '✓ route 接线：拒答(先)→额度(402)→AI 生成→落库 ask_messages'
+    ? '✓ route 接线：付费门槛(403)→拒答(先)→额度(402)→AI 生成→落库 ask_messages'
     : '✗ route 接线断言失败')
 }
 

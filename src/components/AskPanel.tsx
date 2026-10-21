@@ -1,13 +1,15 @@
 'use client'
 
-// AI 追问面板（内嵌 /chart 结果页解锁区）—— ask_pack 额度的前端消费方。
+// AI 追问面板（内嵌 /chart 结果页）—— ask 额度的前端消费方。
+// ★ 追问与付费内容绑定（2026-10-21）：只要有任一付费内容（会员 / 任一报告 / 追问包）才渲染面板；
+//   权限由 /api/ask 的 allowed 下发（服务端单一事实源），前端不自行推断。
 // ★ 额度判定不在此自判：展示剩余次数、额度耗尽时给出购买入口；权威判定在 /api/ask（entitlement 单一事实源）。
 // ★ 合规展示：拒答提示、每条回答的免责句均由服务端返回并原样呈现（前端不生成命理内容）。
 import { useEffect, useRef, useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
 import CheckoutButton from '@/components/CheckoutButton'
 import { waffoProductId } from '@/lib/waffo-products'
-import { SKUS, formatPriceUSD } from '@/lib/pricing'
+import { SKUS, formatPriceUSD, MEMBER_ASK_PER_MONTH, ASK_PER_REPORT } from '@/lib/pricing'
 
 interface AskMessage {
   role: 'user' | 'assistant'
@@ -35,6 +37,10 @@ export default function AskPanel({
   const [remaining, setRemaining] = useState<number | null>(null)
   /** 会员本月剩余（服务端下发；非会员为 0）——用于展示额度来源 */
   const [memberRemaining, setMemberRemaining] = useState<number | null>(null)
+  /** 报告赠送剩余（每份报告赠 5 次）——用于展示额度来源 */
+  const [reportRemaining, setReportRemaining] = useState<number | null>(null)
+  /** 是否有追问权限（买过任意付费内容）；null=尚未取到，先不渲染 */
+  const [allowed, setAllowed] = useState<boolean | null>(null)
   /** 服务端下发的额度开关（GET /api/ask 返回）：只有开启时才在 0 次时引导购买 */
   const [enforced, setEnforced] = useState(false)
   const [error, setError] = useState('')
@@ -48,13 +54,19 @@ export default function AskPanel({
       try {
         const supabase = getSupabase()
         const { data: { session } } = await supabase.auth.getSession()
-        if (!session) return
+        if (!session) {
+          if (!cancelled) setAllowed(false)
+          return
+        }
         const res = await fetch(`/api/ask?token=${encodeURIComponent(session.access_token)}`)
         if (!res.ok) return
         const data = await res.json().catch(() => null)
         if (!cancelled && typeof data?.remaining === 'number') setRemaining(data.remaining)
         if (!cancelled && typeof data?.memberRemaining === 'number') setMemberRemaining(data.memberRemaining)
+        if (!cancelled && typeof data?.reportRemaining === 'number') setReportRemaining(data.reportRemaining)
         if (!cancelled && data?.enforced === true) setEnforced(true)
+        // ★ 只有明确 allowed=true 才渲染；未买过任何付费内容 → 面板整体不出现
+        if (!cancelled && typeof data?.allowed === 'boolean') setAllowed(data.allowed)
       } catch {
         // 忽略：仅影响剩余次数的展示
       }
@@ -92,6 +104,10 @@ export default function AskPanel({
           setExhausted(true)
           if (typeof data?.remaining === 'number') setRemaining(data.remaining)
           setError(data?.error ?? '追问次数已用完')
+        } else if (data?.code === 'ASK_REQUIRES_PAID') {
+          // 权限已失效（退款/订阅过期）——直接收起面板
+          setAllowed(false)
+          setError(data?.error ?? '追问需先购买任一报告或开通会员')
         } else {
           setError(data?.error ?? '追问失败，请稍后再试')
         }
@@ -107,6 +123,7 @@ export default function AskPanel({
       }])
       if (typeof data?.remaining === 'number') setRemaining(data.remaining)
       if (typeof data?.memberRemaining === 'number') setMemberRemaining(data.memberRemaining)
+      if (typeof data?.reportRemaining === 'number') setReportRemaining(data.reportRemaining)
       if (typeof data?.remaining === 'number' && data.remaining <= 0) setExhausted(true)
     } catch (e) {
       setError(e instanceof Error ? e.message : '网络异常，请稍后再试')
@@ -121,6 +138,9 @@ export default function AskPanel({
   //   内测期不催买，正式收费时剩余为 0 就直接给购买按钮。
   const quotaOut = enforced && (exhausted || (remaining !== null && remaining <= 0))
 
+  // ★ 追问与付费内容绑定：未买过任何付费内容（或未登录）→ 整体不渲染
+  if (allowed !== true) return null
+
   return (
     <div className="hw-c-box" style={{ marginTop: 20 }}>
       <div className="flex items-center justify-between gap-3 flex-wrap">
@@ -131,11 +151,15 @@ export default function AskPanel({
             {memberRemaining !== null && memberRemaining > 0 && (
               <>（含会员本月 <b className="text-ink">{memberRemaining}</b> 次）</>
             )}
+            {reportRemaining !== null && reportRemaining > 0 && (
+              <>（含报告赠送 <b className="text-ink">{reportRemaining}</b> 次）</>
+            )}
           </span>
         )}
       </div>
       <p className="text-xs text-ink-light/60 mt-2 mb-3">
-        就你的命盘追问具体问题（如「今年事业上有哪些需要留意的地方」）。涉医疗、法律、投资、生死与重大取舍的
+        就你的命盘追问具体问题（如「今年事业上有哪些需要留意的地方」）。购买任一报告或开通会员后即可使用；
+        每份报告赠 {ASK_PER_REPORT} 次、会员每月 {MEMBER_ASK_PER_MONTH} 次。涉医疗、法律、投资、生死与重大取舍的
         「该不该」类问题，命理不作判决——只讲倾向，供你自行权衡。
       </p>
 

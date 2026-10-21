@@ -73,6 +73,14 @@ export const ASK_PACK_SIZE = 10
  */
 export const MEMBER_ASK_PER_MONTH = 8
 
+/**
+ * ★ 报告赠送追问次数（2026-10-21）—— 单一事实源。
+ *   用户每购买一份单次报告（含三合一套餐），即获赠 ASK_PER_REPORT 次追问，终身有效、不重置。
+ *   「只要产生过付费内容就能追问」的额度来源之一；消费顺序：会员本月 → 报告赠送 → 追问包。
+ *   消费方：entitlement.askQuotaFromRows、定价页 / 会员中心文案。
+ */
+export const ASK_PER_REPORT = 5
+
 export const SKUS: Record<SkuId, Sku> = {
   fatebook: {
     id: 'fatebook', name: '命书报告',

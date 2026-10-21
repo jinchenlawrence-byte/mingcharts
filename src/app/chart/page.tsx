@@ -623,11 +623,12 @@ export default function ChartPage() {
                 </div>
               </div>
             )}
-
-            {/* ★ AI 追问（ask_pack）：解锁后围绕本命盘追问，内嵌于此（不做独立 /ask 页） */}
-            <AskPanel chartId={screenChartId} chart={chart} />
           </div>
         )}
+
+        {/* ★ AI 追问：与付费内容绑定——买过任一报告或已是会员即可使用（面板自查 allowed，未付费不渲染）。
+            原先嵌在「解锁区」内，导致没买命书的会员虽有额度却看不到入口；现移到解锁区之外。 */}
+        <AskPanel chartId={screenChartId} chart={chart} />
       </div>
     </main>
   )

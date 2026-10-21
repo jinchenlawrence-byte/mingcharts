@@ -11,7 +11,7 @@ import Nav from '@/components/Nav'
 import PushOptIn from '@/components/PushOptIn'
 import { GRANT_LABELS } from '@/lib/grantLabels'
 import { getSupabase } from '@/lib/supabase'
-import { SKUS, formatPriceUSD, SUBSCRIPTION_GRANTS, MEMBER_ASK_PER_MONTH } from '@/lib/pricing'
+import { SKUS, formatPriceUSD, SUBSCRIPTION_GRANTS, MEMBER_ASK_PER_MONTH, ASK_PER_REPORT } from '@/lib/pricing'
 // 客户付款门户（改卡 / 查账单）——公开链接、非密钥，客户端可安全引用
 import { WAFFO_PORTAL_URL } from '@/lib/waffo-products'
 
@@ -36,10 +36,11 @@ interface SubStatus {
   nextBillingAt: string | null
 }
 
-// 追问额度（/api/ask GET）：会员本月剩余 + 已购追问包剩余
+// 追问额度（/api/ask GET）：会员本月 + 报告赠送 + 追问包
 interface AskQuota {
   remaining: number
   memberRemaining: number
+  reportRemaining: number
   packRemaining: number
   enforced: boolean
 }
@@ -107,6 +108,7 @@ export default function MemberPage() {
             setAsk({
               remaining: askJson.remaining,
               memberRemaining: Number(askJson.memberRemaining) || 0,
+              reportRemaining: Number(askJson.reportRemaining) || 0,
               packRemaining: Number(askJson.packRemaining) || 0,
               enforced: askJson.enforced === true,
             })
@@ -344,18 +346,20 @@ function BenefitsGrid({ unlocked }: { unlocked: Record<string, boolean> }) {
 }
 
 /**
- * 用量行（≥720px 两列）：多命盘配额 + 本月追问额度。
- * 追问额度以 /api/ask 为准（memberRemaining / packRemaining），失败时只显示静态口径。
+ * 用量行（≥720px 两列）：多命盘配额 + 追问额度。
+ * 追问额度以 /api/ask 为准（会员本月 / 报告赠送 / 追问包），失败时只显示静态口径。
  */
 function UsageRow({ multiChart, ask, isMember }: {
   multiChart: { count: number; limit: number }
   ask: AskQuota | null
   isMember: boolean
 }) {
-  const memberLeft = ask ? ask.memberRemaining : null
-  const pct = memberLeft === null
-    ? 0
-    : Math.max(0, Math.min(100, Math.round((memberLeft / MEMBER_ASK_PER_MONTH) * 100)))
+  // 额度来源：会员本月（8/月）+ 报告赠送（每份 5 次，终身）+ 追问包（10 次/包，终身）
+  const total = ask ? ask.remaining : null
+  const memberLeft = ask ? ask.memberRemaining : 0
+  const pct = isMember
+    ? Math.max(0, Math.min(100, Math.round((memberLeft / MEMBER_ASK_PER_MONTH) * 100)))
+    : 0
 
   return (
     <section className="hw-c-two hw-m-sec" id="usage">
@@ -375,15 +379,17 @@ function UsageRow({ multiChart, ask, isMember }: {
       <div className="hw-c-box">
         <h2 className="hw-c-secTitle">追问额度</h2>
         <div className="hw-m-quota">
-          <b>{memberLeft === null ? '—' : memberLeft}</b>
-          <span>/ {MEMBER_ASK_PER_MONTH} 次 · 本月</span>
+          <b>{total === null ? '—' : total}</b>
+          <span>次可用</span>
         </div>
-        <div className="hw-m-bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>
+        {isMember && <div className="hw-m-bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>}
         <p className="hw-c-meta">
-          {isMember
-            ? `会员每月 ${MEMBER_ASK_PER_MONTH} 次追问，按自然月重置、不累计；先用会员额度，用完后才扣已购追问包。`
-            : `开通会员后每月可用 ${MEMBER_ASK_PER_MONTH} 次追问，按自然月重置、不累计。`}
-          {ask && ask.packRemaining > 0 && <> 已购追问包剩余 <b>{ask.packRemaining}</b> 次。</>}
+          会员本月 {memberLeft}/{MEMBER_ASK_PER_MONTH} 次 · 报告赠送 {ask ? ask.reportRemaining : '—'} 次
+          · 追问包 {ask ? ask.packRemaining : '—'} 次。
+        </p>
+        <p className="hw-c-meta">
+          购买任一报告或开通会员后即可追问；会员每月 {MEMBER_ASK_PER_MONTH} 次按自然月重置、不累计，
+          每份报告另赠 {ASK_PER_REPORT} 次（终身有效），先用会员额度、再扣报告赠送、最后扣追问包。
         </p>
         <p className="mt-3">
           <Link href="/pricing" className="hw-m-btn hw-m-btnSm hw-m-btnGhost">

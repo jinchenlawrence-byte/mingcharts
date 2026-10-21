@@ -270,7 +270,7 @@ ALTER TABLE push_logs ENABLE ROW LEVEL SECURITY;
 -- ★ 额度为【派生】：追问包已授予 = 已支付 ask_pack 流水数 × ASK_PACK_SIZE；
 --   会员另有每月 MEMBER_ASK_PER_MONTH 次（自然月重置）——见 entitlement.askQuotaFromRows。
 --   本表【只记录成功回答的行】，按 credit_source 分别计数：
---     · pack   → 终身累计    · member → 只计本自然月
+--     · pack   → 终身累计    · report → 报告赠送（终身）    · member → 只计本自然月
 --   拒答/失败不落行（不扣额），故行数 === 已消耗次数。
 -- ★ 写入走 service_role（/api/ask 服务端）；客户端会话仅可 SELECT 自己的历史（下方策略）。
 --   额度判定不读本表做权威判定，仅计数——单一判定仍在 entitlement.ts。
@@ -283,14 +283,32 @@ CREATE TABLE IF NOT EXISTS ask_messages (
   question TEXT NOT NULL,
   answer TEXT NOT NULL,
   -- ★ 本条消耗的是哪一类额度（2026-10-21）：pack=已购追问包（终身累计），
+  --   report=报告赠送（每份单次报告赠 ASK_PER_REPORT 次，终身），
   --   member=会员每月额度（只计本自然月）。历史行默认 pack（此前无会员额度）。
-  credit_source TEXT NOT NULL DEFAULT 'pack' CHECK (credit_source IN ('pack', 'member')),
+  credit_source TEXT NOT NULL DEFAULT 'pack' CHECK (credit_source IN ('pack', 'member', 'report')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 【已有数据库】补列（幂等）：历史行取 default 'pack'，与旧口径完全一致
 ALTER TABLE ask_messages ADD COLUMN IF NOT EXISTS credit_source TEXT NOT NULL DEFAULT 'pack'
-  CHECK (credit_source IN ('pack', 'member'));
+  CHECK (credit_source IN ('pack', 'member', 'report'));
+
+-- 【已有数据库 ★ 必跑】放开 credit_source 取值到 'report'（报告赠送额度，2026-10-21）。
+--   旧库上列已存在，上面的 ADD COLUMN 不会补约束，故显式重建（动态删旧 CHECK 再建新的）。
+DO $$
+DECLARE c TEXT;
+BEGIN
+  FOR c IN
+    SELECT conname FROM pg_constraint
+    WHERE conrelid = 'ask_messages'::regclass
+      AND contype = 'c'
+      AND pg_get_constraintdef(oid) LIKE '%credit_source%'
+  LOOP
+    EXECUTE format('ALTER TABLE ask_messages DROP CONSTRAINT %I', c);
+  END LOOP;
+  ALTER TABLE ask_messages ADD CONSTRAINT ask_messages_credit_source_check
+    CHECK (credit_source IN ('pack', 'member', 'report'));
+END $$;
 
 CREATE INDEX IF NOT EXISTS idx_ask_messages_user ON ask_messages(user_id);
 CREATE INDEX IF NOT EXISTS idx_ask_messages_created ON ask_messages(created_at DESC);

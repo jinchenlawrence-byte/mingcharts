@@ -11,6 +11,7 @@ import {
   ONE_TIME_SKUS,
   ASK_PACK_SIZE,
   MEMBER_ASK_PER_MONTH,
+  ASK_PER_REPORT,
   type GrantId,
   type SkuId,
 } from '@/lib/pricing'
@@ -115,7 +116,7 @@ const CARDS: PriceCard[] = [
     // ★ 权益逐项派生自 SUBSCRIPTION_GRANTS：grants 表改了这里自动跟着变，不另写字面量
     features: [
       ...SUBSCRIPTION_GRANTS.map((g) => GRANT_LABELS[g]),
-      `每月 ${MEMBER_ASK_PER_MONTH} 次 AI 追问（解锁命书后使用）`,
+      `每月 ${MEMBER_ASK_PER_MONTH} 次 AI 追问`,
       `年度会员 ${formatPriceUSD(SKUS.member_yearly.priceUSD)}/年（主推，更划算）`,
       '命书 / 年运等深度报告需按次单独购买',
     ],
@@ -134,7 +135,7 @@ const FAQS = [
   },
   {
     q: '会员包含命书等报告吗？',
-    a: `不包含。会员是持续型内容订阅，权益为${SUBSCRIPTION_LABELS}，另含每月 ${MEMBER_ASK_PER_MONTH} 次 AI 追问（按自然月重置、不累计，在解锁命书后的命盘页提问）；${REPORT_SKU_NAMES}等深度报告均需按次单独购买（命书 ${formatPriceUSD(SKUS.fatebook.priceUSD)}/次）。续费时会员有效期会从原到期日向后叠加。`,
+    a: `不包含。会员是持续型内容订阅，权益为${SUBSCRIPTION_LABELS}，另含每月 ${MEMBER_ASK_PER_MONTH} 次 AI 追问（按自然月重置、不累计）；${REPORT_SKU_NAMES}等深度报告均需按次单独购买（命书 ${formatPriceUSD(SKUS.fatebook.priceUSD)}/次）。购买任一报告或开通会员后，即可在命盘页就你的命盘向 AI 追问；每份报告另赠 ${ASK_PER_REPORT} 次，用完可买追问包。续费时会员有效期会从原到期日向后叠加。`,
   },
   {
     q: '购买后可以反复查看吗？',
@@ -184,11 +185,11 @@ const COMPARE_ROWS: CompareRow[] = [
   ...SUBSCRIPTION_GRANTS.map((g) => ({
     label: GRANT_LABELS[g], free: false, grant: g,
   })),
-  // ★ 追问为「额度型」权益：会员每月 8 次，非会员/超额走追问包（10 次 / $4.99）。
-  //   次数与价格全部派生自 pricing.ts，不写死数字。
+  // ★ 追问为「额度型」权益（2026-10-21 与付费内容绑定）：买任一报告即赠 ASK_PER_REPORT 次、
+  //   会员每月 MEMBER_ASK_PER_MONTH 次，故两个付费列都打勾；次数/价格全部派生自 pricing.ts。
   {
-    label: 'AI 命理师追问', free: false, grant: 'ask', member: true,
-    note: `解锁命书后使用 · 会员每月 ${MEMBER_ASK_PER_MONTH} 次 · 追问包 ${formatPriceUSD(SKUS.ask_pack.priceUSD)}/${ASK_PACK_SIZE} 次`,
+    label: 'AI 命理师追问', free: false, member: true,
+    note: `购买任一报告或开通会员即可用 · 会员每月 ${MEMBER_ASK_PER_MONTH} 次 · 每份报告赠 ${ASK_PER_REPORT} 次 · 追问包 ${formatPriceUSD(SKUS.ask_pack.priceUSD)}/${ASK_PACK_SIZE} 次`,
   },
 ]
 
@@ -323,12 +324,13 @@ export default function PricingPage() {
           </p>
         </section>
 
-        {/* ★ 追问包（ask_pack）：解锁命书后就命盘追问 AI 命理师；价格/描述取自 SKUS 单一事实源 */}
+        {/* ★ 追问包（ask_pack）：买过任一报告或开通会员后就命盘追问 AI 命理师；价格/描述取自 SKUS 单一事实源 */}
         <section className="mb-14">
           <h2 className="hw-c-h2 hw-c-h2C">追问包</h2>
           <p className="text-sm text-ink-light text-center mb-6">
-            解锁命书后，可就你的命盘向 AI 命理师追问；会员每月含 {MEMBER_ASK_PER_MONTH} 次，
-            超出或非会员可购买追问包，按次计、用完可续购。
+            购买任一报告或开通会员后，即可在命盘页就你的命盘向 AI 命理师追问；
+            每份报告赠 {ASK_PER_REPORT} 次（终身有效）、会员每月 {MEMBER_ASK_PER_MONTH} 次，
+            用完后可购买追问包续用。
           </p>
           <div className="hw-c-box flex flex-col gap-4 max-w-3xl mx-auto">
             <div className="flex items-start justify-between gap-4">

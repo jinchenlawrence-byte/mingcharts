@@ -2,7 +2,7 @@
 // 全局面禁只此一处：route/页面不得各自写判定（§8.5.1 同型错误）。
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { SkuId, GrantId } from './pricing'
-import { SKUS, MULTI_CHART_LIMIT, ASK_PACK_SIZE, MEMBER_ASK_PER_MONTH } from './pricing'
+import { SKUS, MULTI_CHART_LIMIT, ASK_PACK_SIZE, MEMBER_ASK_PER_MONTH, ASK_PER_REPORT, REPORT_GRANTS } from './pricing'
 
 /**
  * ★★★★★ 付费墙总开关（26号任务书 §二 方案 B，2026-10-13：由写死 false 改为 env 可控）。
@@ -257,14 +257,16 @@ function fatebookPaidRow(row: { sku?: string | null }): boolean {
 }
 
 /**
- * ★ 追问额度「单一判定」（AI 追问功能，2026-10-21 起含会员每月额度）。
+ * ★ 追问额度「单一判定」（AI 追问功能，2026-10-21 起含会员每月额度 + 报告赠送额度）。
  *   追问包：已授予 = 已支付【真实】ask_pack 流水数 × ASK_PACK_SIZE（终身，不重置）。
+ *   报告赠送：已授予 = 已支付【真实】单次报告流水数 × ASK_PER_REPORT（终身，不重置）。
  *   会员额度：每个自然月 MEMBER_ASK_PER_MONTH 次（按月重置、不累计）。
  *   已消耗按【来源】分别计数（ask_messages.credit_source）：
  *     · pack   → 终身累计
+ *     · report → 终身累计（报告赠送消耗）
  *     · member → 只计本自然月（Asia/Shanghai）
- *   剩余 = 追问包剩余 + 会员本月剩余。
- * ★ 扣减顺序：有会员额度时先扣会员额度（月底清零，先用会过期的），再扣追问包。
+ *   剩余 = 会员本月剩余 + 报告赠送剩余 + 追问包剩余。
+ * ★ 扣减顺序：会员额度（月底清零）→ 报告赠送（免费额度）→ 追问包（付费额度）。
  * ★ 纯函数：与 entitlementsFromRows / chartLimitFor 同族，断言可喂数据真跑生产逻辑。
  * ★ 排除模拟流水（'MOCK_' 前缀）——与 entitlementsFromRows 同口径，不是真实购买不授予次数。
  */
@@ -273,22 +275,37 @@ export interface AskQuota {
   pack: number
   /** 会员本月剩余（未登录/非会员/会员已过期 → 0） */
   member: number
-  /** 合计剩余（= pack + member） */
+  /** 报告赠送剩余（每购一份单次报告赠 ASK_PER_REPORT 次，终身有效） */
+  report: number
+  /** 合计剩余（= pack + member + report） */
   total: number
+  /** 是否有追问权限（有过任意付费内容：会员 / 任一报告 / 追问包） */
+  allowed: boolean
 }
 
+/**
+ * ★ 追问权限：只要产生过任何付费内容（有效会员、任一单次报告、追问包）即可追问。
+ *   与额度分开：权限看「买过没有」，额度看「还剩几次」。
+ */
 export function askQuotaFromRows(
   pays: PaymentRow[] | null,
   packUsed: number,
   memberUsedThisMonth: number,
   profile: ProfileRow | null,
-  now: number = Date.now()
+  now: number = Date.now(),
+  reportUsed: number = 0
 ): AskQuota {
-  const granted = (pays ?? []).filter(isPaidAskPackRow).length * ASK_PACK_SIZE
-  const pack = Math.max(0, granted - Math.max(0, Math.floor(packUsed || 0)))
+  const rows = pays ?? []
+  const packGranted = rows.filter(isPaidAskPackRow).length * ASK_PACK_SIZE
+  const pack = Math.max(0, packGranted - Math.max(0, Math.floor(packUsed || 0)))
+  // ★ 报告赠送：每份已付单次报告（含套餐）赠 ASK_PER_REPORT 次，终身累计
+  const reportGranted = rows.filter(isPaidReportRow).length * ASK_PER_REPORT
+  const report = Math.max(0, reportGranted - Math.max(0, Math.floor(reportUsed || 0)))
   const monthly = activeMemberSku(profile, now) ? MEMBER_ASK_PER_MONTH : 0
   const member = Math.max(0, monthly - Math.max(0, Math.floor(memberUsedThisMonth || 0)))
-  return { pack, member, total: pack + member }
+  const ent = entitlementsFromRows(rows, profile, now)
+  const allowed = ent.memberSkus.length > 0 || ent.ownedSkus.size > 0
+  return { pack, member, report, total: pack + member + report, allowed }
 }
 
 /**
@@ -313,6 +330,22 @@ function isPaidAskPackRow(p: PaymentRow): boolean {
 }
 
 /**
+ * 一行已付流水是否为「单次报告」（每份赠 ASK_PER_REPORT 次追问）。
+ *   sku 空＝老流水（当时只有命书单）→ 算报告；
+ *   ask_pack 与会员订阅不在其列；三合一套餐（grants 含多个报告）也算一份，只赠一次。
+ */
+function isPaidReportRow(p: PaymentRow): boolean {
+  if (p.status !== 'paid') return false
+  if (typeof p.transaction_id === 'string' && p.transaction_id.startsWith('MOCK_')) return false
+  if (p.payment_type !== 'single') return false
+  const sku = (p.sku ?? '').trim()
+  if (!sku) return true
+  const s = SKUS[sku as SkuId]
+  if (!s) return false
+  return s.kind === 'one_time' && s.grants.some((g) => REPORT_GRANTS.includes(g))
+}
+
+/**
  * 读取某用户当前追问额度明细（服务端用 service_role）。
  * ★ 只做查库 + 调 askQuotaFromRows —— 逻辑全在纯函数里，断言可直接测。
  * ★ 读路径必须暴露错误（沿用 getEntitlements 的可见性修复）：schema 漂移时直接抛错，
@@ -327,13 +360,14 @@ export async function getAskRemaining(
     { data: pays, error: paysError },
     { data: profile, error: profileError },
     { count: packUsed, error: packError },
+    { count: reportUsed, error: reportError },
     { count: memberUsed, error: memberError },
   ] = await Promise.all([
+    // ★ 取全部已付流水（不再只筛 ask_pack）：既有追问包，也有报告赠送额度
     admin
       .from('payments')
       .select('payment_type, status, transaction_id, sku')
-      .eq('user_id', userId)
-      .eq('sku', 'ask_pack'),
+      .eq('user_id', userId),
     admin
       .from('profiles')
       .select('is_member, member_plan, member_expire_at')
@@ -348,17 +382,25 @@ export async function getAskRemaining(
       .from('ask_messages')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', userId)
+      .eq('credit_source', 'report'),
+    admin
+      .from('ask_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
       .eq('credit_source', 'member')
       .gte('created_at', monthStart),
   ])
-  if (paysError) throw new Error(`ask_pack 流水查询失败: ${paysError.code} ${paysError.message}`)
+  if (paysError) throw new Error(`付费流水查询失败: ${paysError.code} ${paysError.message}`)
   if (profileError) throw new Error(`profiles 会员状态查询失败: ${profileError.code} ${profileError.message}`)
   if (packError) throw new Error(`ask_messages(pack) 计数失败: ${packError.code} ${packError.message}`)
+  if (reportError) throw new Error(`ask_messages(report) 计数失败: ${reportError.code} ${reportError.message}`)
   if (memberError) throw new Error(`ask_messages(member) 计数失败: ${memberError.code} ${memberError.message}`)
   return askQuotaFromRows(
     pays as PaymentRow[] | null,
     packUsed ?? 0,
     memberUsed ?? 0,
-    profile as ProfileRow | null
+    profile as ProfileRow | null,
+    Date.now(),
+    reportUsed ?? 0
   )
 }
