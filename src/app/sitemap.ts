@@ -51,7 +51,9 @@ export default function sitemap(): MetadataRoute.Sitemap {
     )
   ]
 
-  // 出生日期页（1950-2010）
+  // 出生日期聚合页（1950-2010 年/月）
+  // 注：不再收录 /bazi/{y}/{m}/{d} 每日页（约 2.2 万条薄内容，已设为 noindex），
+  // 只保留年、月两级聚合页，避免 sitemap 被大量低质 URL 稀释。
   const baziPages: MetadataRoute.Sitemap = []
   for (let y = 1950; y <= 2010; y++) {
     baziPages.push({
@@ -66,15 +68,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
         changeFrequency: 'yearly',
         priority: 0.5
       })
-      const days = new Date(y, m, 0).getDate()
-      for (let d = 1; d <= days; d++) {
-        const dd = String(d).padStart(2, '0')
-        baziPages.push({
-          url: `${BASE_URL}/bazi/${y}/${mm}/${dd}`,
-          changeFrequency: 'yearly',
-          priority: 0.7
-        })
-      }
     }
   }
 

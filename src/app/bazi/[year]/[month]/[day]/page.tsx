@@ -13,6 +13,9 @@ export async function generateMetadata({ params }: { params: Promise<{ year: str
   return {
     title: `${year}年${month}月${day}日八字算命 · 出生当日干支命理分析`,
     description: `${year}年${month}月${day}日出生八字：当日干支、十神、藏干、旺衰格局、大运流年。按出生日期查看命理分析与生肖运势。`,
+    // 每日日期页是批量生成的薄内容（约 2.2 万条），只供站内浏览与跳转，
+    // 不参与索引，避免拉低整站质量分；年/月聚合页仍正常收录。
+    robots: { index: false, follow: true },
   }
 }
 
