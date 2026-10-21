@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { notFound } from 'next/navigation'
 import { articles, ARTICLE_CATEGORIES } from '@/lib/articles'
+import { SKUS, formatPriceUSD } from '@/lib/pricing'
 
 export function generateStaticParams() {
   const articleParams = articles.map(a => ({ slug: a.slug }))
@@ -85,6 +86,7 @@ export default async function ArticleOrCategoryPage({ params }: { params: Promis
     .slice(0, 4)
 
   const catName = ARTICLE_CATEGORIES.find(c => c.slug === article.category)?.name || ''
+  const cta = article.cta
 
   return (
     <main className="hw-page">
@@ -130,15 +132,20 @@ export default async function ArticleOrCategoryPage({ params }: { params: Promis
             </div>
           </article>
 
-          {/* CTA */}
+          {/* CTA：文章可自带（缺省为免费排盘）；价格一律按 priceSku 从 pricing.ts 派生 */}
           <div className="hw-c-cta mb-6">
-            <h2 className="hw-c-secTitle">学以致用，排盘看看自己的八字</h2>
+            <h2 className="hw-c-secTitle">{cta?.title ?? '学以致用，排盘看看自己的八字'}</h2>
             <p className="hw-c-dx">
-              输入出生时辰，获取您的八字命盘、格局旺衰、大运流年完整分析
+              {cta?.desc ?? '输入出生时辰，获取您的八字命盘、格局旺衰、大运流年完整分析'}
             </p>
-            <Link href="/" className="hw-c-btnBig">
-              免费排盘 →
+            <Link href={cta?.href ?? '/'} className="hw-c-btnBig">
+              {cta?.text ?? '免费排盘'} →
             </Link>
+            {cta?.priceSku && (
+              <p className="mt-3 text-xs text-ink-light/60">
+                {formatPriceUSD(SKUS[cta.priceSku].priceUSD)} · 一次性购买，解锁后永久回看
+              </p>
+            )}
           </div>
 
           {/* 相关文章 */}

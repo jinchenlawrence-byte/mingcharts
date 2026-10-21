@@ -47,6 +47,24 @@ export default function ShengXiaoIndex() {
           ))}
         </div>
 
+        {/* 2027 丁未年窗口：年底至春节是「来年运势」搜索高峰，集中给出 12 个属相入口 */}
+        <div className="hw-c-box mb-10">
+          <h2 className="hw-c-secTitle">2027 丁未年运势 · 十二属相</h2>
+          <p className="hw-c-body mb-4">
+            2027 年立春后为丁未年。属羊值太岁（本命年）、属牛冲太岁兼刑、属狗刑太岁、属鼠害太岁；属马六合，属猪与属兔三合。
+            下面是各属相 2027 年的分项运势，另有
+            <Link href="/article/2027-dingwei-nian-yunshi" className="hw-c-link">「丁未年运势怎么看」</Link>与
+            <Link href="/article/2027-fantaishui" className="hw-c-link">「犯太岁怎么化解」</Link>两篇说明。
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-2">
+            {SHENGXIAO.map(sx => (
+              <Link key={sx.slug} href={`/shengxiao/${sx.slug}/2027`} className="hw-c-link text-sm">
+                属{sx.name} · 2027
+              </Link>
+            ))}
+          </div>
+        </div>
+
         <div className="hw-c-two">
           <div className="hw-c-box">
             <h2 className="hw-c-secTitle">生肖是怎么来的？</h2>

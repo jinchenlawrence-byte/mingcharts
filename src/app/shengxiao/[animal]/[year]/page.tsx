@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Nav from '@/components/Nav'
 import { SHENGXIAO, getShengXiao, getLiunian, LIUNIAN_YEARS } from '@/lib/shengxiaoData'
+import { SKUS, formatPriceUSD } from '@/lib/pricing'
 
 export function generateStaticParams() {
   const params: { animal: string; year: string }[] = []
@@ -158,6 +159,12 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
           <Link href="/" className="hw-c-btnBig">
             输入时辰，排我的八字 →
           </Link>
+          {/* 年底「来年运势」窗口：生肖页直接给出个人年运报告入口（价格派生自 pricing.ts） */}
+          <p className="mt-4 text-sm text-ink-light/70">
+            <Link href="/liunian" className="hw-c-link">
+              或直接生成 {year} 年年运报告（{formatPriceUSD(SKUS.annual_report.priceUSD)}，一次覆盖今年/明年/后年三年）→
+            </Link>
+          </p>
         </div>
 
         <p className="text-center text-xs text-ink-light/40 mt-6">
