@@ -3,7 +3,8 @@ import { paipanZiwei, analyzeZiwei } from '@/lib/ziwei'
 import { generateAIZiwei, fallbackZiweiText } from '@/lib/aiZiwei'
 import { checkDSTTransition } from '@/lib/solarTime'
 import { resolveBirthFromBody } from '@/lib/birthRequest'
-import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
+import { getEntitlements, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
+import { reportUnlocked, previewPayload } from '@/lib/reportPreview'
 import { createServerSupabase } from '@/lib/supabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RULES } from '@/lib/rateLimit'
@@ -60,7 +61,8 @@ export async function POST(request: NextRequest) {
       birthZone: ref?.zone
     })
     // ★ 身份/门禁先解析（§8.5.1 单一判定）——先于 AI 调用，供下方成本护栏使用。
-    // ENFORCE=false → unlocked 恒 true → 内测期【登录用户】行为与现在完全一致 ✓
+    // ★ 报告门禁按【是否持有 SKU】判定（reportUnlocked → grantsCover），不依赖 ENTITLEMENT_ENFORCE：
+    //   未购用户一律进入试读（免费板块全文 + 其余锁定 + 不生成 AI）。
     const token = typeof body.token === 'string' ? body.token : ''
     let ent = EMPTY_ENTITLEMENTS
     let userId: string | null = null
@@ -70,7 +72,7 @@ export async function POST(request: NextRequest) {
       const { data: { user } } = await admin.auth.getUser(token)
       if (user) { userId = user.id; ent = await getEntitlements(admin, user.id) }
     }
-    const unlocked = canView(ent, 'ziwei_deep')
+    const unlocked = reportUnlocked(ent, 'ziwei_deep')
 
     // ★ 报告缓存短路读取（token 防盗用第三档）：登录用户的【同参数重复请求】直接命中存量全文，
     //   零 AI、零限流、零预算（放在限流/预算/AI 之前）。命中处置全在 resolveModuleCachedHit：
@@ -90,7 +92,9 @@ export async function POST(request: NextRequest) {
         ? resolveModuleCachedHit(hit, { unlocked, skus: ['ziwei_deep'], lockedPreview: ZIWEI_LOCKED_PREVIEW })
         : null
       if (resolved) {
-        return NextResponse.json({ success: true, data: resolved.data, reportId: resolved.reportId, cached: true })
+        // ★ 缓存命中也要带同一试读标记，避免免费用户从存量全文缓存拿到完整渲染路径
+        const data = { ...resolved.data, preview: previewPayload('ziwei_deep', unlocked) }
+        return NextResponse.json({ success: true, data, reportId: resolved.reportId, cached: true })
       }
     }
 
@@ -111,7 +115,8 @@ export async function POST(request: NextRequest) {
     const aiBlocked = budget?.exhausted ?? false
     // ★★ 成本护栏（token 防盗用第一档）：仅【登录用户】才生成 AI（本模块每盘 12 次调用）——
     //   匿名（含外部脚本）不再触发；登录用户照常全量生成并入库，回看者必然已登录 ⇒ 不触回看事故。
-    const aiReport = userId && !aiBlocked ? await generateAIZiwei(chart, analysis) : null
+    // ★ 未解锁（试读）不调 AI：本模块每盘 12 次调用，未购用户不再产生成本。
+    const aiReport = userId && unlocked && !aiBlocked ? await generateAIZiwei(chart, analysis) : null
 
     // ★ 入库只存【内容】（locked 剥掉、ai 存全量全文）；门禁只作用于【响应】——
     //   读取侧按当前权益重算（详情页 reportGate），试吃→付费即刻生效。
@@ -133,6 +138,7 @@ export async function POST(request: NextRequest) {
         skus: ['ziwei_deep'],
         preview: ZIWEI_LOCKED_PREVIEW
       },
+      preview: previewPayload('ziwei_deep', unlocked),
       ai,
       aiSource,
       trueSolar: ref

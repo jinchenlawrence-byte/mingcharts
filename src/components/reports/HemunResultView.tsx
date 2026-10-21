@@ -4,9 +4,9 @@
 // 纯展示组件：数据进来渲染，不含请求逻辑
 import type { HemunResult } from '@/lib/hemun'
 import type { AIHemunSections } from '@/lib/aiHemun'
-import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import { isRuleVersion } from '@/lib/reportGate'
-import CheckoutButton from '@/components/CheckoutButton'
+import { PREVIEW_FREE } from '@/lib/reportPreview'
+import { LockedCard, UnlockCta } from '@/components/reports/PreviewLock'
 
 export interface HemunData {
   result: HemunResult
@@ -15,6 +15,8 @@ export interface HemunData {
   dstNotices: { male: string | null; female: string | null }
   // ★ 门禁（§8.5.1）：未解锁时给 preview 与 skus，已解锁为 null
   locked?: { skus: string[]; preview: string } | null
+  /** ★ 试读标记（route 下发；详情页无此字段时按 locked 推断） */
+  preview?: { only: boolean; keys: string[] }
 }
 
 // ───────── 依据徽章（四类视觉可分）─────────
@@ -74,6 +76,14 @@ export default function HemunResultView({ data, onRegen, regenBusy }: {
   const r = data.result
   // ★ 付费用户拿到规则版兜底（AI 结果未过合规校验）时，标签旁必须给出口，否则只能要求退款
   const ruleVersion = isRuleVersion(data.aiSource)
+  // ★ 试读模式：route 明确下发 preview.only；详情页（reportGate 重算）没有该字段时按 locked 推断
+  const previewMode = data.preview?.only ?? !!data.locked
+  const freeDims = previewMode
+    ? r.dimensions.filter(d => PREVIEW_FREE.hemun.includes(d.key))
+    : r.dimensions
+  const lockedDims = previewMode
+    ? r.dimensions.filter(d => !PREVIEW_FREE.hemun.includes(d.key))
+    : []
   return (
     <div className="space-y-6">
       {/* 总观感（主展示，非分数） */}
@@ -108,9 +118,11 @@ export default function HemunResultView({ data, onRegen, regenBusy }: {
       {/* 维度卡片（分项展示，依据分级） */}
       <div className="space-y-3">
         <h2 className="hw-c-h3">
-          分项维度（{r.dimensions.length} 项 · 依据分级如实标注）
+          {previewMode
+            ? `分项维度（免费预览 ${freeDims.length} 项 · 另 ${lockedDims.length} 项解锁后可见）`
+            : `分项维度（${r.dimensions.length} 项 · 依据分级如实标注）`}
         </h2>
-        {r.dimensions.map(d => {
+        {freeDims.map(d => {
           const levelCls = d.level === '吉'
             ? 'bg-green-50 border-green-200 text-green-700'
             : d.level === '忌'
@@ -151,26 +163,10 @@ export default function HemunResultView({ data, onRegen, regenBusy }: {
             </div>
           )
         })}
+        {/* ★ 试读：其余维度只给标题 + 模糊占位（DOM 不含真实正文） */}
+        {lockedDims.map(d => <LockedCard key={d.key} title={d.name} />)}
       </div>
 
-      {/* AI 深度解读：未解锁时显示 preview 与解锁引导（§8.5.1 门禁消费） */}
-      {data.locked && (
-        <div className="hw-c-box hw-c-boxLg text-center">
-          <p className="text-sm text-ink-light mb-4">{data.locked.preview}</p>
-          {data.locked.skus.map((skuId) => {
-            const sku = SKUS[skuId as keyof typeof SKUS]
-            if (!sku) return null
-            // ★ 直连收银台（2026-10-18 修复）：不再绕价格页；returnTo=/reports 付完回我的报告
-            return (
-              <div key={skuId} className="max-w-xs mx-auto mb-2">
-                <CheckoutButton sku={sku.id} available requireChart={false} returnTo="/reports">
-                  解锁 {sku.name} {formatPriceUSD(sku.priceUSD)}
-                </CheckoutButton>
-              </div>
-            )
-          })}
-        </div>
-      )}
       {data.ai && (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
@@ -201,6 +197,20 @@ export default function HemunResultView({ data, onRegen, regenBusy }: {
         ))}
       </div>
       )}
+
+      {/* ★ 试读：6 个 AI 板块只给标题 + 模糊占位（route 未生成、未下发全文） */}
+      {previewMode && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="hw-c-h3">合婚深度解读</h2>
+            <span className="text-xs text-ink-light/60">解锁后可见</span>
+          </div>
+          {AI_SECTIONS.map(s => <LockedCard key={s.key} title={s.name} />)}
+        </div>
+      )}
+
+      {/* ★ 未解锁：锁定区末尾统一解锁按钮 */}
+      {data.locked && <UnlockCta skus={data.locked.skus} preview={data.locked.preview} />}
 
       {/* 免责声明 */}
       <p className="text-xs text-ink-light/60 text-center leading-relaxed border-t border-gold/15 pt-4">

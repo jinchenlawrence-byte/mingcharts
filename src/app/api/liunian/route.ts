@@ -6,7 +6,8 @@ import type { AnalyzableChart } from '@/lib/analysis'
 import { generateAILiunian, fallbackLiunianText } from '@/lib/aiLiunian'
 import { checkDSTTransition } from '@/lib/solarTime'
 import { resolveBirthFromBody } from '@/lib/birthRequest'
-import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
+import { getEntitlements, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
+import { reportUnlocked, previewPayload } from '@/lib/reportPreview'
 import { createServerSupabase } from '@/lib/supabase'
 import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RULES, FORCE_RULES } from '@/lib/rateLimit'
 import { checkAiBudget } from '@/lib/aiBudget'
@@ -76,7 +77,8 @@ export async function POST(request: NextRequest) {
     const cacheKey = annualCacheKey(reportInput)
 
     // ★ 门禁判定统一走 entitlement（§8.5.1），不得在本路由另写判断
-    // ENFORCE=false → unlocked 恒 true → 内测期行为与现在完全一致 ✓
+    // ★ 报告门禁按【是否持有 SKU】判定（reportUnlocked → grantsCover），不依赖 ENTITLEMENT_ENFORCE：
+    //   未购用户一律进入试读（目标流年头部 + 三年流年概览全文 + 其余锁定 + 不生成 AI）。
     // userId 供缓存读写使用（与 ent 同一次 auth.getUser 取得）
     const token = typeof body.token === 'string' ? body.token : ''
     let ent = EMPTY_ENTITLEMENTS
@@ -90,7 +92,7 @@ export async function POST(request: NextRequest) {
         ent = await getEntitlements(admin, user.id)
       }
     }
-    const unlocked = canView(ent, 'annual_report')
+    const unlocked = reportUnlocked(ent, 'annual_report')
 
     // ★ 缓存读取（HANDOFF §3.4 流程②）：命中处置全在纯函数 resolveCachedHit（REPLY-23 发现①）——
     //   判可用 → 按当前权益重算 locked/ai/aiSource → 组装响应，route 只剩一行调用；
@@ -100,7 +102,9 @@ export async function POST(request: NextRequest) {
       const hit = await readReportCache(admin, userId, 'annual', cacheKey)
       const resolved = hit ? resolveCachedHit(hit, { unlocked, skus: ['annual_report'], targetYear }) : null
       if (resolved) {
-        return NextResponse.json({ success: true, data: resolved.data, reportId: resolved.reportId, cached: true })
+        // ★ 缓存命中也要带同一试读标记，避免免费用户从存量全文缓存拿到完整渲染路径
+        const data = { ...resolved.data, preview: previewPayload('annual_report', unlocked) }
+        return NextResponse.json({ success: true, data, reportId: resolved.reportId, cached: true })
       }
     }
 
@@ -184,7 +188,8 @@ export async function POST(request: NextRequest) {
       locked: unlocked ? null : {
         skus: ['annual_report'],
         preview: `${targetYear}年（${target.ganZhi}年）流年详批：事业/财运/感情/健康分维度深度解读解锁后可见。`
-      }
+      },
+      preview: previewPayload('annual_report', unlocked)
     }
 
     // 登录用户：报告作为账户资产自动保存（静默降级，不阻断主流程）。

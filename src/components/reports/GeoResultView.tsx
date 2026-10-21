@@ -8,9 +8,9 @@ import type { FeatureCollection, Geometry } from 'geojson'
 import worldData from '@/data/world-countries.json'
 import type { GeoAnalysis, CategoryResult, GeoCityHit } from '@/lib/geo'
 import type { GeoAIReport } from '@/lib/aiGeo'
-import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import { isRuleVersion } from '@/lib/reportGate'
-import CheckoutButton from '@/components/CheckoutButton'
+import { PREVIEW_FREE } from '@/lib/reportPreview'
+import { LockedCard, UnlockCta } from '@/components/reports/PreviewLock'
 
 export interface GeoResultData {
   geo: GeoAnalysis
@@ -21,6 +21,8 @@ export interface GeoResultData {
   aiSource: string
   // ★ 门禁（§8.5.1）：未解锁时给 preview 与 skus，已解锁为 null
   locked?: { skus: string[]; preview: string } | null
+  /** ★ 试读标记（route 下发；详情页无此字段时按 locked 推断） */
+  preview?: { only: boolean; keys: string[] }
 }
 
 // ---------- SVG 地图组件（离线渲染，无瓦片请求） ----------
@@ -218,6 +220,16 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
   const { geo, solar, ai, aiSource, locked } = data
   // ★ 付费用户拿到规则版兜底（AI 结果未过合规校验）时，标签旁必须给出口，否则只能要求退款
   const ruleVersion = isRuleVersion(aiSource)
+  // ★ 试读：地图 + 现居城市 + career 类别免费；其余 4 类别与 8 个 AI 板块锁
+  const previewMode = data.preview?.only ?? !!locked
+  const freeCats = previewMode
+    ? geo.categories.filter(c => PREVIEW_FREE.geo.includes(c.key))
+    : geo.categories
+  const lockedCats = previewMode
+    ? geo.categories.filter(c => !PREVIEW_FREE.geo.includes(c.key))
+    : []
+  // 地图上的城市点同样只保留免费类别，避免锁定类别的分数/理由从弹窗泄露
+  const mapGeo = previewMode ? { ...geo, categories: freeCats } : geo
   return (
     <div className="space-y-6">
       {/* 喜忌摘要 */}
@@ -313,9 +325,9 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
       {/* 地图 */}
       <div className="hw-c-box hw-c-boxLg p-3 md:p-4">
         <h2 className="hw-c-h3">命主方位地图</h2>
-        <GeoMap geo={geo} />
+        <GeoMap geo={mapGeo} />
         <div className="flex flex-wrap gap-3 mt-3 text-xs text-ink-light/60">
-          {geo.categories.map((c) => (
+          {freeCats.map((c) => (
             <span key={c.key} className="flex items-center gap-1">
               <span className="w-3 h-3 rounded-full inline-block" style={{ background: c.color }} />
               {c.label}
@@ -327,29 +339,12 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
         </div>
       </div>
 
-      {/* 四类城市明细 */}
-      {geo.categories.map((cat) => (
+      {/* 城市明细（试读：仅 career 类别全量，其余锁定） */}
+      {freeCats.map((cat) => (
         <CategorySection key={cat.key} cat={cat} />
       ))}
+      {lockedCats.map((cat) => <LockedCard key={cat.key} title={`${cat.icon} ${cat.label}`} />)}
 
-      {/* AI 解读：未解锁时显示 preview 与解锁引导（§8.5.1 门禁消费） */}
-      {locked && (
-        <div className="hw-c-box hw-c-boxLg text-center">
-          <p className="text-sm text-ink-light mb-4">{locked.preview}</p>
-          {locked.skus.map((skuId) => {
-            const sku = SKUS[skuId as keyof typeof SKUS]
-            if (!sku) return null
-            // ★ 直连收银台（2026-10-18 修复）：不再绕价格页；returnTo=/reports 付完回我的报告
-            return (
-              <div key={skuId} className="max-w-xs mx-auto mb-2">
-                <CheckoutButton sku={sku.id} available requireChart={false} returnTo="/reports">
-                  解锁 {sku.name} {formatPriceUSD(sku.priceUSD)}
-                </CheckoutButton>
-              </div>
-            )
-          })}
-        </div>
-      )}
       {ai && (
         <div className="space-y-4">
           <h2 className="hw-c-h1">深度解读 · {aiSource}</h2>
@@ -384,6 +379,20 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
           ))}
         </div>
       )}
+
+      {/* ★ 试读：8 个 AI 板块只给标题 + 模糊占位（route 未生成、未下发全文） */}
+      {previewMode && !ai && (
+        <div className="space-y-4">
+          <h2 className="hw-c-h1">深度解读</h2>
+          {[
+            '方位总论', '现居城市影响', '财富之城', '事业之城',
+            '贵人之城', '安居之城', '才华之城', '迁居开运'
+          ].map(title => <LockedCard key={title} title={title} />)}
+        </div>
+      )}
+
+      {/* ★ 未解锁：锁定区末尾统一解锁按钮 */}
+      {locked && <UnlockCta skus={locked.skus} preview={locked.preview} />}
     </div>
   )
 }

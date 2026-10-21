@@ -7,7 +7,8 @@ import { resolveBirthFromBody } from '@/lib/birthRequest'
 import { findCityById } from '@/lib/worldCitiesServer'
 import { generateAIGeo, fallbackGeoText } from '@/lib/aiGeo'
 import { tiaoHouWuxing } from '@/lib/analysis'
-import { getEntitlements, canView, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
+import { getEntitlements, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
+import { reportUnlocked, previewPayload } from '@/lib/reportPreview'
 import { createServerSupabase } from '@/lib/supabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RULES } from '@/lib/rateLimit'
@@ -90,7 +91,8 @@ export async function POST(request: NextRequest) {
     }
 
     // ★ 身份/门禁先解析（§8.5.1 单一判定）——先于 AI 调用，供下方成本护栏使用。
-    // ENFORCE=false → unlocked 恒 true → 内测期【登录用户】行为与现在完全一致 ✓
+    // ★ 报告门禁按【是否持有 SKU】判定（reportUnlocked → grantsCover），不依赖 ENTITLEMENT_ENFORCE：
+    //   未购用户一律进入试读（现居城市/事业之城全文 + 其余锁定 + 不生成 AI）。
     const token = typeof body.token === 'string' ? body.token : ''
     let ent = EMPTY_ENTITLEMENTS
     let userId: string | null = null
@@ -100,7 +102,7 @@ export async function POST(request: NextRequest) {
       const { data: { user } } = await admin.auth.getUser(token)
       if (user) { userId = user.id; ent = await getEntitlements(admin, user.id) }
     }
-    const unlocked = canView(ent, 'geo')
+    const unlocked = reportUnlocked(ent, 'geo')
 
     // ★ 报告缓存短路读取（token 防盗用第三档）：登录用户的【同参数重复请求】直接命中存量全文，
     //   零 AI、零限流、零预算（必须放在限流/预算/AI 之前）。命中处置全在纯函数 resolveModuleCachedHit：
@@ -121,7 +123,9 @@ export async function POST(request: NextRequest) {
         ? resolveModuleCachedHit(hit, { unlocked, skus: ['geo'], lockedPreview: GEO_LOCKED_PREVIEW })
         : null
       if (resolved) {
-        return NextResponse.json({ success: true, data: resolved.data, reportId: resolved.reportId, cached: true })
+        // ★ 缓存命中也要带同一试读标记，避免免费用户从存量全文缓存拿到完整渲染路径
+        const data = { ...resolved.data, preview: previewPayload('geo', unlocked) }
+        return NextResponse.json({ success: true, data, reportId: resolved.reportId, cached: true })
       }
     }
 
@@ -151,7 +155,8 @@ export async function POST(request: NextRequest) {
     // ★★ 成本护栏（token 防盗用第一档）：仅【登录用户】才生成 AI ——
     //   匿名（含外部脚本）不再触发本端点的 AI 调用（无账号、命中不了缓存，是最大敞口）；
     //   登录用户照常全量生成并入库全文，回看者必然已登录 ⇒ 不触「回看读到锁定版」事故。
-    const aiReport = userId && !aiBlocked ? await generateAIGeo(analysis) : null
+    // ★ 未解锁（试读）不调 AI：8 节全文不下发，未购用户不再产生成本。
+    const aiReport = userId && unlocked && !aiBlocked ? await generateAIGeo(analysis) : null
 
     // ★ 入库只存【内容】（locked 剥掉、ai 存全量全文）；门禁只作用于【响应】——
     //   读取侧按当前权益重算（详情页 reportGate），试吃→付费即刻生效。
@@ -177,6 +182,7 @@ export async function POST(request: NextRequest) {
         skus: ['geo'],
         preview: GEO_LOCKED_PREVIEW
       },
+      preview: previewPayload('geo', unlocked),
       trueSolar: ref
         ? {
             birthplace: city?.name || null,

@@ -19,8 +19,17 @@ const tooth = toothArg ? toothArg.split('=')[1] : null
 const { setServerSupabaseForTest } = await import('../src/lib/supabase.ts')
 
 // ---------- 内存 admin（reports/profiles/payments 的最小可用替身） ----------
-function makeMockAdmin(userId) {
+// ★ 2026-10-21 试读改版：报告门禁改按【是否持有 SKU】判定（reportUnlocked），
+//   不再随 ENTITLEMENT_ENFORCE 恒真。本脚本验证的是「已购用户的缓存/覆盖写」，
+//   故默认种一条真实已付流水（annual_report）；未购场景见断言⑥（匿名）与⑨。
+function makeMockAdmin(userId, { paidSku = 'annual_report' } = {}) {
   const db = { rows: [], seq: 0, freezeAt: null }
+  if (paidSku) {
+    db.rows.push({
+      __table: 'payments', user_id: userId, payment_type: 'single', status: 'paid',
+      transaction_id: `T-test-${paidSku}`, sku: paidSku
+    })
+  }
   const matches = (row, table, filters) =>
     row.__table === table && filters.every(([c, v]) => row[c] === v)
   // ★ 并发窗口模拟（REPLY-23 发现②）：db.freezeAt 开启后，下一次 select 只能看到冻结点
@@ -359,7 +368,12 @@ console.log('—— ⑥ 未登录用户：零 AI 调用、不走缓存、不落�
   if (aiCalls.length !== 0) fail(`未登录两次请求 AI 计数 ${aiCalls.length} ≠ 0（未登录应零 AI 成本）`)
   if (r1.json.reportId !== null || r2.json.reportId !== null) fail('未登录不应返回 reportId')
   if (rowsOf(db).length !== 0) fail('未登录不应写入 reports')
-  console.log('  ✓ 未登录：零 AI 调用（成本护栏）、不落库、无 reportId——与 saveReport 无 token 返回 null 一致')
+  // ★ 2026-10-21 试读：匿名＝未持有权益 → 必须进试读（preview.only=true），且不下发 AI 全文
+  if (r1.json.data?.preview?.only !== true || r1.json.data?.preview?.keys?.join() !== 'overview,liuNian') {
+    fail(`未登录应进入试读 preview={only:true,keys:[overview,liuNian]}，实际 ${JSON.stringify(r1.json.data?.preview)}`)
+  }
+  if (r1.json.data?.ai != null) fail('未登录不得下发 AI 全文（ai 应为 null）')
+  console.log('  ✓ 未登录：零 AI 调用（成本护栏）、不落库、无 reportId、preview.only=true 且 ai=null')
 }
 
 // ---------- 断言 ⑦ 权益重算接线方向（REPLY-23 发现①：resolveCachedHit 端到端安全方向） ----------

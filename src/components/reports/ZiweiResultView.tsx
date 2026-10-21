@@ -5,9 +5,9 @@
 import { useState } from 'react'
 import type { ZwChart, ZiweiAnalysis, PeriodRead } from '@/lib/ziwei'
 import type { ZiweiAIReport } from '@/lib/aiZiwei'
-import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import { isRuleVersion } from '@/lib/reportGate'
-import CheckoutButton from '@/components/CheckoutButton'
+import { PREVIEW_FREE } from '@/lib/reportPreview'
+import { LockedCard, UnlockCta } from '@/components/reports/PreviewLock'
 
 export interface ZiweiResultData {
   chart: ZwChart
@@ -16,6 +16,8 @@ export interface ZiweiResultData {
   aiSource: string
   // ★ 门禁（§8.5.1）：未解锁时给 preview 与 skus，已解锁为 null
   locked?: { skus: string[]; preview: string } | null
+  /** ★ 试读标记（route 下发；详情页无此字段时按 locked 推断） */
+  preview?: { only: boolean; keys: string[] }
   trueSolar: {
     birthplace: string | null
     zone: string
@@ -75,6 +77,18 @@ export default function ZiweiResultView({ data, onRegen, regenBusy }: {
   const [selected, setSelected] = useState<number | null>(chart.mingIndex)
   // ★ 付费用户拿到规则版兜底（AI 结果未过合规校验）时，标签旁必须给出口，否则只能要求退款
   const ruleVersion = isRuleVersion(aiSource)
+  // ★ 试读：十二宫星盘与基础信息常显；规则板块只放 patterns / transforms；大限流年锁
+  const previewMode = data.preview?.only ?? !!locked
+  const periods = [
+    { key: 'decadal', p: analysis.decadal },
+    { key: 'yearly', p: analysis.yearly },
+  ]
+  const freePeriods = previewMode
+    ? periods.filter(x => PREVIEW_FREE.ziwei_deep.includes(x.key))
+    : periods
+  const lockedPeriods = previewMode
+    ? periods.filter(x => !PREVIEW_FREE.ziwei_deep.includes(x.key))
+    : []
 
   const periodPalaceIndex = (p: PeriodRead): number =>
     chart.palaces.findIndex((x) => x.name === p.basePalace)
@@ -232,9 +246,9 @@ export default function ZiweiResultView({ data, onRegen, regenBusy }: {
         </div>
       </div>
 
-      {/* 大限/流年 */}
-      {[analysis.decadal, analysis.yearly].map((p) => (
-        <div key={p.title} className="hw-c-box hw-c-boxLg">
+      {/* 大限/流年（试读：仅免费板块全量，其余锁定） */}
+      {freePeriods.map(({ key, p }) => (
+        <div key={key} className="hw-c-box hw-c-boxLg">
             <h3 className="hw-c-h3">{p.title}</h3>
           <div className="text-sm text-ink/70 mb-2">
             {p.ganZhi}，命宫坐原局<span className="font-medium">{p.basePalace}</span>宫
@@ -249,27 +263,9 @@ export default function ZiweiResultView({ data, onRegen, regenBusy }: {
           </div>
         </div>
       ))}
+      {/* ★ 试读：大限 / 流年只给标题 + 模糊占位（DOM 不含真实正文） */}
+      {lockedPeriods.map(({ key, p }) => <LockedCard key={key} title={p.title} />)}
 
-      {/* AI 深度解读：未解锁时显示 preview 与解锁引导（§8.5.1 门禁消费） */}
-      {locked && (
-        <div className="hw-c-box hw-c-boxLg text-center">
-          <p className="text-sm text-ink-light mb-4">{locked.preview}</p>
-          {locked.skus.map((skuId) => {
-            const sku = SKUS[skuId as keyof typeof SKUS]
-            if (!sku) return null
-            // ★ 直连收银台（2026-10-18 修复）：旧实现 href="/pricing" 把用户丢去价格页再点一次，
-            //   且「紫微深度」在价格页的按钮同样绕路（真实事故）。returnTo=/reports：付完回我的报告
-            //   看已解锁内容（紫微与命盘无绑定关系，requireChart=false —— 未排盘也能买）。
-            return (
-              <div key={skuId} className="max-w-xs mx-auto mb-2">
-                <CheckoutButton sku={sku.id} available requireChart={false} returnTo="/reports">
-                  解锁 {sku.name} {formatPriceUSD(sku.priceUSD)}
-                </CheckoutButton>
-              </div>
-            )
-          })}
-        </div>
-      )}
       {ai && (
         <div className="space-y-4">
           <h2 className="hw-c-h1">深度解读 · {aiSource}</h2>
@@ -302,6 +298,17 @@ export default function ZiweiResultView({ data, onRegen, regenBusy }: {
             ))}
         </div>
       )}
+
+      {/* ★ 试读：12 个 AI 板块只给标题 + 模糊占位（route 未生成、未下发全文） */}
+      {previewMode && !ai && (
+        <div className="space-y-3">
+          <h2 className="hw-c-h1">深度解读</h2>
+          {SECTIONS.map(([key, title]) => <LockedCard key={key} title={title} />)}
+        </div>
+      )}
+
+      {/* ★ 未解锁：锁定区末尾统一解锁按钮 */}
+      {locked && <UnlockCta skus={locked.skus} preview={locked.preview} />}
     </div>
   )
 }

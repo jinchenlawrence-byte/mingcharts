@@ -4,9 +4,8 @@
 import type { LuckLiuNianItem, LuckLiuYueItem, LuckDaYunItem } from '@/lib/analysis'
 import type { Pillar } from '@/lib/paipan'
 import type { AILiunianSections } from '@/lib/aiLiunian'
-import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import { isRuleVersion } from '@/lib/reportGate'
-import CheckoutButton from '@/components/CheckoutButton'
+import { LockedCard, UnlockCta } from '@/components/reports/PreviewLock'
 
 export interface LiunianResultData {
   targetYear: number
@@ -28,6 +27,8 @@ export interface LiunianResultData {
   aiSource: string
   // ★ 门禁（§8.5.1）：未解锁时给 preview 与 skus，已解锁为 null
   locked?: { skus: string[]; preview: string } | null
+  /** ★ 试读标记（route 下发；详情页无此字段时按 locked 推断） */
+  preview?: { only: boolean; keys: string[] }
   dstNotice: string | null
 }
 
@@ -75,6 +76,8 @@ export default function LiunianResultView({ data, onRegen, regenBusy }: {
   const pillarLine = (pl: Pillar) => pl.ganZhi
   // ★ 付费用户拿到规则版兜底（AI 结果未过合规校验）时，标签旁必须给出口，否则只能要求退款
   const ruleVersion = isRuleVersion(data.aiSource)
+  // ★ 试读：目标流年头部（四柱/喜忌/当前大运）与三年流年概览免费；当年流月节奏与 AI 全文锁
+  const previewMode = data.preview?.only ?? !!data.locked
 
   return (
     <div className="space-y-6">
@@ -176,24 +179,7 @@ export default function LiunianResultView({ data, onRegen, regenBusy }: {
         </div>
       </div>
 
-      {/* AI 深度解读板块：未解锁时显示 preview 与解锁引导（§8.5.1 门禁消费） */}
-      {data.locked && (
-        <div className="hw-c-box hw-c-boxLg text-center">
-          <p className="text-sm text-ink-light mb-4">{data.locked.preview}</p>
-          {data.locked.skus.map((skuId) => {
-            const sku = SKUS[skuId as keyof typeof SKUS]
-            if (!sku) return null
-            // ★ 直连收银台（2026-10-18 修复）：不再绕价格页；returnTo=/reports 付完回我的报告
-            return (
-              <div key={skuId} className="max-w-xs mx-auto mb-2">
-                <CheckoutButton sku={sku.id} available requireChart={false} returnTo="/reports">
-                  解锁 {sku.name} {formatPriceUSD(sku.priceUSD)}
-                </CheckoutButton>
-              </div>
-            )
-          })}
-        </div>
-      )}
+      {/* AI 深度解读板块 */}
       {data.ai && (
       <div className="space-y-4">
         {AI_SECTIONS.map(({ key, name }) => {
@@ -212,8 +198,8 @@ export default function LiunianResultView({ data, onRegen, regenBusy }: {
       </div>
       )}
 
-      {/* 当年流月表（仅目标年=当年时展示） */}
-      {data.liuYue && data.liuYue.length > 0 && (
+      {/* 当年流月表（仅目标年=当年时展示）；试读时只给标题 + 占位 */}
+      {!previewMode && data.liuYue && data.liuYue.length > 0 && (
         <div className="hw-c-box hw-c-boxLg">
           <h3 className="hw-c-h3">当年流月节奏（节气换月）</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
@@ -227,6 +213,21 @@ export default function LiunianResultView({ data, onRegen, regenBusy }: {
           </div>
         </div>
       )}
+      {/* 有流月数据才给锁定卡：目标年≠当年时该板块本来就不存在，给卡会误导 */}
+      {previewMode && data.liuYue && data.liuYue.length > 0 && (
+        <LockedCard title="当年流月节奏（节气换月）" />
+      )}
+
+      {/* ★ 试读：6 个 AI 板块只给标题 + 模糊占位（route 未生成、未下发全文） */}
+      {previewMode && !data.ai && (
+        <div className="space-y-3">
+          <h2 className="hw-c-h1">年运深度解读</h2>
+          {AI_SECTIONS.map(({ key, name }) => <LockedCard key={key} title={name} />)}
+        </div>
+      )}
+
+      {/* ★ 未解锁：锁定区末尾统一解锁按钮 */}
+      {data.locked && <UnlockCta skus={data.locked.skus} preview={data.locked.preview} />}
 
       {/* 免责声明 */}
       <p className="text-xs text-ink-light/60 text-center leading-relaxed">

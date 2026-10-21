@@ -72,11 +72,16 @@ export function reportCacheKey(kind: string, version: number, input: unknown): s
   return `${kind}:v${version}:${digest}`
 }
 
-/** 写缓存前剥掉权益状态（locked 是派生字段，入缓存即违反原则①） */
-export function stripEntitlementState<T extends object>(data: T): Omit<T, 'locked'> {
+/**
+ * 写缓存前剥掉权益状态（locked / preview 都是派生字段，入缓存即违反原则①）。
+ * ★ preview 也必须剥：试读期写下 only=true 后用户付费，命中缓存时若沿用旧标记会把
+ *   已购用户渲染成锁定形态（与「付费后仍显示未解锁」同型事故）。
+ */
+export function stripEntitlementState<T extends object>(data: T): Omit<T, 'locked' | 'preview'> {
   const content = { ...data } as Record<string, unknown>
   delete content.locked
-  return content as Omit<T, 'locked'>
+  delete content.preview
+  return content as Omit<T, 'locked' | 'preview'>
 }
 
 /**

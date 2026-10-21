@@ -1,10 +1,12 @@
 // ★ 门禁接线断言（HANDOFF-geo改真付费与门禁补完 §五）
-// ① geo free/locked 结构——行为：真调 /api/geo POST，断言 locked=null + free.geo 存在
-// ② canView 接线——grep route 源码：REPORT_GRANTS 每个 grant 有 canView 调用
+// ① geo 试读结构——行为：真调 /api/geo POST（匿名），断言 locked 非空 + preview.only=true
+//    + free.geo 存在 + ai 未下发（未购不生成、不下发全文）
+// ② 报告门禁接线——grep route 源码：REPORT_GRANTS 每个 grant 有 reportUnlocked 调用
+//    （★ 2026-10-21 起报告门禁不再走 canView：canView 在 ENFORCE=false 恒真，会把未购当已购）
 // ③ 前端消费 locked——剥注释后精确形态正则（§八-① 收紧：旧 /locked/ 裸词可被注释骗过）
-// ④ 定价与门禁一致性——grep：ONE_TIME_SKUS 每个 grant 有 canView + locked skus 包含
+// ④ 定价与门禁一致性——grep：ONE_TIME_SKUS 每个 grant 有 reportUnlocked + locked skus 包含
 // ⑤ prompt 同源——五模块引用 FORBIDDEN_WORDS_PROMPT + 三表拆分语义（A 移出拦截，B/C 保留）
-// ⑥ ENFORCE=false 回归——ENTITLEMENT_ENFORCE === false + canView 恒 true
+// ⑥ ENFORCE=false 回归——ENTITLEMENT_ENFORCE === false + canView 恒 true（canView 语义未改）
 
 import { readFileSync, readdirSync, existsSync } from 'node:fs'
 
@@ -29,8 +31,8 @@ const root = new URL('../src/', import.meta.url).pathname.replace(/^\/(\w:)/, '$
 const allFiles = walk(root)
 const relOf = (file) => file.replace(root, 'src/').replace(/\\/g, '/').replace(/\/+/g, '/')
 
-// ---------- ① geo free/locked 结构（行为断言：真调 route handler）----------
-console.log('—— ① geo free/locked 结构（真调 /api/geo POST）——')
+// ---------- ① geo 试读结构（行为断言：真调 route handler）----------
+console.log('—— ① geo 试读结构（真调 /api/geo POST，匿名＝未购）——')
 let geoBehaviorFail = 0
 try {
   const { ENTITLEMENT_ENFORCE, canView, EMPTY_ENTITLEMENTS } = await import('../src/lib/entitlement.ts')
@@ -54,33 +56,47 @@ try {
   const geoRes = await geoPOST(mockReq)
   const geoJson = await geoRes.json()
   if (!geoJson.success) { fail(`geo route 返回失败：${geoJson.error}`); geoBehaviorFail++ }
-  if (geoJson.data?.locked !== null) { fail(`geo locked 在 ENFORCE=false 时应为 null，实际 ${JSON.stringify(geoJson.data?.locked)}`); geoBehaviorFail++ }
+  // ★ 新规则（2026-10-21）：未持有 geo 权益 ⇒ 试读，不给全文、不生成 AI
+  if (!geoJson.data?.locked || geoJson.data.locked.skus?.join() !== 'geo') {
+    fail(`geo 未购应返回 locked.skus=['geo']，实际 ${JSON.stringify(geoJson.data?.locked)}`); geoBehaviorFail++
+  }
+  if (geoJson.data?.preview?.only !== true) {
+    fail(`geo 未购 preview.only 应为 true，实际 ${JSON.stringify(geoJson.data?.preview)}`); geoBehaviorFail++
+  }
+  if (geoJson.data?.preview?.keys?.join() !== 'current,career') {
+    fail(`geo 免费板块应为 current,career，实际 ${JSON.stringify(geoJson.data?.preview?.keys)}`); geoBehaviorFail++
+  }
+  if (geoJson.data?.ai != null) { fail('geo 未购不得下发 AI 全文（ai 应为 null）'); geoBehaviorFail++ }
   if (!geoJson.data?.free?.geo) { fail('geo free.geo 不存在（试吃内容缺失）'); geoBehaviorFail++ }
   console.log(geoBehaviorFail === 0
-    ? '✓ geo free/locked 结构：ENFORCE=false 时 locked=null，free.geo 含结构化数据'
+    ? '✓ geo 试读结构：未购 locked 非空 + preview.only=true + 免费板块 current/career + ai 未下发 + free.geo 有数据'
     : `✗ geo 行为断言失败 ${geoBehaviorFail} 处`)
 } catch (e) {
   geoBehaviorFail++; fail(`geo 行为断言异常：${e instanceof Error ? e.message : e}`)
   console.log(`✗ geo 行为断言异常 ${geoBehaviorFail} 处`)
 }
 
-// ---------- ② canView 接线（全库级）----------
-console.log('—— ② canView 接线（REPORT_GRANTS 每个 grant 有 canView 调用）——')
+// ---------- ② 报告门禁接线（全库级）----------
+console.log('—— ② reportUnlocked 接线（四个试读模块的 grant 各有 reportUnlocked 调用）——')
 const { REPORT_GRANTS } = await import('../src/lib/pricing.ts')
+const REPORT_GATE_RE = (grant) => new RegExp(`reportUnlocked\\s*\\(\\s*ent\\s*,\\s*['"]${grant}['"]`)
+// ★ fatebook 不走报告试读：命书是「一份一付·按盘判定」，门禁是 canViewFatebookForChart
+//   （/api/entitlements 无 chartId 时仍用 canView(ent,'fatebook') 粗判）——不在此要求 reportUnlocked。
+const PREVIEW_GRANTS = REPORT_GRANTS.filter((g) => g !== 'fatebook')
 let gateFail = 0
-for (const grant of REPORT_GRANTS) {
-  const re = new RegExp(`canView\\s*\\(\\s*ent\\s*,\\s*['"]${grant}['"]`)
+for (const grant of PREVIEW_GRANTS) {
+  const re = REPORT_GATE_RE(grant)
   let found = false
   for (const file of allFiles) {
     if (!file.includes('/api/')) continue
     const content = readFileSync(file, 'utf8')
     if (re.test(content)) { found = true; break }
   }
-  if (!found) { fail(`canView(ent, '${grant}') 在 api/ 下无调用`); gateFail++ }
+  if (!found) { fail(`reportUnlocked(ent, '${grant}') 在 api/ 下无调用`); gateFail++ }
 }
 console.log(gateFail === 0
-  ? `✓ canView 接线：${REPORT_GRANTS.length} 个报告 grant 全部在路由里接了 canView 调用`
-  : `✗ canView 接线缺失 ${gateFail} 处`)
+  ? `✓ 报告门禁接线：${PREVIEW_GRANTS.length} 个试读 grant 全部在路由里接了 reportUnlocked（不依赖 ENFORCE）；命书仍走按盘判定`
+  : `✗ reportUnlocked 接线缺失 ${gateFail} 处`)
 
 // ---------- ③ 前端消费 locked（剥注释 + 精确形态正则，§八-① 收紧）----------
 console.log('—— ③ 前端消费 locked（5 个页面：剥注释后匹配 .locked?. / .locked && 消费形态）——')
@@ -112,20 +128,20 @@ console.log(feFail === 0
   : `✗ 前端未消费 locked ${feFail} 处`)
 
 // ---------- ④ 定价与门禁一致性 ----------
-console.log('—— ④ 定价与门禁一致性（每个 one_time SKU 的 grant 有 canView + locked skus）——')
+console.log('—— ④ 定价与门禁一致性（每个 one_time SKU 的 grant 有 reportUnlocked + locked skus）——')
 const { ONE_TIME_SKUS } = await import('../src/lib/pricing.ts')
 let consistencyFail = 0
 for (const sku of ONE_TIME_SKUS) {
   for (const grant of sku.grants) {
-    if (!REPORT_GRANTS.includes(grant)) continue // 只查报告类 grant
-    // (a) canView 调用存在
-    const re = new RegExp(`canView\\s*\\(\\s*ent\\s*,\\s*['"]${grant}['"]`)
+    if (!PREVIEW_GRANTS.includes(grant)) continue // 只查四个试读模块的 grant（fatebook 走按盘判定）
+    // (a) reportUnlocked 调用存在（报告门禁；canView 在 ENFORCE=false 恒真，不能作门禁）
+    const re = REPORT_GATE_RE(grant)
     let canViewFound = false
     for (const file of allFiles) {
       if (!file.includes('/api/')) continue
       if (re.test(readFileSync(file, 'utf8'))) { canViewFound = true; break }
     }
-    if (!canViewFound) { fail(`${sku.id}.grants[${grant}] 无 canView 调用`); consistencyFail++ }
+    if (!canViewFound) { fail(`${sku.id}.grants[${grant}] 无 reportUnlocked 调用`); consistencyFail++ }
     // (b) locked skus 包含该 grant
     let lockedFound = false
     for (const file of allFiles) {
@@ -137,7 +153,7 @@ for (const sku of ONE_TIME_SKUS) {
   }
 }
 console.log(consistencyFail === 0
-  ? `✓ 定价与门禁一致：${ONE_TIME_SKUS.length} 个 one_time SKU 的报告 grant 全部有 canView + locked skus`
+  ? `✓ 定价与门禁一致：${ONE_TIME_SKUS.length} 个 one_time SKU 的报告 grant 全部有 reportUnlocked + locked skus`
   : `✗ 定价门禁不一致 ${consistencyFail} 处`)
 
 // ---------- ⑤ prompt 与判据同源（三表拆分语义 + 五模块引用派生）----------
@@ -184,8 +200,9 @@ console.log(promptFail === 0
 // ---------- 牙口自检 ----------
 console.log('—— 牙口自检 ——')
 let toothFail = 0
-// ② 牙口：删 geo canView → 应翻红（验证 grep 判据有效）
-if (!/canView\s*\(\s*ent\s*,\s*['"]geo['"]/.test("canView(ent, 'geo')")) { toothFail++; fail('牙口：canView geo 样本未检出') }
+// ② 牙口：删 geo reportUnlocked → 应翻红（验证 grep 判据有效）；canView 不得冒充报告门禁
+if (!REPORT_GATE_RE('geo').test("reportUnlocked(ent, 'geo')")) { toothFail++; fail('牙口：reportUnlocked geo 样本未检出') }
+if (REPORT_GATE_RE('geo').test("canView(ent, 'geo')")) { toothFail++; fail('牙口：canView 被误判为 reportUnlocked') }
 // ③ 牙口：精确形态判据有效——成员访问 / 解构后裸用 均命中；注释 / 类型声明不命中
 if (!LOCKED_CONSUME_RE.test(stripComments('const x = data.locked && 1'))) { toothFail++; fail('牙口：data.locked && 消费形态未检出') }
 if (!LOCKED_CONSUME_RE.test(stripComments('{locked && ('))) { toothFail++; fail('牙口：locked && 解构消费形态未检出') }
