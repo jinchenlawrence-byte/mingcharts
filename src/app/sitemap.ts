@@ -4,7 +4,9 @@ import { SHENGXIAO, LIUNIAN_YEARS } from '@/lib/shengxiaoData'
 import { JIEQI } from '@/lib/jieqiData'
 import { JIERI } from '@/lib/jieriData'
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
+// 与 robots.ts 同一口径：环境变量缺失或为 localhost 时回退正式域名，绝不把 localhost 交给爬虫。
+const RAW_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || ''
+const BASE_URL = RAW_URL && !RAW_URL.includes('localhost') ? RAW_URL.replace(/\/$/, '') : 'https://www.mingcharts.com'
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date()
