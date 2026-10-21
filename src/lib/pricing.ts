@@ -60,10 +60,18 @@ export const MULTI_CHART_LIMIT = { free: 1, member: 5 } as const
 
 /**
  * ★ 追问包次数（ask_pack 每次购买可追问的条数）—— 单一事实源，只此一处定义。
- *   消费方：SKUS.ask_pack.desc、grantLabels 的 ask 标签、entitlement.askCreditsFromRows。
- *   改次数只动这一处（route/组件不得各自写「15」）。
+ *   消费方：SKUS.ask_pack.desc、grantLabels 的 ask 标签、entitlement.askQuotaFromRows。
+ *   改次数只动这一处（route/组件不得各自写死数字）。
  */
-export const ASK_PACK_SIZE = 15
+export const ASK_PACK_SIZE = 10
+
+/**
+ * ★ 会员每月追问额度（2026-10-21）—— 单一事实源，只此一处定义。
+ *   订阅会员（月/年）每个自然月可免费追问 8 次，按月重置、不累计；
+ *   与追问包互不挤占：会员先扣本月额度，用完后才扣已购追问包的次数。
+ *   消费方：entitlement.askQuotaFromRows、会员 SKU 文案。
+ */
+export const MEMBER_ASK_PER_MONTH = 8
 
 export const SKUS: Record<SkuId, Sku> = {
   fatebook: {
@@ -106,13 +114,13 @@ export const SKUS: Record<SkuId, Sku> = {
   },
   member_monthly: {
     id: 'member_monthly', name: '月度会员',
-    desc: '个性化日运（每日）＋ 流月提示，持续更新',
+    desc: `个性化日运（每日）＋ 流月提示 ＋ 每月 ${MEMBER_ASK_PER_MONTH} 次追问`,
     priceUSD: 9.9, kind: 'subscription', durationDays: 30,
     grants: SUBSCRIPTION_GRANTS   // ★ 不含任何报告（订阅不含报告，定价方案 §4.2）
   },
   member_yearly: {
     id: 'member_yearly', name: '年度会员',
-    desc: '个性化日运 ＋ 流月提示，按年订阅更划算',
+    desc: `个性化日运 ＋ 流月提示 ＋ 每月 ${MEMBER_ASK_PER_MONTH} 次追问，按年订阅更划算`,
     priceUSD: 49, kind: 'subscription', durationDays: 365,
     grants: SUBSCRIPTION_GRANTS   // ★ 同上
   },

@@ -1,11 +1,11 @@
 // AI 追问（ask_pack）验收（docs/追问功能实现方案）
-// 覆盖：① 次数单一事实源（ASK_PACK_SIZE）② 硬拒答分类 ③ 拒答/免责话术自证合规
-//       ④ askCreditsFromRows 派生额度边界 ⑤ route 接线（拒答先于 AI 调用、额度 402、落库）
+// 覆盖：① 次数单一事实源（ASK_PACK_SIZE / MEMBER_ASK_PER_MONTH）② 硬拒答分类 ③ 拒答/免责话术自证合规
+//       ④ askQuotaFromRows 派生额度边界（追问包 + 会员每月）⑤ route 接线（拒答先于 AI 调用、额度 402、落库）
 //       ⑥ 合规示范自证（复用 FORBIDDEN_FEWSHOT + 问答场景整句）
 import { readFileSync } from 'node:fs'
-import { SKUS, ASK_PACK_SIZE } from '../src/lib/pricing.ts'
+import { SKUS, ASK_PACK_SIZE, MEMBER_ASK_PER_MONTH } from '../src/lib/pricing.ts'
 import { GRANT_LABELS } from '../src/lib/grantLabels.ts'
-import { askCreditsFromRows } from '../src/lib/entitlement.ts'
+import { askQuotaFromRows, askMonthStart } from '../src/lib/entitlement.ts'
 import {
   classifyAskQuestion,
   refusalText,
@@ -20,24 +20,30 @@ const fail = (msg) => { allPass = false; console.log('  ✗ ' + msg) }
 const read = (p) => readFileSync(new URL(p, import.meta.url), 'utf8')
 const strip = (s) => s.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
 
-// ---------- ① 次数单一事实源：ASK_PACK_SIZE ----------
+// ---------- ① 次数单一事实源：ASK_PACK_SIZE / MEMBER_ASK_PER_MONTH ----------
 {
   let f = 0
-  if (ASK_PACK_SIZE !== 15) { f++; fail(`ASK_PACK_SIZE 应为 15，实得 ${ASK_PACK_SIZE}`) }
-  // desc / 标签必须由 ASK_PACK_SIZE 派生，不得另写字面量
+  if (ASK_PACK_SIZE !== 10) { f++; fail(`ASK_PACK_SIZE 应为 10，实得 ${ASK_PACK_SIZE}`) }
+  if (MEMBER_ASK_PER_MONTH !== 8) { f++; fail(`MEMBER_ASK_PER_MONTH 应为 8，实得 ${MEMBER_ASK_PER_MONTH}`) }
+  // desc / 标签必须由常量派生，不得另写字面量
   if (!SKUS.ask_pack.desc.includes(String(ASK_PACK_SIZE))) {
     f++; fail(`ask_pack.desc 未含 ${ASK_PACK_SIZE}（未派生）：${SKUS.ask_pack.desc}`)
   }
   if (!GRANT_LABELS.ask.includes(String(ASK_PACK_SIZE))) {
     f++; fail(`GRANT_LABELS.ask 未含 ${ASK_PACK_SIZE}（未派生）：${GRANT_LABELS.ask}`)
   }
-  // 源码守卫：pricing.ts 不得硬编码「追问 15 次」；grantLabels 不得硬编码「追问 15」或「V2」
+  for (const id of ['member_monthly', 'member_yearly']) {
+    if (!SKUS[id].desc.includes(String(MEMBER_ASK_PER_MONTH))) {
+      f++; fail(`${id}.desc 未含会员每月追问额度 ${MEMBER_ASK_PER_MONTH}（未派生）`)
+    }
+  }
+  // 源码守卫：次数不得在别处硬编码数字
   const pricingSrc = strip(read('../src/lib/pricing.ts'))
-  if (/追问\s*15/.test(pricingSrc)) { f++; fail('pricing.ts 仍硬编码「追问 15 次」字面量') }
+  if (/追问\s*\d/.test(pricingSrc)) { f++; fail('pricing.ts 硬编码了「追问 N 次」字面量') }
   const grantSrc = strip(read('../src/lib/grantLabels.ts'))
-  if (/追问\s*15|V2/.test(grantSrc)) { f++; fail('grantLabels.ts 的 ask 标签仍硬编码 15/V2') }
+  if (/追问\s*\d|V2/.test(grantSrc)) { f++; fail('grantLabels.ts 的 ask 标签硬编码了数字/V2') }
   console.log(f === 0
-    ? `✓ 单一事实源：ASK_PACK_SIZE=${ASK_PACK_SIZE}，desc/标签均派生，无 15/V2 字面量`
+    ? `✓ 单一事实源：ASK_PACK_SIZE=${ASK_PACK_SIZE}，MEMBER_ASK_PER_MONTH=${MEMBER_ASK_PER_MONTH}，desc/标签均派生`
     : '✗ 单一事实源断言失败')
 }
 
@@ -94,23 +100,41 @@ const strip = (s) => s.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
     : '✗ 话术合规断言失败')
 }
 
-// ---------- ④ askCreditsFromRows 派生额度边界 ----------
+// ---------- ④ askQuotaFromRows 派生额度边界（追问包 + 会员每月）----------
 {
   let f = 0
   const P = (over = {}) => ({ payment_type: 'single', status: 'paid', transaction_id: 'WF-A', sku: 'ask_pack', ...over })
+  const M = (over = {}) => ({ is_member: true, member_plan: 'monthly', member_expire_at: '2099-01-01T00:00:00Z', ...over })
   const eq = (got, want, label) => { if (got !== want) { f++; fail(`${label}：期望 ${want}，实得 ${got}`) } }
 
-  eq(askCreditsFromRows([], 0), 0, '无流水→0')
-  eq(askCreditsFromRows([P()], 0), ASK_PACK_SIZE, '一包未用→15')
-  eq(askCreditsFromRows([P()], ASK_PACK_SIZE), 0, '一包用尽→0')
-  eq(askCreditsFromRows([P()], ASK_PACK_SIZE + 5), 0, '超额消耗→夹到 0')
-  eq(askCreditsFromRows([P(), P()], 5), 2 * ASK_PACK_SIZE - 5, '两包叠加→30-5')
-  eq(askCreditsFromRows([P({ transaction_id: 'MOCK_1' })], 0), 0, 'MOCK_ 流水不授予')
-  eq(askCreditsFromRows([P({ status: 'pending' })], 0), 0, '未支付不授予')
-  eq(askCreditsFromRows([P({ sku: 'fatebook' })], 0), 0, '非 ask_pack 不授予')
-  eq(askCreditsFromRows([P({ sku: ' ask_pack ' })], 0), ASK_PACK_SIZE, 'sku 带空格仍识别')
+  // 追问包（终身，不重置）
+  eq(askQuotaFromRows([], 0, 0, null).total, 0, '无流水→0')
+  eq(askQuotaFromRows([P()], 0, 0, null).pack, ASK_PACK_SIZE, '一包未用→10')
+  eq(askQuotaFromRows([P()], ASK_PACK_SIZE, 0, null).pack, 0, '一包用尽→0')
+  eq(askQuotaFromRows([P()], ASK_PACK_SIZE + 5, 0, null).pack, 0, '超额消耗→夹到 0')
+  eq(askQuotaFromRows([P(), P()], 5, 0, null).pack, 2 * ASK_PACK_SIZE - 5, '两包叠加→20-5')
+  eq(askQuotaFromRows([P({ transaction_id: 'MOCK_1' })], 0, 0, null).pack, 0, 'MOCK_ 流水不授予')
+  eq(askQuotaFromRows([P({ status: 'pending' })], 0, 0, null).pack, 0, '未支付不授予')
+  eq(askQuotaFromRows([P({ sku: 'fatebook' })], 0, 0, null).pack, 0, '非 ask_pack 不授予')
+  eq(askQuotaFromRows([P({ sku: ' ask_pack ' })], 0, 0, null).pack, ASK_PACK_SIZE, 'sku 带空格仍识别')
+
+  // 会员每月额度（自然月重置，不累计）
+  eq(askQuotaFromRows([], 0, 0, M()).member, MEMBER_ASK_PER_MONTH, '会员本月未用→8')
+  eq(askQuotaFromRows([], 0, MEMBER_ASK_PER_MONTH, M()).member, 0, '会员本月用尽→0')
+  eq(askQuotaFromRows([], 0, MEMBER_ASK_PER_MONTH + 3, M()).member, 0, '会员超额消耗→夹到 0')
+  eq(askQuotaFromRows([], 0, 3, M()).member, MEMBER_ASK_PER_MONTH - 3, '会员用 3 次→剩 5')
+  eq(askQuotaFromRows([], 0, 0, M({ member_plan: 'yearly' })).member, MEMBER_ASK_PER_MONTH, '年费会员同享每月 8 次')
+  eq(askQuotaFromRows([], 0, 0, M({ is_member: false })).member, 0, '非会员→0')
+  eq(askQuotaFromRows([], 0, 0, M({ member_expire_at: '2020-01-01T00:00:00Z' })).member, 0, '会员已过期→0')
+  eq(askQuotaFromRows([], 0, 0, null).member, 0, '无档案→0')
+
+  // 两种额度叠加：合计 = 包剩余 + 会员本月剩余（互不挤占）
+  eq(askQuotaFromRows([P()], 4, 3, M()).total, (ASK_PACK_SIZE - 4) + (MEMBER_ASK_PER_MONTH - 3), '包剩余 + 会员剩余')
+  // 自然月边界：北京时间 11-01 00:30 属于 11 月；10-31 23:59 属于 10 月
+  eq(askMonthStart(new Date('2026-10-31T16:30:00Z').getTime()), '2026-10-31T16:00:00.000Z', '跨月瞬间按北京时间归月（11 月）')
+  eq(askMonthStart(new Date('2026-10-31T15:59:59Z').getTime()), '2026-09-30T16:00:00.000Z', '10-31 23:59（北京）仍归 10 月')
   console.log(f === 0
-    ? '✓ 额度派生：授予/消耗/夹零/多包叠加/MOCK_/未付/异 SKU/空格 边界全过'
+    ? '✓ 额度派生：追问包终身 + 会员每月 8 次 + 叠加/过期/归月 边界全过'
     : '✗ 额度派生断言失败')
 }
 
@@ -127,6 +151,12 @@ const strip = (s) => s.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
   if (!/\.from\(\s*['"]ask_messages['"]\s*\)[\s\S]*?\.insert\(/.test(code)) {
     f++; fail('route 未向 ask_messages 落库')
   }
+  // ★ 扣减来源（2026-10-21）：会员额度优先、其次追问包；落库必须带 credit_source
+  if (!code.includes("credit_source")) { f++; fail('route 落库未标记 credit_source（额度来源无法区分）') }
+  if (!/quota\.member\s*>\s*0\s*\?\s*'member'\s*:\s*'pack'/.test(code)) {
+    f++; fail('route 未按「会员额度优先、其次追问包」选择 credit_source')
+  }
+  if (!code.includes('memberRemaining')) { f++; fail('route 未下发 memberRemaining（会员每月额度明细）') }
   // ★ 顺序守卫：拒答判定必须【先于】AI 生成（零成本、不扣额）
   const iRef = code.indexOf('classifyAskQuestion')
   const iGen = code.indexOf('generateAskAnswer')

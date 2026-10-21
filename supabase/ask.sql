@@ -5,12 +5,14 @@
 --
 -- 背景：追问包（ask_pack，$4.99 / ASK_PACK_SIZE 次）购买经现有 checkout/webhook 落
 --   payments(payment_type='single', sku='ask_pack')，【无需新增加额逻辑】；
---   本表只记录【成功回答】的问答，剩余次数 = 已支付 ask_pack 流水数 × 次数 − 本表行数。
+--   本表只记录【成功回答】的问答，剩余次数 = 追问包已付次数 × ASK_PACK_SIZE
+--   + 会员本月额度（MEMBER_ASK_PER_MONTH）− 分别按 credit_source 统计的消耗。
 --
 -- ★★ 额度语义：
 --   · 拒答 / AI 失败 / 合规重试后放弃 → 【不落行、不扣额】；
 --   · 仅「AI 成功且过合规」才落一行 → 本表行数 === 已消耗次数；
---   · 额度判定单一事实源在 src/lib/entitlement.ts（askCreditsFromRows / getAskRemaining），
+--   · credit_source 标记本条消耗的是 pack（终身）还是 member（本自然月）；
+--   · 额度判定单一事实源在 src/lib/entitlement.ts（askQuotaFromRows / getAskRemaining），
 --     本表仅作计数，绝不在此另立判定。
 -- ★★ 写入走 service_role（/api/ask 服务端，绕过 RLS）；客户端会话仅可 SELECT 自己的历史。
 --    （question/answer 为 AI 生成内容，非敏感凭据；但仍只对本人可见。）
@@ -23,11 +25,18 @@ CREATE TABLE IF NOT EXISTS ask_messages (
   chart_id UUID REFERENCES charts(id) ON DELETE SET NULL,
   question TEXT NOT NULL,
   answer TEXT NOT NULL,
+  -- ★ 本条消耗的额度来源（2026-10-21）：pack=追问包（终身），member=会员每月（本自然月）
+  credit_source TEXT NOT NULL DEFAULT 'pack' CHECK (credit_source IN ('pack', 'member')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 【已有数据库】补列（幂等）：历史行取 default 'pack'，与旧口径完全一致
+ALTER TABLE ask_messages ADD COLUMN IF NOT EXISTS credit_source TEXT NOT NULL DEFAULT 'pack'
+  CHECK (credit_source IN ('pack', 'member'));
+
 CREATE INDEX IF NOT EXISTS idx_ask_messages_user ON ask_messages(user_id);
 CREATE INDEX IF NOT EXISTS idx_ask_messages_created ON ask_messages(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_ask_messages_source ON ask_messages(user_id, credit_source, created_at DESC);
 
 ALTER TABLE ask_messages ENABLE ROW LEVEL SECURITY;
 

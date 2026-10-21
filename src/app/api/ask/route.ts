@@ -29,11 +29,17 @@ export async function GET(request: NextRequest) {
     const admin = createServerSupabase()
     const { data: { user }, error } = await admin.auth.getUser(token)
     if (error || !user) return NextResponse.json({ error: '登录无效，请重新登录' }, { status: 401 })
-    const remaining = await getAskRemaining(admin, user.id)
+    const quota = await getAskRemaining(admin, user.id)
     // ★ enforced 一并下发（2026-10-21）：前端据此决定「剩余 0 时是否显示购买入口」。
     //   内测期 ENFORCE=false ⇒ 额度为 0 也能照常提问，此时不该催用户买；
     //   开关口径仍以本文件（服务端）为单一事实源，前端不自行判断 env。
-    return NextResponse.json({ remaining, enforced: ENTITLEMENT_ENFORCE })
+    // ★ 明细一并下发（2026-10-21）：会员每月额度与已购追问包分开，便于前端展示来源。
+    return NextResponse.json({
+      remaining: quota.total,
+      memberRemaining: quota.member,
+      packRemaining: quota.pack,
+      enforced: ENTITLEMENT_ENFORCE,
+    })
   } catch (e) {
     console.error('追问额度查询失败:', e)
     return NextResponse.json({ error: '追问额度查询失败' }, { status: 500 })
@@ -58,7 +64,7 @@ export async function POST(request: NextRequest) {
     const { data: { user }, error: authError } = await admin.auth.getUser(token)
     if (authError || !user) return NextResponse.json({ error: '登录无效，请重新登录' }, { status: 401 })
 
-    const remaining = await getAskRemaining(admin, user.id)
+    const quota = await getAskRemaining(admin, user.id)
 
     // ★ 速率限制（token 防盗用第二档）：默认关闭（内测放行）；开启后按 u:<id> 固定窗口计数，超限返 429。
     //   与其它 AI 端点共用 ai_user_min/ai_user_day 桶 ⇒ 全站每用户 AI 总频次共享（5/分 + 50/日）。
@@ -73,12 +79,12 @@ export async function POST(request: NextRequest) {
         disclaimer: ASK_DISCLAIMER,
         refused: true,
         category: refusedCategory,
-        remaining,
+        remaining: quota.total,
       })
     }
 
     // ③ 额度硬校验（仅 ENFORCE 开启时）
-    if (ENTITLEMENT_ENFORCE && remaining <= 0) {
+    if (ENTITLEMENT_ENFORCE && quota.total <= 0) {
       return NextResponse.json(
         {
           error: '追问次数已用完，可购买追问包继续提问',
@@ -97,7 +103,7 @@ export async function POST(request: NextRequest) {
         answer: ASK_FALLBACK_TEXT,
         disclaimer: ASK_DISCLAIMER,
         failed: true,
-        remaining,
+        remaining: quota.total,
       })
     }
 
@@ -108,16 +114,20 @@ export async function POST(request: NextRequest) {
         answer: ASK_FALLBACK_TEXT,
         disclaimer: ASK_DISCLAIMER,
         failed: true,
-        remaining,
+        remaining: quota.total,
       })
     }
 
     // ⑤ 成功才落库（本表行数 === 已消耗次数）；拒答/失败不落行、不扣额
+    // ★ 来源标记（2026-10-21）：优先扣会员本月额度（月底清零），其次扣追问包。
+    //   额度重算完全依赖本列：pack 终身累计、member 只计本自然月。
+    const creditSource = quota.member > 0 ? 'member' : 'pack'
     const { error: insertError } = await admin.from('ask_messages').insert({
       user_id: user.id,
       chart_id: chartId ?? null,
       question: q,
       answer,
+      credit_source: creditSource,
     })
     // ★ 落库失败不阻断用户拿到答案（但留痕）；next 次 remaining 会据表重新派生
     if (insertError) console.error('追问落库失败:', insertError.code, insertError.message)
@@ -125,7 +135,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       answer,
       disclaimer: ASK_DISCLAIMER,
-      remaining: Math.max(0, remaining - 1),
+      remaining: Math.max(0, quota.total - 1),
+      // ★ 明细随扣减更新：本次扣的是会员额度还是追问包，前端据此刷新展示
+      memberRemaining: Math.max(0, quota.member - (creditSource === 'member' ? 1 : 0)),
+      packRemaining: Math.max(0, quota.pack - (creditSource === 'pack' ? 1 : 0)),
     })
   } catch (e) {
     console.error('追问失败:', e)

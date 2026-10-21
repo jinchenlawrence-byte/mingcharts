@@ -2,7 +2,7 @@
 // 全局面禁只此一处：route/页面不得各自写判定（§8.5.1 同型错误）。
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { SkuId, GrantId } from './pricing'
-import { SKUS, MULTI_CHART_LIMIT, ASK_PACK_SIZE } from './pricing'
+import { SKUS, MULTI_CHART_LIMIT, ASK_PACK_SIZE, MEMBER_ASK_PER_MONTH } from './pricing'
 
 /**
  * ★★★★★ 付费墙总开关（26号任务书 §二 方案 B，2026-10-13：由写死 false 改为 env 可控）。
@@ -113,6 +113,23 @@ function skuOfPayment(p: PaymentRow): SkuId | null {
 }
 
 /**
+ * 当前有效会员 SKU（无有效会员期 → null）。
+ * ★ 单一判定：entitlementsFromRows 与会员每月追问额度共用，避免两处各写一遍过期判断。
+ */
+export function activeMemberSku(
+  profile: ProfileRow | null,
+  now: number = Date.now()
+): SkuId | null {
+  const expireMs = profile?.member_expire_at
+    ? new Date(profile.member_expire_at).getTime()
+    : NaN
+  if (profile?.is_member === true && !Number.isNaN(expireMs) && expireMs > now) {
+    return profile.member_plan === 'yearly' ? 'member_yearly' : 'member_monthly'
+  }
+  return null
+}
+
+/**
  * 纯函数：从 profiles 行 + payments 行算出 Entitlements。
  * ★ 抽出来的目的：让断言可以喂数据、真跑生产逻辑，而不是用测试自己造的字面量。
  * getEntitlements = 查库 + 调它。
@@ -124,12 +141,8 @@ export function entitlementsFromRows(
 ): Entitlements {
   // 有效会员期 → 持有对应订阅 SKU（旧数据缺 member_plan 时按月度计）
   const memberSkus: SkuId[] = []
-  const expireMs = profile?.member_expire_at
-    ? new Date(profile.member_expire_at).getTime()
-    : NaN
-  if (profile?.is_member === true && !Number.isNaN(expireMs) && expireMs > now) {
-    memberSkus.push(profile.member_plan === 'yearly' ? 'member_yearly' : 'member_monthly')
-  }
+  const memberSku = activeMemberSku(profile, now)
+  if (memberSku) memberSkus.push(memberSku)
 
   const ownedSkus = new Set<SkuId>()
   for (const p of pays ?? []) {
@@ -244,17 +257,51 @@ function fatebookPaidRow(row: { sku?: string | null }): boolean {
 }
 
 /**
- * ★ 追问额度「单一判定」（AI 追问功能）。规模【派生】，不新增可变计数器：
- *   已授予 = 已支付【真实】ask_pack 流水数 × ASK_PACK_SIZE（次数只在 pricing.ts 定义）。
- *   已消耗 = ask_messages 行数（本表只落「AI 成功且过合规」的行，拒答/失败不落行）。
- *   剩余   = max(0, 已授予 − 已消耗)。
+ * ★ 追问额度「单一判定」（AI 追问功能，2026-10-21 起含会员每月额度）。
+ *   追问包：已授予 = 已支付【真实】ask_pack 流水数 × ASK_PACK_SIZE（终身，不重置）。
+ *   会员额度：每个自然月 MEMBER_ASK_PER_MONTH 次（按月重置、不累计）。
+ *   已消耗按【来源】分别计数（ask_messages.credit_source）：
+ *     · pack   → 终身累计
+ *     · member → 只计本自然月（Asia/Shanghai）
+ *   剩余 = 追问包剩余 + 会员本月剩余。
+ * ★ 扣减顺序：有会员额度时先扣会员额度（月底清零，先用会过期的），再扣追问包。
  * ★ 纯函数：与 entitlementsFromRows / chartLimitFor 同族，断言可喂数据真跑生产逻辑。
  * ★ 排除模拟流水（'MOCK_' 前缀）——与 entitlementsFromRows 同口径，不是真实购买不授予次数。
  */
-export function askCreditsFromRows(pays: PaymentRow[] | null, usedCount: number): number {
+export interface AskQuota {
+  /** 追问包剩余（终身有效，不随月份重置） */
+  pack: number
+  /** 会员本月剩余（未登录/非会员/会员已过期 → 0） */
+  member: number
+  /** 合计剩余（= pack + member） */
+  total: number
+}
+
+export function askQuotaFromRows(
+  pays: PaymentRow[] | null,
+  packUsed: number,
+  memberUsedThisMonth: number,
+  profile: ProfileRow | null,
+  now: number = Date.now()
+): AskQuota {
   const granted = (pays ?? []).filter(isPaidAskPackRow).length * ASK_PACK_SIZE
-  const used = Math.max(0, Math.floor(usedCount || 0))
-  return Math.max(0, granted - used)
+  const pack = Math.max(0, granted - Math.max(0, Math.floor(packUsed || 0)))
+  const monthly = activeMemberSku(profile, now) ? MEMBER_ASK_PER_MONTH : 0
+  const member = Math.max(0, monthly - Math.max(0, Math.floor(memberUsedThisMonth || 0)))
+  return { pack, member, total: pack + member }
+}
+
+/**
+ * 会员额度所属自然月起点（Asia/Shanghai，返回 ISO 串）。
+ * ★ 按自然月重置、不累计：跨月后本月 member 用量从 0 重算。
+ */
+export function askMonthStart(now: number = Date.now()): string {
+  const ym = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+  }).format(new Date(now))
+  return new Date(`${ym}-01T00:00:00+08:00`).toISOString()
 }
 
 /** 一行流水是否为「已支付的真实 ask_pack 购买」（授予次数的唯一依据） */
@@ -266,27 +313,52 @@ function isPaidAskPackRow(p: PaymentRow): boolean {
 }
 
 /**
- * 读取某用户当前追问剩余次数（服务端用 service_role）。
- * ★ 只做查库 + 调 askCreditsFromRows —— 逻辑全在纯函数里，断言可直接测。
+ * 读取某用户当前追问额度明细（服务端用 service_role）。
+ * ★ 只做查库 + 调 askQuotaFromRows —— 逻辑全在纯函数里，断言可直接测。
  * ★ 读路径必须暴露错误（沿用 getEntitlements 的可见性修复）：schema 漂移时直接抛错，
  *   调用方返 500 让问题可见，绝不静默判「0 次」（否则付费用户无声失去额度）。
  */
 export async function getAskRemaining(
   admin: SupabaseClient,
   userId: string
-): Promise<number> {
-  const [{ data: pays, error: paysError }, { count, error: countError }] = await Promise.all([
+): Promise<AskQuota> {
+  const monthStart = askMonthStart()
+  const [
+    { data: pays, error: paysError },
+    { data: profile, error: profileError },
+    { count: packUsed, error: packError },
+    { count: memberUsed, error: memberError },
+  ] = await Promise.all([
     admin
       .from('payments')
       .select('payment_type, status, transaction_id, sku')
       .eq('user_id', userId)
       .eq('sku', 'ask_pack'),
     admin
+      .from('profiles')
+      .select('is_member, member_plan, member_expire_at')
+      .eq('id', userId)
+      .maybeSingle(),
+    admin
       .from('ask_messages')
       .select('id', { count: 'exact', head: true })
-      .eq('user_id', userId),
+      .eq('user_id', userId)
+      .eq('credit_source', 'pack'),
+    admin
+      .from('ask_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('credit_source', 'member')
+      .gte('created_at', monthStart),
   ])
   if (paysError) throw new Error(`ask_pack 流水查询失败: ${paysError.code} ${paysError.message}`)
-  if (countError) throw new Error(`ask_messages 计数失败: ${countError.code} ${countError.message}`)
-  return askCreditsFromRows(pays as PaymentRow[] | null, count ?? 0)
+  if (profileError) throw new Error(`profiles 会员状态查询失败: ${profileError.code} ${profileError.message}`)
+  if (packError) throw new Error(`ask_messages(pack) 计数失败: ${packError.code} ${packError.message}`)
+  if (memberError) throw new Error(`ask_messages(member) 计数失败: ${memberError.code} ${memberError.message}`)
+  return askQuotaFromRows(
+    pays as PaymentRow[] | null,
+    packUsed ?? 0,
+    memberUsed ?? 0,
+    profile as ProfileRow | null
+  )
 }

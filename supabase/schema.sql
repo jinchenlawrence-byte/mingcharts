@@ -267,8 +267,10 @@ ALTER TABLE push_logs ENABLE ROW LEVEL SECURITY;
 -- ─────────────────────────────────────────────────────────────
 -- AI 追问（ask_pack）问答记录（2026-10-20；与 supabase/ask.sql 同段）
 -- 【已有数据库】在 SQL Editor 补跑 supabase/ask.sql。
--- ★ 额度为【派生】：已授予 = 已支付 ask_pack 流水数 × ASK_PACK_SIZE（见 entitlement.askCreditsFromRows）；
---   本表【只记录成功回答的行】，剩余 = 已授予 − 本表行数。
+-- ★ 额度为【派生】：追问包已授予 = 已支付 ask_pack 流水数 × ASK_PACK_SIZE；
+--   会员另有每月 MEMBER_ASK_PER_MONTH 次（自然月重置）——见 entitlement.askQuotaFromRows。
+--   本表【只记录成功回答的行】，按 credit_source 分别计数：
+--     · pack   → 终身累计    · member → 只计本自然月
 --   拒答/失败不落行（不扣额），故行数 === 已消耗次数。
 -- ★ 写入走 service_role（/api/ask 服务端）；客户端会话仅可 SELECT 自己的历史（下方策略）。
 --   额度判定不读本表做权威判定，仅计数——单一判定仍在 entitlement.ts。
@@ -280,11 +282,20 @@ CREATE TABLE IF NOT EXISTS ask_messages (
   chart_id UUID REFERENCES charts(id) ON DELETE SET NULL,
   question TEXT NOT NULL,
   answer TEXT NOT NULL,
+  -- ★ 本条消耗的是哪一类额度（2026-10-21）：pack=已购追问包（终身累计），
+  --   member=会员每月额度（只计本自然月）。历史行默认 pack（此前无会员额度）。
+  credit_source TEXT NOT NULL DEFAULT 'pack' CHECK (credit_source IN ('pack', 'member')),
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 【已有数据库】补列（幂等）：历史行取 default 'pack'，与旧口径完全一致
+ALTER TABLE ask_messages ADD COLUMN IF NOT EXISTS credit_source TEXT NOT NULL DEFAULT 'pack'
+  CHECK (credit_source IN ('pack', 'member'));
+
 CREATE INDEX IF NOT EXISTS idx_ask_messages_user ON ask_messages(user_id);
 CREATE INDEX IF NOT EXISTS idx_ask_messages_created ON ask_messages(created_at DESC);
+-- 额度计数：pack 终身累计 / member 本自然月，均按 (user_id, credit_source, created_at) 过滤
+CREATE INDEX IF NOT EXISTS idx_ask_messages_source ON ask_messages(user_id, credit_source, created_at DESC);
 
 ALTER TABLE ask_messages ENABLE ROW LEVEL SECURITY;
 

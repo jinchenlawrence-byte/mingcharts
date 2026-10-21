@@ -33,6 +33,8 @@ export default function AskPanel({
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [remaining, setRemaining] = useState<number | null>(null)
+  /** 会员本月剩余（服务端下发；非会员为 0）——用于展示额度来源 */
+  const [memberRemaining, setMemberRemaining] = useState<number | null>(null)
   /** 服务端下发的额度开关（GET /api/ask 返回）：只有开启时才在 0 次时引导购买 */
   const [enforced, setEnforced] = useState(false)
   const [error, setError] = useState('')
@@ -51,6 +53,7 @@ export default function AskPanel({
         if (!res.ok) return
         const data = await res.json().catch(() => null)
         if (!cancelled && typeof data?.remaining === 'number') setRemaining(data.remaining)
+        if (!cancelled && typeof data?.memberRemaining === 'number') setMemberRemaining(data.memberRemaining)
         if (!cancelled && data?.enforced === true) setEnforced(true)
       } catch {
         // 忽略：仅影响剩余次数的展示
@@ -103,6 +106,7 @@ export default function AskPanel({
         disclaimer: data?.disclaimer,
       }])
       if (typeof data?.remaining === 'number') setRemaining(data.remaining)
+      if (typeof data?.memberRemaining === 'number') setMemberRemaining(data.memberRemaining)
       if (typeof data?.remaining === 'number' && data.remaining <= 0) setExhausted(true)
     } catch (e) {
       setError(e instanceof Error ? e.message : '网络异常，请稍后再试')
@@ -122,7 +126,12 @@ export default function AskPanel({
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="hw-c-secTitle" style={{ margin: 0 }}>追问命理师</h3>
         {remaining !== null && (
-          <span className="text-xs text-ink-light/70">剩余追问次数：<b className="text-ink">{remaining}</b></span>
+          <span className="text-xs text-ink-light/70">
+            剩余追问次数：<b className="text-ink">{remaining}</b>
+            {memberRemaining !== null && memberRemaining > 0 && (
+              <>（含会员本月 <b className="text-ink">{memberRemaining}</b> 次）</>
+            )}
+          </span>
         )}
       </div>
       <p className="text-xs text-ink-light/60 mt-2 mb-3">
