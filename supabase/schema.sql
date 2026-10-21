@@ -124,10 +124,13 @@ CREATE POLICY "Users can insert own charts" ON charts
 CREATE POLICY "Users can view own payments" ON payments
   FOR SELECT USING (auth.uid() = user_id);
 
--- 匿名访问（未登录用户也可以排盘，但不保存记录）
--- 这个策略允许匿名用户插入charts，但user_id为NULL
-CREATE POLICY "Anonymous can insert charts" ON charts
-  FOR INSERT WITH CHECK (auth.uid() IS NULL);
+-- ★ 安全修复（2026-10-21）：【删除】「匿名可插入命盘」策略。
+--   原策略 `FOR INSERT WITH CHECK (auth.uid() IS NULL)` 允许任何人用公开 anon key
+--   在【无登录】状态下无限量往 charts 写行（user_id=NULL），存储可被刷爆。
+--   应用侧所有写入一律走 service_role（/api/charts/save、/api/unlock、/api/paipan），
+--   匿名用户排盘不落库，该策略未被任何客户端路径使用。
+--   已有数据库补跑 supabase/lock-write-policies.sql。
+DROP POLICY IF EXISTS "Anonymous can insert charts" ON charts;
 
 -- 付费报告资产表（合婚/紫微/地理/年运/命书；命书正文存于 charts.chart_data，本表仅存指针行）
 -- 写入走 service_role（绕过 RLS）；列表/详情走客户端会话 + 下方 SELECT 策略
@@ -151,8 +154,13 @@ ALTER TABLE reports ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can view own reports" ON reports
   FOR SELECT USING (auth.uid() = user_id);
 
-CREATE POLICY "Users can insert own reports" ON reports
-  FOR INSERT WITH CHECK (auth.uid() = user_id);
+-- ★ 安全修复（2026-10-21）：【删除】「用户可插入自己的报告」策略。
+--   原策略 `FOR INSERT WITH CHECK (auth.uid() = user_id)` 允许登录用户直接写 reports。
+--   这不构成权益绕过（别人的行仍读不到），但报告正文只应由服务端生成后落库
+--   （reportSave.ts 一律走 service_role），开放客户端插入等于允许刷存储。
+--   客户端 /reports 页面只用 SELECT + DELETE，故只保留这两条。
+--   已有数据库补跑 supabase/lock-write-policies.sql。
+DROP POLICY IF EXISTS "Users can insert own reports" ON reports;
 
 CREATE POLICY "Users can delete own reports" ON reports
   FOR DELETE USING (auth.uid() = user_id);

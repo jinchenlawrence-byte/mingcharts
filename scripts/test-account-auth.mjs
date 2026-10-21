@@ -349,5 +349,30 @@ console.log('—— ⑥ Google 第三方登录 ——')
     'profiles-rls.sql 迁移与 schema.sql 同源（补跑口径一致）')
 }
 
+{
+  // ★ 安全守护（2026-10-21）：关闭 charts / reports 的客户端写入面。
+  //   · charts 匿名插入 = 未登录即可无限写行（刷存储）
+  //   · reports 用户插入 = 登录即可直插报告行（应用侧一律 service_role 落库）
+  //   牙口：把任一条 CREATE POLICY 写回 schema.sql → 本段精确翻红。
+  const schema = read('../supabase/schema.sql')
+  assert(!/CREATE POLICY "Anonymous can insert charts"/.test(schema),
+    'schema.sql 不再创建 charts 匿名插入策略（防未登录刷存储）')
+  assert(/DROP POLICY IF EXISTS "Anonymous can insert charts" ON charts/.test(schema),
+    'schema.sql 显式 DROP charts 匿名插入策略（已有库升级也安全）')
+  assert(!/CREATE POLICY "Users can insert own reports"/.test(schema),
+    'schema.sql 不再创建 reports 用户插入策略（写库一律 service_role）')
+  assert(/DROP POLICY IF EXISTS "Users can insert own reports" ON reports/.test(schema),
+    'schema.sql 显式 DROP reports 用户插入策略（已有库升级也安全）')
+  // 客户端仍依赖 reports 的 SELECT + DELETE —— 删插入不得误伤这两条
+  assert(/CREATE POLICY "Users can view own reports" ON reports/.test(schema)
+    && /CREATE POLICY "Users can delete own reports" ON reports/.test(schema),
+    'reports 的 SELECT / DELETE 策略仍在（/reports 页面删除功能不受影响）')
+
+  const mig = read('../supabase/lock-write-policies.sql')
+  assert(/DROP POLICY IF EXISTS "Anonymous can insert charts" ON charts/.test(mig)
+    && /DROP POLICY IF EXISTS "Users can insert own reports" ON reports/.test(mig),
+    'lock-write-policies.sql 迁移与 schema.sql 同源（补跑口径一致）')
+}
+
 console.log('\n' + (allPass ? 'ACCOUNT_AUTH_PASS' : 'ACCOUNT_AUTH_FAIL'))
 if (!allPass) process.exit(1)
