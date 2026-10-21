@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import SaveChart from '@/components/SaveChart'
+import ShareLink from '@/components/ShareLink'
 import CheckoutButton from '@/components/CheckoutButton'
 import AskPanel from '@/components/AskPanel'
 import { getSupabase } from '@/lib/supabase'
@@ -545,6 +546,16 @@ export default function ChartPage() {
 
         {/* 保存命盘 */}
         <SaveChart />
+
+        {/* 分享：带 utm_source=share，用于统计分享带来的访问（结果页是最自然的传播点） */}
+        <div className="mt-4 text-center">
+          <ShareLink
+            path="/"
+            title="明理 · 免费八字排盘"
+            text="用生辰排一张盘，看看十卷命书怎么说"
+            label="分享给朋友排盘"
+          />
+        </div>
 
         {/* 命书十卷 */}
         <h2 className="hw-c-h2">命书十卷</h2>

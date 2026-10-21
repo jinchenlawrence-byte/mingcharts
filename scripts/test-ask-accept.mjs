@@ -6,6 +6,7 @@ import { readFileSync } from 'node:fs'
 import { SKUS, ASK_PACK_SIZE, MEMBER_ASK_PER_MONTH, ASK_PER_REPORT } from '../src/lib/pricing.ts'
 import { GRANT_LABELS } from '../src/lib/grantLabels.ts'
 import { askQuotaFromRows, askMonthStart } from '../src/lib/entitlement.ts'
+import { ASK_PER_INVITE } from '../src/lib/pricing.ts'
 import {
   classifyAskQuestion,
   refusalText,
@@ -145,6 +146,14 @@ const strip = (s) => s.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
   eq(askQuotaFromRows([], 0, 0, null).allowed, false, '没买过→allowed=false')
   eq(askQuotaFromRows([], 0, 0, M({ member_expire_at: '2020-01-01T00:00:00Z' })).allowed, false, '会员过期且无购买→false')
 
+  // 邀请奖励（2026-10-21）：inviteGranted=邀请成功人数，inviteUsed=已用邀请额度次数
+  eq(askQuotaFromRows([], 0, 0, null, Date.now(), 0, 2).invite, 2 * ASK_PER_INVITE, '邀请 2 人→赠 6 次')
+  eq(askQuotaFromRows([], 0, 0, null, Date.now(), 0, 1, 2).invite, ASK_PER_INVITE - 2, '邀请 1 人且用 2 次→剩 1')
+  eq(askQuotaFromRows([], 0, 0, null, Date.now(), 0, 1, 99).invite, 0, '邀请额度超额消耗→夹到 0')
+  eq(askQuotaFromRows([], 0, 0, null, Date.now(), 0, 0).invite, 0, '未邀请→0')
+  eq(askQuotaFromRows([], 0, 0, null, Date.now(), 0, 1).allowed, true, '被邀请人有额度→allowed')
+  eq(askQuotaFromRows([], 0, 0, null, Date.now(), 0, 0).allowed, false, '无邀请无购买→仍 false')
+
   // 两种额度叠加：合计 = 包剩余 + 会员本月剩余（互不挤占）
   eq(askQuotaFromRows([P()], 4, 3, M()).total, (ASK_PACK_SIZE - 4) + (MEMBER_ASK_PER_MONTH - 3), '包剩余 + 会员剩余')
   // 三源叠加：会员 5 + 报告 4 + 追问包 6
@@ -174,13 +183,14 @@ const strip = (s) => s.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
   if (!/\.from\(\s*['"]ask_messages['"]\s*\)[\s\S]*?\.insert\(/.test(code)) {
     f++; fail('route 未向 ask_messages 落库')
   }
-  // ★ 扣减来源（2026-10-21）：会员额度 → 报告赠送 → 追问包；落库必须带 credit_source
+  // ★ 扣减来源（2026-10-21）：会员额度 → 报告赠送 → 邀请奖励 → 追问包；落库必须带 credit_source
   if (!code.includes("credit_source")) { f++; fail('route 落库未标记 credit_source（额度来源无法区分）') }
-  if (!/quota\.member\s*>\s*0\s*\?\s*'member'\s*:\s*quota\.report\s*>\s*0\s*\?\s*'report'\s*:\s*'pack'/.test(code)) {
-    f++; fail('route 未按「会员额度 → 报告赠送 → 追问包」选择 credit_source')
+  if (!/quota\.member\s*>\s*0\s*\?\s*'member'\s*:\s*quota\.report\s*>\s*0\s*\?\s*'report'\s*:\s*quota\.invite\s*>\s*0\s*\?\s*'invite'\s*:\s*'pack'/.test(code)) {
+    f++; fail('route 未按「会员额度 → 报告赠送 → 邀请奖励 → 追问包」选择 credit_source')
   }
   if (!code.includes('memberRemaining')) { f++; fail('route 未下发 memberRemaining（会员每月额度明细）') }
   if (!code.includes('reportRemaining')) { f++; fail('route 未下发 reportRemaining（报告赠送额度明细）') }
+  if (!code.includes('inviteRemaining')) { f++; fail('route 未下发 inviteRemaining（邀请奖励额度明细）') }
   // ★ 付费门槛（2026-10-21）：未买过任何付费内容必须 403，且先于 AI 生成
   if (!code.includes('ASK_REQUIRES_PAID')) { f++; fail('route 缺 ASK_REQUIRES_PAID（付费门槛 403 码）') }
   if (!/quota\.allowed/.test(code) || !code.includes('allowed: quota.allowed')) {

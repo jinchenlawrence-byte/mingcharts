@@ -9,7 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
 import CheckoutButton from '@/components/CheckoutButton'
 import { waffoProductId } from '@/lib/waffo-products'
-import { SKUS, formatPriceUSD, MEMBER_ASK_PER_MONTH, ASK_PER_REPORT } from '@/lib/pricing'
+import { SKUS, formatPriceUSD, MEMBER_ASK_PER_MONTH, ASK_PER_REPORT, ASK_PER_INVITE } from '@/lib/pricing'
 
 interface AskMessage {
   role: 'user' | 'assistant'
@@ -39,6 +39,8 @@ export default function AskPanel({
   const [memberRemaining, setMemberRemaining] = useState<number | null>(null)
   /** 报告赠送剩余（每份报告赠 5 次）——用于展示额度来源 */
   const [reportRemaining, setReportRemaining] = useState<number | null>(null)
+  /** 邀请奖励剩余（每邀请 1 人赠 3 次）——用于展示额度来源 */
+  const [inviteRemaining, setInviteRemaining] = useState<number | null>(null)
   /** 是否有追问权限（买过任意付费内容）；null=尚未取到，先不渲染 */
   const [allowed, setAllowed] = useState<boolean | null>(null)
   /** 服务端下发的额度开关（GET /api/ask 返回）：只有开启时才在 0 次时引导购买 */
@@ -64,6 +66,7 @@ export default function AskPanel({
         if (!cancelled && typeof data?.remaining === 'number') setRemaining(data.remaining)
         if (!cancelled && typeof data?.memberRemaining === 'number') setMemberRemaining(data.memberRemaining)
         if (!cancelled && typeof data?.reportRemaining === 'number') setReportRemaining(data.reportRemaining)
+        if (!cancelled && typeof data?.inviteRemaining === 'number') setInviteRemaining(data.inviteRemaining)
         if (!cancelled && data?.enforced === true) setEnforced(true)
         // ★ 只有明确 allowed=true 才渲染；未买过任何付费内容 → 面板整体不出现
         if (!cancelled && typeof data?.allowed === 'boolean') setAllowed(data.allowed)
@@ -124,6 +127,7 @@ export default function AskPanel({
       if (typeof data?.remaining === 'number') setRemaining(data.remaining)
       if (typeof data?.memberRemaining === 'number') setMemberRemaining(data.memberRemaining)
       if (typeof data?.reportRemaining === 'number') setReportRemaining(data.reportRemaining)
+      if (typeof data?.inviteRemaining === 'number') setInviteRemaining(data.inviteRemaining)
       if (typeof data?.remaining === 'number' && data.remaining <= 0) setExhausted(true)
     } catch (e) {
       setError(e instanceof Error ? e.message : '网络异常，请稍后再试')
@@ -154,12 +158,15 @@ export default function AskPanel({
             {reportRemaining !== null && reportRemaining > 0 && (
               <>（含报告赠送 <b className="text-ink">{reportRemaining}</b> 次）</>
             )}
+            {inviteRemaining !== null && inviteRemaining > 0 && (
+              <>（含邀请奖励 <b className="text-ink">{inviteRemaining}</b> 次）</>
+            )}
           </span>
         )}
       </div>
       <p className="text-xs text-ink-light/60 mt-2 mb-3">
-        就你的命盘追问具体问题（如「今年事业上有哪些需要留意的地方」）。购买任一报告或开通会员后即可使用；
-        每份报告赠 {ASK_PER_REPORT} 次、会员每月 {MEMBER_ASK_PER_MONTH} 次。涉医疗、法律、投资、生死与重大取舍的
+        就你的命盘追问具体问题（如「今年事业上有哪些需要留意的地方」）。购买任一报告、开通会员或邀请好友注册后即可使用；
+        每份报告赠 {ASK_PER_REPORT} 次、每邀请 1 人赠 {ASK_PER_INVITE} 次、会员每月 {MEMBER_ASK_PER_MONTH} 次。涉医疗、法律、投资、生死与重大取舍的
         「该不该」类问题，命理不作判决——只讲倾向，供你自行权衡。
       </p>
 

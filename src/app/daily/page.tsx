@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import DailyShareCard from '@/components/DailyShareCard'
+import ShareLink from '@/components/ShareLink'
 import PersonalDailySection from '@/components/PersonalDailySection'
 import { dailySignFor } from '@/lib/daily'
 import { DAILY_SIGN_DAY_BOUNDARY } from '@/data/daily-signs'
@@ -77,6 +78,16 @@ export default async function DailyPage({
             disclaimer={view.disclaimer}
             boundary={DAILY_SIGN_DAY_BOUNDARY}
           />
+
+          {/* 分享链接：带 utm_source=share，用于统计分享带来的访问 */}
+          <div className="mt-4 text-center">
+            <ShareLink
+              path="/daily"
+              title="明理 · 每日日签"
+              text="今日一省：看看今天的干支给了什么提醒"
+              label="分享今日日签"
+            />
+          </div>
         </section>
 
         {/* 个性化日运段（已登录有命盘才显示；HANDOFF-个性化日运 §6.2） */}

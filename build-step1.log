@@ -1,0 +1,113 @@
+﻿
+> bazi-mvp@0.1.0 build
+> next build
+
+▲ Next.js 16.3.7 (Turbopack)
+- Environments: .env.local
+✓ Running next.config.ts took 34ms
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 2.1s
+  Running TypeScript ...
+  Finished TypeScript in 5.0s ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/1065) ...
+  Generating static pages using 15 workers (266/1065) 
+  Generating static pages using 15 workers (532/1065) 
+  Generating static pages using 15 workers (798/1065) 
+✓ Generating static pages using 15 workers (1065/1065) in 3.9s
+  Finalizing page optimization ...
+
+Route (app)
+┌ ○ /
+├ ○ /_not-found
+├ ○ /account
+├ ƒ /api/ask
+├ ƒ /api/charts/save
+├ ƒ /api/checkout
+├ ƒ /api/cron/daily-push
+├ ƒ /api/daily
+├ ƒ /api/entitlements
+├ ƒ /api/geo
+├ ƒ /api/hemun
+├ ƒ /api/liunian
+├ ƒ /api/member/summary
+├ ƒ /api/membership
+├ ƒ /api/membership/cancel
+├ ƒ /api/paipan
+├ ƒ /api/push/subscribe
+├ ƒ /api/track
+├ ƒ /api/unlock
+├ ƒ /api/verify-payment
+├ ƒ /api/webhooks/waffo
+├ ƒ /api/ziwei
+├ ○ /apple-icon.png
+├ ○ /article
+├   /article/[slug]
+│ ├ ● /article/shenme-shi-bazi
+│ ├ ● /article/shenwang-shenruo-zenme-panduan
+│ ├ ● /article/yongshen-xishen-jishen
+│ └ ● [+77 more paths]
+├ ○ /auth
+├ ○ /auth/callback
+├ ○ /bazi
+├   /bazi/[year]
+│ ├ ● /bazi/1950
+│ ├ ● /bazi/1951
+│ ├ ● /bazi/1952
+│ └ ● [+58 more paths]
+├   /bazi/[year]/[month]
+│ ├ ● /bazi/1950/01
+│ ├ ● /bazi/1950/02
+│ ├ ● /bazi/1950/03
+│ └ ● [+729 more paths]
+├ ƒ /bazi/[year]/[month]/[day]
+├ ○ /chart
+├ ○ /charts
+├ ○ /checkout/success
+├ ƒ /daily
+├ ○ /geo
+├ ○ /hemun
+├ ○ /jieqi
+├   /jieqi/[name]
+│ ├ ● /jieqi/lichun
+│ ├ ● /jieqi/yushui
+│ ├ ● /jieqi/jingzhe
+│ └ ● [+21 more paths]
+├ ○ /jieri
+├   /jieri/[slug]
+│ ├ ● /jieri/chunjie
+│ ├ ● /jieri/yuanxiao
+│ ├ ● /jieri/duanwu
+│ └ ● [+7 more paths]
+├ ○ /liunian
+├ ○ /manifest.webmanifest
+├ ○ /member
+├ ○ /mingshu
+├ ○ /mingshu/demo
+├ ○ /pricing
+├ ○ /privacy
+├ ○ /reports
+├ ƒ /reports/[id]
+├ ○ /reset-password
+├ ○ /robots.txt
+├ ○ /shengxiao
+├   /shengxiao/[animal]
+│ ├ ● /shengxiao/shu
+│ ├ ● /shengxiao/niu
+│ ├ ● /shengxiao/hu
+│ └ ● [+9 more paths]
+├   /shengxiao/[animal]/[year]
+│ ├ ● /shengxiao/shu/2024
+│ ├ ● /shengxiao/shu/2025
+│ ├ ● /shengxiao/shu/2026
+│ └ ● [+93 more paths]
+├ ○ /sitemap.xml
+├ ○ /terms
+└ ○ /ziwei
+
+
+○  (Static)   prerendered as static content
+●  (SSG)      prerendered as static HTML (uses generateStaticParams)
+ƒ  (Dynamic)  server-rendered on demand
+

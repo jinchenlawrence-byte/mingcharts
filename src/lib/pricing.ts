@@ -81,6 +81,14 @@ export const MEMBER_ASK_PER_MONTH = 8
  */
 export const ASK_PER_REPORT = 5
 
+/**
+ * ★ 邀请奖励追问次数（2026-10-21）—— 单一事实源。
+ *   邀请 1 位好友注册成功（且非自己），邀请人得 ASK_PER_INVITE 次追问，终身有效。
+ *   消费顺序：会员本月 → 报告赠送 → 邀请奖励 → 追问包（付费额度最后扣）。
+ *   消费方：entitlement.askQuotaFromRows、api/invite/claim 文案。
+ */
+export const ASK_PER_INVITE = 3
+
 export const SKUS: Record<SkuId, Sku> = {
   fatebook: {
     id: 'fatebook', name: '命书报告',

@@ -14,6 +14,7 @@ export interface TrackProps {
 
 const SID_KEY = 'ml_sid'
 const TOUCH_KEY = 'ml_touch'
+const REF_KEY = 'ml_ref'
 
 function safeSession(): Storage | null {
   try {
@@ -93,6 +94,19 @@ export function firstTouch(search?: string): Touch {
     // 隐私模式写入失败：本次仍可用，只是不跨页
   }
   return current
+}
+
+/** 记住分享者带来的 ref 码（首次写入后不再覆盖，防止被后续链接改写归因） */
+export function rememberRef(search?: string): void {
+  const local = safeLocal()
+  if (!local || !search) return
+  try {
+    if (local.getItem(REF_KEY)) return
+    const ref = (new URLSearchParams(search).get('ref') || '').slice(0, 32)
+    if (ref) local.setItem(REF_KEY, ref)
+  } catch {
+    // 隐私模式：忽略
+  }
 }
 
 /** 上报一个事件（fire-and-forget，永不影响主流程） */

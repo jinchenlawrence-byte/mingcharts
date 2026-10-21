@@ -12,6 +12,7 @@ import {
   ASK_PACK_SIZE,
   MEMBER_ASK_PER_MONTH,
   ASK_PER_REPORT,
+  ASK_PER_INVITE,
   type GrantId,
   type SkuId,
 } from '@/lib/pricing'
@@ -189,7 +190,7 @@ const COMPARE_ROWS: CompareRow[] = [
   //   会员每月 MEMBER_ASK_PER_MONTH 次，故两个付费列都打勾；次数/价格全部派生自 pricing.ts。
   {
     label: 'AI 命理师追问', free: false, member: true,
-    note: `购买任一报告或开通会员即可用 · 会员每月 ${MEMBER_ASK_PER_MONTH} 次 · 每份报告赠 ${ASK_PER_REPORT} 次 · 追问包 ${formatPriceUSD(SKUS.ask_pack.priceUSD)}/${ASK_PACK_SIZE} 次`,
+    note: `购买任一报告或开通会员即可用 · 会员每月 ${MEMBER_ASK_PER_MONTH} 次 · 每份报告赠 ${ASK_PER_REPORT} 次 · 每邀请 1 人赠 ${ASK_PER_INVITE} 次 · 追问包 ${formatPriceUSD(SKUS.ask_pack.priceUSD)}/${ASK_PACK_SIZE} 次`,
   },
 ]
 
@@ -329,8 +330,8 @@ export default function PricingPage() {
           <h2 className="hw-c-h2 hw-c-h2C">追问包</h2>
           <p className="text-sm text-ink-light text-center mb-6">
             购买任一报告或开通会员后，即可在命盘页就你的命盘向 AI 命理师追问；
-            每份报告赠 {ASK_PER_REPORT} 次（终身有效）、会员每月 {MEMBER_ASK_PER_MONTH} 次，
-            用完后可购买追问包续用。
+            每份报告赠 {ASK_PER_REPORT} 次（终身有效）、每邀请 1 位好友注册赠 {ASK_PER_INVITE} 次、
+            会员每月 {MEMBER_ASK_PER_MONTH} 次，用完后可购买追问包续用。
           </p>
           <div className="hw-c-box flex flex-col gap-4 max-w-3xl mx-auto">
             <div className="flex items-start justify-between gap-4">

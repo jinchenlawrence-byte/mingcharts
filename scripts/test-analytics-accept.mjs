@@ -63,6 +63,35 @@ const preview = read('src/components/reports/PreviewLock.tsx')
 assert(/track\('preview_view'/.test(preview), 'UnlockCta 记 preview_view')
 assert(/const skuKey = skus\.join\(','\)/.test(preview), 'effect 依赖用字符串，避免数组引用导致重复上报')
 
+// ── ④b 分享链路 ─────────────────────────────────────────────
+const share = read('src/components/ShareLink.tsx')
+assert(/utm_source/.test(share) && /utm_medium/.test(share), '分享链接带 UTM 归因')
+assert(/ml_ref/.test(share), '分享链接继续携带 ref 码')
+assert(/navigator\.share/.test(share) && /clipboard\.writeText/.test(share), '优先系统分享，降级复制链接')
+assert(/rememberRef/.test(read('src/components/TrackPageView.tsx')), '落地页记住 ref 码')
+assert(/<ShareLink/.test(read('src/app/daily/page.tsx')), '日签页挂载分享按钮')
+assert(/<ShareLink/.test(read('src/app/chart/page.tsx')), '排盘结果页挂载分享按钮')
+
+// ── ④c 邀请奖励 ─────────────────────────────────────────────
+const invitesSql = read('supabase/invites.sql')
+assert(/CREATE TABLE IF NOT EXISTS invites/.test(invitesSql), 'invites.sql 建表存在')
+assert(/UNIQUE \(invitee_id\)/.test(invitesSql), '被邀请人唯一（一人只能被领一次）')
+assert(/invitee_id <> .*inviter_id|inviter_id <> invitee_id/.test(invitesSql), '禁止自己邀请自己')
+assert(/ENABLE ROW LEVEL SECURITY/.test(invitesSql), 'invites 开启 RLS')
+assert(!/CREATE POLICY/i.test(invitesSql), 'invites 零策略（仅 service_role 可写）')
+assert(/'invite'/.test(invitesSql), 'credit_source 允许值含 invite')
+
+const claim = read('src/app/api/invite/claim/route.ts')
+assert(/admin\.auth\.getUser\(token\)/.test(claim), '领取接口先校验登录 token')
+assert(/from\('profiles'\)[\s\S]*?\.like\('id'/.test(claim), '邀请人由服务端按前缀反查，不信任前端 id')
+assert(/neq\('id', user\.id\)/.test(claim), '不能邀请自己')
+assert(/23505/.test(claim), '重复领取按已处理（不报错）')
+assert(!/console\.log/.test(claim), '领取接口无 console.log')
+
+const trackPage = read('src/components/TrackPageView.tsx')
+assert(/\/api\/invite\/claim/.test(trackPage), '落地页触发邀请领取')
+assert(/ml_ref_claimed/.test(trackPage), '领取结果本地标记，避免重复请求')
+
 // ── ⑤ 真调 route ───────────────────────────────────────────
 const { setServerSupabaseForTest } = await import('../src/lib/supabase.ts')
 const { POST } = await import('../src/app/api/track/route.ts')

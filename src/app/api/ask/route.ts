@@ -42,6 +42,7 @@ export async function GET(request: NextRequest) {
       remaining: quota.total,
       memberRemaining: quota.member,
       reportRemaining: quota.report,
+      inviteRemaining: quota.invite,
       packRemaining: quota.pack,
       allowed: quota.allowed,
       enforced: ENTITLEMENT_ENFORCE,
@@ -77,7 +78,7 @@ export async function POST(request: NextRequest) {
     if (!quota.allowed) {
       return NextResponse.json(
         {
-          error: '追问需先购买任一报告或开通会员',
+          error: '追问需先购买任一报告、开通会员，或邀请好友注册',
           code: 'ASK_REQUIRES_PAID',
           remaining: 0,
         },
@@ -138,9 +139,10 @@ export async function POST(request: NextRequest) {
     }
 
     // ⑥ 成功才落库（本表行数 === 已消耗次数）；拒答/失败不落行、不扣额
-    // ★ 来源标记（2026-10-21）：会员本月 → 报告赠送 → 追问包，依次扣减。
-    //   额度重算完全依赖本列：pack/report 终身累计、member 只计本自然月。
-    const creditSource = quota.member > 0 ? 'member' : quota.report > 0 ? 'report' : 'pack'
+    // ★ 来源标记（2026-10-21）：会员本月 → 报告赠送 → 邀请奖励 → 追问包，依次扣减。
+    //   额度重算完全依赖本列：pack/report/invite 终身累计、member 只计本自然月。
+    const creditSource =
+      quota.member > 0 ? 'member' : quota.report > 0 ? 'report' : quota.invite > 0 ? 'invite' : 'pack'
     const { error: insertError } = await admin.from('ask_messages').insert({
       user_id: user.id,
       chart_id: chartId ?? null,
@@ -158,6 +160,7 @@ export async function POST(request: NextRequest) {
       // ★ 明细随扣减更新：本次扣的是会员额度 / 报告赠送 / 追问包，前端据此刷新展示
       memberRemaining: Math.max(0, quota.member - (creditSource === 'member' ? 1 : 0)),
       reportRemaining: Math.max(0, quota.report - (creditSource === 'report' ? 1 : 0)),
+      inviteRemaining: Math.max(0, quota.invite - (creditSource === 'invite' ? 1 : 0)),
       packRemaining: Math.max(0, quota.pack - (creditSource === 'pack' ? 1 : 0)),
     })
   } catch (e) {

@@ -11,7 +11,7 @@ import Nav from '@/components/Nav'
 import PushOptIn from '@/components/PushOptIn'
 import { GRANT_LABELS } from '@/lib/grantLabels'
 import { getSupabase } from '@/lib/supabase'
-import { SKUS, formatPriceUSD, SUBSCRIPTION_GRANTS, MEMBER_ASK_PER_MONTH, ASK_PER_REPORT } from '@/lib/pricing'
+import { SKUS, formatPriceUSD, SUBSCRIPTION_GRANTS, MEMBER_ASK_PER_MONTH, ASK_PER_REPORT, ASK_PER_INVITE } from '@/lib/pricing'
 // 客户付款门户（改卡 / 查账单）——公开链接、非密钥，客户端可安全引用
 import { WAFFO_PORTAL_URL } from '@/lib/waffo-products'
 
@@ -36,11 +36,12 @@ interface SubStatus {
   nextBillingAt: string | null
 }
 
-// 追问额度（/api/ask GET）：会员本月 + 报告赠送 + 追问包
+// 追问额度（/api/ask GET）：会员本月 + 报告赠送 + 邀请奖励 + 追问包
 interface AskQuota {
   remaining: number
   memberRemaining: number
   reportRemaining: number
+  inviteRemaining: number
   packRemaining: number
   enforced: boolean
 }
@@ -109,6 +110,7 @@ export default function MemberPage() {
               remaining: askJson.remaining,
               memberRemaining: Number(askJson.memberRemaining) || 0,
               reportRemaining: Number(askJson.reportRemaining) || 0,
+              inviteRemaining: Number(askJson.inviteRemaining) || 0,
               packRemaining: Number(askJson.packRemaining) || 0,
               enforced: askJson.enforced === true,
             })
@@ -385,11 +387,16 @@ function UsageRow({ multiChart, ask, isMember }: {
         {isMember && <div className="hw-m-bar" aria-hidden="true"><i style={{ width: `${pct}%` }} /></div>}
         <p className="hw-c-meta">
           会员本月 {memberLeft}/{MEMBER_ASK_PER_MONTH} 次 · 报告赠送 {ask ? ask.reportRemaining : '—'} 次
-          · 追问包 {ask ? ask.packRemaining : '—'} 次。
+          · 邀请奖励 {ask ? ask.inviteRemaining : '—'} 次 · 追问包 {ask ? ask.packRemaining : '—'} 次。
         </p>
         <p className="hw-c-meta">
-          购买任一报告或开通会员后即可追问；会员每月 {MEMBER_ASK_PER_MONTH} 次按自然月重置、不累计，
-          每份报告另赠 {ASK_PER_REPORT} 次（终身有效），先用会员额度、再扣报告赠送、最后扣追问包。
+          购买任一报告、开通会员或邀请好友注册后即可追问；会员每月 {MEMBER_ASK_PER_MONTH} 次按自然月重置、不累计，
+          每份报告另赠 {ASK_PER_REPORT} 次、每邀请 1 人赠 {ASK_PER_INVITE} 次（均终身有效），
+          先用会员额度、再扣报告赠送与邀请奖励、最后扣追问包。
+        </p>
+        <p className="hw-c-meta">
+          邀请方式：在排盘结果页或日签页点「分享给朋友」，对方通过你的链接注册即计入 1 人；
+          每人只能被邀请一次，邀请人不能邀请自己。
         </p>
         <p className="mt-3">
           <Link href="/pricing" className="hw-m-btn hw-m-btnSm hw-m-btnGhost">

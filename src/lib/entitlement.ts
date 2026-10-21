@@ -2,7 +2,7 @@
 // 全局面禁只此一处：route/页面不得各自写判定（§8.5.1 同型错误）。
 import type { SupabaseClient } from '@supabase/supabase-js'
 import type { SkuId, GrantId } from './pricing'
-import { SKUS, MULTI_CHART_LIMIT, ASK_PACK_SIZE, MEMBER_ASK_PER_MONTH, ASK_PER_REPORT, REPORT_GRANTS } from './pricing'
+import { SKUS, MULTI_CHART_LIMIT, ASK_PACK_SIZE, MEMBER_ASK_PER_MONTH, ASK_PER_REPORT, ASK_PER_INVITE, REPORT_GRANTS } from './pricing'
 
 /**
  * ★★★★★ 付费墙总开关（26号任务书 §二 方案 B，2026-10-13：由写死 false 改为 env 可控）。
@@ -277,7 +277,9 @@ export interface AskQuota {
   member: number
   /** 报告赠送剩余（每购一份单次报告赠 ASK_PER_REPORT 次，终身有效） */
   report: number
-  /** 合计剩余（= pack + member + report） */
+  /** 邀请奖励剩余（每成功邀请 1 人赠 ASK_PER_INVITE 次，终身有效） */
+  invite: number
+  /** 合计剩余（= pack + member + report + invite） */
   total: number
   /** 是否有追问权限（有过任意付费内容：会员 / 任一报告 / 追问包） */
   allowed: boolean
@@ -293,7 +295,9 @@ export function askQuotaFromRows(
   memberUsedThisMonth: number,
   profile: ProfileRow | null,
   now: number = Date.now(),
-  reportUsed: number = 0
+  reportUsed: number = 0,
+  inviteGranted: number = 0,
+  inviteUsed: number = 0
 ): AskQuota {
   const rows = pays ?? []
   const packGranted = rows.filter(isPaidAskPackRow).length * ASK_PACK_SIZE
@@ -301,11 +305,17 @@ export function askQuotaFromRows(
   // ★ 报告赠送：每份已付单次报告（含套餐）赠 ASK_PER_REPORT 次，终身累计
   const reportGranted = rows.filter(isPaidReportRow).length * ASK_PER_REPORT
   const report = Math.max(0, reportGranted - Math.max(0, Math.floor(reportUsed || 0)))
+  // ★ 邀请奖励：每成功邀请 1 人赠 ASK_PER_INVITE 次，终身累计（与付费额度互不挤占）
+  const invite = Math.max(
+    0,
+    Math.max(0, Math.floor(inviteGranted || 0)) * ASK_PER_INVITE - Math.max(0, Math.floor(inviteUsed || 0))
+  )
   const monthly = activeMemberSku(profile, now) ? MEMBER_ASK_PER_MONTH : 0
   const member = Math.max(0, monthly - Math.max(0, Math.floor(memberUsedThisMonth || 0)))
   const ent = entitlementsFromRows(rows, profile, now)
-  const allowed = ent.memberSkus.length > 0 || ent.ownedSkus.size > 0
-  return { pack, member, report, total: pack + member + report, allowed }
+  // ★ 被邀请人手里有赠送次数也应能追问：allowed 不再只看「买过没有」
+  const allowed = ent.memberSkus.length > 0 || ent.ownedSkus.size > 0 || invite > 0
+  return { pack, member, report, invite, total: pack + member + report + invite, allowed }
 }
 
 /**
@@ -362,6 +372,8 @@ export async function getAskRemaining(
     { count: packUsed, error: packError },
     { count: reportUsed, error: reportError },
     { count: memberUsed, error: memberError },
+    { count: inviteGranted, error: inviteError },
+    { count: inviteUsed, error: inviteUsedError },
   ] = await Promise.all([
     // ★ 取全部已付流水（不再只筛 ask_pack）：既有追问包，也有报告赠送额度
     admin
@@ -389,18 +401,32 @@ export async function getAskRemaining(
       .eq('user_id', userId)
       .eq('credit_source', 'member')
       .gte('created_at', monthStart),
+    // ★ 邀请奖励：我成功邀请的人数（被邀请人已在 invites 表落行即算 1 人）
+    admin
+      .from('invites')
+      .select('id', { count: 'exact', head: true })
+      .eq('inviter_id', userId),
+    admin
+      .from('ask_messages')
+      .select('id', { count: 'exact', head: true })
+      .eq('user_id', userId)
+      .eq('credit_source', 'invite'),
   ])
   if (paysError) throw new Error(`付费流水查询失败: ${paysError.code} ${paysError.message}`)
   if (profileError) throw new Error(`profiles 会员状态查询失败: ${profileError.code} ${profileError.message}`)
   if (packError) throw new Error(`ask_messages(pack) 计数失败: ${packError.code} ${packError.message}`)
   if (reportError) throw new Error(`ask_messages(report) 计数失败: ${reportError.code} ${reportError.message}`)
   if (memberError) throw new Error(`ask_messages(member) 计数失败: ${memberError.code} ${memberError.message}`)
+  if (inviteError) throw new Error(`invites 计数失败: ${inviteError.code} ${inviteError.message}`)
+  if (inviteUsedError) throw new Error(`ask_messages(invite) 计数失败: ${inviteUsedError.code} ${inviteUsedError.message}`)
   return askQuotaFromRows(
     pays as PaymentRow[] | null,
     packUsed ?? 0,
     memberUsed ?? 0,
     profile as ProfileRow | null,
     Date.now(),
-    reportUsed ?? 0
+    reportUsed ?? 0,
+    inviteGranted ?? 0,
+    inviteUsed ?? 0
   )
 }
