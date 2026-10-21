@@ -1245,6 +1245,43 @@ export function buildLuckCycles(chart: AnalyzableChart, now: Date = new Date()):
   return { currentDaYunGanZhi, currentYear, daYun, liuNian, liuYue }
 }
 
+/**
+ * ★ 命书免费试读（2026-10-21）：只用规则引擎生成十卷文字，零 AI、零网络。
+ *   前两卷（八字总览、性格天赋）给全文，其余八卷只给 1–2 句短引——
+ *   前端对短引做模糊处理，既能让用户看到「确实是为这张盘写的」，又不泄露全文。
+ *   完整命书仍由 AI 精批（另一条链路），此处不触发任何 AI 调用。
+ */
+export interface FatebookPreview {
+  /** 前两卷规则版全文 */
+  free: [string, string]
+  /** 其余八卷短引（每条 1–2 句） */
+  rest: string[]
+}
+
+/** 取首句（长度 >= 24 才当整句，否则退化为 90 字截断），给正文做「可读但成不了篇」的引子 */
+function leadSentence(text: string): string {
+  const t = (text || '').trim()
+  const m = t.match(/^[^。！？]{0,80}[。！？]/)
+  if (m && m[0].length >= 24) return m[0]
+  return t.length > 90 ? t.slice(0, 90) + '…' : t
+}
+
+export function buildFatebookPreview(chart: AnalyzableChart): FatebookPreview {
+  const all = [
+    buildOverview(chart),
+    buildPersonality(chart),
+    buildYongShen(chart),
+    buildGeJu(chart),
+    buildTiaoHou(chart),
+    buildDaYun(chart),
+    buildCareer(chart),
+    buildMarriage(chart),
+    buildChildren(chart),
+    buildHealth(chart),
+  ]
+  return { free: [all[0], all[1]], rest: all.slice(2).map(leadSentence) }
+}
+
 export function generateAnalysis(chart: AnalyzableChart): PaidAnalysis {
   return {
     overview: buildOverview(chart),

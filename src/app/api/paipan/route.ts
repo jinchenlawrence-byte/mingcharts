@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { paipan, getWangShuai, getGeJu } from '@/lib/paipan'
-import { buildLuckCycles, type AnalyzableChart } from '@/lib/analysis'
+import { buildLuckCycles, buildFatebookPreview, type AnalyzableChart } from '@/lib/analysis'
 import { checkDSTTransition } from '@/lib/solarTime'
 import { resolveBirthFromBody } from '@/lib/birthRequest'
 import { canViewFatebookForChart } from '@/lib/entitlement'
@@ -127,7 +127,11 @@ export async function POST(request: NextRequest) {
           chart: analyzable,
           wangShuai,
           geJu,
-          structuralIssues
+          structuralIssues,
+          // ★ 命书试读（2026-10-21）：前两卷规则版全文 + 其余八卷短引。
+          //   纯规则引擎计算，不调用 AI。是否展示由前端按 isPaid 判定——
+          //   不能挂在 unlocked 上：ENTITLEMENT_ENFORCE=false（内测）时 unlocked 恒为 true。
+          fatebookPreview: buildFatebookPreview(analyzable)
         },
         locked: unlocked ? null : {
           skus: ['fatebook', 'annual_report'],

@@ -83,6 +83,10 @@ interface ChartData {
   }
   // ★ 门禁（§8.5.1）：未解锁时给 preview 与 skus，已解锁为 null
   locked?: { skus: string[]; preview: string } | null
+  // ★ 命书试读（2026-10-21）：未解锁时由 /api/paipan 用规则引擎下发，前两卷全文 + 其余八卷短引
+  free?: {
+    fatebookPreview?: { free: string[]; rest: string[] } | null
+  } | null
 }
 
 // ★ 大运/流年 7 档判词配色（FortuneTier）：文字标签本身即判词，不只靠颜色区分（色盲可达）
@@ -319,6 +323,8 @@ export default function ChartPage() {
   const paidRows: [string, string][] | null = paid
     ? VOLS.map((title, i) => [title, paid[PAID_KEYS[i]]])
     : null
+  // ★ 命书试读：仅未解锁时有值（服务端规则引擎生成，零 AI）
+  const fatebookPreview = !chart.analysis.isPaid ? chart.free?.fatebookPreview ?? null : null
 
   return (
     <main className="hw-page">
@@ -547,6 +553,43 @@ export default function ChartPage() {
             <span key={v}><i>卷{CN_NUM[i]}</i>{v}</span>
           ))}
         </div>
+
+        {/* ★ 命书试读（2026-10-21）：前两卷规则版全文免费；其余八卷只给短引并做模糊处理。
+            全部由服务端规则引擎按本盘推算，不调用 AI；完整命书仍是 AI 精批。 */}
+        {fatebookPreview && (
+          <div className="hw-pv">
+            <div className="hw-pv-head">
+              <h3 className="hw-c-secTitle">命书试读 · 前两卷</h3>
+              <p className="hw-c-meta">
+                以下由规则引擎按你的四柱直接推算（不调用 AI），可先看文风与判断；完整命书为 AI 精批的万字全文。
+              </p>
+            </div>
+
+            {fatebookPreview.free.map((text, i) => (
+              <article key={VOLS[i]} className="hw-c-box hw-pv-card">
+                <h4 className="hw-pv-title"><i>卷{CN_NUM[i]}</i>{VOLS[i]}</h4>
+                <p className="hw-c-body">{text}</p>
+              </article>
+            ))}
+
+            <div className="hw-pv-rest">
+              {fatebookPreview.rest.map((text, i) => {
+                const idx = i + 2
+                return (
+                  <div key={VOLS[idx]} className="hw-pv-lock">
+                    <h4 className="hw-pv-title"><i>卷{CN_NUM[idx]}</i>{VOLS[idx]}</h4>
+                    {/* 短引仅作「确有内容」的视觉证据，模糊后不提供可读信息 */}
+                    <p className="hw-c-body hw-pv-blur" aria-hidden="true">{text}</p>
+                    <span className="hw-pv-chip">解锁后查看全文</span>
+                  </div>
+                )
+              })}
+            </div>
+            <p className="hw-pv-note">
+              试读为规则版推断，措辞较简；完整命书由 AI 结合格局、调候与岁运综合撰写（约万字，永久回看）。
+            </p>
+          </div>
+        )}
 
         {/* 付费解锁区（正式收费：Waffo 托管收银台按次购买，价格取自 SKUS 单一事实源） */}
         {!chart.analysis.isPaid && (
