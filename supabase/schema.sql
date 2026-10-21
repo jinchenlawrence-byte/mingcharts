@@ -120,6 +120,12 @@ CREATE POLICY "Users can view own charts" ON charts
 CREATE POLICY "Users can insert own charts" ON charts
   FOR INSERT WITH CHECK (auth.uid() = user_id);
 
+-- ★ schema 漂移修复（2026-10-21）：生产库已有「删除自己的命盘」策略，
+--   但本文件此前漏写 → 新库初始化后 /charts 的删除按钮会报错（客户端走 anon delete）。
+--   以生产库现状为准补回，保持「文件 = 线上」。
+CREATE POLICY "Users can delete own charts" ON charts
+  FOR DELETE USING (auth.uid() = user_id);
+
 -- payments: 用户只能查看自己的支付记录
 CREATE POLICY "Users can view own payments" ON payments
   FOR SELECT USING (auth.uid() = user_id);
