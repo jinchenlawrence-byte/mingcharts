@@ -50,3 +50,6 @@ temp/
 .trae/
 .vercel
 .env*
+
+# 本地构建/验证日志
+*.log
