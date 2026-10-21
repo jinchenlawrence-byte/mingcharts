@@ -18,7 +18,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/article`, changeFrequency: 'weekly', priority: 0.9 },
     { url: `${BASE_URL}/shengxiao`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${BASE_URL}/jieqi`, changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${BASE_URL}/jieri`, changeFrequency: 'yearly', priority: 0.6 }
+    { url: `${BASE_URL}/jieri`, changeFrequency: 'yearly', priority: 0.6 },
+    // 工具型入口页（表单即内容）：搜索「合婚/紫微/年运/方位」时可直接落地
+    { url: `${BASE_URL}/hemun`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/ziwei`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/liunian`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE_URL}/geo`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE_URL}/daily`, changeFrequency: 'daily', priority: 0.7 }
   ]
 
   // 节气节日页：24节气 + 10节日

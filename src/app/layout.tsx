@@ -58,6 +58,33 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} ${notoSerifSC.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-paper text-ink">
+        {/* 结构化数据：让搜索引擎识别品牌实体与站点（提升品牌词识别与富摘要） */}
+        <script
+          type="application/ld+json"
+          // 静态常量，不含用户输入，无 XSS 风险
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  "@id": "https://www.mingcharts.com/#org",
+                  name: "明理 MingCharts",
+                  url: "https://www.mingcharts.com",
+                  description: "免费八字排盘与 AI 命理报告：命书十卷、合婚、紫微斗数、流年运势、方位城市。",
+                },
+                {
+                  "@type": "WebSite",
+                  "@id": "https://www.mingcharts.com/#site",
+                  url: "https://www.mingcharts.com",
+                  name: "明理 · 免费八字排盘",
+                  inLanguage: "zh-CN",
+                  publisher: { "@id": "https://www.mingcharts.com/#org" },
+                },
+              ],
+            }),
+          }}
+        />
         {children}
         {/* 流量漏斗：每次路由变化上报一条 page_view（不采集命理内容与个人信息） */}
         <TrackPageView />

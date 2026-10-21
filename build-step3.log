@@ -4,18 +4,18 @@
 
 ▲ Next.js 16.3.7 (Turbopack)
 - Environments: .env.local
-✓ Running next.config.ts took 30ms
+✓ Running next.config.ts took 28ms
 
   Creating an optimized production build ...
-✓ Compiled successfully in 1994ms
+✓ Compiled successfully in 1103ms
   Running TypeScript ...
-  Finished TypeScript in 5.0s ...
+  Finished TypeScript in 1804ms ...
   Collecting page data using 15 workers ...
-  Generating static pages using 15 workers (0/1066) ...
-  Generating static pages using 15 workers (266/1066) 
-  Generating static pages using 15 workers (532/1066) 
-  Generating static pages using 15 workers (799/1066) 
-✓ Generating static pages using 15 workers (1066/1066) in 3.9s
+  Generating static pages using 15 workers (0/1070) ...
+  Generating static pages using 15 workers (267/1070) 
+  Generating static pages using 15 workers (534/1070) 
+  Generating static pages using 15 workers (802/1070) 
+✓ Generating static pages using 15 workers (1070/1070) in 4.0s
   Finalizing page optimization ...
 
 Route (app)
@@ -48,7 +48,7 @@ Route (app)
 │ ├ ● /article/shenme-shi-bazi
 │ ├ ● /article/shenwang-shenruo-zenme-panduan
 │ ├ ● /article/yongshen-xishen-jishen
-│ └ ● [+77 more paths]
+│ └ ● [+81 more paths]
 ├ ○ /auth
 ├ ○ /auth/callback
 ├ ○ /bazi
