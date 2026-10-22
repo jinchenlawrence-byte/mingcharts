@@ -1,10 +1,16 @@
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { articles, ARTICLE_CATEGORIES } from '@/lib/articles'
+import { hantAlternates } from '@/lib/hant-seo'
 
 export const metadata = {
   title: '八字命理知识大全：入门、十神、格局、五行、神煞详解',
-  description: '系统学习八字命理知识，涵盖八字入门、十神详解、格局分析、五行天干、神煞查法等内容，基于《子平真诠》《滴天髓》等经典整理。'
+  description: '系统学习八字命理知识，涵盖八字入门、十神详解、格局分析、五行天干、神煞查法等内容，基于《子平真诠》《滴天髓》等经典整理。',
+  // hreflang：与 /tw/article 双向互指
+  alternates: {
+    canonical: '/article',
+    languages: hantAlternates('/article'),
+  },
 }
 
 export default function ArticleIndex() {

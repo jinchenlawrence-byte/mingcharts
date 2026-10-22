@@ -3,6 +3,7 @@ import Nav from '@/components/Nav'
 import { notFound } from 'next/navigation'
 import { articles, ARTICLE_CATEGORIES } from '@/lib/articles'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
+import { hantAlternates } from '@/lib/hant-seo'
 
 export function generateStaticParams() {
   const articleParams = articles.map(a => ({ slug: a.slug }))
@@ -14,17 +15,21 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const { slug } = await params
   const article = articles.find(a => a.slug === slug)
   const category = ARTICLE_CATEGORIES.find(c => c.slug === slug)
+  // hreflang：与 /tw/article/<slug> 双向互指（矩阵由 lib/hant-seo 单一生成）
+  const languages = hantAlternates(`/article/${slug}`)
   if (article) {
     return {
       title: article.title,
       description: article.description,
-      keywords: article.keywords.join(',')
+      keywords: article.keywords.join(','),
+      alternates: { canonical: `/article/${slug}`, languages },
     }
   }
   if (category) {
     return {
       title: `${category.name}文章大全 - 八字命理知识`,
-      description: `${category.name}相关的八字命理文章，系统讲解${category.name}的核心概念、查法与命理应用。`
+      description: `${category.name}相关的八字命理文章，系统讲解${category.name}的核心概念、查法与命理应用。`,
+      alternates: { canonical: `/article/${slug}`, languages },
     }
   }
   return { title: '文章未找到' }

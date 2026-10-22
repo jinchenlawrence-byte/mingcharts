@@ -16,6 +16,7 @@ const near = (file) => new URL(`../src/${file}`, import.meta.url)
 const { toHant, localize, twinPath, hantTaiSui } = await import('../src/lib/hant.ts')
 const { HANT_HREFLANG, HANT_LOCALES, hantAlternates } = await import('../src/lib/hant-seo.ts')
 const { SHENGXIAO, getPeiDui, getLiunian, LIUNIAN_YEARS, LIUNIAN_2027_DETAIL } = await import('../src/lib/shengxiaoData.ts')
+const { articles, ARTICLE_CATEGORIES } = await import('../src/lib/articles.ts')
 const { default: sitemap } = await import('../src/app/sitemap.ts')
 
 // ---------- ① 转换层 ----------
@@ -111,8 +112,18 @@ for (const sx of SHENGXIAO) {
     }
   }
 }
+// 文章库：标题/描述/小标题/正文段落全部过一遍（这是最大的一块内容）
+for (const a of articles) {
+  const parts = [a.title, a.description, ...a.sections.flatMap((s) => [s.heading, ...s.body])]
+  for (const p of parts) {
+    scanned++
+    const hant = toHant(p)
+    const hit = hant.match(markRe)
+    if (hit) { contentFail++; fail(`文章「${a.slug}」转繁后残留简体「${hit[0]}」：${hant.slice(0, 50)}…`) }
+  }
+}
 console.log(contentFail === 0
-  ? `✓ 内容：扫描 ${scanned} 段正文（${SHENGXIAO.length} 属相 × 5 板块 + 132 条配对 + ${SHENGXIAO.length * LIUNIAN_YEARS.length} 个流年页全字段），繁体输出 0 处简体残留`
+  ? `✓ 内容：扫描 ${scanned} 段正文（${SHENGXIAO.length} 属相 × 5 板块 + 132 条配对 + ${SHENGXIAO.length * LIUNIAN_YEARS.length} 个流年页全字段 + ${articles.length} 篇文章全文），繁体输出 0 处简体残留`
   : `✗ 内容残留 ${contentFail} 处`)
 
 // ---------- ③ hreflang 矩阵 ----------
@@ -135,7 +146,9 @@ for (const [k, v] of Object.entries(expectAlt)) {
 if (Object.keys(alt).length !== 6) { seoFail++; fail(`alternates 应恰为 6 键，实际 ${Object.keys(alt).length}`) }
 // 两边都必须从同一函数生成（防一边手写、一边不写 → hreflang 单向失效）
 for (const f of ['app/shengxiao/[animal]/page.tsx', 'app/tw/shengxiao/[animal]/page.tsx',
-  'app/shengxiao/[animal]/[year]/page.tsx', 'app/tw/shengxiao/[animal]/[year]/page.tsx']) {
+  'app/shengxiao/[animal]/[year]/page.tsx', 'app/tw/shengxiao/[animal]/[year]/page.tsx',
+  'app/article/page.tsx', 'app/tw/article/page.tsx',
+  'app/article/[slug]/page.tsx', 'app/tw/article/[slug]/page.tsx']) {
   const src = readFileSync(near(f), 'utf8')
   if (!src.includes('hantAlternates(')) { seoFail++; fail(`${f} 未使用 hantAlternates（hreflang 必须单一来源）`) }
   if (/hreflang|zh-Hant', '\//.test(src) && src.includes("'zh-TW':")) { seoFail++; fail(`${f} 手写了 alternates 字面量`) }
@@ -177,7 +190,9 @@ for (const want of ['/shengxiao/shu', '/bazi', '/article']) {
 }
 const twCount = urls.filter((u) => u.includes('/tw')).length
 // 由构成推导而不是写死数字：落地页 1 + 生肖索引 1 + 伙伴页 1 + 12 属相 + 12×8 流年
+//   + 文章索引 1 + 分类数 + 文章数
 const expectTw = 3 + SHENGXIAO.length + SHENGXIAO.length * LIUNIAN_YEARS.length
+  + 1 + ARTICLE_CATEGORIES.length + articles.length
 if (twCount !== expectTw) {
   siteFail++
   fail(`/tw 条目应为 ${expectTw}（落地页+生肖索引+伙伴页+${SHENGXIAO.length} 属相），实际 ${twCount}`)

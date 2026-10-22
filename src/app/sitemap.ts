@@ -110,7 +110,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
         changeFrequency: 'yearly' as const,
         priority: 0.7
       }))
-    )
+    ),
+    // 繁体文章库：索引 + 分类 + 全部文章（与简体 /article/* 一一对应）
+    { url: `${BASE_URL}/tw/article`, changeFrequency: 'weekly', priority: 0.8 },
+    ...ARTICLE_CATEGORIES.map(c => ({
+      url: `${BASE_URL}/tw/article/${c.slug}`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7
+    })),
+    ...articles.map(a => ({
+      url: `${BASE_URL}/tw/article/${a.slug}`,
+      changeFrequency: 'monthly' as const,
+      priority: 0.7,
+      lastModified: now
+    }))
   ]
 
   // 伙伴招募（白标 v1）：独立于内容页，优先级低但它必须可被搜到
