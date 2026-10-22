@@ -57,7 +57,7 @@ const AI_SECTIONS: Array<{ key: keyof AILiunianSections; name: string }> = [
   { key: 'wealthFlow', name: '流年财运' },
   { key: 'loveFlow', name: '流年感情' },
   { key: 'healthFlow', name: '流年健康' },
-  { key: 'monthFlow', name: '当年流月节奏' }
+  { key: 'monthFlow', name: '流月节奏' }
 ]
 
 const WX_COLOR: Record<string, string> = {
@@ -198,10 +198,10 @@ export default function LiunianResultView({ data, onRegen, regenBusy }: {
       </div>
       )}
 
-      {/* 当年流月表（仅目标年=当年时展示）；试读时只给标题 + 占位 */}
+      {/* 流月表（当年/明年/后年均有，往年无）；试读时只给标题 + 占位 */}
       {!previewMode && data.liuYue && data.liuYue.length > 0 && (
         <div className="hw-c-box hw-c-boxLg">
-          <h3 className="hw-c-h3">当年流月节奏（节气换月）</h3>
+          <h3 className="hw-c-h3">{data.targetYear}年流月节奏（节气换月）</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
             {data.liuYue.map(m => (
               <div key={m.month} className={`rounded-[16px] border p-2.5 ${TAG_STYLE[m.tag] || TAG_STYLE['一般']}`}>
@@ -213,9 +213,9 @@ export default function LiunianResultView({ data, onRegen, regenBusy }: {
           </div>
         </div>
       )}
-      {/* 有流月数据才给锁定卡：目标年≠当年时该板块本来就不存在，给卡会误导 */}
+      {/* 有流月数据才给锁定卡：往年（超出三年范围）该板块本来就不存在，给卡会误导 */}
       {previewMode && data.liuYue && data.liuYue.length > 0 && (
-        <LockedCard title="当年流月节奏（节气换月）" />
+        <LockedCard title={`${data.targetYear}年流月节奏（节气换月）`} />
       )}
 
       {/* ★ 试读：6 个 AI 板块只给标题 + 模糊占位（route 未生成、未下发全文） */}

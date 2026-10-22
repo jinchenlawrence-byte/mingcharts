@@ -27,14 +27,14 @@ const liuYueFake = [
 ]
 
 let fbFail = 0
-// ①-a 无流月（明年/后年）：5 板块、无 monthFlow、各板块 ≥50 字
+// ①-a 无流月（未提供数据，如往年）：5 板块、无 monthFlow、各板块 ≥50 字
 const fbYear = fallbackLiunianText(2027, { ...item, year: 2027, current: false }, null, ctx)
 const BASE_KEYS = ['annualOverview', 'careerFlow', 'wealthFlow', 'loveFlow', 'healthFlow']
 for (const k of BASE_KEYS) {
   const v = fbYear[k]
   if (typeof v !== 'string' || v.trim().length < 50) { fbFail++; fail(`规则版 ${k} 缺失或过短（${typeof v === 'string' ? v.length : v} 字）`) }
 }
-if (fbYear.monthFlow !== undefined) { fbFail++; fail('无流月输入时不应产出 monthFlow 板块（明年/后年严禁编造流月）') }
+if (fbYear.monthFlow !== undefined) { fbFail++; fail('无流月输入时不应产出 monthFlow 板块（超出三年范围严禁编造流月）') }
 // ①-b 有流月（当年）：monthFlow 存在且含较宜/宜慎
 const fbNow = fallbackLiunianText(2026, item, liuYueFake, ctx)
 if (!fbNow.monthFlow) { fbFail++; fail('当年输入应产出 monthFlow 板块') }
@@ -83,21 +83,35 @@ console.log(aiFail === 0
   ? `✓ 合规接线：重试/溯源/禁词（默认口径）/不必替换/facts含胎元命宫/板块条件化 ${WIRING.length} 判据全中；禁词派生引用+流月措辞齐备`
   : '✗ 合规接线断言失败')
 
-// ---------- ②-b liuYueFor 纯函数真调（§八-②：流月仅当年——曾被注入恒 true 而断言全绿的缺口）----------
+// ---------- ②-b liuYueFor 纯函数真调（流月覆盖三年：当年/明年/后年；往年 null）----------
 console.log('—— ②-b liuYueFor 流月条件（真调生产纯函数，零 AI/零 IO）——')
 const { liuYueFor } = await import('../src/lib/aiLiunian.ts')
-// ★ 当年判定已改为读显式字段 currentYear（流月索引事故，2026-10-10）；
-//   本用例仍为假数据接线测试；真实命盘的太岁/当年流月断言在 test-liuyue-index-fix.mjs
-const luckStub = { currentYear: 2026, liuNian: [{ year: 2026 }], liuYue: [{ month: 3, ganZhi: '辛卯' }] }
+// ★ 2026-10-22：年运报告一次覆盖三年，流月由「仅当年」扩为当年/明年/后年；
+//   当年判定仍读显式字段 currentYear（流月索引事故，2026-10-10）。
+//   真实命盘的太岁/三年流月断言在 test-liuyue-index-fix.mjs
+const lyCurrent = [{ month: 3, ganZhi: '辛卯' }]
+const lyNext = [{ month: 4, ganZhi: '壬辰' }]
+const lyNext2 = [{ month: 5, ganZhi: '癸巳' }]
+const luckStub = {
+  currentYear: 2026,
+  liuNian: [{ year: 2026 }],
+  liuYue: lyCurrent,
+  liuYueByYear: { 2026: lyCurrent, 2027: lyNext, 2028: lyNext2 }
+}
 let lyFail = 0
-if (liuYueFor(2026, luckStub) !== luckStub.liuYue) { lyFail++; fail('liuYueFor(当年) 应返回 liuYue 数组本体') }
-if (liuYueFor(2027, luckStub) !== null) { lyFail++; fail('liuYueFor(明年) 应返回 null（严禁编造流月）') }
-if (liuYueFor(2025, luckStub) !== null) { lyFail++; fail('liuYueFor(去年) 应返回 null') }
+if (liuYueFor(2026, luckStub) !== lyCurrent) { lyFail++; fail('liuYueFor(当年) 应返回 liuYueByYear[当年] 本体') }
+if (liuYueFor(2027, luckStub) !== lyNext) { lyFail++; fail('liuYueFor(明年) 应返回 liuYueByYear[明年]（三年覆盖）') }
+if (liuYueFor(2028, luckStub) !== lyNext2) { lyFail++; fail('liuYueFor(后年) 应返回 liuYueByYear[后年]（三年覆盖）') }
+if (liuYueFor(2025, luckStub) !== null) { lyFail++; fail('liuYueFor(去年) 应返回 null（超出三年范围严禁编造流月）') }
+// 兼容旧快照（无 liuYueByYear）：仅当年回退，其余 null
+const legacyStub = { currentYear: 2026, liuNian: [{ year: 2026 }], liuYue: lyCurrent }
+if (liuYueFor(2026, legacyStub) !== lyCurrent) { lyFail++; fail('无三年表时当年仍应回退到 liuYue') }
+if (liuYueFor(2027, legacyStub) !== null) { lyFail++; fail('无三年表时明年应返回 null') }
 // 接线断言：buildUserPrompt 与 generateAILiunian 两处都须经 liuYueFor 判定（不再各自手算）
 const lyHits = (aiSrc.match(/liuYueFor\(targetYear, luck\)/g) || []).length
 if (lyHits < 2) { lyFail++; fail(`liuYueFor 接线不足 2 处（实际 ${lyHits}），buildUserPrompt/generateAILiunian 有手算残留`) }
 console.log(lyFail === 0
-  ? `✓ liuYueFor：当年→数组本体 / 明年→null / 去年→null；接线 ${lyHits} 处（模式：liuYueFor\\(targetYear, luck\\)，命中数已打）`
+  ? `✓ liuYueFor：当年/明年/后年→各自数组本体 / 去年→null；旧快照兼容；接线 ${lyHits} 处（模式：liuYueFor\\(targetYear, luck\\)，命中数已打）`
   : '✗ liuYueFor 断言失败')
 
 // ---------- ③ route：targetYear 校验 + 规则引擎同源 + 保存 ----------
@@ -109,7 +123,7 @@ const R_NEEDS = [
   ['仅支持今年、明年或后年', '校验失败缺中文 400 提示'],
   ['buildLuckCycles(', '未用规则引擎 buildLuckCycles（严禁另造算法）'],
   ['luck.liuNian.find(y => y.year === targetYear)', '目标流年未从规则引擎 liuNian 取（同源断言）'],
-  ['? luck.liuYue : null', '流月未按「仅当年」条件给出'],
+  ['liuYueFor(targetYear, luck)', '流月未按「当年/明年/后年三年」条件给出（应走 liuYueFor）'],
   ["kind: 'annual'", '报告未以 annual 类别保存'],
   ['saveReport(', '未接报告保存'],
   ['locked:', '缺 locked 双写层'],
@@ -119,7 +133,7 @@ for (const [pat, why] of R_NEEDS) {
   if (!routeSrc.includes(pat)) { rFail++; fail(`route 缺「${pat}」——${why}`) }
 }
 console.log(rFail === 0
-  ? `✓ route：目标年三档校验+中文400；流年事实取自 buildLuckCycles 同源；流月仅当年；报告按 annual 保存并双写 locked（${R_NEEDS.length} 判据全中）`
+  ? `✓ route：目标年三档校验+中文400；流年事实取自 buildLuckCycles 同源；流月覆盖三年；报告按 annual 保存并双写 locked（${R_NEEDS.length} 判据全中）`
   : '✗ route 断言失败')
 
 // ---------- ④ 页面与导航 ----------

@@ -197,7 +197,7 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
           {/* 年底「来年运势」窗口：生肖页直接给出个人年运报告入口（价格派生自 pricing.ts） */}
           <p className="mt-4 text-sm text-ink-light/70">
             <Link href="/liunian" className="hw-c-link">
-              或直接生成 {year} 年年运报告（{formatPriceUSD(SKUS.annual_report.priceUSD)}，一次覆盖今年/明年/后年三年）→
+              或直接生成 {year} 年年运报告（{formatPriceUSD(SKUS.annual_report.priceUSD)}，一次覆盖今年/明年/后年三年，各含流月节奏）→
             </Link>
           </p>
         </div>

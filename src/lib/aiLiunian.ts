@@ -19,7 +19,7 @@ export interface AILiunianSections {
   wealthFlow: string      // 流年财运
   loveFlow: string        // 流年感情
   healthFlow: string      // 流年健康
-  monthFlow?: string      // 当年流月节奏（仅目标年=当年时生成）
+  monthFlow?: string      // 流月节奏（当年/明年/后年均有；往年无）
 }
 
 const SECTION_SPECS_BASE: Array<{ key: keyof AILiunianSections; name: string; requirement: string }> = [
@@ -29,7 +29,7 @@ const SECTION_SPECS_BASE: Array<{ key: keyof AILiunianSections; name: string; re
   { key: 'loveFlow', name: '流年感情', requirement: '结合流年与夫妻宫（日支）的冲/合/伏吟关系、流年干支十神中配偶星（男看财、女看官）的状态，描述当年感情倾向：单身者桃花机缘、有伴者关系节奏；关系描述只能引用算法事实，200-250字' },
   { key: 'healthFlow', name: '流年健康', requirement: '结合流年干支五行属性与命局喜忌，点出当年需要留意的脏腑养护（木肝胆、火心脏、土脾胃、金肺、水肾）与作息建议；只作倾向提示，严禁任何病症断言，150-250字' },
 ]
-const MONTHFLOW_SPEC = { key: 'monthFlow' as const, name: '当年流月节奏', requirement: '引用给定的当年流月数据（节气换月），点出较宜之月与宜慎之月各是哪几个月、宜安排什么、宜回避什么；只用"较宜/一般/宜慎"标签，严禁出现"大吉/吉"，150-250字' }
+const MONTHFLOW_SPEC = { key: 'monthFlow' as const, name: '流月节奏', requirement: '引用给定的目标流年流月数据（节气换月），点出较宜之月与宜慎之月各是哪几个月、宜安排什么、宜回避什么；只用"较宜/一般/宜慎"标签，严禁出现"大吉/吉"，150-250字' }
 
 const SYSTEM_PROMPT = `你是一位精通传统子平命理的资深命理师，熟读《子平真诠》《滴天髓》《穷通宝鉴》《渊海子平》《三命通会》《千里命稿》六部经典，正在为用户撰写年度流年详批。
 
@@ -37,10 +37,11 @@ const SYSTEM_PROMPT = `你是一位精通传统子平命理的资深命理师，
 1. 排盘数据、旺衰、格局、喜忌、【算法已确认的流年事实】区块中的所有结论均为确定性算法算出，你只做解读，严禁修改、否认或与其矛盾；没有列出的干支关系一律不得自行编造。
 2. 紧扣这个命局与目标流年的具体干支组合，禁止写放之四海皆准的套话；断语留余地，用"倾向""易""需注意"等表述，严禁绝对化断言、不吓唬用户。
 3. 语言典雅通俗，让普通人看得懂。
-4. 若目标流年不是当年（未提供流月数据），全文严禁提及任何流月、月份节奏内容。
-5. 输出必须是纯 JSON 对象，不要 markdown 代码块、不要任何额外文字。
-6. ${FORBIDDEN_WORDS_PROMPT}
-7. "annualOverview"（年运总纲）板块必须以这句固定免责语收尾、原文照写：
+4. 若未提供流月数据（目标流年超出当年/明年/后年范围），全文严禁提及任何流月、月份节奏内容。
+5. 目标流年晚于当年时属预测性内容，写"预计""大致""较易"等留余地的措辞，不得把未来事件写成已定结论。
+6. 输出必须是纯 JSON 对象，不要 markdown 代码块、不要任何额外文字。
+7. ${FORBIDDEN_WORDS_PROMPT}
+8. "annualOverview"（年运总纲）板块必须以这句固定免责语收尾、原文照写：
    "以上为流年倾向性分析，仅供参考，非确定性结论，不构成任何重大决策依据。"
 
 命理术语铁律（违反即为错误）：
@@ -59,8 +60,13 @@ const CANG_GAN: Record<string, string[]> = {
 // ★ 流月条件单一事实源（§八-②）：仅目标流年=当年时提供流月数据
 //   （liuYue 只算当年；明年/后年严禁 AI 自行编造流月内容）——buildUserPrompt 与
 //   generateAILiunian 共用此判定，有真调断言守护（改恒 true 会翻红）。
+//   ★ 2026-10-22 起：当年/明年/后年均有流月（年运报告一次覆盖三年），
+//   取值一律经 liuYueByYear；超出三年范围（往年）仍返回 null，AI 严禁提及流月。
 //   ★ 当年读显式字段 luck.currentYear，严禁 luck.liuNian[0]（首位是 8 年前；复核 2026-10-10 流月失效事故）
 export function liuYueFor(targetYear: number, luck: LuckCycles): LuckLiuYueItem[] | null {
+  const byYear = luck.liuYueByYear
+  if (byYear && byYear[targetYear]) return byYear[targetYear]
+  // 兼容不含三年表的旧快照/桩数据：仅当年回退到 liuYue
   return targetYear === luck.currentYear ? luck.liuYue : null
 }
 
@@ -71,7 +77,8 @@ function buildUserPrompt(
 ): string {
   const p = chart.pillars
   const gender = chart.input.gender === 1 ? '男' : '女'
-  const includeMonthFlow = liuYueFor(targetYear, luck) !== null
+  const months = liuYueFor(targetYear, luck)
+  const includeMonthFlow = months !== null
   const specs = includeMonthFlow ? [...SECTION_SPECS_BASE, MONTHFLOW_SPEC] : SECTION_SPECS_BASE
 
   const pillarLine = (label: string, pl: typeof p.year) =>
@@ -111,8 +118,8 @@ function buildUserPrompt(
 
   const target = luck.liuNian.find(y => y.year === targetYear)!
   const monthFlowCheck = includeMonthFlow
-    ? `■ 当年流月节奏（节气换月，流月段必须严格引用）：\n　较宜之月：${luck.liuYue.filter(m => m.tag === '较宜').map(m => `${m.month}月${m.ganZhi}【较宜】`).join('、') || '无明显突出之月'}\n　宜慎之月：${luck.liuYue.filter(m => m.tag === '宜慎').map(m => `${m.month}月${m.ganZhi}【宜慎】`).join('、') || '无明显宜慎之月'}`
-    : '■ 目标流年非当年：未提供任何流月数据，全文严禁提及流月或月份节奏。'
+    ? `■ ${targetYear}年流月节奏（节气换月，流月段必须严格引用）：\n　较宜之月：${months!.filter(m => m.tag === '较宜').map(m => `${m.month}月${m.ganZhi}【较宜】`).join('、') || '无明显突出之月'}\n　宜慎之月：${months!.filter(m => m.tag === '宜慎').map(m => `${m.month}月${m.ganZhi}【宜慎】`).join('、') || '无明显宜慎之月'}`
+    : '■ 目标流年超出三年范围：未提供任何流月数据，全文严禁提及流月或月份节奏。'
 
   return `请为以下命盘撰写${targetYear}年（${target.ganZhi}年）流年详批。
 
@@ -152,7 +159,7 @@ interface ChatCompletionResponse {
 
 // ★ 合规退回后的结构提示（配合 ai-check.complianceRetryHint 回灌退回原因，单一事实源）：
 //   与紫微模块同法——把退回原因追加为一条 user 消息，不改 buildUserPrompt，保证首次请求逐字一致。
-const LIUNIAN_SHAPE = '完整 JSON（流年各段：年运总纲、流年事业、流年财运、流年感情、流年健康，当年另含流月节奏）'
+const LIUNIAN_SHAPE = '完整 JSON（流年各段：年运总纲、流年事业、流年财运、流年感情、流年健康，三年内均含流月节奏）'
 
 // 调用 OpenAI 兼容接口；失败返回 null（调用方回退到规则版文字）
 export async function generateAILiunian(
@@ -166,7 +173,8 @@ export async function generateAILiunian(
     return null
   }
 
-  const includeMonthFlow = liuYueFor(targetYear, luck) !== null
+  const months = liuYueFor(targetYear, luck)
+  const includeMonthFlow = months !== null
   const specs = includeMonthFlow ? [...SECTION_SPECS_BASE, MONTHFLOW_SPEC] : SECTION_SPECS_BASE
 
   // 免责兜底语（与 SYSTEM_PROMPT 第7条一致）
@@ -179,7 +187,7 @@ export async function generateAILiunian(
     chart.taiYuan, chart.mingGong,
     ...chart.daYun.map(d => d.ganZhi),
     ...luck.liuNian.map(y => y.ganZhi),
-    ...(includeMonthFlow ? luck.liuYue.map(m => m.ganZhi) : [])
+    ...(includeMonthFlow ? months!.map(m => m.ganZhi) : [])
   ])
 
   // 合规校验（与 aiAnalysis/aiHemun 对称接线，共享判据 ai-check.ts）：
@@ -305,7 +313,7 @@ export function fallbackLiunianText(
   if (liuYue && liuYue.length) {
     const good = liuYue.filter(m => m.tag === '较宜').map(m => `${m.month}月（${m.ganZhi}）`)
     const bad = liuYue.filter(m => m.tag === '宜慎').map(m => `${m.month}月（${m.ganZhi}）`)
-    out.monthFlow = `当年流月节奏（以节气为界）：较宜安排要事的月份有${good.join('、') || '无明显突出之月'}；宜谨慎行事的月份有${bad.join('、') || '无明显宜慎之月'}。流月吉凶本就起伏有限，标签仅作节奏参考，遇事以实际准备为准。`
+    out.monthFlow = `${targetYear}年流月节奏（以节气为界）：较宜安排要事的月份有${good.join('、') || '无明显突出之月'}；宜谨慎行事的月份有${bad.join('、') || '无明显宜慎之月'}。流月吉凶本就起伏有限，标签仅作节奏参考，遇事以实际准备为准。`
   }
   return out
 }

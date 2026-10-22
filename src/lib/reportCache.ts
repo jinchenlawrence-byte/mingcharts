@@ -22,7 +22,8 @@ import type { SupabaseClient } from '@supabase/supabase-js'
  * ★★ 改动【AI prompt / 判据 / 排盘算法】任一时必须 +1（否则旧缓存与新规则矛盾）。
  * 本任务书 §〇-4 明文要求；下一轮接其它报告模块时各起各的版本常量。
  */
-export const ANNUAL_CACHE_VERSION = 1
+// ★ 2：2026-10-22 流月由「仅当年」扩为「当年/明年/后年」+ prompt 增预测措辞条款（纪律要求 +1）
+export const ANNUAL_CACHE_VERSION = 2
 
 /**
  * ★★ 合婚/紫微/地理的缓存版本（同上纪律：改 AI prompt / 判据 / 排盘算法必须 +1）。

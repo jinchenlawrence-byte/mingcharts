@@ -12,7 +12,7 @@
 //   ② 真实命盘 + 真实 buildLuckCycles（不用假数据）：
 //      currentYear 与 current 流年项一致；太岁地支＝当年流年地支；
 //      流月冲/合太岁逐月精确重算（不多不少，全年恰好各 1 个月）；
-//      liuYueFor(当年)===liuYue、去年/明年/后年 === null；12 月齐全、tag 三档。
+//      liuYueFor(当年/明年/后年)===各年数组本体、去年===null；12 月齐全、tag 三档。
 //   牙口（开发期手工注入，已实测留痕）：
 //     A analysis.ts「const currentNian = liuNian.find(y => y.current)」改回 liuNian[0]
 //       → 太岁断言 + 当年流月断言精确翻红
@@ -160,10 +160,21 @@ for (const Y of ANCHORS) {
   if (heMonths.length !== 1) { behFail++; fail(`${Y}：合太岁月份 ${heMonths.length} 个（期望恰好 1）：${heMonths}`) }
   console.log(`  · ${Y}（太岁 ${taiSui}）：冲太岁在 ${chongMonths.join(',')} 月 / 合太岁在 ${heMonths.join(',')} 月（逐月精确重算一致）`)
 
-  // ②-e liuYueFor：当年给数组本体；去年/明年/后年一律 null（严禁 AI 编造非当年流月）
+  // ②-e liuYueFor：当年/明年/后年给各自数组本体；往年一律 null（严禁 AI 编造三年外的流月）
   if (liuYueFor(Y, luck) !== luck.liuYue) { behFail++; fail(`${Y}：liuYueFor(当年) 未返回 liuYue 本体`) }
-  for (const dy of [-1, 1, 2]) {
-    if (liuYueFor(Y + dy, luck) !== null) { behFail++; fail(`${Y}：liuYueFor(${Y + dy}) 应返回 null`) }
+  if (liuYueFor(Y - 1, luck) !== null) { behFail++; fail(`${Y}：liuYueFor(${Y - 1}) 应返回 null`) }
+  for (const dy of [1, 2]) {
+    const arr = luck.liuYueByYear[Y + dy]
+    if (!arr || arr.length !== 12) { behFail++; fail(`${Y}：liuYueByYear[${Y + dy}] 缺失或非 12 条（实际 ${arr?.length ?? '无'}）`); continue }
+    if (liuYueFor(Y + dy, luck) !== arr) { behFail++; fail(`${Y}：liuYueFor(${Y + dy}) 未返回该年数组本体`) }
+    // ★ 未来年太岁必须取【该年】地支：沿用当年太岁是 2026-10-10 事故的同类错误
+    const futTaiSui = luck.liuNian.find(y => y.year === Y + dy)?.ganZhi?.[1]
+    const futChong = arr.filter(m => m.relations.some(r => r.includes('月支冲太岁'))).length
+    const futHe = arr.filter(m => m.relations.some(r => r.includes('月支合太岁'))).length
+    if (!futTaiSui) { behFail++; fail(`${Y}：未找到 ${Y + dy} 的流年干支，无法核对未来年太岁`) }
+    else if (futChong !== 1 || futHe !== 1) {
+      behFail++; fail(`${Y + dy}（太岁 ${futTaiSui}）：冲太岁 ${futChong} 月 / 合太岁 ${futHe} 月（期望各 1）`)
+    }
   }
 }
 
@@ -183,7 +194,7 @@ for (const Y of ANCHORS) {
   }
 }
 console.log(behFail === 0
-  ? `✓ 流月功能：${ANCHORS.length} 个锚定年份全部通过（currentYear 一致/太岁逐月精确/当年有流月·往年明年无/12月三档）`
+  ? `✓ 流月功能：${ANCHORS.length} 个锚定年份全部通过（currentYear 一致/太岁逐月精确/三年均有流月·往年无/12月三档）`
   : '✗ 流月功能断言失败')
 
 console.log('\n' + (allPass && scanHits === 0 && wireFail === 0 && behFail === 0 ? 'LIUYUE_INDEX_FIX_PASS' : 'LIUYUE_INDEX_FIX_FAIL'))

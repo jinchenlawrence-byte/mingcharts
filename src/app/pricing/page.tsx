@@ -181,7 +181,7 @@ const COMPARE_ROWS: CompareRow[] = [
   {
     label: GRANT_LABELS.annual_report, free: false, grant: 'annual_report',
     // ★ 补披露（HANDOFF-年运披露与报告缓存 §二）：明确一次购买覆盖三年
-    note: `单项购买 ${formatPriceUSD(SKUS.annual_report.priceUSD)} · 覆盖今年/明年/后年三年`,
+    note: `单项购买 ${formatPriceUSD(SKUS.annual_report.priceUSD)} · 覆盖今年/明年/后年三年，各含流月节奏`,
   },
   ...SUBSCRIPTION_GRANTS.map((g) => ({
     label: GRANT_LABELS[g], free: false, grant: g,

@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js'
 import { paipan, getWangShuai, getGeJu } from '@/lib/paipan'
 import { buildLuckCycles, getFavorSets } from '@/lib/analysis'
 import type { AnalyzableChart } from '@/lib/analysis'
-import { generateAILiunian, fallbackLiunianText } from '@/lib/aiLiunian'
+import { generateAILiunian, fallbackLiunianText, liuYueFor } from '@/lib/aiLiunian'
 import { checkDSTTransition } from '@/lib/solarTime'
 import { resolveBirthFromBody } from '@/lib/birthRequest'
 import { getEntitlements, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
@@ -144,9 +144,9 @@ export async function POST(request: NextRequest) {
     const budget = unlocked && userId ? await checkAiBudget(admin, Date.now()) : null
     const aiBlocked = budget?.exhausted ?? false
 
-    // AI 深度文字解读；失败回退规则版（流月仅当年提供）
-    // ★ 当年读 luck.currentYear 显式字段，严禁 luck.liuNian[0]（首位是 8 年前；复核 2026-10-10）
-    const liuYue = targetYear === luck.currentYear ? luck.liuYue : null
+    // AI 深度文字解读；失败回退规则版（流月：当年/明年/后年均有，往年无）
+    // ★ 取值统一走 liuYueFor（liuYueByYear），严禁按 liuNian 数组索引猜年份（复核 2026-10-10 流月失效事故）
+    const liuYue = liuYueFor(targetYear, luck)
     const favorSets = getFavorSets(analyzable)
     // ★ 未解锁不调 AI（REPLY-23 复核 发现③(a)）：试吃用户拿不到 AI 文本，调了也是丢弃——
     //   无条件调用会让「试吃」成为最贵路径且缓存永远建立不起来（ai=null → 下次未命中 → 再调）。

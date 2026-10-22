@@ -86,6 +86,8 @@ export interface LuckCycles {
   daYun: LuckDaYunItem[]
   liuNian: LuckLiuNianItem[]
   liuYue: LuckLiuYueItem[]
+  /** ★ 三年流月表：当年 / 明年 / 后年各自 12 个月（键＝流年，值＝该年流月） */
+  liuYueByYear: Record<number, LuckLiuYueItem[]>
 }
 
 export interface PaidAnalysis {
@@ -1242,7 +1244,15 @@ export function buildLuckCycles(chart: AnalyzableChart, now: Date = new Date()):
   const nianZhi = currentNian?.ganZhi[1]
     ?? Solar.fromYmdHms(nowYear, 6, 15, 12, 0, 0).getLunar().getEightChar().getYear()[1]
   const liuYue = buildLuckLiuYue(chart, favorable, unfavorable, currentYear, nianZhi)
-  return { currentDaYunGanZhi, currentYear, daYun, liuNian, liuYue }
+  // ★ 明年/后年流月（2026-10-22）：年运报告一次覆盖三年，故三年各自生成 12 个月。
+  //   干支仍由 lunar-javascript 按该年节气确定，属确定性算法，AI 只能引用不得编造。
+  const liuYueByYear: Record<number, LuckLiuYueItem[]> = { [currentYear]: liuYue }
+  for (const y of liuNian) {
+    if (y.year > currentYear && y.year <= currentYear + 2) {
+      liuYueByYear[y.year] = buildLuckLiuYue(chart, favorable, unfavorable, y.year, y.ganZhi[1])
+    }
+  }
+  return { currentDaYunGanZhi, currentYear, daYun, liuNian, liuYue, liuYueByYear }
 }
 
 /**

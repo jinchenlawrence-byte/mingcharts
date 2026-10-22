@@ -28,8 +28,8 @@ function yearOptions(): Array<{ year: number; label: string; note: string }> {
   }
   return [
     { year: y, label: `${y}年（${gz(y)}）· 今年`, note: '含流月节奏' },
-    { year: y + 1, label: `${y + 1}年（${gz(y + 1)}）· 明年`, note: '全年四维度' },
-    { year: y + 2, label: `${y + 2}年（${gz(y + 2)}）· 后年`, note: '全年四维度' }
+    { year: y + 1, label: `${y + 1}年（${gz(y + 1)}）· 明年`, note: '四维度 + 流月节奏' },
+    { year: y + 2, label: `${y + 2}年（${gz(y + 2)}）· 后年`, note: '四维度 + 流月节奏' }
   ]
 }
 
