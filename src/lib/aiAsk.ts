@@ -9,6 +9,7 @@ import { Solar } from 'lunar-javascript'
 import type { AnalyzableChart } from './analysis'
 import { buildLuckCycles } from './analysis'
 import { unknownGanzhi, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
+import { localeDirective, type OutputLocale } from './locale'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -164,7 +165,7 @@ interface ChatCompletionResponse {
  * 生成一条追问回答。成功且过合规 → 返回文本；否则 null（调用方返回合规兜底、不扣额度）。
  * ★ 复用 withComplianceRetry（首次留痕 + 带反馈重试），validate = 干支溯源 + 禁用词。
  */
-export async function generateAskAnswer(chart: AnalyzableChart, question: string): Promise<string | null> {
+export async function generateAskAnswer(chart: AnalyzableChart, question: string, opts?: { locale?: OutputLocale }): Promise<string | null> {
   if (!AI_API_KEY) {
     console.warn('[ask] 未配置 AI_API_KEY，本次无法作答')
     return null
@@ -176,7 +177,7 @@ export async function generateAskAnswer(chart: AnalyzableChart, question: string
     const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
     try {
       const messages: Array<{ role: string; content: string }> = [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
         { role: 'user', content: buildUserPrompt(chart, question) },
       ]
       if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, ASK_SHAPE) })

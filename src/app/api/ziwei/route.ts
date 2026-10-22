@@ -11,6 +11,7 @@ import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RU
 import { checkAiBudget } from '@/lib/aiBudget'
 import { saveReport, deriveReportTitle } from '@/lib/reportSave'
 import { stripEntitlementState, reportCacheKey, readReportCache, resolveModuleCachedHit, ZIWEI_CACHE_VERSION } from '@/lib/reportCache'
+import { localeFromRequest } from '@/lib/locale'
 
 /** 未解锁时的 preview（入库剥离、命中重算时共用，避免两处文案漂移） */
 const ZIWEI_LOCKED_PREVIEW = '紫微十二宫深度解读（命格、性格、十二宫导读、事业、财运、婚姻、健康、生年四化、格局成败、大限十年、流年流月、趋避建议）解锁后可见。'
@@ -18,6 +19,7 @@ const ZIWEI_LOCKED_PREVIEW = '紫微十二宫深度解读（命格、性格、�
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    const locale = localeFromRequest(request, body)
     const toInt = (v: unknown, def = 0): number => {
       if (v === undefined || v === null || v === '') return def
       const n = parseInt(String(v), 10)
@@ -116,7 +118,7 @@ export async function POST(request: NextRequest) {
     // ★★ 成本护栏（token 防盗用第一档）：仅【登录用户】才生成 AI（本模块每盘 12 次调用）——
     //   匿名（含外部脚本）不再触发；登录用户照常全量生成并入库，回看者必然已登录 ⇒ 不触回看事故。
     // ★ 未解锁（试读）不调 AI：本模块每盘 12 次调用，未购用户不再产生成本。
-    const aiReport = userId && unlocked && !aiBlocked ? await generateAIZiwei(chart, analysis) : null
+    const aiReport = userId && unlocked && !aiBlocked ? await generateAIZiwei(chart, analysis, { locale }) : null
 
     // ★ 入库只存【内容】（locked 剥掉、ai 存全量全文）；门禁只作用于【响应】——
     //   读取侧按当前权益重算（详情页 reportGate），试吃→付费即刻生效。

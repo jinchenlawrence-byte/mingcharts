@@ -12,6 +12,7 @@ import {
   ASK_FALLBACK_TEXT,
   ASK_MAX_QUESTION_LEN,
 } from '@/lib/aiAsk'
+import { localeFromRequest } from '@/lib/locale'
 
 // AI 追问（ask_pack）—— 单条问答端点。写入走 service_role；额度判定走 entitlement 单一事实源。
 //
@@ -55,7 +56,10 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const { token, chartId, chart, question } = await request.json()
+    const body = await request.json()
+    const { token, chartId, chart, question } = body
+    // 输出语言：body.locale ＞ cookie ＞ 默认简体；追问应与所问那份报告同语言
+    const locale = localeFromRequest(request, body)
 
     if (!token) return NextResponse.json({ error: '缺少 token' }, { status: 400 })
     if (!chart?.input || !chart?.pillars) {
@@ -129,7 +133,7 @@ export async function POST(request: NextRequest) {
     }
 
     // ⑤ 生成（AI + 合规重试）；失败 → 合规兜底、不扣额
-    const answer = await generateAskAnswer(chart as AnalyzableChart, q)
+    const answer = await generateAskAnswer(chart as AnalyzableChart, q, { locale })
     if (!answer) {
       return NextResponse.json({
         answer: ASK_FALLBACK_TEXT,

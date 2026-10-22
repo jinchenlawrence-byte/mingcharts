@@ -7,10 +7,14 @@ import { generateAIAnalysis } from '@/lib/aiAnalysis'
 import { searchSimilarCases } from '@/lib/caseSearch'
 import { canViewFatebookForChart } from '@/lib/entitlement'
 import { ensureFatebookReportByAdmin } from '@/lib/reportSave'
+import { localeFromRequest } from '@/lib/locale'
 
 export async function POST(request: NextRequest) {
   try {
-    const { token, chart } = await request.json()
+    const body = await request.json()
+    const { token, chart } = body
+    // 输出语言：body.locale ＞ cookie ＞ 默认简体（lib/locale 单一事实源）
+    const locale = localeFromRequest(request, body)
     if (!token || !chart?.input || !chart?.pillars) {
       return NextResponse.json({ error: '参数缺失或格式错误' }, { status: 400 })
     }
@@ -107,7 +111,7 @@ export async function POST(request: NextRequest) {
     const analyzable = chart as AnalyzableChart
     // 规则引擎始终先跑：其结构化岁运（大运/流年/流月）确定性计算，AI 不参与
     const rulePaid = generateAnalysis(analyzable)
-    const aiPaid = aiBlocked ? null : await generateAIAnalysis(analyzable)
+    const aiPaid = aiBlocked ? null : await generateAIAnalysis(analyzable, { locale })
     const similarCases = searchSimilarCases(analyzable)
     const paid = aiPaid
       ? { ...aiPaid, luckCycles: rulePaid.luckCycles, similarCases }

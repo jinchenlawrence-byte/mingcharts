@@ -13,6 +13,7 @@ import type {
   WebhookEvent,
   WebhookEventData,
 } from '@waffo/pancake-ts'
+import { checkoutLanguage } from './locale'
 
 // 双保险：万一被误打进客户端，模块加载即炸（不泄露任何密钥）
 if (typeof window !== 'undefined') {
@@ -128,6 +129,11 @@ export interface CheckoutParamsInput {
    *   仅接受以 / 开头的站内绝对路径（非 //），其余一律丢弃——防开放重定向。
    */
   returnTo?: string
+  /**
+   * 收银台语言（OutputLocale 或任意原生写法，由 lib/locale 归一）。
+   * ★ 缺省 = zh-Hans，与旧行为逐字一致；繁体入口（/tw）传 zh-Hant → 收银台 zh-Hant-TW。
+   */
+  locale?: unknown
   appUrl: string
   storeId: string
 }
@@ -165,7 +171,7 @@ export function buildCheckoutParams(input: CheckoutParamsInput): WaffoCheckoutPa
     productId: input.productId,
     currency: 'USD',
     buyerEmail: input.buyerEmail.trim().toLowerCase(),
-    language: 'zh-Hans',
+    language: checkoutLanguage(input.locale),
     includePaymentMethods: cardOnly,
     orderMerchantExternalId: input.orderMerchantExternalId,
     metadata: {

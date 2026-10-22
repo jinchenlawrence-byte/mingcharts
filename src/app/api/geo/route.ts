@@ -15,6 +15,7 @@ import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RU
 import { checkAiBudget } from '@/lib/aiBudget'
 import { saveReport, deriveReportTitle } from '@/lib/reportSave'
 import { stripEntitlementState, reportCacheKey, readReportCache, resolveModuleCachedHit, GEO_CACHE_VERSION } from '@/lib/reportCache'
+import { localeFromRequest } from '@/lib/locale'
 import type { WX } from '@/lib/geo'
 
 /** 未解锁时的 preview（入库剥离、命中重算时共用，避免两处文案漂移） */
@@ -23,6 +24,7 @@ const GEO_LOCKED_PREVIEW = '方位总论 · 现居城市影响 · 财富/事业/
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    const locale = localeFromRequest(request, body)
     const toInt = (v: unknown, def = 0): number => {
       if (v === undefined || v === null || v === '') return def
       const n = parseInt(String(v), 10)
@@ -156,7 +158,7 @@ export async function POST(request: NextRequest) {
     //   匿名（含外部脚本）不再触发本端点的 AI 调用（无账号、命中不了缓存，是最大敞口）；
     //   登录用户照常全量生成并入库全文，回看者必然已登录 ⇒ 不触「回看读到锁定版」事故。
     // ★ 未解锁（试读）不调 AI：8 节全文不下发，未购用户不再产生成本。
-    const aiReport = userId && unlocked && !aiBlocked ? await generateAIGeo(analysis) : null
+    const aiReport = userId && unlocked && !aiBlocked ? await generateAIGeo(analysis, { locale }) : null
 
     // ★ 入库只存【内容】（locked 剥掉、ai 存全量全文）；门禁只作用于【响应】——
     //   读取侧按当前权益重算（详情页 reportGate），试吃→付费即刻生效。

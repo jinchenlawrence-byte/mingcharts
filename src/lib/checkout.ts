@@ -1,4 +1,3 @@
-// ─────────────────────────────────────────────────────────────
 // 收银台会话创建（服务端共享件，档 C 2026-10-18）
 //   一次性购买（/api/checkout）与会员订阅（/api/membership）共用本函数 ——
 //   两者走【同一个】client.checkout.createSession，区别只在 productId 与 returnTo。
@@ -15,6 +14,8 @@ export interface CheckoutSessionInput {
   sku: string
   chartId?: string
   returnTo?: string
+  /** 收银台语言：省略即 zh-Hans（与旧行为一致）；繁体入口传 zh-Hant */
+  locale?: unknown
 }
 
 export interface CheckoutSession {
@@ -32,6 +33,7 @@ export async function createCheckoutSession(input: CheckoutSessionInput): Promis
     sku: input.sku,
     chartId: input.chartId || undefined, // 空串=未关联，metadata 里落空串
     returnTo: input.returnTo || undefined, // 空串=不回跳指定页（成功页走默认 /chart）
+    locale: input.locale,
     appUrl: getAppUrl(),
     storeId: getWaffoStoreId(),
   })

@@ -2,6 +2,7 @@
 import { ZIWEI_PALACE_NAMES, type ZwChart, type ZiweiAnalysis } from './ziwei'
 import type { AIUsage } from './ai-types'
 import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
+import { localeDirective, type OutputLocale } from './locale'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -254,7 +255,7 @@ interface ChatCompletionResponse {
 //   采用「追加一条 user 消息」而非改写 buildUserPrompt：保证首次请求与既有形态逐字一致。
 const ZIWEI_SHAPE = '完整 JSON（十二板块，字段见系统提示）'
 
-export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis): Promise<(ZiweiAIReport & { _usage?: AIUsage }) | null> {
+export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis, opts?: { locale?: OutputLocale }): Promise<(ZiweiAIReport & { _usage?: AIUsage }) | null> {
   if (!AI_API_KEY) {
     // ★ 回退必须可见（任务书 §四）：静默降级让「AI 没跑」这件事不可见
     console.warn('[aiZiwei] 未配置 AI_API_KEY，本次回退规则版文案')
@@ -272,7 +273,7 @@ export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis): 
     const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
     try {
       const messages: Array<{ role: string; content: string }> = [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
         { role: 'user', content: buildUserPrompt(chart, analysis, specs) }
       ]
       // 以追加一条 user 消息的方式回灌退回原因：不动 buildUserPrompt 的原始请求体，

@@ -7,6 +7,7 @@ import { waffoProductId } from '@/lib/waffo-products'
 import { createCheckoutSession } from '@/lib/checkout'
 import { makeMerchantOrderId } from '@/lib/waffo-events'
 import type { SkuId } from '@/lib/pricing'
+import { localeFromRequest } from '@/lib/locale'
 
 // 从请求中提取访问令牌：优先 Authorization 头，其次 query 参数
 function getToken(req: NextRequest): string | null {
@@ -145,6 +146,8 @@ export async function POST(req: NextRequest) {
       userId: user.id,
       sku,
       returnTo: '/member',
+      // 会员订阅同样按入口语言给收银台（body.locale ＞ cookie ＞ 默认）
+      locale: localeFromRequest(req),
     })
 
     return NextResponse.json({

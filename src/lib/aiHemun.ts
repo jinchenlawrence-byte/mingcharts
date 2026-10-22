@@ -4,6 +4,7 @@ import type { AnalyzableChart } from './analysis'
 import type { HemunResult } from './hemun'
 import type { AIUsage } from './ai-types'
 import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
+import { localeDirective, type OutputLocale } from './locale'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -90,7 +91,8 @@ const HEMUN_SHAPE = '完整 JSON（六个板块：配对总评、生肖年柱、
 export async function generateAIHemun(
   male: AnalyzableChart,
   female: AnalyzableChart,
-  result: HemunResult
+  result: HemunResult,
+  opts?: { locale?: OutputLocale }
 ): Promise<(AIHemunSections & { _usage?: AIUsage }) | null> {
   if (!AI_API_KEY) {
     // ★ 回退必须可见（任务书 §四）：静默降级让「AI 没跑」这件事不可见
@@ -107,7 +109,7 @@ export async function generateAIHemun(
     const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
     try {
       const messages: Array<{ role: string; content: string }> = [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
         { role: 'user', content: buildUserPrompt(male, female, result) }
       ]
       if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, HEMUN_SHAPE) })

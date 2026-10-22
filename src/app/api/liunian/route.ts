@@ -16,10 +16,12 @@ import {
   annualCacheKey, stripEntitlementState, resolveCachedHit, readReportCache,
   type AnnualCacheInput
 } from '@/lib/reportCache'
+import { localeFromRequest } from '@/lib/locale'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    const locale = localeFromRequest(request, body)
     const toInt = (v: unknown, def = 0): number => {
       if (v === undefined || v === null || v === '') return def
       const n = parseInt(String(v), 10)
@@ -153,7 +155,7 @@ export async function POST(request: NextRequest) {
     // ★ 成本护栏叠加（token 防盗用第一档）：再要求【登录】—— ENFORCE=false 下 unlocked 恒 true，
     //   仅 unlocked 挡不住匿名；匿名又命中不了缓存（缓存读需 userId），最容易被脚本刷。
     // ★ 预算熔断叠加（第三档）：!aiBlocked。牙口注入点：去掉 unlocked(&& userId) 守卫 → 断言⑨结构断言翻红。
-    const aiReport = unlocked && userId && !aiBlocked ? await generateAILiunian(analyzable, luck, targetYear) : null
+    const aiReport = unlocked && userId && !aiBlocked ? await generateAILiunian(analyzable, luck, targetYear, { locale }) : null
 
     // ★ free 层保留结构化岁运事实（试吃本意）；ai 在未解锁时为 null
     const ai = unlocked ? (aiReport || fallbackLiunianText(targetYear, target, liuYue, favorSets)) : null

@@ -2,6 +2,7 @@
 import type { GeoAnalysis } from './geo'
 import type { AIUsage } from './ai-types'
 import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
+import { localeDirective, type OutputLocale } from './locale'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -152,7 +153,7 @@ interface ChatCompletionResponse {
 //   与紫微模块同法——把退回原因追加为一条 user 消息，不改 buildUserPrompt，保证首次请求逐字一致。
 const GEO_SHAPE = '完整 JSON（八个板块：方位总论、现居城市影响、财富之城、事业之城、贵人之城、安居之城、才华之城、迁居开运建议）'
 
-export async function generateAIGeo(a: GeoAnalysis): Promise<(GeoAIReport & { _usage?: AIUsage }) | null> {
+export async function generateAIGeo(a: GeoAnalysis, opts?: { locale?: OutputLocale }): Promise<(GeoAIReport & { _usage?: AIUsage }) | null> {
   if (!AI_API_KEY) {
     // ★ 回退必须可见（任务书 §四）：静默降级让「AI 没跑」这件事不可见
     console.warn('[aiGeo] 未配置 AI_API_KEY，本次回退规则版文案')
@@ -169,7 +170,7 @@ export async function generateAIGeo(a: GeoAnalysis): Promise<(GeoAIReport & { _u
       const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
 
       const messages: Array<{ role: string; content: string }> = [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
         { role: 'user', content: buildUserPrompt(a) }
       ]
       if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, GEO_SHAPE) })

@@ -7,6 +7,7 @@ import type { AnalyzableChart, LuckCycles, LuckLiuNianItem, LuckLiuYueItem } fro
 import { getFavorSets, TIAO_HOU } from './analysis'
 import type { AIUsage } from './ai-types'
 import { unknownGanzhi, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
+import { localeDirective, type OutputLocale } from './locale'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -165,7 +166,8 @@ const LIUNIAN_SHAPE = '完整 JSON（流年各段：年运总纲、流年事业�
 export async function generateAILiunian(
   chart: AnalyzableChart,
   luck: LuckCycles,
-  targetYear: number
+  targetYear: number,
+  opts?: { locale?: OutputLocale }
 ): Promise<(AILiunianSections & { _usage?: AIUsage }) | null> {
   if (!AI_API_KEY) {
     // ★ 回退必须可见（任务书 §四）：静默降级让「AI 没跑」这件事不可见
@@ -206,7 +208,7 @@ export async function generateAILiunian(
     const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
     try {
       const messages: Array<{ role: string; content: string }> = [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
         { role: 'user', content: buildUserPrompt(chart, luck, targetYear) }
       ]
       if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, LIUNIAN_SHAPE) })

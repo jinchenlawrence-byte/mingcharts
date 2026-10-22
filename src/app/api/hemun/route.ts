@@ -14,6 +14,7 @@ import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RU
 import { checkAiBudget } from '@/lib/aiBudget'
 import { saveReport, deriveReportTitle } from '@/lib/reportSave'
 import { stripEntitlementState, reportCacheKey, readReportCache, resolveModuleCachedHit, HEMUN_CACHE_VERSION } from '@/lib/reportCache'
+import { localeFromRequest } from '@/lib/locale'
 
 /** 未解锁时的 preview（入库剥离、命中重算时共用，避免两处文案漂移） */
 const HEMUN_LOCKED_PREVIEW = '合婚双人九维深度解读（典籍干支、古法纳音、民俗生肖分级呈现）解锁后可见。'
@@ -64,6 +65,7 @@ async function parseBirth(raw: RawBirth, expectGender: 1 | 0): Promise<{ data?: 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    const locale = localeFromRequest(request, body)
     const [m, f] = await Promise.all([
       parseBirth(body.male || {}, 1),
       parseBirth(body.female || {}, 0)
@@ -150,7 +152,7 @@ export async function POST(request: NextRequest) {
     // ★★ 成本护栏（token 防盗用第一档）：仅【登录用户】才生成 AI ——
     //   匿名（含外部脚本）不再触发；登录用户照常全量生成并入库，回看者必然已登录 ⇒ 不触回看事故。
     // ★ 未解锁（试读）不调 AI：报告全文不下发，调了也丢弃且成本最高。
-    const aiReport = userId && unlocked && !aiBlocked ? await generateAIHemun(male, female, result) : null
+    const aiReport = userId && unlocked && !aiBlocked ? await generateAIHemun(male, female, result, { locale }) : null
 
     // ★ 入库只存【内容】（locked 剥掉、ai 存全量全文）；门禁只作用于【响应】——
     //   读取侧按当前权益重算（详情页 reportGate），试吃→付费即刻生效。

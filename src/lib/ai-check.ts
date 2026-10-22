@@ -99,10 +99,12 @@ export interface HitSentence {
 // strictBi：合婚口径物理禁「必」字（含不必/未必，任务书 aiHemun 第9条）
 export function findForbidden(text: string, strictBi = false): { hits: HitSentence[]; skipped: HitSentence[] } {
   const sentences = splitSentences(text)
-  const NEG_BEFORE = /(并非|不是|不可|不属|非|无|未|没有|不具|不含)[^，、。；！？]{0,3}$/
+  // ★ 2026-10-22：否定判据补繁体字形（並非/無/沒有），否则繁体输出里「並非註定」会被误判为违规，
+  //   白吃一次 AI 重试、重试不过就退回规则版 —— 付费用户看到「规则版」等于交付降级。
+  const NEG_BEFORE = /(并非|並非|不是|不可|不属|不屬|非|无|無|未|没有|沒有|不具|不含)[^，、。；！？]{0,3}$/
   const hits: HitSentence[] = []
   const skipped: HitSentence[] = []
-  for (const w of FORBIDDEN_WORDS) {
+  for (const w of FORBIDDEN_SCAN) {
     for (const s of sentences) {
       let idx = s.indexOf(w)
       while (idx >= 0) {
@@ -125,6 +127,15 @@ export function findForbidden(text: string, strictBi = false): { hits: HitSenten
   }
   return { hits, skipped }
 }
+
+/** ★ 繁体写法别名（2026-10-22，繁体输出上线前补）：
+ *  B/C 两类里「注定/积极进取/突破性进展」转繁后字形全变（註定/積極進取/突破性進展），
+ *  而「必」「一定」繁简同形。若不补别名，繁体命书会**整片绕过合规校验** —— 这是判据缺口，不是文案问题。
+ *  ★★ 单独成表、**不并入 FORBIDDEN_WORDS**：test-entitlement-gate 断言 FORBIDDEN_WORDS 恰为 B+C 五词。 */
+export const FORBIDDEN_WORDS_HANT = ['註定', '積極進取', '突破性進展'] as const
+
+/** 实际拦截用的全表（简体主表 + 繁体别名），仅供 findForbidden 遍历 */
+const FORBIDDEN_SCAN = [...FORBIDDEN_WORDS, ...FORBIDDEN_WORDS_HANT] as const
 
 // ★ 「一定」限定用法白名单（词后紧邻）：
 //   「一定的X」（任意名词：时间、影响、帮助、作用…——作定语即"少量/部分"义，是弱化而非承诺）

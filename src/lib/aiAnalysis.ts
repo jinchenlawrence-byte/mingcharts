@@ -4,6 +4,7 @@ import type { AnalyzableChart, PaidAnalysis } from './analysis'
 import { TIAO_HOU, buildLuckCycles } from './analysis'
 import type { AIUsage } from './ai-types'
 import { unknownGanzhi, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
+import { localeDirective, type OutputLocale } from './locale'
 // ★ 冲/合/害表复用 branchRelations.ts 的单一事实源（HANDOFF-个性化日运 §二）
 import { LIU_CHONG, LIU_HAI, LIU_HE } from './branchRelations'
 import type { Zhi } from './branchRelations'
@@ -216,7 +217,7 @@ interface ChatCompletionResponse {
 const ANALYSIS_SHAPE = '完整 JSON（命书十段：八字总览、性格天赋、用神喜忌、格局成败、调候用神、大运流年、事业财运、婚姻感情、子女六亲、健康提示）'
 
 // 调用 OpenAI 兼容接口，返回解析后的文字板块；失败返回 null（调用方回退规则引擎）
-export async function generateAIAnalysis(chart: AnalyzableChart): Promise<(AIPaidAnalysis & { _usage?: AIUsage }) | null> {
+export async function generateAIAnalysis(chart: AnalyzableChart, opts?: { locale?: OutputLocale }): Promise<(AIPaidAnalysis & { _usage?: AIUsage }) | null> {
   if (!AI_API_KEY) {
     // ★ 回退必须可见（任务书 §四）：静默降级让「AI 没跑」这件事不可见
     console.warn('[ai] 未配置 AI_API_KEY，本次回退规则版文案')
@@ -246,7 +247,7 @@ export async function generateAIAnalysis(chart: AnalyzableChart): Promise<(AIPai
     const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
     try {
       const messages: Array<{ role: string; content: string }> = [
-        { role: 'system', content: SYSTEM_PROMPT },
+        { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
         { role: 'user', content: buildUserPrompt(chart, specs) }
       ]
       if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, ANALYSIS_SHAPE) })
