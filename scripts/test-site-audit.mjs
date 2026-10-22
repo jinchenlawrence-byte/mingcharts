@@ -207,6 +207,48 @@ console.log(clientFail === 0
   ? `✓ 行为：${CLIENT_PAGES.length} 个 use client 页模块加载通过（default 均为函数；组件体不执行）`
   : `✗ use client 行为断言失败 ${clientFail} 处`)
 
+// ---------- ⑤ metadata 无对象插值（[object Object] 守护）----------
+// 背景：getZodiac() 返回 { name, benmingfo, element }，2026-10 曾把对象直接插进
+// title/description，使 /bazi/<年> 与 /bazi/<年>/<月> 共 793 页标题渲染成「属[object Object]」。
+// 两层：静态禁止裸插值；行为层真实调用 generateMetadata 断言输出无 [object Object]。
+console.log('—— ⑤ metadata 无对象插值 ——')
+let objInterpFail = 0
+const BARE_OBJ_RE = /\$\{[a-zA-Z_$][\w$]*[zZ]odiac[a-zA-Z_$][\w$]*\}|\$\{[zZ]odiac\}/g
+for (const file of allFiles) {
+  const rel = relOf(file)
+  const content = readFileSync(file, 'utf8')
+  if (!content.includes('getZodiac(')) continue
+  BARE_OBJ_RE.lastIndex = 0
+  const hits = content.match(BARE_OBJ_RE) || []
+  for (const hit of hits) {
+    objInterpFail++
+    fail(`${rel} 裸对象插值 ${hit}——getZodiac() 返回对象，应改用 .name（如 \${zodiac.name}）`)
+  }
+}
+const META_ROUTES = [
+  { route: '/bazi/1990', file: 'src/app/bazi/[year]/page.tsx', params: { year: '1990' } },
+  { route: '/bazi/1990/05', file: 'src/app/bazi/[year]/[month]/page.tsx', params: { year: '1990', month: '05' } },
+]
+let metaObjFail = 0
+for (const { route, file, params } of META_ROUTES) {
+  try {
+    const mod = await import('../' + file)
+    if (typeof mod.generateMetadata !== 'function') { metaObjFail++; fail(`generateMetadata 缺失：${route}`); continue }
+    const meta = await mod.generateMetadata({ params: Promise.resolve(params) })
+    const text = `${meta.title || ''}|${meta.description || ''}`
+    if (/object Object/.test(text)) {
+      metaObjFail++
+      fail(`metadata 含 [object Object]：${route} → ${text.slice(0, 120)}`)
+    }
+  } catch (e) {
+    metaObjFail++
+    fail(`generateMetadata 调用抛错：${route} - ${e instanceof Error ? e.message : e}`)
+  }
+}
+console.log(objInterpFail + metaObjFail === 0
+  ? `✓ metadata：0 处裸对象插值；${META_ROUTES.length} 条动态路由 generateMetadata 输出无 [object Object]`
+  : `✗ metadata 对象插值问题 ${objInterpFail + metaObjFail} 处`)
+
 // ---------- 牙口自检（守护扫描器本身）----------
 console.log('—— 牙口自检（守护扫描器）——')
 let toothFail = 0
@@ -214,8 +256,12 @@ if (!/(^|[^.\w])console\.log\s*\(/.test('  console.log("debug")')) { toothFail++
 if (!/(^|[^.\w])debugger\b/.test('  debugger;')) { toothFail++; fail('牙口：debugger 样本未检出') }
 if (!/(^|[^.\w])alert\s*\(/.test('  alert("x")')) { toothFail++; fail('牙口：alert( 样本未检出') }
 if (!'TODO'.includes('TODO')) { toothFail++; fail('牙口：TODO 字面量未检出') }
+BARE_OBJ_RE.lastIndex = 0
+if (!BARE_OBJ_RE.test('`属${zodiac}人`')) { toothFail++; fail('牙口：裸对象插值样本未检出') }
+BARE_OBJ_RE.lastIndex = 0
+if (BARE_OBJ_RE.test('`属${zodiac.name}人`')) { toothFail++; fail('牙口：正确写法被误判') }
 console.log(toothFail === 0
-  ? '✓ 牙口自检：console.log/debugger/alert(/TODO 判据样本均能检出'
+  ? '✓ 牙口自检：console.log/debugger/alert(/TODO/裸对象插值 判据样本均能检出'
   : '✗ 牙口自检失败')
 
 console.log('\n' + (allPass ? 'SITE_AUDIT_PASS' : 'SITE_AUDIT_FAIL'))

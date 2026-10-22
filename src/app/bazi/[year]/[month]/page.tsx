@@ -20,8 +20,8 @@ export async function generateMetadata({ params }: { params: Promise<{ year: str
   const ganZhi = getYearGanZhi(yearNum)
   const zodiac = getZodiac(ganZhi[1])
   return {
-    title: `${year}年${month}月八字算命 · ${ganZhi}年属${zodiac}每日八字查询`,
-    description: `${year}年${month}月每日八字查询：${ganZhi}年（属${zodiac}），按日查看生辰八字、干支十神、命理分析与生肖运势。`,
+    title: `${year}年${month}月八字算命 · ${ganZhi}年属${zodiac.name}每日八字查询`,
+    description: `${year}年${month}月每日八字查询：${ganZhi}年（属${zodiac.name}），按日查看生辰八字、干支十神、命理分析与生肖运势。`,
   }
 }
 
