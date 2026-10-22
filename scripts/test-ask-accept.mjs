@@ -180,6 +180,8 @@ const strip = (s) => s.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
   if (!code.includes('ASK_QUOTA_EXHAUSTED')) { f++; fail('route 缺 ASK_QUOTA_EXHAUSTED（402 码）') }
   if (!code.includes('ENTITLEMENT_ENFORCE')) { f++; fail('route 未引用 ENTITLEMENT_ENFORCE 开关') }
   if (!code.includes('generateAskAnswer')) { f++; fail('route 未调用 generateAskAnswer') }
+  // ★ 追问单独日桶（2026-10-22）：额度可囤积，必须与长报告分开计量（30/日）
+  if (!code.includes('ASK_RULES')) { f++; fail('route 未叠加 ASK_RULES（追问缺少单独日桶）') }
   if (!/\.from\(\s*['"]ask_messages['"]\s*\)[\s\S]*?\.insert\(/.test(code)) {
     f++; fail('route 未向 ask_messages 落库')
   }

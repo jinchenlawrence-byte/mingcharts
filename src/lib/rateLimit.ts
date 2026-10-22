@@ -57,6 +57,18 @@ export const FORCE_RULES: RateRule[] = [
   { bucket: 'ai_force_day', max: 10, windowMs: RATE_WINDOW.day },
 ]
 
+/**
+ * 追问（/api/ask）：单独收紧为 30 次/日（登录用户）。
+ * ★ 与 USER_RULES 叠加使用：追问既占自己的日桶，也占全站每用户 AI 总频次（5/分 + 50/日）。
+ * ★ 为什么要单独设桶（2026-10-22）：追问次数是可囤积的商业额度（追问包/报告赠送/邀请），
+ *   若只受总桶 50/日 约束，屯量用户可把当日 AI 调用全用在短问答上。
+ *   单条追问成本低但条数可多，单独计量后「长报告」与「短问答」两类消耗互不挤占，
+ *   且各自可观测（bucket=ai_ask_day）。
+ */
+export const ASK_RULES: RateRule[] = [
+  { bucket: 'ai_ask_day', max: 30, windowMs: RATE_WINDOW.day },
+]
+
 /** 固定窗口起点（纯函数，可断言）：floor(now / windowMs) * windowMs */
 export function fixedWindowStart(now: number, windowMs: number): number {
   return Math.floor(now / windowMs) * windowMs

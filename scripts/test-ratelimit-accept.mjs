@@ -2,7 +2,7 @@
 // 覆盖：① 纯函数（fixedWindowStart / clientKey / rateLimitedBody）
 //       ② 开关关闭时【不查库】直接放行（子进程删 env 验证）
 //       ③ 开关开启时固定窗口计数（子进程 env=true 验证）：第 N+1 次拦截、窗口重置、多规则、fail-open
-//       ④ 六个 AI 路由的接线（checkRateLimit 先于 AI 调用；liunian 含 FORCE_RULES）
+//       ④ 六个 AI 路由的接线（checkRateLimit 先于 AI 调用；liunian 含 FORCE_RULES；ask 含 ASK_RULES）
 import { readFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
@@ -18,7 +18,7 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 // ---------- ① 纯函数 ----------
 {
   let f = 0
-  const { fixedWindowStart, clientKey, rateLimitedBody } = await import('../src/lib/rateLimit.ts')
+  const { fixedWindowStart, clientKey, rateLimitedBody, ASK_RULES } = await import('../src/lib/rateLimit.ts')
 
   const eq = (got, want, label) => { if (got !== want) { f++; fail(`${label}：期望 ${want}，实得 ${got}`) } }
   eq(fixedWindowStart(0, 60_000), 0, 'fixedWindowStart(0)')
@@ -42,6 +42,12 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
   eq(body.code, 'RATE_LIMITED', 'rateLimitedBody.code')
   eq(body.retryAfter, 7, 'rateLimitedBody.retryAfter')
   if (!body.error.includes('7')) { f++; fail('rateLimitedBody.error 应含等待秒数') }
+
+  // ★ 追问单独桶（2026-10-22）：bucket/max/window 三者缺一不可（改口径必须同步本断言）
+  eq(ASK_RULES.length, 1, 'ASK_RULES 应恰好 1 条')
+  eq(ASK_RULES[0].bucket, 'ai_ask_day', 'ASK_RULES.bucket')
+  eq(ASK_RULES[0].max, 30, 'ASK_RULES.max（追问 30 次/日）')
+  eq(ASK_RULES[0].windowMs, 86_400_000, 'ASK_RULES.windowMs（按日）')
 
   console.log(f === 0
     ? '✓ 纯函数：fixedWindowStart / clientKey(含 IP 哈希不落原值) / rateLimitedBody 全过'
@@ -72,8 +78,12 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
   if (!strip(read('../src/app/api/liunian/route.ts')).includes('FORCE_RULES')) {
     f++; fail('liunian 未对 force=true 叠加 FORCE_RULES')
   }
+  // ask 必须叠加追问单独日桶（否则囤额度用户可吃满 50/日 总桶）
+  if (!strip(read('../src/app/api/ask/route.ts')).includes('ASK_RULES')) {
+    f++; fail('ask 未叠加 ASK_RULES（追问缺少单独日桶）')
+  }
   console.log(f === 0
-    ? '✓ 接线：六个 AI 路由均限流先于 AI 调用；liunian force 叠加收紧规则'
+    ? '✓ 接线：六个 AI 路由均限流先于 AI 调用；liunian force 叠加收紧规则；ask 叠加 ASK_RULES'
     : '✗ 接线断言失败')
 }
 

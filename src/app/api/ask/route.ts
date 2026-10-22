@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase'
 import { ENTITLEMENT_ENFORCE, getAskRemaining } from '@/lib/entitlement'
-import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RULES } from '@/lib/rateLimit'
+import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RULES, ASK_RULES } from '@/lib/rateLimit'
 import { checkAiBudget } from '@/lib/aiBudget'
 import type { AnalyzableChart } from '@/lib/analysis'
 import {
@@ -87,8 +87,9 @@ export async function POST(request: NextRequest) {
     }
 
     // ★ 速率限制（token 防盗用第二档）：默认关闭（内测放行）；开启后按 u:<id> 固定窗口计数，超限返 429。
-    //   与其它 AI 端点共用 ai_user_min/ai_user_day 桶 ⇒ 全站每用户 AI 总频次共享（5/分 + 50/日）。
-    const rl = await checkRateLimit(admin, clientKey(user.id, request), USER_RULES)
+    //   与其它 AI 端点共用 ai_user_min/ai_user_day 桶 ⇒ 全站每用户 AI 总频次共享（5/分 + 50/日）；
+    //   另叠加 ai_ask_day（30/日）单独收紧追问——追问额度可囤积，不与长报告挤占同一日额度。
+    const rl = await checkRateLimit(admin, clientKey(user.id, request), [...ASK_RULES, ...USER_RULES])
     if (!rl.allowed) return NextResponse.json(rateLimitedBody(rl), { status: 429 })
 
     // ③ 硬拒答：在调用 AI 之前判定（零成本、可逐条审核、不扣额度）
