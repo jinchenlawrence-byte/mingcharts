@@ -92,5 +92,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }))
   ]
 
-  return [...staticPages, ...seasonPages, ...shengxiaoPages, ...baziPages, ...articlePages]
+  // 繁体树（/tw）：方案 C 第一版只镜像生肖常青页 + 落地页（详见 docs/推广-繁体化改造清单.md）
+  // ★ 与简体页一一对应，hreflang 双向；不要在这里放未镜像的路径（会出现「声明了但没有页」）
+  const hantPages: MetadataRoute.Sitemap = [
+    { url: `${BASE_URL}/tw`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/tw/shengxiao`, changeFrequency: 'monthly', priority: 0.8 },
+    ...SHENGXIAO.map(s => ({
+      url: `${BASE_URL}/tw/shengxiao/${s.slug}`,
+      changeFrequency: 'monthly' as const,
+      priority: 0.8
+    }))
+  ]
+
+  return [...staticPages, ...seasonPages, ...shengxiaoPages, ...baziPages, ...articlePages, ...hantPages]
 }

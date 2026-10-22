@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { notFound } from 'next/navigation'
 import { SHENGXIAO, getShengXiao, getPeiDui, getLiunian, LIUNIAN_YEARS } from '@/lib/shengxiaoData'
+import { hantAlternates } from '@/lib/hant-seo'
 
 export function generateStaticParams() {
   return SHENGXIAO.map(s => ({ animal: s.slug }))
@@ -14,7 +15,12 @@ export async function generateMetadata({ params }: { params: Promise<{ animal: s
   return {
     title: `属${sx.name}的命运详解：${sx.years.slice(-4).join('、')}年属${sx.name}人性格财运婚姻运势`,
     description: `属${sx.name}（地支${sx.zhi}、五行属${sx.wuxing}）人命理详解：性格特点、事业财运、婚姻配对、健康养生、本命佛${sx.benmingfo}、幸运数字颜色，以及2024-2031流年运势。`,
-    keywords: [`属${sx.name}`, `${sx.name}年出生`, `属${sx.name}运势`, `属${sx.name}性格`, `属${sx.name}婚姻`, `属${sx.name}配对`, sx.benmingfo]
+    keywords: [`属${sx.name}`, `${sx.name}年出生`, `属${sx.name}运势`, `属${sx.name}性格`, `属${sx.name}婚姻`, `属${sx.name}配对`, sx.benmingfo],
+    // hreflang：与 /tw/shengxiao/<slug> 双向互指（矩阵由 lib/hant-seo 单一生成，防两边手写漂移）
+    alternates: {
+      canonical: `/shengxiao/${sx.slug}`,
+      languages: hantAlternates(`/shengxiao/${sx.slug}`),
+    },
   }
 }
 
