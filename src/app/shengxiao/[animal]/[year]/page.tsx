@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Nav from '@/components/Nav'
-import { SHENGXIAO, getShengXiao, getLiunian, LIUNIAN_YEARS } from '@/lib/shengxiaoData'
+import { SHENGXIAO, getShengXiao, getLiunian, LIUNIAN_YEARS, LIUNIAN_2027_DETAIL } from '@/lib/shengxiaoData'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
 
 export function generateStaticParams() {
@@ -86,6 +86,15 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
         <FortuneSection title="财运运势" body={ln.wealth} />
         <FortuneSection title="感情婚姻" body={ln.relationship} />
         <FortuneSection title="健康运势" body={ln.health} />
+
+        {/* 2027 专属：逐属相差异化段落（通用关系模板之外的具体落点） */}
+        {yearNum === 2027 && LIUNIAN_2027_DETAIL[sx.slug] && (
+          <div className="hw-c-box mb-4">
+            <h2 className="hw-c-secTitle">2027 丁未年 · 属{sx.name}的具体落点</h2>
+            <p className="hw-c-body mb-3">{LIUNIAN_2027_DETAIL[sx.slug].focus}</p>
+            <p className="hw-c-body">{LIUNIAN_2027_DETAIL[sx.slug].action}</p>
+          </div>
+        )}
 
         {/* 开运建议 */}
         <div className="hw-c-box mb-6">
