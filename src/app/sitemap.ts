@@ -102,7 +102,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${BASE_URL}/tw/shengxiao/${s.slug}`,
       changeFrequency: 'monthly' as const,
       priority: 0.8
-    }))
+    })),
+    // 繁体流年页（96 页）：与简体 /shengxiao/<属相>/<年> 一一对应
+    ...SHENGXIAO.flatMap(s =>
+      LIUNIAN_YEARS.map(y => ({
+        url: `${BASE_URL}/tw/shengxiao/${s.slug}/${y}`,
+        changeFrequency: 'yearly' as const,
+        priority: 0.7
+      }))
+    )
   ]
 
   // 伙伴招募（白标 v1）：独立于内容页，优先级低但它必须可被搜到

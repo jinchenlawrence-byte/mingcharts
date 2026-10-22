@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation'
 import Nav from '@/components/Nav'
 import { SHENGXIAO, getShengXiao, getLiunian, LIUNIAN_YEARS, LIUNIAN_2027_DETAIL } from '@/lib/shengxiaoData'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
+import { hantAlternates } from '@/lib/hant-seo'
 
 export function generateStaticParams() {
   const params: { animal: string; year: string }[] = []
@@ -23,7 +24,12 @@ export async function generateMetadata({ params }: { params: Promise<{ animal: s
   return {
     title: `${year}年属${sx.name}运势详解：${taiSuiWord}，事业财运感情健康全解`,
     description: `${year}${ln.ganZhi}年属${sx.name}人运势如何？${ln.relationText}详解属${sx.name}${year}年事业、财运、感情婚姻、健康注意事项与开运化解建议。`,
-    keywords: [`${year}年属${sx.name}运势`, `属${sx.name}${year}年`, `${year}年${taiSuiWord}`, `属${sx.name}${year}年财运`, `属${sx.name}本命年`]
+    keywords: [`${year}年属${sx.name}运势`, `属${sx.name}${year}年`, `${year}年${taiSuiWord}`, `属${sx.name}${year}年财运`, `属${sx.name}本命年`],
+    // hreflang：与 /tw/shengxiao/<slug>/<year> 双向互指（矩阵由 lib/hant-seo 单一生成）
+    alternates: {
+      canonical: `/shengxiao/${sx.slug}/${year}`,
+      languages: hantAlternates(`/shengxiao/${sx.slug}/${year}`),
+    },
   }
 }
 
