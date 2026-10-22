@@ -99,6 +99,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             <span aria-hidden="true">·</span>
             <a href="mailto:hello@mingcharts.com" className="underline hover:text-ink/60">hello@mingcharts.com</a>
             <span aria-hidden="true">·</span>
+            <a href="/partners" className="underline hover:text-ink/60">命理师合作</a>
+            <span aria-hidden="true">·</span>
             <span>
               城市数据 ©{' '}
               <a

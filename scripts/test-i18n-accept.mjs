@@ -148,7 +148,12 @@ for (const want of ['/shengxiao/shu', '/bazi', '/article']) {
   if (!has(want)) { siteFail++; fail(`sitemap 丢了原有 ${want}`) }
 }
 const twCount = urls.filter((u) => u.includes('/tw')).length
-if (twCount !== 14) { siteFail++; fail(`/tw 条目应为 14（落地页+索引+12 属相），实际 ${twCount}`) }
+// 由构成推导而不是写死数字：落地页 1 + 生肖索引 1 + 伙伴页 1 + 12 属相
+const expectTw = 3 + SHENGXIAO.length
+if (twCount !== expectTw) {
+  siteFail++
+  fail(`/tw 条目应为 ${expectTw}（落地页+生肖索引+伙伴页+${SHENGXIAO.length} 属相），实际 ${twCount}`)
+}
 // 简体页 title 模板不得被本次改动动过
 const hansPage = readFileSync(near('app/shengxiao/[animal]/page.tsx'), 'utf8')
 if (!hansPage.includes('title: `属${sx.name}的命运详解')) {

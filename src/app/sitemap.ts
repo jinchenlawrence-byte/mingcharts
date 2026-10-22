@@ -97,6 +97,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const hantPages: MetadataRoute.Sitemap = [
     { url: `${BASE_URL}/tw`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/tw/shengxiao`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/tw/partners`, changeFrequency: 'monthly', priority: 0.7 },
     ...SHENGXIAO.map(s => ({
       url: `${BASE_URL}/tw/shengxiao/${s.slug}`,
       changeFrequency: 'monthly' as const,
@@ -104,5 +105,10 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }))
   ]
 
-  return [...staticPages, ...seasonPages, ...shengxiaoPages, ...baziPages, ...articlePages, ...hantPages]
+  // 伙伴招募（白标 v1）：独立于内容页，优先级低但它必须可被搜到
+  const partnerPages: MetadataRoute.Sitemap = [
+    { url: `${BASE_URL}/partners`, changeFrequency: 'monthly', priority: 0.6 },
+  ]
+
+  return [...staticPages, ...seasonPages, ...shengxiaoPages, ...baziPages, ...articlePages, ...hantPages, ...partnerPages]
 }

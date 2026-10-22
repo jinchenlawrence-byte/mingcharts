@@ -69,6 +69,16 @@ export const ASK_RULES: RateRule[] = [
   { bucket: 'ai_ask_day', max: 30, windowMs: RATE_WINDOW.day },
 ]
 
+/**
+ * 伙伴申请（/api/partner/apply，匿名写入口）：5 次/时 + 20 次/日（按 IP）。
+ * ★ 为什么单独设桶：这是全站唯一【匿名可写】的表单端点，不加桶等于给机器人留一个
+ *   往库里灌垃圾的口子（v1 表单无验证码，靠限流 + 蜜罐兜底）。
+ */
+export const APPLY_RULES: RateRule[] = [
+  { bucket: 'partner_apply_hour', max: 5, windowMs: RATE_WINDOW.hour },
+  { bucket: 'partner_apply_day', max: 20, windowMs: RATE_WINDOW.day },
+]
+
 /** 固定窗口起点（纯函数，可断言）：floor(now / windowMs) * windowMs */
 export function fixedWindowStart(now: number, windowMs: number): number {
   return Math.floor(now / windowMs) * windowMs
