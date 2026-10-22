@@ -4,6 +4,8 @@ import { notFound } from 'next/navigation'
 import { SHENGXIAO, getShengXiao, getPeiDui } from '@/lib/shengxiaoData'
 import { hantAlternates } from '@/lib/hant-seo'
 import { toHant } from '@/lib/hant'
+import { articles } from '@/lib/articles'
+import { pickBySlug, SHENGXIAO_ARTICLE_SLUGS } from '@/lib/relatedArticles'
 
 export function generateStaticParams() {
   return SHENGXIAO.map((s) => ({ animal: s.slug }))
@@ -37,6 +39,7 @@ export default async function HantShengXiaoDetail({ params }: { params: Promise<
   const sx = getShengXiao(animal)
   if (!sx) notFound()
   const name = toHant(sx.name)
+  const relatedReading = pickBySlug([...SHENGXIAO_ARTICLE_SLUGS])
 
   return (
     <div className="hw-wrap hw-c-pg">
@@ -118,6 +121,21 @@ export default async function HantShengXiaoDetail({ params }: { params: Promise<
             )
           })}
         </div>
+      </div>
+
+      {/* 相關命理知識：给属相页一条通向文章库的路（原来只有属相互链，孤立在生肖子图里） */}
+      <div className="hw-c-box mb-6">
+        <h2 className="hw-c-secTitle">相關命理知識</h2>
+        <ul className="space-y-1.5 text-sm">
+          {relatedReading.map((a) => (
+            <li key={a.slug}>
+              <Link href={`/tw/article/${a.slug}`} className="hw-c-link">• {toHant(a.title)}</Link>
+            </li>
+          ))}
+          <li>
+            <Link href="/tw/article" className="hw-c-link">• 八字命理知識大全（{articles.length} 篇）</Link>
+          </li>
+        </ul>
       </div>
 
       <div className="hw-c-cta">

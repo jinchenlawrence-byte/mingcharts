@@ -5,6 +5,7 @@ import { articles, ARTICLE_CATEGORIES } from '@/lib/articles'
 import { hantAlternates } from '@/lib/hant-seo'
 import { toHant } from '@/lib/hant'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
+import { relatedHantArticles } from '@/lib/relatedArticles'
 
 // 繁体文章详情 / 分类（/tw/article/<slug>）
 // 与简体页同构：一个 [slug] 路由同时承担「分类列表」与「文章详情」两种形态。
@@ -80,7 +81,9 @@ export default async function HantArticlePage({ params }: { params: Promise<{ sl
   const article = articles.find((a) => a.slug === slug)
   if (!article) notFound()
 
-  const related = articles.filter((a) => a.category === article.category && a.slug !== article.slug).slice(0, 4)
+  // ★ 相关文章：同分类优先，不足按关键词重合跨分类补位（relatedHantArticles 是确定性函数）
+  //   只取同分类会让边缘分类的相关块空缺，文章页之间缺乏横向通路 → 抓取优先级下降。
+  const related = relatedHantArticles(article, 6)
   const catName = toHant(ARTICLE_CATEGORIES.find((c) => c.slug === article.category)?.name ?? '')
   const cta = article.cta
 

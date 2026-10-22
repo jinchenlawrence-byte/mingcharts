@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation'
 import { SHENGXIAO, getShengXiao, getLiunian, LIUNIAN_YEARS, LIUNIAN_2027_DETAIL } from '@/lib/shengxiaoData'
 import { hantAlternates } from '@/lib/hant-seo'
 import { toHant, hantTaiSui } from '@/lib/hant'
+import { pickBySlug, LIUNIAN_ARTICLE_SLUGS } from '@/lib/relatedArticles'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
 
 // 繁体流年页（/tw/shengxiao/<属相>/<年>，96 页）
@@ -62,6 +63,7 @@ export default async function HantShengXiaoLiunian({ params }: { params: Promise
   const nextYear = LIUNIAN_YEARS[idx + 1]
   const isFanTaiSui = ['值', '冲', '害', '刑'].includes(ln.relation)
   const detail = yearNum === 2027 ? LIUNIAN_2027_DETAIL[sx.slug] : undefined
+  const relatedReading = pickBySlug([...LIUNIAN_ARTICLE_SLUGS])
 
   return (
     <div className="hw-wrap hw-c-pg">
@@ -168,6 +170,12 @@ export default async function HantShengXiaoLiunian({ params }: { params: Promise
                 • 十二生肖流年運勢總覽（2024–2031）
               </Link>
             </li>
+            {/* 流年方法论与犯太岁专题：给 96 个流年页一条通向文章库的路 */}
+            {relatedReading.map((a) => (
+              <li key={a.slug}>
+                <Link href={`/tw/article/${a.slug}`} className="hw-c-link">• {toHant(a.title)}</Link>
+              </li>
+            ))}
           </ul>
         </div>
 

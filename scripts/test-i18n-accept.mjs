@@ -204,6 +204,62 @@ if (!hansPage.includes('title: `属${sx.name}的命运详解')) {
 }
 console.log(siteFail === 0 ? `✓ sitemap：新增 ${twCount} 条 /tw，原有简体条目未丢；简体 title 模板未变` : `✗ sitemap/回归失败 ${siteFail} 处`)
 
+// ---------- ⑥ 繁体内链（208 页的连通性）----------
+console.log('—— ⑥ 繁体内链 ——')
+let linkFail = 0
+const { relatedHantArticles, pickBySlug, categoriesWithCount, SHENGXIAO_ARTICLE_SLUGS, LIUNIAN_ARTICLE_SLUGS } = await import('../src/lib/relatedArticles.ts')
+{
+  const sample = articles[0]
+  const a1 = relatedHantArticles(sample, 6)
+  const a2 = relatedHantArticles(sample, 6)
+  // ① 确定性：两次调用必须完全同序（否则 SSG 每次构建产物不同，无法缓存/断言）
+  if (JSON.stringify(a1.map((a) => a.slug)) !== JSON.stringify(a2.map((a) => a.slug))) {
+    linkFail++; fail('relatedHantArticles 不确定（两次结果不同）')
+  }
+  // ② 不得含自身
+  if (a1.some((a) => a.slug === sample.slug)) { linkFail++; fail('相关文章含自身') }
+  // ③ 同分类优先：若该分类还有别的文章，首项必须同分类
+  const sameCatExists = articles.some((a) => a.category === sample.category && a.slug !== sample.slug)
+  if (sameCatExists && a1[0]?.category !== sample.category) {
+    linkFail++; fail('相关文章未同分类优先')
+  }
+  // ④ 边缘分类也要补满（跨分类兜底）——这是"文章页不再孤立"的关键
+  const tiny = articles.find((a) => articles.filter((x) => x.category === a.category).length <= 2) ?? sample
+  if (relatedHantArticles(tiny, 6).length < 6) { linkFail++; fail('小分类的相关文章未跨分类补满 6 条') }
+  // ⑤ 精选 slug 必须都存在（删文章后不至于静默丢入口）
+  if (pickBySlug([...SHENGXIAO_ARTICLE_SLUGS]).length !== SHENGXIAO_ARTICLE_SLUGS.length) {
+    linkFail++; fail('SHENGXIAO_ARTICLE_SLUGS 有 slug 不存在')
+  }
+  if (pickBySlug([...LIUNIAN_ARTICLE_SLUGS]).length !== LIUNIAN_ARTICLE_SLUGS.length) {
+    linkFail++; fail('LIUNIAN_ARTICLE_SLUGS 有 slug 不存在')
+  }
+  if (pickBySlug(['__not_exist__']).length !== 0) { linkFail++; fail('pickBySlug 未跳过不存在的 slug') }
+  // ⑥ 分类计数与文章数一致
+  for (const c of categoriesWithCount()) {
+    if (c.count !== articles.filter((a) => a.category === c.slug).length) {
+      linkFail++; fail(`分类 ${c.slug} 计数与实际文章数不符`)
+    }
+  }
+  // ⑦ 静态：四个繁体页都必须给出通向文章库的链接（否则又成孤岛）
+  const pages = {
+    'app/tw/page.tsx': ['categoriesWithCount', '/tw/article/'],
+    'app/tw/article/[slug]/page.tsx': ['relatedHantArticles', '/tw/article/'],
+    'app/tw/shengxiao/[animal]/page.tsx': ['SHENGXIAO_ARTICLE_SLUGS', '/tw/article/'],
+    'app/tw/shengxiao/[animal]/[year]/page.tsx': ['LIUNIAN_ARTICLE_SLUGS', '/tw/article/'],
+  }
+  for (const [f, needles] of Object.entries(pages)) {
+    const src = readFileSync(near(f), 'utf8')
+    for (const n of needles) {
+      if (!src.includes(n)) { linkFail++; fail(`${f} 缺 ${n}（内链断点）`) }
+    }
+    // ⑧ 确定性：SSG 页面里不得出现随机/时间驱动的内链选择
+    if (/Math\.random|Date\.now\(\)/.test(src)) { linkFail++; fail(`${f} 用了随机/时间（构建产物不可复现）`) }
+  }
+}
+console.log(linkFail === 0
+  ? '✓ 内链：选择器确定性、同分类优先且跨分类补满、精选 slug 全存在、四个繁体页都有文章库入口、无随机来源'
+  : `✗ 内链失败 ${linkFail} 处`)
+
 // ---------- 牙口自检 ----------
 console.log('—— 牙口自检（守护断言本身）——')
 let toothFail = 0
