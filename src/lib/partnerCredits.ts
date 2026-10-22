@@ -153,3 +153,47 @@ export async function adjustPartnerUnits(
   }
   return { ok: true, balance: await getPartnerBalance(admin, input.userId) }
 }
+
+export interface ClawbackResult {
+  ok: boolean
+  /** 冲抵份数（重复退款事件为 0） */
+  clawed: number
+  duplicate: boolean
+  balance: number
+  /** 冲抵后余额为负：说明伙伴已经用掉了一部分，属于欠账，需要人工跟进 */
+  negative: boolean
+  error?: string
+}
+
+/**
+ * 退款冲抵（refund.succeeded）。
+ * ★ 与 spendPartnerUnits 的关键区别：**允许扣成负数**。
+ *   退款是客户拿回钱，不管伙伴有没有把额度用掉，这笔账都必须记下来 ——
+ *   拒绝扣减会让余额凭空多出一笔，比负数更难查。
+ *   负数余额 = 欠账，由运维跟进（`--grant/--adjust` 补回或停用）。
+ * ★ 幂等键 = 原支付单号：退款事件重投不会重复冲抵。
+ */
+export async function clawbackPartnerUnits(
+  admin: SupabaseClient,
+  input: { userId: string; sku: string; ref: string }
+): Promise<ClawbackResult> {
+  const units = unitsForSku(input.sku)
+  if (units === null) {
+    return { ok: false, clawed: 0, duplicate: false, balance: await getPartnerBalance(admin, input.userId), negative: false, error: `不是伙伴包 SKU：${input.sku}` }
+  }
+
+  const { error } = await admin.from('partner_credits').insert({
+    user_id: input.userId,
+    delta: -units,
+    reason: 'refund',
+    ref: input.ref,
+  } as never)
+
+  if (error && (error as { code?: string }).code !== '23505') {
+    return { ok: false, clawed: 0, duplicate: false, balance: await getPartnerBalance(admin, input.userId), negative: false, error: `退款冲抵失败：${error.message}` }
+  }
+
+  const duplicate = Boolean(error && (error as { code?: string }).code === '23505')
+  const balance = await getPartnerBalance(admin, input.userId)
+  return { ok: true, clawed: duplicate ? 0 : units, duplicate, balance, negative: balance < 0 }
+}

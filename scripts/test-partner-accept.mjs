@@ -254,9 +254,20 @@ const {
   if (!/★伙伴额度入账失败[\s\S]{0,200}console\.error|console\.error\([\s\S]{0,80}★伙伴额度入账失败/.test(hook)) {
     creditFail++; fail('入账失败未用 console.error 告警（需要人工补账，不能只 warn）')
   }
+  // ★ 退款冲抵（2026-10-22）：额度是另一本账，payments 置 refunded 不会自动退额度
+  if (!hook.includes('clawbackPartnerUnits')) { creditFail++; fail('webhook 退款分支未接入额度冲抵（退了钱额度还在）') }
+  if (!/payment_refunded[\s\S]{0,2500}clawbackPartnerUnits/.test(hook)) {
+    creditFail++; fail('冲抵未挂在 payment_refunded 分支内')
+  }
+  const { clawbackPartnerUnits } = await import('../src/lib/partnerCredits.ts')
+  if (typeof clawbackPartnerUnits !== 'function') { creditFail++; fail('partnerCredits 缺 clawbackPartnerUnits') }
+  // 退款冲抵必须允许扣成负数并标记欠账（与 spend 的余额校验刻意不同）
+  const clawSrc = readFileSync(near('src/lib/partnerCredits.ts'), 'utf8')
+  if (!/negative:\s*balance\s*<\s*0/.test(clawSrc)) { creditFail++; fail('退款冲抵未标记欠账（negative 标志）') }
+  if (!clawSrc.includes("reason: 'refund'")) { creditFail++; fail("退款冲抵未用 reason='refund'（无法与 consum 区分审计）") }
   // SQL 迁移必须存在幂等索引
   const sql = readFileSync(near('supabase/partner-credits.sql'), 'utf8')
-  for (const idx of ['idx_partner_credits_purchase_ref', 'idx_partner_credits_consume_ref']) {
+  for (const idx of ['idx_partner_credits_purchase_ref', 'idx_partner_credits_consume_ref', 'idx_partner_credits_refund_ref']) {
     if (!sql.includes(idx)) { creditFail++; fail(`partner-credits.sql 缺幂等索引 ${idx}`) }
   }
   if (!sql.includes('ENABLE ROW LEVEL SECURITY')) { creditFail++; fail('partner-credits.sql 未开 RLS') }

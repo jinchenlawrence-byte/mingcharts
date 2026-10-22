@@ -27,7 +27,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_credits_purchase_ref
 CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_credits_consume_ref
   ON partner_credits (ref) WHERE reason = 'consume' AND ref IS NOT NULL;
 
--- ③ 余额查询 / 伙伴列表用
+-- ③ 退款冲抵幂等：同一笔支付只冲抵一次
+CREATE UNIQUE INDEX IF NOT EXISTS idx_partner_credits_refund_ref
+  ON partner_credits (ref) WHERE reason = 'refund' AND ref IS NOT NULL;
+
+-- ④ 余额查询 / 伙伴列表用
 CREATE INDEX IF NOT EXISTS idx_partner_credits_user
   ON partner_credits (user_id, created_at DESC);
 

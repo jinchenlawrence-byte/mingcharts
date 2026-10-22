@@ -9,7 +9,7 @@
 import { existsSync } from 'node:fs'
 import { createClient } from '@supabase/supabase-js'
 import {
-  creditPartnerPurchase, spendPartnerUnits, getPartnerBalance, adjustPartnerUnits,
+  creditPartnerPurchase, spendPartnerUnits, getPartnerBalance, adjustPartnerUnits, clawbackPartnerUnits,
 } from '../src/lib/partnerCredits.ts'
 
 if (existsSync('.env.local')) process.loadEnvFile('.env.local')
@@ -76,12 +76,27 @@ check(s3.balance === base + 19, '被拒后余额不变', `balance=${s3.balance}`
 const a1 = await adjustPartnerUnits(admin, { userId: user.id, units: 2, note: 'test-adjust' })
 check(a1.ok && a1.balance === base + 21, '人工调整 +2 份', `balance=${a1.balance}`)
 
-// ⑧ 清理
+// ⑧ ★ 退款冲抵（允许扣成负数：用户已用掉一部分也要记账）
+//    当前余额 base+21 = 入账 20 + 调整 2 − 扣减 1；冲抵第一笔 10 份后应为 base+11
+const r1 = await clawbackPartnerUnits(admin, { userId: user.id, sku: 'partner_credits_10', ref: PAY1 })
+check(r1.ok && r1.clawed === 10 && r1.balance === base + 11, '退款冲抵 10 份', `clawed=${r1.clawed} balance=${r1.balance}`)
+check(!r1.negative, '冲抵后余额仍为正，不报欠账')
+// 同一支付单重复退款事件 → 不重复冲抵
+const r2 = await clawbackPartnerUnits(admin, { userId: user.id, sku: 'partner_credits_10', ref: PAY1 })
+check(r2.duplicate && r2.clawed === 0 && r2.balance === base + 11, '重复退款事件不重复冲抵', `balance=${r2.balance}`)
+// 第二笔（PAY2）也冲抵 → 余额 base+1
+const r3 = await clawbackPartnerUnits(admin, { userId: user.id, sku: 'partner_credits_10', ref: PAY2 })
+check(r3.ok && r3.balance === base + 1, '第二笔退款冲抵后余额 base+1', `balance=${r3.balance}`)
+// 人工扣到负数场景：再冲抵第三笔（不存在的支付）→ 余额 -9，必须报 negative
+const r4 = await clawbackPartnerUnits(admin, { userId: user.id, sku: 'partner_credits_10', ref: `PAY_TESTCREDIT${stamp}C` })
+check(r4.ok && r4.balance === base - 9 && r4.negative, '★ 余额扣成负数时仍然记账并标记欠账', `balance=${r4.balance} negative=${r4.negative}`)
+
+// ⑨ 清理
 const { error: delErr } = await admin
   .from('partner_credits')
   .delete()
   .eq('user_id', user.id)
-  .or(`ref.eq.${PAY1},ref.eq.${PAY2},ref.eq.${REPORT1},ref.eq.test-adjust`)
+  .in('ref', [PAY1, PAY2, `PAY_TESTCREDIT${stamp}C`, REPORT1, 'test-adjust'])
 check(!delErr, '测试数据已清理', delErr?.message ?? '')
 const final = await getPartnerBalance(admin, user.id)
 check(final === base, '余额已还原', `final=${final}`)

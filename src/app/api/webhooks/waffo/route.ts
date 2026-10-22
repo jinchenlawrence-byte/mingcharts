@@ -5,7 +5,7 @@ import { createWaffoRepo } from '@/lib/waffo-repo'
 import { handleWaffoEvent, buildPaidPaymentRow } from '@/lib/waffo-events'
 import { ensureFatebookReportByAdmin } from '@/lib/reportSave'
 import { isPartnerPack } from '@/lib/pricing'
-import { creditPartnerPurchase } from '@/lib/partnerCredits'
+import { creditPartnerPurchase, clawbackPartnerUnits } from '@/lib/partnerCredits'
 
 // POST /api/webhooks/waffo —— Waffo 支付回调（本任务核心）
 //
@@ -127,6 +127,49 @@ export async function POST(request: NextRequest) {
           console.info(
             `[waffo-webhook] 退款已撤销权益 ${eventType}/${eventId} affected=${result.affected} order=${orderId}`,
           )
+
+          // ★ 伙伴包退款冲抵额度（2026-10-22）：报告权益靠 payments.status 自动失效，
+          //   但额度是另一本账（partner_credits），必须显式冲抵，否则「退了钱、额度还在」。
+          //   幂等键 = 原支付单号（退款事件重投不会重复冲抵）。
+          //   ★ 允许扣成负数：退款是客户拿回钱，不论额度是否已用掉，这笔账都得记 ——
+          //     拒绝扣减会让余额凭空多一笔，比负数更难查。负数=欠账，日志里点名让人跟进。
+          try {
+            const admin = createServerSupabase()
+            const paymentId = event.data?.paymentId ?? null
+            const externalId = event.data?.orderMerchantExternalId ?? null
+            let query = admin
+              .from('payments')
+              .select('user_id,sku,transaction_id')
+              .limit(1)
+            query = paymentId
+              ? query.eq('transaction_id', paymentId)
+              : query.eq('order_merchant_external_id', externalId ?? '')
+            const { data: payRow } = await query.maybeSingle()
+            const sku = (payRow as { sku?: string } | null)?.sku ?? ''
+            const payerId = (payRow as { user_id?: string } | null)?.user_id ?? ''
+            const txId = (payRow as { transaction_id?: string } | null)?.transaction_id ?? ''
+            if (payerId && txId && isPartnerPack(sku)) {
+              const claw = await clawbackPartnerUnits(admin, { userId: payerId, sku, ref: txId })
+              if (!claw.ok) {
+                console.error(`[waffo-webhook] ★伙伴额度冲抵失败 ${sku} ${txId}: ${claw.error}`)
+              } else {
+                console.info(
+                  `[waffo-webhook] 伙伴额度冲抵 ${sku} -${claw.clawed} 份` +
+                  `${claw.duplicate ? '（重复退款事件，未重复冲抵）' : ''} · 余额 ${claw.balance}`,
+                )
+                if (claw.negative) {
+                  console.error(
+                    `[waffo-webhook] ★伙伴余额为负（欠账，需人工跟进） user=${payerId} 余额=${claw.balance} 份 tx=${txId}`,
+                  )
+                }
+              }
+            }
+          } catch (clawErr) {
+            console.error(
+              `[waffo-webhook] ★伙伴额度冲抵异常（需人工补账）${eventType}/${eventId} order=${orderId}:`,
+              clawErr instanceof Error ? clawErr.message : clawErr,
+            )
+          }
         } else {
           console.warn(
             `[waffo-webhook] ★退款未匹配到一次性流水（可能为订阅退款或事件乱序） ${eventType}/${eventId} order=${orderId}`,
