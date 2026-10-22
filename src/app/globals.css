@@ -2081,3 +2081,50 @@ h1, h2, h3, .font-serif-sc {
   line-height: 1.7;
   color: var(--hw-mute);
 }
+
+/* ─────────────────────────────────────────────────────────────
+   打印样式（命理师白标 v1：分享页「打印 / 存为 PDF」）
+   范围收在 .hw-print 容器内 —— 不影响站内其他页面打印。
+   ───────────────────────────────────────────────────────────── */
+@media print {
+  /* 隐藏操作元素：打印条、页头导航 */
+  .hw-print .hw-print-hide {
+    display: none !important;
+  }
+  /* 去掉背景色与阴影，省墨且避免整页灰底 */
+  .hw-print,
+  .hw-print .hw-c-box {
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+  .hw-print .hw-c-box {
+    border: 1px solid #ddd !important;
+  }
+  /* 每卷尽量不跨页断开 */
+  .hw-print .hw-c-box,
+  .hw-print .hw-print-block {
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  /* 正文按 A4 收敛 */
+  .hw-print {
+    font-size: 12pt;
+    line-height: 1.75;
+    color: #000 !important;
+  }
+  .hw-print h1 {
+    font-size: 18pt;
+    margin-bottom: 8pt;
+  }
+  .hw-print h2 {
+    font-size: 13pt;
+    break-after: avoid;
+    page-break-after: avoid;
+  }
+  /* 打印后仍能回到站点：显示完整链接 */
+  .hw-print a[href^="http"]::after {
+    content: " (" attr(href) ")";
+    font-size: 9pt;
+    color: #666;
+  }
+}

@@ -1,0 +1,138 @@
+import type { Metadata } from 'next'
+import Link from 'next/link'
+import { createServerSupabase } from '@/lib/supabase'
+import { isShareTokenShape, isShareActive, shareInactiveReason } from '@/lib/reportShare'
+import { REPORT_KIND_LABELS, type ReportKind } from '@/lib/reportSave'
+import SharePrintBar from '@/components/reports/SharePrintBar'
+import ShareFatebookView from '@/components/reports/ShareFatebookView'
+import HemunResultView from '@/components/reports/HemunResultView'
+import type { HemunData } from '@/components/reports/HemunResultView'
+import ZiweiResultView from '@/components/reports/ZiweiResultView'
+import type { ZiweiResultData } from '@/components/reports/ZiweiResultView'
+import GeoResultView from '@/components/reports/GeoResultView'
+import type { GeoResultData } from '@/components/reports/GeoResultView'
+import LiunianResultView from '@/components/reports/LiunianResultView'
+import type { LiunianResultData } from '@/components/reports/LiunianResultView'
+
+// 报告分享页（命理师白标 v1）
+//
+// ★ 免登录：客户拿到链接就能看，不需要注册 —— 这是伙伴愿意用的前提。
+// ★ 走 service_role 查【单行】：reports 的 RLS 按 user_id 隔离，anon 读不到；
+//   这里只按 share_token 取一行，且只取渲染必需字段（不取 input，避免泄露命盘原始输入）。
+// ★ noindex：分享页不进搜索引擎（客户隐私 + 防重复内容稀释正页）。
+export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: '报告分享 | 明理',
+  description: '明理命理报告分享页。内容为传统文化分析，仅供参考娱乐。',
+  robots: { index: false, follow: false, nocache: true },
+}
+
+const DISCLAIMER = '本报告为传统命理民俗文化分析，仅供参考娱乐，不构成医疗、投资、婚姻或其他专业建议。'
+
+interface ShareRow {
+  kind: ReportKind
+  title: string
+  result: unknown
+  input: unknown
+  created_at: string
+  share_token: string | null
+  share_expires_at: string | null
+  share_revoked_at: string | null
+}
+
+function inactiveMessage(reason: 'revoked' | 'expired' | 'missing'): string {
+  if (reason === 'revoked') return '这个分享链接已被发出者关闭。'
+  if (reason === 'expired') return '这个分享链接已过期（有效期 90 天）。'
+  return '这个分享链接不存在或已失效。'
+}
+
+export default async function SharedReportPage({ params }: { params: Promise<{ token: string }> }) {
+  const { token } = await params
+
+  // 形状不对就不必查库
+  if (!isShareTokenShape(token)) {
+    return <InactiveCard message={inactiveMessage('missing')} />
+  }
+
+  const admin = createServerSupabase()
+  const { data, error } = await admin
+    .from('reports')
+    .select('kind,title,result,input,created_at,share_token,share_expires_at,share_revoked_at')
+    .eq('share_token', token)
+    .maybeSingle()
+
+  if (error) {
+    console.error('[share] 查询失败:', error.message)
+    return <InactiveCard message="报告读取失败，请稍后重试或联系你的命理师。" />
+  }
+
+  const row = data as ShareRow | null
+  if (!isShareActive(row)) {
+    return <InactiveCard message={inactiveMessage(shareInactiveReason(row))} />
+  }
+
+  // 命书正文不在 reports.result 里（只存了 chart_id 指针），需回查 charts.chart_data
+  let fatebookPaid: Record<string, unknown> | null = null
+  if (row!.kind === 'fatebook') {
+    const chartId = (row!.input as { chart_id?: string } | null)?.chart_id
+    if (chartId) {
+      const { data: chartRow } = await admin
+        .from('charts')
+        .select('chart_data')
+        .eq('id', chartId)
+        .maybeSingle()
+      const chartData = (chartRow as { chart_data?: { analysis?: { paid?: Record<string, unknown> } } } | null)?.chart_data
+      fatebookPaid = chartData?.analysis?.paid ?? null
+    }
+  }
+
+  const kindLabel = REPORT_KIND_LABELS[row!.kind] ?? '报告'
+  const created = new Date(row!.created_at)
+
+  return (
+    <main className="hw-page">
+      <div className="hw-wrap hw-c-pg hw-print">
+        <SharePrintBar />
+
+        <header className="mb-6">
+          <p className="text-xs text-ink-light/60">
+            {kindLabel} · 生成于 {created.getFullYear()}年{created.getMonth() + 1}月{created.getDate()}日
+          </p>
+          <h1 className="hw-c-h1">{row!.title}</h1>
+        </header>
+
+        {row!.kind === 'fatebook' && <ShareFatebookView paid={fatebookPaid} />}
+        {row!.kind === 'hemun' && <HemunResultView data={row!.result as unknown as HemunData} />}
+        {row!.kind === 'ziwei' && <ZiweiResultView data={row!.result as unknown as ZiweiResultData} />}
+        {row!.kind === 'geo' && <GeoResultView data={row!.result as unknown as GeoResultData} />}
+        {row!.kind === 'annual' && <LiunianResultView data={row!.result as unknown as LiunianResultData} />}
+
+        <footer className="mt-10 pt-4 border-t border-gold/15">
+          <p className="text-xs text-ink-light/60">{DISCLAIMER}</p>
+          <p className="text-xs text-ink-light/40 mt-2">
+            由 明理 mingcharts.com 引擎生成 ·{' '}
+            <Link href="/" className="hw-c-link">mingcharts.com</Link>
+          </p>
+        </footer>
+      </div>
+    </main>
+  )
+}
+
+function InactiveCard({ message }: { message: string }) {
+  return (
+    <main className="hw-page">
+      <div className="hw-wrap hw-c-pg">
+        <div className="hw-c-box text-center">
+          <h1 className="hw-c-h1">链接不可用</h1>
+          <p className="hw-c-dx mt-3">{message}</p>
+          <p className="text-xs text-ink-light/50 mt-4">
+            如果你是从命理师那里收到的链接，请直接联系对方重新发送。
+          </p>
+          <Link href="/" className="hw-c-back inline-block mt-6">← 返回明理首页</Link>
+        </div>
+      </div>
+    </main>
+  )
+}
