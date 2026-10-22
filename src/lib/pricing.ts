@@ -109,14 +109,13 @@ export type PartnerPackSku = keyof typeof PARTNER_PACK_UNITS
 
 /**
  * ★ 伙伴包是否已开放购买（闸门）。
- *   2026-10-22：账本/入账/余额三件已写好，但 supabase/partner-credits.sql 尚未执行 ——
- *   表不在时放行 = 收钱不发货，故此刻仍为 false。
- *   翻闸条件（三条全绿再改 true）：
- *     ① supabase/partner-credits.sql 已在生产库执行
- *     ② webhook 入账分支已上线（npm run verify 含 partner §8）
- *     ③ npm run partners:credits --list 能查到余额
+ *   2026-10-22 已翻闸：三条前置全部满足并实测通过 ——
+ *     ① supabase/partner-credits.sql 已在生产库执行（npm run partners:credits --list 可查）
+ *     ② webhook 入账分支在线（src/app/api/webhooks/waffo/route.ts）
+ *     ③ 账本实测通过：入账/重复回调不重加/金额不符告警/扣减幂等/余额不足拒绝（npm run verify:ledger-live）
+ *   若要回滚成 false，请连同「账本表是否已建」一起说明原因。
  */
-export const PARTNER_PACK_PURCHASABLE = false
+export const PARTNER_PACK_PURCHASABLE = true
 
 /** 是否为伙伴批量包（结账/入账分支用；避免各处写字符串比较） */
 export function isPartnerPack(sku: string): sku is PartnerPackSku {

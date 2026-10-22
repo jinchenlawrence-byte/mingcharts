@@ -14,6 +14,7 @@
     "partners:credits": "tsx scripts/partner-credits.mjs",
     "verify:share-live": "tsx scripts/verify-share-live.mjs",
     "verify:partner-live": "tsx scripts/verify-partner-live.mjs",
+    "verify:ledger-live": "tsx scripts/verify-ledger-live.mjs",
     "build:demo": "tsx scripts/build-demo-fatebook.mjs",
     "gen:icons": "node scripts/gen-pwa-icons.mjs",
     "seo:indexnow": "node scripts/indexnow.mjs"
