@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { SHENGXIAO, getShengXiao, getLiunian, LIUNIAN_YEARS, LIUNIAN_2027_DETAIL } from '@/lib/shengxiaoData'
 import { hantAlternates } from '@/lib/hant-seo'
-import { toHant } from '@/lib/hant'
+import { toHant, hantTaiSui } from '@/lib/hant'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
 
 // 繁体流年页（/tw/shengxiao/<属相>/<年>，96 页）
@@ -80,14 +80,14 @@ export default async function HantShengXiaoLiunian({ params }: { params: Promise
           <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
             <h1 className="text-2xl md:text-3xl font-bold text-ink">{year}年屬{name}運勢詳解</h1>
             <span className={`text-sm px-3 py-1 rounded-full font-semibold ${TONE_BADGE[ln.tone]}`}>
-              {TONE_WORD[ln.tone]} · {toHant(ln.relation)}太歲
+              {TONE_WORD[ln.tone]} · {hantTaiSui(ln.relation)}太歲
             </span>
           </div>
           <p className="text-ink-light leading-relaxed">{toHant(ln.relationText)}</p>
           {isFanTaiSui && (
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">
               {year}年屬{name}
-              {ln.relation === '值' ? '正值本命年（值太歲）' : `${toHant(ln.relation)}太歲`}，
+              {ln.relation === '值' ? '正值本命年（值太歲）' : `${hantTaiSui(ln.relation)}太歲`}，
               民俗認為犯太歲之年宜安太歲、拜太歲、多行善事，重大決策宜審慎。
               犯太歲不等於必有災禍，心存敬畏、積極應對即可。
             </div>
@@ -125,7 +125,7 @@ export default async function HantShengXiaoLiunian({ params }: { params: Promise
               <h3 className="font-semibold text-gray-800 mb-1">{year}年屬{name}犯太歲嗎？</h3>
               <p className="text-ink-light leading-relaxed">
                 {isFanTaiSui
-                  ? `${year}${ln.ganZhi}年，屬${name}為${toHant(ln.relation)}太歲，屬於犯太歲的一種。犯太歲主變動、波動，建議年初拜太歲、全年謹慎行事，多行善積德，平穩度過。`
+                  ? `${year}${ln.ganZhi}年，屬${name}為${hantTaiSui(ln.relation)}太歲，屬於犯太歲的一種。犯太歲主變動、波動，建議年初拜太歲、全年謹慎行事，多行善積德，平穩度過。`
                   : `${year}${ln.ganZhi}年，屬${name}與太歲無刑沖${ln.relation === '合' ? '，且為合太歲，是得貴人相助的年份' : '害關係，整體運勢平穩'}，不屬於犯太歲。`}
               </p>
             </div>

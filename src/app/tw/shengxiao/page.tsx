@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { SHENGXIAO, LIUNIAN_YEARS, getLiunian } from '@/lib/shengxiaoData'
 import { hantAlternates } from '@/lib/hant-seo'
-import { toHant } from '@/lib/hant'
+import { toHant, hantTaiSui } from '@/lib/hant'
 
 export const metadata: Metadata = {
   title: '十二生肖性格與流年運勢（繁體）：屬鼠、屬牛、屬虎…',
@@ -51,7 +51,7 @@ export default function HantShengXiaoIndex() {
                   <span
                     key={y}
                     className="text-xs px-2 py-0.5 rounded bg-gold/10 text-ink-light"
-                    title={`${ln.ganZhi}年 · ${toHant(ln.relation)}太歲`}
+                    title={`${ln.ganZhi}年 · ${hantTaiSui(ln.relation)}太歲`}
                   >
                     {y} {TONE_WORD[ln.tone] ?? ln.tone}
                   </span>

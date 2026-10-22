@@ -13,7 +13,7 @@ let allPass = true
 const fail = (msg) => { allPass = false; console.log('  ✗ ' + msg) }
 const near = (file) => new URL(`../src/${file}`, import.meta.url)
 
-const { toHant, localize, twinPath } = await import('../src/lib/hant.ts')
+const { toHant, localize, twinPath, hantTaiSui } = await import('../src/lib/hant.ts')
 const { HANT_HREFLANG, HANT_LOCALES, hantAlternates } = await import('../src/lib/hant-seo.ts')
 const { SHENGXIAO, getPeiDui, getLiunian, LIUNIAN_YEARS, LIUNIAN_2027_DETAIL } = await import('../src/lib/shengxiaoData.ts')
 const { default: sitemap } = await import('../src/app/sitemap.ts')
@@ -41,6 +41,20 @@ for (const [src, want] of mustChange) {
 // 占位符泄漏（私有区字符出现在正文里 = 用户可见乱码）
 const leak = toHant('时干与甲子，小凶之局，冲太岁。')
 if (/[\uE000\uE001]/.test(leak)) { convFail++; fail(`toHant 泄漏私有区占位符：${JSON.stringify(leak)}`) }
+// ★ 单字「冲」的陷阱（2026-10-22 真实事故：2026 屬鼠页同时出现 沖太歲 与 衝太歲）
+//   转换器把单字 冲 → 衝（衝動），命理要 沖（相沖）；POST_FIXES 只按「衝太歲」词组修正，
+//   调用方自己拼「太歲」时就会漏，故有 hantTaiSui。
+if (toHant('冲') !== '衝') { convFail++; fail(`toHant('冲') 应为「衝」（这是陷阱本身，改了就要重新审视 hantTaiSui）`) }
+if (hantTaiSui('冲') !== '沖') { convFail++; fail('hantTaiSui(冲) 必须是「沖」（相沖），不能是「衝」') }
+for (const [rel, want] of [['值', '值'], ['害', '害'], ['刑', '刑'], ['合', '合'], ['平', '平']]) {
+  if (hantTaiSui(rel) !== want) { convFail++; fail(`hantTaiSui(${rel}) 应为「${want}」`) }
+}
+// 静态：繁体页不得再对单字调 toHant(ln.relation)（会把「衝太歲」放出去）
+for (const f of ['app/tw/shengxiao/[animal]/[year]/page.tsx', 'app/tw/shengxiao/page.tsx']) {
+  const src = readFileSync(near(f), 'utf8')
+  if (src.includes('toHant(ln.relation)')) { convFail++; fail(`${f} 仍对单字用 toHant（会产出「衝太歲」），应改 hantTaiSui`) }
+  if (!src.includes('hantTaiSui(ln.relation)')) { convFail++; fail(`${f} 未使用 hantTaiSui 处理太岁关系`) }
+}
 // 简体恒等 + 不跑转换器
 if (localize('免费排盘', 'zh-Hans') !== '免费排盘') { convFail++; fail('localize(zh-Hans) 应原样返回') }
 if (localize('免费排盘', 'zh-Hant') !== '免費排盤') { convFail++; fail('localize(zh-Hant) 应返回繁体') }

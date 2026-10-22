@@ -81,6 +81,22 @@ export function localize(text: string, locale: OutputLocale): string {
   return locale === 'zh-Hant' ? toHant(text) : text
 }
 
+/**
+ * ★ 太岁关系单字表（值 / 冲 / 害 / 刑 / 合 / 平）。
+ *   为什么需要它：转换器把【单字】「冲」转成「衝」（衝動的衝），
+ *   而命理写「沖」（相沖）。POST_FIXES 只修正「衝太歲」这种词组，
+ *   当调用方只转一个字、自己拼「太歲」时（`toHant(ln.relation) + '太歲'`）就会漏成「衝太歲」。
+ *   真实事故：2026 屬鼠页同时出现「沖太歲」与「衝太歲」。
+ */
+export const HANT_TAISUI: Record<string, string> = {
+  '值': '值', '冲': '沖', '害': '害', '刑': '刑', '合': '合', '平': '平',
+}
+
+/** 太岁关系取繁体写法；未知关系回退到通用转换 */
+export function hantTaiSui(relation: string): string {
+  return HANT_TAISUI[relation] ?? toHant(relation)
+}
+
 /** 简繁对照的 URL 互指（hreflang 与切换器共用，避免两处手写路径） */
 export function twinPath(path: string, locale: OutputLocale): string {
   // 约定：繁体树在 /tw 前缀下，路径其余部分与简体一致
