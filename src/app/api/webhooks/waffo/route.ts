@@ -2,8 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase'
 import { verifyWaffoEvent } from '@/lib/waffo'
 import { createWaffoRepo } from '@/lib/waffo-repo'
-import { handleWaffoEvent } from '@/lib/waffo-events'
+import { handleWaffoEvent, buildPaidPaymentRow } from '@/lib/waffo-events'
 import { ensureFatebookReportByAdmin } from '@/lib/reportSave'
+import { isPartnerPack } from '@/lib/pricing'
+import { creditPartnerPurchase } from '@/lib/partnerCredits'
 
 // POST /api/webhooks/waffo —— Waffo 支付回调（本任务核心）
 //
@@ -57,6 +59,36 @@ export async function POST(request: NextRequest) {
           }
         } catch (reportErr) {
           console.warn('[waffo-webhook] reports 命书行写入失败（不阻断）:', reportErr)
+        }
+
+        // ★ 伙伴报告包入账（白标 v1，2026-10-22）：买的是"份数"，不是报告权益。
+        //   幂等键 = 支付单号（PAY_xxx），webhook 重试不会重复加额度。
+        //   ★ 入账失败必须记 error 级日志：这是"钱收了、额度没记"的唯一信号，
+        //     且这里【不抛错】—— 抛错会让 Waffo 重试并被 processed_webhooks 判为已处理，
+        //     反而更难补。处置方式是按日志里的 eventId/orderId 人工补账。
+        try {
+          const paidRow = buildPaidPaymentRow(event.data)
+          const sku = paidRow?.sku ?? ''
+          if (paidRow?.user_id && isPartnerPack(sku)) {
+            const credited = await creditPartnerPurchase(createServerSupabase(), {
+              userId: paidRow.user_id,
+              sku,
+              ref: paidRow.transaction_id,
+              paidUSD: paidRow.amount,
+            })
+            if (credited.priceWarning) {
+              console.error(`[waffo-webhook] ★价格不符：${credited.priceWarning} order=${orderId}`)
+            }
+            console.info(
+              `[waffo-webhook] 伙伴额度入账 ${sku} +${credited.credited} 份` +
+              `${credited.duplicate ? '（重复回调，未重复加）' : ''} · 余额 ${credited.balance}`,
+            )
+          }
+        } catch (creditErr) {
+          console.error(
+            `[waffo-webhook] ★伙伴额度入账失败（需人工补账）${eventType}/${eventId} order=${orderId}:`,
+            creditErr instanceof Error ? creditErr.message : creditErr,
+          )
         }
         break
       }

@@ -109,10 +109,12 @@ export type PartnerPackSku = keyof typeof PARTNER_PACK_UNITS
 
 /**
  * ★ 伙伴包是否已开放购买（闸门）。
- *   为什么默认 false：productId 一登记，/api/checkout 就认这个 SKU，
- *   而「支付成功 → 写入伙伴额度」的入账链路（webhook + partner_credits 账本）
- *   还没上线 —— 此时放行等于收了钱不发货。
- *   ★ 上线顺序：账本 + webhook 入账 + 余额查询 三者齐备后，把这里翻成 true。
+ *   2026-10-22：账本/入账/余额三件已写好，但 supabase/partner-credits.sql 尚未执行 ——
+ *   表不在时放行 = 收钱不发货，故此刻仍为 false。
+ *   翻闸条件（三条全绿再改 true）：
+ *     ① supabase/partner-credits.sql 已在生产库执行
+ *     ② webhook 入账分支已上线（npm run verify 含 partner §8）
+ *     ③ npm run partners:credits --list 能查到余额
  */
 export const PARTNER_PACK_PURCHASABLE = false
 

@@ -11,6 +11,7 @@
     "verify:ai": "tsx scripts/test-ai-compliance.mjs",
     "share:link": "tsx scripts/share-link.mjs",
     "partners:list": "tsx scripts/partner-applications.mjs",
+    "partners:credits": "tsx scripts/partner-credits.mjs",
     "verify:share-live": "tsx scripts/verify-share-live.mjs",
     "verify:partner-live": "tsx scripts/verify-partner-live.mjs",
     "build:demo": "tsx scripts/build-demo-fatebook.mjs",

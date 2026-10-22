@@ -196,21 +196,74 @@ const { WAFFO_PRODUCTS, waffoProductId } = await import('../src/lib/waffo-produc
     const pid = waffoProductId(id)
     if (!pid || !pid.startsWith('PROD_')) { skuFail++; fail(`${id} 的 productId 未登记或形态不对：${pid}`) }
   }
-  // 闸门：未开放自助购买时，checkout 必须挡
+  // 闸门：翻闸后必须仍保留守卫接线（将来若关闸，checkout 仍能挡住）
   const checkoutSrc = readFileSync(near('src/app/api/checkout/route.ts'), 'utf8')
   if (!checkoutSrc.includes('isPartnerPack(sku)') || !checkoutSrc.includes('PARTNER_PACK_PURCHASABLE')) {
     skuFail++; fail('checkout 未接入伙伴包闸门（钱收了却不会入账）')
   }
-  if (PARTNER_PACK_PURCHASABLE !== false) {
-    skuFail++; fail('PARTNER_PACK_PURCHASABLE 应为 false —— 入账链路未上线前不得放行')
+  // 2026-10-22：闸门值取决于【账本表是否已在生产库建好】，故不钉死 true/false，
+  // 而是钉死不变式：一旦开闸，账本与 webhook 接线必须都在 —— 否则就是"收钱不发货"。
+  if (typeof PARTNER_PACK_PURCHASABLE !== 'boolean') {
+    skuFail++; fail('PARTNER_PACK_PURCHASABLE 必须是布尔值')
+  }
+  if (PARTNER_PACK_PURCHASABLE) {
+    const creditsLib = readFileSync(near('src/lib/partnerCredits.ts'), 'utf8')
+    const hookSrc = readFileSync(near('src/app/api/webhooks/waffo/route.ts'), 'utf8')
+    if (!creditsLib.includes('creditPartnerPurchase')) { skuFail++; fail('已开闸但账本库缺入账函数') }
+    if (!hookSrc.includes('creditPartnerPurchase')) { skuFail++; fail('已开闸但 webhook 未接入入账') }
   }
   if (Object.keys(WAFFO_PRODUCTS).filter((k) => isPartnerPack(k)).length !== 3) {
     skuFail++; fail('WAFFO_PRODUCTS 里伙伴包应恰为 3 条')
   }
 }
 console.log(skuFail === 0
-  ? '✓ 伙伴包：3 个 SKU 价格/份数/单价对齐档位价；grants 为空；不上定价页；productId 已登记；闸门已关'
+  ? '✓ 伙伴包：3 个 SKU 价格/份数/单价对齐档位价；grants 为空；不上定价页；productId 已登记；闸门已开'
   : `✗ 伙伴包失败 ${skuFail} 处`)
+
+// ---------- ⑧ 额度账本（纯函数 + 接线）----------
+console.log('—— ⑧ 额度账本 ——')
+let creditFail = 0
+const {
+  unitsForSku, balanceOf, amountMatchesSku, getPartnerBalance, creditPartnerPurchase, spendPartnerUnits,
+} = await import('../src/lib/partnerCredits.ts')
+{
+  // 份数映射
+  if (unitsForSku('partner_credits_10') !== 10) { creditFail++; fail('10 份档映射不对') }
+  if (unitsForSku('partner_credits_50') !== 50) { creditFail++; fail('50 份档映射不对') }
+  if (unitsForSku('partner_credits_200') !== 200) { creditFail++; fail('200 份档映射不对') }
+  if (unitsForSku('fatebook') !== null) { creditFail++; fail('非伙伴包不应返回份数') }
+  // 余额求和（含负数与脏数据）
+  if (balanceOf([]) !== 0) { creditFail++; fail('空账本余额应为 0') }
+  if (balanceOf([{ delta: 10 }, { delta: -3 }]) !== 7) { creditFail++; fail('余额求和不对') }
+  if (balanceOf([{ delta: NaN }]) !== 0) { creditFail++; fail('脏数据不应污染余额') }
+  // 金额比对：这是抓「收单方标错价」的唯一地方
+  if (!amountMatchesSku('partner_credits_10', 150)) { creditFail++; fail('$150 应匹配 10 份档') }
+  if (!amountMatchesSku('partner_credits_10', 150.005)) { creditFail++; fail('1 分以内容差应通过') }
+  if (amountMatchesSku('partner_credits_10', 15)) { creditFail++; fail('★ $15（少一个零）必须判为不匹配') }
+  if (amountMatchesSku('partner_credits_200', 180)) { creditFail++; fail('★ $180 必须判为不匹配') }
+  // 函数存在性（避免只有骨架没实现）
+  for (const fn of [getPartnerBalance, creditPartnerPurchase, spendPartnerUnits]) {
+    if (typeof fn !== 'function') { creditFail++; fail('partnerCredits 导出缺失') }
+  }
+  // webhook 必须接线，且幂等键用支付单号
+  const hook = readFileSync(near('src/app/api/webhooks/waffo/route.ts'), 'utf8')
+  if (!hook.includes('creditPartnerPurchase')) { creditFail++; fail('webhook 未接入伙伴额度入账') }
+  if (!hook.includes('buildPaidPaymentRow')) { creditFail++; fail('webhook 未复用 buildPaidPaymentRow 取 sku/金额') }
+  if (!hook.includes('isPartnerPack')) { creditFail++; fail('webhook 未判定伙伴包') }
+  // 入账失败必须 error 级日志（这是「钱收了没额度」的唯一信号）
+  if (!/★伙伴额度入账失败[\s\S]{0,200}console\.error|console\.error\([\s\S]{0,80}★伙伴额度入账失败/.test(hook)) {
+    creditFail++; fail('入账失败未用 console.error 告警（需要人工补账，不能只 warn）')
+  }
+  // SQL 迁移必须存在幂等索引
+  const sql = readFileSync(near('supabase/partner-credits.sql'), 'utf8')
+  for (const idx of ['idx_partner_credits_purchase_ref', 'idx_partner_credits_consume_ref']) {
+    if (!sql.includes(idx)) { creditFail++; fail(`partner-credits.sql 缺幂等索引 ${idx}`) }
+  }
+  if (!sql.includes('ENABLE ROW LEVEL SECURITY')) { creditFail++; fail('partner-credits.sql 未开 RLS') }
+}
+console.log(creditFail === 0
+  ? '✓ 账本：份数映射/余额求和/金额容差（$15 与 $180 必须不匹配）；webhook 接线 + error 告警；SQL 含两个幂等索引 + RLS'
+  : `✗ 账本失败 ${creditFail} 处`)
 
 // ---------- 牙口自检 ----------
 console.log('—— 牙口自检（守护断言本身）——')
