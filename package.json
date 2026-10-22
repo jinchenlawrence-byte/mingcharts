@@ -12,6 +12,7 @@
     "share:link": "tsx scripts/share-link.mjs",
     "partners:list": "tsx scripts/partner-applications.mjs",
     "verify:share-live": "tsx scripts/verify-share-live.mjs",
+    "verify:partner-live": "tsx scripts/verify-partner-live.mjs",
     "build:demo": "tsx scripts/build-demo-fatebook.mjs",
     "gen:icons": "node scripts/gen-pwa-icons.mjs",
     "seo:indexnow": "node scripts/indexnow.mjs"
