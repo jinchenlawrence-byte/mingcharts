@@ -150,6 +150,32 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
           ) : <span />}
         </div>
 
+        {/* 延伸阅读：双向内链（流年方法论常驻；2027 窗口期加丁未年专题） */}
+        <div className="hw-c-box mb-6">
+          <h2 className="hw-c-secTitle">延伸阅读</h2>
+          <ul className="space-y-2 text-sm">
+            <li>
+              <Link href="/article/liunian-zenme-kan" className="hw-c-link">
+                • 流年运势怎么看？从流年干支、十神到原局冲合的完整顺序
+              </Link>
+            </li>
+            {yearNum === 2027 && (
+              <>
+                <li>
+                  <Link href="/article/2027-dingwei-nian-yunshi" className="hw-c-link">
+                    • 2027丁未年运势详解：犯太岁生肖与五行气质
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/article/2027-fantaishui" className="hw-c-link">
+                    • 2027年犯太岁怎么化解：值、冲、刑、害四种区别
+                  </Link>
+                </li>
+              </>
+            )}
+          </ul>
+        </div>
+
         {/* CTA */}
         <div className="hw-c-cta">
           <h2 className="hw-c-secTitle">想看更准确的{year}年个人运势？</h2>

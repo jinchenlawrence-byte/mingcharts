@@ -184,6 +184,28 @@ export default function LiunianPage() {
           <p className="hw-note text-center">
             {formatPriceUSD(SKUS.annual_report.priceUSD)}/次 · 会员不含报告 · 解锁后永久回看
           </p>
+
+          {/* 内链：先读方法论再排盘（降低跳出、把搜索流量导向长文） */}
+          <div className="hw-c-box mt-6">
+            <h2 className="hw-c-secTitle">先了解流年怎么看</h2>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <Link href="/article/liunian-zenme-kan" className="hw-c-link">
+                  • 流年五步法：干支 → 十神 → 冲合 → 大运 → 分领域
+                </Link>
+              </li>
+              <li>
+                <Link href="/article/2027-dingwei-nian-yunshi" className="hw-c-link">
+                  • 2027 丁未年运势详解：犯太岁与合太岁生肖
+                </Link>
+              </li>
+              <li>
+                <Link href="/article/2027-fantaishui" className="hw-c-link">
+                  • 2027 年犯太岁怎么化解：四种类型与应对
+                </Link>
+              </li>
+            </ul>
+          </div>
         </form>
 
         {/* 结果区 */}

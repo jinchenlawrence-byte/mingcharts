@@ -88,9 +88,43 @@ export default async function ArticleOrCategoryPage({ params }: { params: Promis
   const catName = ARTICLE_CATEGORIES.find(c => c.slug === article.category)?.name || ''
   const cta = article.cta
 
+  // 结构化数据：Article + BreadcrumbList（提升富摘要与品牌实体识别）
+  const BASE = 'https://www.mingcharts.com'
+  const articleUrl = `${BASE}/article/${article.slug}`
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'Article',
+        '@id': `${articleUrl}#article`,
+        headline: article.title,
+        description: article.description,
+        inLanguage: 'zh-CN',
+        mainEntityOfPage: { '@type': 'WebPage', '@id': articleUrl },
+        author: { '@type': 'Organization', name: '明理 MingCharts', url: BASE },
+        publisher: { '@id': `${BASE}/#org` },
+        isPartOf: { '@id': `${BASE}/#site` },
+      },
+      {
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+          { '@type': 'ListItem', position: 1, name: '首页', item: BASE },
+          { '@type': 'ListItem', position: 2, name: '命理知识', item: `${BASE}/article` },
+          { '@type': 'ListItem', position: 3, name: catName, item: `${BASE}/article/${article.category}` },
+          { '@type': 'ListItem', position: 4, name: article.title, item: articleUrl },
+        ],
+      },
+    ],
+  }
+
   return (
     <main className="hw-page">
       <Nav />
+      <script
+        type="application/ld+json"
+        // 静态派生自 articles.ts，不含用户输入
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="hw-wrap hw-c-pg">
         <div className="max-w-3xl mx-auto">
           <nav className="hw-c-back">
