@@ -53,3 +53,6 @@ temp/
 
 # 鏈湴鏋勫缓/楠岃瘉鏃ュ織
 *.log
+
+# 提交信息临时文件（git commit -F 用，勿入库）
+_commitmsg.txt
