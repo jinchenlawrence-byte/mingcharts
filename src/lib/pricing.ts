@@ -12,6 +12,11 @@ export type SkuId =
   | 'member_monthly'  // 月度会员
   | 'member_yearly'   // 年度会员（★主推）
   | 'ask_pack'        // 追问包（次数见 ASK_PACK_SIZE，单一事实源）
+  // ★ 伙伴批量包（白标 v1，2026-10-22）：卖给命理师的「报告份数」，
+  //   不是给终端用户的产品 —— 故 grants 为空、且不进 ONE_TIME_SKUS（不上消费者定价页）
+  | 'partner_credits_10'
+  | 'partner_credits_50'
+  | 'partner_credits_200'
 
 /**
  * 可访问的能力（GrantId）—— ★ 与「可购买的东西」（SkuId）刻意分离。
@@ -89,6 +94,33 @@ export const ASK_PER_REPORT = 5
  */
 export const ASK_PER_INVITE = 3
 
+/**
+ * ★ 伙伴批量包：每包可出的报告份数（单一事实源）。
+ *   消费方：结账 webhook 入账、伙伴后台显示余额、白标方案价目表。
+ *   改档只动这里；SKUS 里的价格必须与之同批调整（test-partner-accept 会比对文档）。
+ */
+export const PARTNER_PACK_UNITS = {
+  partner_credits_10: 10,
+  partner_credits_50: 50,
+  partner_credits_200: 200,
+} as const
+
+export type PartnerPackSku = keyof typeof PARTNER_PACK_UNITS
+
+/**
+ * ★ 伙伴包是否已开放购买（闸门）。
+ *   为什么默认 false：productId 一登记，/api/checkout 就认这个 SKU，
+ *   而「支付成功 → 写入伙伴额度」的入账链路（webhook + partner_credits 账本）
+ *   还没上线 —— 此时放行等于收了钱不发货。
+ *   ★ 上线顺序：账本 + webhook 入账 + 余额查询 三者齐备后，把这里翻成 true。
+ */
+export const PARTNER_PACK_PURCHASABLE = false
+
+/** 是否为伙伴批量包（结账/入账分支用；避免各处写字符串比较） */
+export function isPartnerPack(sku: string): sku is PartnerPackSku {
+  return Object.prototype.hasOwnProperty.call(PARTNER_PACK_UNITS, sku)
+}
+
 export const SKUS: Record<SkuId, Sku> = {
   fatebook: {
     id: 'fatebook', name: '命书报告',
@@ -146,8 +178,40 @@ export const SKUS: Record<SkuId, Sku> = {
     desc: `追问 ${ASK_PACK_SIZE} 次`,
     priceUSD: 4.99, kind: 'pack',
     grants: ['ask']
+  },
+  // ── 伙伴批量包（白标 v1）──────────────────────────────────────────
+  // ★ 商品名与描述会被收单方（Waffo）看到，且要落在已批类目 digital content 里：
+  //   一律说「报告包 N 份」，不要出现「额度 / 储值 / credit / 充值」——
+  //   预付储值类在收单方眼里是另一类受监管商品，容易触发二次审核。
+  // ★ grants 必须为空：伙伴包只产出「份数」，不给购买者本人解锁任何报告能力。
+  //   否则 isReportPurchase 会把它当报告购买（entitlement.ts:355）。
+  partner_credits_10: {
+    id: 'partner_credits_10',
+    name: '命理报告包 · 10 份（命书 / 合婚）',
+    desc: '命书或合婚报告 10 份，供命理师交付客户：每份为万字命书（十卷）或合婚详批（双人九维），逐条注明所引经典；生成带您品牌信息的报告链接，客户可直接阅读并打印为 PDF。自购买起 24 个月有效，不可转让；数字内容，交付后不支持退款。',
+    priceUSD: 150, kind: 'one_time',
+    grants: []
+  },
+  partner_credits_50: {
+    id: 'partner_credits_50',
+    name: '命理报告包 · 50 份（命书 / 合婚）',
+    desc: '命书或合婚报告 50 份，供命理师交付客户：每份为万字命书（十卷）或合婚详批（双人九维），逐条注明所引经典；生成带您品牌信息的报告链接，客户可直接阅读并打印为 PDF。自购买起 24 个月有效，不可转让；数字内容，交付后不支持退款。',
+    priceUSD: 600, kind: 'one_time',
+    grants: []
+  },
+  partner_credits_200: {
+    id: 'partner_credits_200',
+    name: '命理报告包 · 200 份（命书 / 合婚）',
+    desc: '命书或合婚报告 200 份，供命理师交付客户：每份为万字命书（十卷）或合婚详批（双人九维），逐条注明所引经典；生成带您品牌信息的报告链接，客户可直接阅读并打印为 PDF。自购买起 24 个月有效，不可转让；数字内容，交付后不支持退款。',
+    priceUSD: 1800, kind: 'one_time',
+    grants: []
   }
 }
+
+/** 伙伴批量包便捷列表（/partners 展示、伙伴后台） */
+export const PARTNER_PACK_SKUS: Sku[] = [
+  SKUS.partner_credits_10, SKUS.partner_credits_50, SKUS.partner_credits_200,
+]
 
 /** 订阅类 SKU 便捷列表（pricing 页会员区） */
 export const MEMBER_SKUS: Sku[] = [SKUS.member_monthly, SKUS.member_yearly]

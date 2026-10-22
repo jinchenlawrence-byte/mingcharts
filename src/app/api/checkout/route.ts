@@ -5,6 +5,7 @@ import { createCheckoutSession } from '@/lib/checkout'
 import { waffoProductId } from '@/lib/waffo-products'
 import { makeMerchantOrderId } from '@/lib/waffo-events'
 import type { SkuId } from '@/lib/pricing'
+import { isPartnerPack, PARTNER_PACK_PURCHASABLE } from '@/lib/pricing'
 import { localeFromRequest } from '@/lib/locale'
 
 // POST /api/checkout { token, sku, chartId?, returnTo? }
@@ -31,6 +32,16 @@ export async function POST(request: NextRequest) {
     if (!productId) {
       return NextResponse.json(
         { error: '该商品尚未开放购买', code: 'SKU_UNAVAILABLE' },
+        { status: 400 },
+      )
+    }
+
+    // ★ 伙伴包准入闸门（2026-10-22）：商品已在收单方建好并登记，但「支付成功 → 入账伙伴额度」
+    //   的链路还没上线。此时若放行，会出现「钱收了、额度没记」—— 比报错严重得多。
+    //   翻闸条件：partner_credits 账本 + webhook 入账 + 余额查询 三者齐备。
+    if (isPartnerPack(sku) && !PARTNER_PACK_PURCHASABLE) {
+      return NextResponse.json(
+        { error: '伙伴报告包暂未开放自助购买，请联系 hello@mingcharts.com', code: 'PARTNER_PACK_CLOSED' },
         { status: 400 },
       )
     }

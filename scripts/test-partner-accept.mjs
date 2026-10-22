@@ -166,6 +166,52 @@ const layout = readFileSync(near('src/app/layout.tsx'), 'utf8')
 if (!layout.includes('href="/partners"')) { siteFail++; fail('根 layout 页脚没有 /partners 入口') }
 console.log(siteFail === 0 ? '✓ sitemap 收录简繁两版；根页脚有入口' : `✗ sitemap/入口失败 ${siteFail} 处`)
 
+// ---------- ⑦ 伙伴包 SKU 与准入闸门（2026-10-22）----------
+console.log('—— ⑦ 伙伴包 SKU / 价格 / 闸门 ——')
+let skuFail = 0
+const {
+  SKUS, ONE_TIME_SKUS, PARTNER_PACK_UNITS, PARTNER_PACK_SKUS, PARTNER_PACK_PURCHASABLE, isPartnerPack,
+} = await import('../src/lib/pricing.ts')
+const { WAFFO_PRODUCTS, waffoProductId } = await import('../src/lib/waffo-products.ts')
+{
+  // 三个包都在 SKUS 里，价格与份数严格对齐（改价忘了改份数会被测出来）
+  const expect = { partner_credits_10: [150, 10], partner_credits_50: [600, 50], partner_credits_200: [1800, 200] }
+  for (const [id, [price, units]] of Object.entries(expect)) {
+    if (!SKUS[id]) { skuFail++; fail(`SKUS 缺 ${id}`); continue }
+    if (SKUS[id].priceUSD !== price) { skuFail++; fail(`${id} 价格 ${SKUS[id].priceUSD}，应为 ${price}`) }
+    if (PARTNER_PACK_UNITS[id] !== units) { skuFail++; fail(`${id} 份数 ${PARTNER_PACK_UNITS[id]}，应为 ${units}`) }
+    // 每份单价必须落在白标方案的档位价上
+    const perUnit = price / units
+    const tier = units === 10 ? 15 : units === 50 ? 12 : 9
+    if (perUnit !== tier) { skuFail++; fail(`${id} 每份 $${perUnit}，应为档位价 $${tier}`) }
+  }
+  // grants 必须为空：否则 isReportPurchase 会把它当报告购买，白送报告 + 追问
+  for (const s of PARTNER_PACK_SKUS) {
+    if ((s.grants ?? []).length !== 0) { skuFail++; fail(`${s.id} 的 grants 必须为空（当前 ${JSON.stringify(s.grants)}）`) }
+  }
+  // 不得出现在消费者定价页的列表里
+  if (ONE_TIME_SKUS.some((s) => isPartnerPack(s.id))) { skuFail++; fail('伙伴包混进了 ONE_TIME_SKUS（会出现在消费者定价页）') }
+  // 三个 productId 都已登记且形态正确
+  for (const id of Object.keys(expect)) {
+    const pid = waffoProductId(id)
+    if (!pid || !pid.startsWith('PROD_')) { skuFail++; fail(`${id} 的 productId 未登记或形态不对：${pid}`) }
+  }
+  // 闸门：未开放自助购买时，checkout 必须挡
+  const checkoutSrc = readFileSync(near('src/app/api/checkout/route.ts'), 'utf8')
+  if (!checkoutSrc.includes('isPartnerPack(sku)') || !checkoutSrc.includes('PARTNER_PACK_PURCHASABLE')) {
+    skuFail++; fail('checkout 未接入伙伴包闸门（钱收了却不会入账）')
+  }
+  if (PARTNER_PACK_PURCHASABLE !== false) {
+    skuFail++; fail('PARTNER_PACK_PURCHASABLE 应为 false —— 入账链路未上线前不得放行')
+  }
+  if (Object.keys(WAFFO_PRODUCTS).filter((k) => isPartnerPack(k)).length !== 3) {
+    skuFail++; fail('WAFFO_PRODUCTS 里伙伴包应恰为 3 条')
+  }
+}
+console.log(skuFail === 0
+  ? '✓ 伙伴包：3 个 SKU 价格/份数/单价对齐档位价；grants 为空；不上定价页；productId 已登记；闸门已关'
+  : `✗ 伙伴包失败 ${skuFail} 处`)
+
 // ---------- 牙口自检 ----------
 console.log('—— 牙口自检（守护断言本身）——')
 let toothFail = 0

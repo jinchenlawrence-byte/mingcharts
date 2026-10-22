@@ -36,6 +36,14 @@ export const WAFFO_PRODUCTS: Partial<Record<SkuId, string>> = {
   //   scripts/create-onetime-products.mjs 创建并发布（onetimeProducts.create + publish）。
   //   登记即开闸：pricing 页与 /chart 追问面板的购买入口由「即将推出」切换为可购。
   ask_pack: 'PROD_46MgOElCSTRpOGA3eJCJh0',        // 追问包 4.99 USD 一次性
+
+  // ★ 伙伴批量包（白标 v1，2026-10-22）：由 scripts/create-onetime-products.mjs 用生产凭证直建。
+  //   ★★ 登记前请先确认【收单方后台的价格】与本表一致（create 接口无读回，只能肉眼核对一次）：
+  //       10 份 = 150 / 50 份 = 600 / 200 份 = 1800 USD。
+  //   运行时还有第二道防线：webhook 入账时比对实付金额与 SKUS[sku].priceUSD，不符会告警。
+  partner_credits_10: 'PROD_0P1vrruUo6dQTs4wpeGO0y',   // 命理报告包 · 10 份 150 USD
+  partner_credits_50: 'PROD_3qarBecDT5jf94kdSvCK2w',   // 命理报告包 · 50 份 600 USD
+  partner_credits_200: 'PROD_1aL4vcm2o1T7HonzdgSPIY',  // 命理报告包 · 200 份 1800 USD
 }
 
 // 返回某 SKU 对应的 Waffo productId；未登记则返回 null（购买入口据此显示「即将推出」）
