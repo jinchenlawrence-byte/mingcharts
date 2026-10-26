@@ -42,6 +42,9 @@ interface ShareRow {
   share_token: string | null
   share_expires_at: string | null
   share_revoked_at: string | null
+  /** 伙伴品牌位（第 34 轮）：只收两个文本字段，渲染在标题上方 */
+  brand_name: string | null
+  brand_contact: string | null
 }
 
 function inactiveMessage(reason: 'revoked' | 'expired' | 'missing'): string {
@@ -61,8 +64,10 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
   const admin = createServerSupabase()
   const { data, error } = await admin
     .from('reports')
-    .select('kind,title,result,input,created_at,share_token,share_expires_at,share_revoked_at')
+    .select('kind,title,result,input,created_at,share_token,share_expires_at,share_revoked_at,brand_name,brand_contact')
     .eq('share_token', token)
+    // ★ 第 34 轮：pending / failed 行不可分享（即使令牌列被误写）
+    .eq('status', 'ready')
     .maybeSingle()
 
   if (error) {
@@ -75,7 +80,8 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
     return <InactiveCard message={inactiveMessage(shareInactiveReason(row))} />
   }
 
-  // 命书正文不在 reports.result 里（只存了 chart_id 指针），需回查 charts.chart_data
+  // 命书正文：旧行在 charts.chart_data（只存了 chart_id 指针）；
+  // 伙伴自助 V2 不写 charts（避免污染伙伴自己的「我的命盘」）→ 回退读 reports.result.paid。
   let fatebookPaid: Record<string, unknown> | null = null
   if (row!.kind === 'fatebook') {
     const chartId = (row!.input as { chart_id?: string } | null)?.chart_id
@@ -87,11 +93,16 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
         .maybeSingle()
       const chartData = (chartRow as { chart_data?: { analysis?: { paid?: Record<string, unknown> } } } | null)?.chart_data
       fatebookPaid = chartData?.analysis?.paid ?? null
+    } else {
+      const result = row!.result as { paid?: Record<string, unknown> } | null
+      fatebookPaid = result?.paid ?? null
     }
   }
 
   const kindLabel = REPORT_KIND_LABELS[row!.kind] ?? '报告'
   const created = new Date(row!.created_at)
+  // 品牌位（伙伴自己的名称/联系方式）：只在伙伴填过时出现，位于标题上方
+  const brandLine = [row!.brand_name, row!.brand_contact].filter(Boolean).join(' · ')
   // 披露文案跟随访客语言（伙伴的客户多为繁体读者；简体为默认）
   const isHant = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value) === 'zh-Hant'
 
@@ -104,6 +115,9 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
           <p className="text-xs text-ink-light/60">
             {kindLabel} · 生成于 {created.getFullYear()}年{created.getMonth() + 1}月{created.getDate()}日
           </p>
+          {brandLine && (
+            <p className="text-sm font-semibold text-ink mb-1">{brandLine}</p>
+          )}
           <h1 className="hw-c-h1">{row!.title}</h1>
           {/* 来源披露放标题下方（不是页脚）：这是伙伴交付给客户的第一屏，客户端辨别成本最低 */}
           <ReportOriginNote hant={isHant} className="mt-2" />
