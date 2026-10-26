@@ -222,6 +222,26 @@ export const ZHI_TO_ANIMAL: Record<string, string> = {
 // ============ 流年运势 ============
 export const LIUNIAN_YEARS = [2024, 2025, 2026, 2027, 2028, 2029, 2030, 2031]
 
+/**
+ * 太岁关系 → 简体标题用词（唯一来源）。
+ * ★ 第 32 轮修复：'平' 原为 '运势'，导致标题退化成「运势详解：运势」、keywords 出现「2029年运势」废词。
+ * ★ 繁体侧必须由 toHant 派生，不许再手写第二份繁体映射（简繁各写一遍正是本次缺陷的成因）。
+ */
+export const TAISUI_TITLE_WORD: Record<string, string> = {
+  '值': '本命年值太岁',
+  '冲': '冲太岁',
+  '害': '害太岁',
+  '刑': '刑太岁',
+  '合': '合太岁',
+  '平': '平顺之年',
+}
+
+/** 太岁关系 → keywords 用词（与标题词分开：'平顺之年' 不适合当搜索关键词） */
+export const TAISUI_KEYWORD_WORD: Record<string, string> = {
+  ...TAISUI_TITLE_WORD,
+  '平': '流年运势',
+}
+
 const GANS = ['甲', '乙', '丙', '丁', '戊', '己', '庚', '辛', '壬', '癸']
 const ZHIS = ['子', '丑', '寅', '卯', '辰', '巳', '午', '未', '申', '酉', '戌', '亥']
 export const GAN_WUXING_NAME: Record<string, string> = {

@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import Nav from '@/components/Nav'
-import { SHENGXIAO, getShengXiao, getLiunian, LIUNIAN_YEARS, LIUNIAN_2027_DETAIL } from '@/lib/shengxiaoData'
+import { SHENGXIAO, getShengXiao, getLiunian, LIUNIAN_YEARS, LIUNIAN_2027_DETAIL, TAISUI_TITLE_WORD, TAISUI_KEYWORD_WORD } from '@/lib/shengxiaoData'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import { hantAlternates } from '@/lib/hant-seo'
 
@@ -20,11 +20,12 @@ export async function generateMetadata({ params }: { params: Promise<{ animal: s
   const sx = getShengXiao(animal)
   if (!sx) return { title: '页面未找到' }
   const ln = getLiunian(sx, Number(year))
-  const taiSuiWord = { '值': '本命年值太岁', '冲': '冲太岁', '害': '害太岁', '刑': '刑太岁', '合': '合太岁', '平': '运势' }[ln.relation]
+  // ★ 标题词走单一来源（'平' = 平顺之年）；keywords 另用关键词表（'平' = 流年运势）
+  const taiSuiWord = TAISUI_TITLE_WORD[ln.relation]
   return {
     title: `${year}年属${sx.name}运势详解：${taiSuiWord}，事业财运感情健康全解`,
     description: `${year}${ln.ganZhi}年属${sx.name}人运势如何？${ln.relationText}详解属${sx.name}${year}年事业、财运、感情婚姻、健康注意事项与开运化解建议。`,
-    keywords: [`${year}年属${sx.name}运势`, `属${sx.name}${year}年`, `${year}年${taiSuiWord}`, `属${sx.name}${year}年财运`, `属${sx.name}本命年`],
+    keywords: [`${year}年属${sx.name}运势`, `属${sx.name}${year}年`, `${year}年${TAISUI_KEYWORD_WORD[ln.relation]}`, `属${sx.name}${year}年财运`, `属${sx.name}本命年`],
     // hreflang：与 /tw/shengxiao/<slug>/<year> 双向互指（矩阵由 lib/hant-seo 单一生成）
     alternates: {
       canonical: `/shengxiao/${sx.slug}/${year}`,

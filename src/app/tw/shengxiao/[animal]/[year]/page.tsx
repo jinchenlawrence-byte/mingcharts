@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { SHENGXIAO, getShengXiao, getLiunian, LIUNIAN_YEARS, LIUNIAN_2027_DETAIL } from '@/lib/shengxiaoData'
+import { SHENGXIAO, getShengXiao, getLiunian, LIUNIAN_YEARS, LIUNIAN_2027_DETAIL, TAISUI_TITLE_WORD } from '@/lib/shengxiaoData'
 import { hantAlternates } from '@/lib/hant-seo'
 import { toHant, hantTaiSui } from '@/lib/hant'
 import { pickBySlug, LIUNIAN_ARTICLE_SLUGS } from '@/lib/relatedArticles'
@@ -39,7 +39,8 @@ export async function generateMetadata({ params }: { params: Promise<{ animal: s
   if (!sx) return { title: '頁面未找到' }
   const ln = getLiunian(sx, Number(year))
   const name = toHant(sx.name)
-  const taiSuiWord = { '值': '本命年值太歲', '冲': '沖太歲', '害': '害太歲', '刑': '刑太歲', '合': '合太歲', '平': '運勢' }[ln.relation]
+  // ★ 词表来自单一来源，繁体由 toHant 派生（禁止再手写第二份繁体映射——那是第 32 轮缺陷的成因）
+  const taiSuiWord = toHant(TAISUI_TITLE_WORD[ln.relation])
   return {
     title: `${year}年屬${name}運勢詳解：${taiSuiWord}，事業財運感情健康全解`,
     description: `${year}${ln.ganZhi}年屬${name}人運勢如何？${toHant(ln.relationText)}詳解屬${name}${year}年事業、財運、感情婚姻、健康注意事項與開運化解建議。`,
