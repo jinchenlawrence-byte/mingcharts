@@ -276,6 +276,58 @@ console.log(creditFail === 0
   ? '✓ 账本：份数映射/余额求和/金额容差（$15 与 $180 必须不匹配）；webhook 接线 + error 告警；SQL 含两个幂等索引 + RLS'
   : `✗ 账本失败 ${creditFail} 处`)
 
+// ---------- ⑨ 来源披露（2026-10-23 新增）----------
+// 判的是什么：报告开头必须声明「由明理引擎生成」，且繁简两版与转换层一致；
+// 伙伴不能靠"暗示手写"卖钱 —— 这是 §3-2 的落地断言。
+{
+  let discFail = 0
+  const notePath = near('src/components/reports/ReportOriginNote.tsx')
+  const noteSrc = readFileSync(notePath, 'utf8')
+
+  // 组件必须导出两串常量（繁体是预生成，避免客户端引 opencc-js）
+  const { REPORT_ORIGIN_HANS, REPORT_ORIGIN_HANT } = await import('../src/components/reports/ReportOriginNote.tsx')
+  if (typeof REPORT_ORIGIN_HANS !== 'string' || REPORT_ORIGIN_HANS.length < 20) {
+    discFail++; fail('ReportOriginNote 缺简体来源说明常量')
+  }
+  if (!REPORT_ORIGIN_HANS.includes('引擎') || !REPORT_ORIGIN_HANS.includes('经典')) {
+    discFail++; fail('来源说明没写清「引擎生成」与「所引经典」')
+  }
+  // ★ 繁体常量必须等于 toHant(简体) —— 否则两版会漂移（改文案只改一边就会红）
+  const { toHant } = await import('../src/lib/hant.ts')
+  if (toHant(REPORT_ORIGIN_HANS) !== REPORT_ORIGIN_HANT) {
+    discFail++; fail(`繁体来源说明与 toHant(简体) 不一致：\n    toHant => ${toHant(REPORT_ORIGIN_HANS)}\n    常量   => ${REPORT_ORIGIN_HANT}`)
+  }
+  // 繁体常量必须真的是繁体（防有人把简体复制过去）
+  if (REPORT_ORIGIN_HANT.includes('报告') || REPORT_ORIGIN_HANT.includes('经典') || REPORT_ORIGIN_HANT.includes('解读')) {
+    discFail++; fail('繁体来源说明里混入了简体字')
+  }
+
+  // 分享页（伙伴交付给客户的那个页面）必须渲染它，且放在标题下方而不是页脚
+  const shareSrc = readFileSync(near('src/app/r/[token]/page.tsx'), 'utf8')
+  if (!shareSrc.includes('ReportOriginNote')) { discFail++; fail('分享页未渲染来源说明（客户看不到披露）') }
+  if (!/<h1 className="hw-c-h1">\{row!\.title\}<\/h1>\s*\{?\/?\*?[\s\S]{0,220}ReportOriginNote/.test(shareSrc)) {
+    discFail++; fail('来源说明不在报告标题附近（放在页脚等于没有披露）')
+  }
+  if (!shareSrc.includes('LOCALE_COOKIE')) { discFail++; fail('分享页未按访客语言切换披露文案') }
+
+  // 落地页必须把「分工」讲明，并给出披露话术（伙伴才推得动）
+  const landingSrc = readFileSync(near('src/components/partners/PartnerLanding.tsx'), 'utf8')
+  for (const must of ['分工说清楚', '我用工具按你的盘生成的', '不该暗示是手写']) {
+    if (!landingSrc.includes(must)) { discFail++; fail(`伙伴落地页缺少「${must}」`) }
+  }
+
+  // 协议要点必须把「禁止宣称自研」升级为「披露义务」+ 违约条款兜底
+  const doc = readFileSync(near('docs/推广-命理师白标方案.md'), 'utf8')
+  for (const must of ['披露义务', '不得以任何方式暗示报告为本人手写', 'C-1. 给伙伴的披露话术', '问题不在"用工具"，在"用工具还宣称手工"']) {
+    if (!doc.includes(must)) { discFail++; fail(`白标方案缺「${must}」`) }
+  }
+  if (!/10\. 违约[\s\S]{0,120}暗示手写/.test(doc)) { discFail++; fail('违约条款未覆盖「暗示手写」') }
+
+  console.log(discFail === 0
+    ? '✓ 披露：报告开头声明引擎生成；繁简两版与 toHant 一致；落地页给话术；协议升级为义务 + 违约兜底'
+    : `✗ 披露失败 ${discFail} 处`)
+}
+
 // ---------- 牙口自检 ----------
 console.log('—— 牙口自检（守护断言本身）——')
 let toothFail = 0

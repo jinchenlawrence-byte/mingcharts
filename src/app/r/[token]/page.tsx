@@ -1,7 +1,10 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { cookies } from 'next/headers'
 import { createServerSupabase } from '@/lib/supabase'
 import { isShareTokenShape, isShareActive, shareInactiveReason } from '@/lib/reportShare'
+import { LOCALE_COOKIE, parseLocale } from '@/lib/locale'
+import ReportOriginNote from '@/components/reports/ReportOriginNote'
 import { REPORT_KIND_LABELS, type ReportKind } from '@/lib/reportSave'
 import SharePrintBar from '@/components/reports/SharePrintBar'
 import ShareFatebookView from '@/components/reports/ShareFatebookView'
@@ -89,6 +92,8 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
 
   const kindLabel = REPORT_KIND_LABELS[row!.kind] ?? '报告'
   const created = new Date(row!.created_at)
+  // 披露文案跟随访客语言（伙伴的客户多为繁体读者；简体为默认）
+  const isHant = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value) === 'zh-Hant'
 
   return (
     <main className="hw-page">
@@ -100,6 +105,8 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
             {kindLabel} · 生成于 {created.getFullYear()}年{created.getMonth() + 1}月{created.getDate()}日
           </p>
           <h1 className="hw-c-h1">{row!.title}</h1>
+          {/* 来源披露放标题下方（不是页脚）：这是伙伴交付给客户的第一屏，客户端辨别成本最低 */}
+          <ReportOriginNote hant={isHant} className="mt-2" />
         </header>
 
         {row!.kind === 'fatebook' && <ShareFatebookView paid={fatebookPaid} />}
