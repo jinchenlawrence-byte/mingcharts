@@ -63,24 +63,31 @@
 
 # 三、A 侧发现的问题（均非本轮引入，属既有缺口）
 
-## 3-1. ★ 文章详情页与分类页没有 hreflang（建议开一轮补）
+## 3-1. ★ 更正：文章页 hreflang 并没有缺（A 侧误判，已撤回）
 
-实测：
+原先我判定「文章详情页与分类页没有 hreflang」，依据是：
 
 ```
-/article/shenme-shi-bazi                → hreflang 数 0
-/tw/article/shenme-shi-bazi             → hreflang 数 0
-/article/haiwai-chusheng-paipan         → hreflang 数 0
+curl | grep -c 'hreflang'   → 0
 ```
 
-代码侧确认：`hantAlternates` 只用在 `/article`（索引）、`/partners`、`/tw/layout` 三处，
-**文章详情页与分类页从来没接**。
+**这个判据错了。** Next.js 渲染出的属性是驼峰 `hrefLang`，我用了小写正则，所以全部漏掉。
+改用 `(?i)hreflang` 复核后的事实：
 
-影响：88 篇 × 2 版本 ≈ 176 个页面缺互指，Google 只能靠 sitemap 与内链猜配对。
-简体/繁体内容确有差异（字形不同），被判重复的风险不高，但会稀释互指权重。
+| URL | 实测标签（去重后） |
+|---|---|
+| `/article/haiwai-chusheng-paipan` | zh-Hans / x-default / zh-Hant / zh-TW / zh-HK / zh-MO —— **6 条齐全** |
+| `/tw/article/haiwai-chusheng-paipan` | 同上 6 条，互指正确（x-default → 简体） |
+| `/article/shenme-shi-bazi`（老文） | 6 条齐全 |
+| `/article/bazi`（分类页） | 6 条齐全 |
+| `/tw/article/bazi` | 互指正确 |
 
-**建议**：单开一轮「文章页 hreflang 覆盖」，把 `hantAlternates(hansPath)` 接到
-`/article/[slug]` 与 `/article/[category]` 的 `generateMetadata`。优先级 P1（成本低、页面数多）。
+结论：**hreflang 覆盖是完整的，不需要补。** 我原建议的「第 30 轮开 hreflang」作废。
+
+> 教训（写进 A 侧自查清单）：核对 HTML 属性一律用大小写不敏感匹配；
+> 且**先在一个已知正确的页面（如 /partners）上校准判据**，再去判可疑页面。
+> 我这次跳过了校准这一步，直接把工具缺陷当成了产品缺陷。
+
 
 ## 3-2. 根 JSON-LD 在繁体页注入 zh-CN 与简体描述（已知限制，再次确认）
 
@@ -120,12 +127,14 @@ PASS
 - 定位与文风符合任务书（知识文章，不是产品页；无 CTA 招揽味）
 - 已提交 IndexNow，静待抓取
 
-**下一轮建议（按 ROI）：**
+**下一轮建议（按 ROI，已按 §3-1 的更正调整）：**
 
-1. **P1** 文章页 hreflang 覆盖（§3-1）——成本低、覆盖 176 页
-2. **P2** 把 `indexnow.mjs` 的路径改为「从 sitemap 差集自动算」而不是手工维护，
-   避免以后每加一篇都要人来记得提交
-3. **P3** 根 JSON-LD 的 `inLanguage` 按页面语言输出（§3-2 的根治）
+1. **P1** `indexnow.mjs` 的默认集合改为**从文章库派生**——现在靠手工维护路径列表，
+   每加一篇都要人记得提交，本轮的「海外排盘」就差点漏（是我手工补的）。
+   派生化之后永不再漏，且可用测试断言「每篇文章都在默认集合里」。
+2. **P2** 根 JSON-LD 的 `inLanguage` / 描述按页面语言输出（§3-2 的根治）：
+   现在所有繁体页都声明 `zh-CN`，属既有脏数据，影响面约 200+ 页。
+3. **P3** 把 `hrefLang` 这类大小写判据写进 A 侧自查清单，避免再次误判（本轮已发生一次）。
 
 ---
 
