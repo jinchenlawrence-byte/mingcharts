@@ -52,7 +52,8 @@ console.log('—— ① 文章 / 分类 / 生肖 / 核心页 简繁齐全 ——
   if (missAnimal.length) fail(`生肖简繁缺失 ${missAnimal.length} 个：${missAnimal.join(', ')}`)
   else console.log(`  · 生肖 ${INDEXNOW_ANIMALS.length} 个 × ${INDEXNOW_LIUNIAN_YEAR} × 简繁 2 条 全部在集合内`)
 
-  const CORE = ['/', '/partners', '/shengxiao', '/liunian', '/tw', '/tw/partners', '/tw/shengxiao', '/tw/liunian']
+  // ★ 核心页 7 条：繁体侧无 /tw/liunian（线上 404，第 31 轮剔除）
+  const CORE = ['/', '/partners', '/shengxiao', '/liunian', '/tw', '/tw/partners', '/tw/shengxiao']
   const missCore = CORE.filter((p) => !SET.has(abs(p)))
   if (missCore.length) fail(`核心页缺失 ${missCore.length} 条：${missCore.join(', ')}`)
   else console.log(`  · 核心页 ${CORE.length} 条全部在集合内`)
@@ -78,16 +79,16 @@ console.log('—— ② 无重复 / 全部以 BASE 开头 / 无重复斜杠 —�
 // ---------- ③ 条数公式 ----------
 console.log('—— ③ 条数公式 ——')
 {
-  const expect = 8 + 2 * articles.length + 2 * ARTICLE_CATEGORIES.length + 2 * INDEXNOW_ANIMALS.length
+  const expect = 7 + 2 * articles.length + 2 * ARTICLE_CATEGORIES.length + 2 * INDEXNOW_ANIMALS.length
   eq(URLS.length, expect, '默认集合条数')
-  console.log(`  · 8 + 2×${articles.length} + 2×${ARTICLE_CATEGORIES.length} + 2×${INDEXNOW_ANIMALS.length} = ${expect}`)
+  console.log(`  · 7 + 2×${articles.length} + 2×${ARTICLE_CATEGORIES.length} + 2×${INDEXNOW_ANIMALS.length} = ${expect}`)
 }
 
 // ---------- ④ 繁体侧下限 ----------
 console.log('—— ④ 繁体侧条数下限 ——')
 {
   const twCount = URLS.filter((u) => u.startsWith(`${INDEXNOW_BASE}/tw/`) || u === `${INDEXNOW_BASE}/tw`).length
-  const floor = articles.length + ARTICLE_CATEGORIES.length + INDEXNOW_ANIMALS.length + 4
+  const floor = articles.length + ARTICLE_CATEGORIES.length + INDEXNOW_ANIMALS.length + 3
   if (twCount < floor) fail(`繁体条数 ${twCount} < 下限 ${floor}（/tw 被漏掉？）`)
   else console.log(`  · 繁体侧 ${twCount} 条（下限 ${floor}）`)
 }

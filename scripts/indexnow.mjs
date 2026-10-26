@@ -9,6 +9,7 @@
  *   npm run seo:indexnow -- --dry-run --all  # 同上；--all 会先拉 sitemap 计数（不碰 IndexNow 端点）
  *
  * 默认集合的唯一数据源：src/lib/indexnowPaths.ts（articles.ts + 硬编码路由树）。
+ * 提交前建议先跑：npm run verify:indexnow-live   # 确认集合内无 404
  * 前提：public/<KEY>.txt 已部署且内容与 KEY 一致，否则搜索引擎会拒绝。
  */
 import { indexnowDefaultPaths } from '../src/lib/indexnowPaths.ts'
