@@ -75,4 +75,8 @@ export const LIUNIAN_ARTICLE_SLUGS = [
   'liunian-zenme-kan',
   '2027-fantaishui',
   '2027-dingwei-nian-yunshi',
+  // 第 35 轮：2027 安太岁内容簇（三篇互为推荐，也接进流年页的延伸阅读池）
+  '2027-an-taisui-zenme-zuo',
+  '2027-fan-taisui-shengxiao',
+  'an-taisui-yao-zhunbei-shenme',
 ] as const
