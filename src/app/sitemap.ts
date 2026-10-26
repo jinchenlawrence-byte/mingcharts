@@ -97,6 +97,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const hantPages: MetadataRoute.Sitemap = [
     { url: `${BASE_URL}/tw`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/tw/shengxiao`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/tw/liunian`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/tw/partners`, changeFrequency: 'monthly', priority: 0.7 },
     ...SHENGXIAO.map(s => ({
       url: `${BASE_URL}/tw/shengxiao/${s.slug}`,

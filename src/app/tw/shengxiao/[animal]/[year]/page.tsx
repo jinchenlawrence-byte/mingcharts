@@ -185,9 +185,10 @@ export default async function HantShengXiaoLiunian({ params }: { params: Promise
           <p className="hw-c-dx">
             生肖運勢是十二分之一的共性參考；結合完整八字（四柱、大運、流年）分析的個人運勢才精準。
           </p>
-          <Link href="/bazi" className="hw-c-btnBig">輸入時辰，排我的八字 →</Link>
+          <Link href="/" className="hw-c-btnBig">輸入時辰，排我的八字 →</Link>
+          <p className="text-xs text-ink-light/60 mt-2">排盤頁目前為簡體版</p>
           <p className="mt-4 text-sm text-ink-light/70">
-            或直接生成 {year} 年年運報告（{formatPriceUSD(SKUS.annual_report.priceUSD)}，一次覆蓋今年／明年／後年三年，各含流月節奏）
+            或<Link href="/tw/liunian" className="hw-c-link">直接生成 {year} 年年運報告（{formatPriceUSD(SKUS.annual_report.priceUSD)}，一次覆蓋今年／明年／後年三年，各含流月節奏）→</Link>
           </p>
         </div>
 

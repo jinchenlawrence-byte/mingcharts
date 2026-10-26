@@ -18,11 +18,12 @@ export const INDEXNOW_ANIMALS = [
 /** 默认通知的流年页年份（年底至春节的「来年运势」窗口） */
 export const INDEXNOW_LIUNIAN_YEAR = 2027
 
-/** 核心入口（简体 4 条 + 繁体 3 条，顺序固定）
- *  ★ 繁体侧没有流年索引页：/tw/liunian 线上 404，第 31 轮已剔除（勿补回，除非该页真的上线）。 */
+/** 核心入口（简体 4 条 + 繁体 4 条，顺序固定）
+ *  ★ 第 33 轮：/tw/liunian 已上线（繁体年运入口页），故加回 ——
+ *    第 31 轮曾因该路径线上 404 而剔除，与本行不矛盾：页面是否存在才是判据。 */
 const CORE_PATHS = [
   '/', '/partners', '/shengxiao', '/liunian',
-  '/tw', '/tw/partners', '/tw/shengxiao'
+  '/tw', '/tw/partners', '/tw/shengxiao', '/tw/liunian'
 ]
 
 /** 结构化的最小入参：只要 slug，便于测试注入假数据做牙口自检 */

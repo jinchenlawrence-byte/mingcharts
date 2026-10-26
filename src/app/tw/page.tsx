@@ -26,9 +26,10 @@ export default function HantHome() {
           想更精準再看完整命盤：四柱、十神、藏干、大運、流年，一次算清。
         </p>
         <div className="flex flex-wrap gap-3 mt-4">
-          <Link href="/bazi" className="hw-c-btnBig">免費排八字 →</Link>
+          <Link href="/" className="hw-c-btnBig">免費排八字 →</Link>
           <Link href="/tw/shengxiao" className="hw-c-back self-center">先看生肖 →</Link>
         </div>
+        <p className="text-xs text-ink-light/60 mt-2">排盤頁目前為簡體版</p>
       </section>
 
       <section className="hw-c-box mb-6">

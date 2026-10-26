@@ -67,7 +67,8 @@ export default function HantShengXiaoIndex() {
         <p className="hw-c-dx">
           同一屬相的人命運差別很大，因為年月日時四柱各不相同。輸入精確出生時辰，看專屬命盤。
         </p>
-        <Link href="/bazi" className="hw-c-btnBig">免費排盤 →</Link>
+        <Link href="/" className="hw-c-btnBig">免費排盤 →</Link>
+        <p className="text-xs text-ink-light/60 mt-2">排盤頁目前為簡體版</p>
       </div>
 
       <p className="text-center text-xs text-ink-light/40 mt-6">

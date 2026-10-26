@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import LocaleSync from '@/components/LocaleSync'
+import HantLangSwitch from '@/components/HantLangSwitch'
 import { HANT_HREFLANG, hantAlternates } from '@/lib/hant-seo'
 
 // 繁体树根布局：lang 必须与内容一致（zh-Hant），否则 Google 会按 zh-CN 处理，
@@ -35,10 +36,10 @@ export default function HantLayout({ children }: { children: React.ReactNode }) 
           </Link>
           <nav className="flex items-center gap-4 text-sm text-ink-light">
             <Link href="/tw/shengxiao" className="hover:text-ink">生肖</Link>
-            <Link href="/bazi" className="hover:text-ink">排盤</Link>
+            <Link href="/" className="hover:text-ink">排盤</Link>
             <Link href="/article" className="hover:text-ink">命理知識</Link>
-            {/* 语言切换：回简体同路径（路径映射由 lib/hant.twinPath 保证与 hreflang 一致） */}
-            <Link href="/shengxiao" className="text-ink-light/40 hover:text-ink">简体</Link>
+            {/* 语言切换：由 lib/hant.twinPath 按当前路径推导（第 33 轮修：原写死 /shengxiao） */}
+            <HantLangSwitch />
           </nav>
         </div>
       </header>
