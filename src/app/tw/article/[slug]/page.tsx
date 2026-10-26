@@ -161,7 +161,7 @@ export default async function HantArticlePage({ params }: { params: Promise<{ sl
           <p className="hw-c-dx">
             {cta ? toHant(cta.desc) : '輸入出生時辰，獲取您的八字命盤、格局旺衰、大運流年完整分析'}
           </p>
-          <Link href={cta?.href ?? '/bazi'} className="hw-c-btnBig">{cta ? toHant(cta.text) : '免費排盤'} →</Link>
+          <Link href={cta ? (cta.hantHref ?? cta.href) : '/bazi'} className="hw-c-btnBig">{cta ? toHant(cta.text) : '免費排盤'} →</Link>
           {cta?.priceSku && (
             <p className="mt-3 text-xs text-ink-light/60">
               {formatPriceUSD(SKUS[cta.priceSku].priceUSD)} · 一次性購買，解鎖後永久回看

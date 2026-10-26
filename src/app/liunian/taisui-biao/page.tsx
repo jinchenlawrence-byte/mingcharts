@@ -57,6 +57,9 @@ export default function TaisuiTablePage() {
           <p className="text-sm text-ink-light mt-3">
             想看自己这一年的完整情况：<Link href="/" className="hw-c-link">排一次盘 →</Link>
           </p>
+          <p className="text-sm text-ink-light mt-2">
+            只看 2027 丁未年：<Link href="/liunian/2027" className="hw-c-link">2027 年运势总览（谁犯太岁、各是什么关系）→</Link>
+          </p>
         </section>
 
         <p className="text-center text-xs text-ink-light/40">

@@ -178,6 +178,11 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
             {yearNum === 2027 && (
               <>
                 <li>
+                  <Link href="/liunian/2027" className="hw-c-link">
+                    • 2027 丁未年总览：12 个属相与太岁的关系一页看完
+                  </Link>
+                </li>
+                <li>
                   <Link href="/article/2027-dingwei-nian-yunshi" className="hw-c-link">
                     • 2027丁未年运势详解：犯太岁生肖与五行气质
                   </Link>

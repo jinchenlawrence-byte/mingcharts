@@ -36,8 +36,10 @@ function yearHref(base: string, animal: string, year: number) {
   return `${base}/shengxiao/${animal}/${year}`
 }
 
-export default function TaisuiTable({ hant = false }: { hant?: boolean }) {
+// focusYear：只高亮某一列（如 2027 落地页）。不传时仍高亮「今年」，与既有行为完全一致。
+export default function TaisuiTable({ hant = false, focusYear }: { hant?: boolean; focusYear?: number }) {
   const thisYear = new Date().getFullYear()
+  const focus = focusYear ?? thisYear
   const years = LIUNIAN_YEARS
   const animalHref = (slug: string) => `${hant ? '/tw' : ''}/shengxiao/${slug}`
   const label = (r: Relation) => (hant ? toHant(RELATION_LABEL_HANS[r]) : RELATION_LABEL_HANS[r])
@@ -57,7 +59,7 @@ export default function TaisuiTable({ hant = false }: { hant?: boolean }) {
                 key={y}
                 className="py-2 px-2 text-center whitespace-nowrap"
                 style={
-                  y === thisYear
+                  y === focus
                     ? { backgroundColor: 'rgba(185,65,52,0.08)', color: '#B94134', fontWeight: 600 }
                     : undefined
                 }

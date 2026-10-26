@@ -25,6 +25,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/liunian`, changeFrequency: 'monthly', priority: 0.7 },
     // 可引用资产页：12 生肖 × 8 年太岁对照表（第 33 轮新增，写得流年文的人会引这张表）
     { url: `${BASE_URL}/liunian/taisui-biao`, changeFrequency: 'yearly', priority: 0.7 },
+    // 2027 丁未年落地页（第 35 轮）：窗口期主落地页，春节前搜索高峰集中在这里
+    { url: `${BASE_URL}/liunian/2027`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${BASE_URL}/geo`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/daily`, changeFrequency: 'daily', priority: 0.7 }
   ]
@@ -101,6 +103,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/tw/shengxiao`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/tw/liunian`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/tw/liunian/taisui-biao`, changeFrequency: 'yearly', priority: 0.7 },
+    // 2027 丁未年落地页（繁体，第 35 轮）：台湾／香港的搜索高峰在 12 月中到 1 月底
+    { url: `${BASE_URL}/tw/liunian/2027`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${BASE_URL}/tw/partners`, changeFrequency: 'monthly', priority: 0.7 },
     ...SHENGXIAO.map(s => ({
       url: `${BASE_URL}/tw/shengxiao/${s.slug}`,

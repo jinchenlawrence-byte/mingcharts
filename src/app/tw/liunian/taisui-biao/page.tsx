@@ -57,6 +57,9 @@ export default function HantTaisuiTablePage() {
           想看自己這一年的完整情況：<Link href="/" className="hw-c-link">排一次盤 →</Link>
           <span className="text-xs text-ink-light/60 ml-2">排盤頁目前為簡體版</span>
         </p>
+        <p className="text-sm text-ink-light mt-2">
+          只看 2027 丁未年：<Link href="/tw/liunian/2027" className="hw-c-link">2027 年運勢總覽（誰犯太歲、各是什麼關係）→</Link>
+        </p>
       </section>
 
       <p className="text-center text-xs text-ink-light/40">

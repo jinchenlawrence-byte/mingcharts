@@ -171,6 +171,13 @@ export default async function HantShengXiaoLiunian({ params }: { params: Promise
                 • 十二生肖流年運勢總覽（2024–2031）
               </Link>
             </li>
+            {yearNum === 2027 && (
+              <li>
+                <Link href="/tw/liunian/2027" className="hw-c-link">
+                  • 2027 丁未年總覽：12 個屬相與太歲的關係一頁看完
+                </Link>
+              </li>
+            )}
             {/* 流年方法论与犯太岁专题：给 96 个流年页一条通向文章库的路 */}
             {relatedReading.map((a) => (
               <li key={a.slug}>
