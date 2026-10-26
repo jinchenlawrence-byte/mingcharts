@@ -114,8 +114,38 @@ if (!page.includes('仅供参考') && !page.includes('不构成')) { pageFail++;
 if (!page.includes('由 明理 mingcharts.com 引擎生成')) { pageFail++; fail('分享页缺「由 明理引擎生成」页脚') }
 console.log(pageFail === 0 ? '✓ 安全：noindex / force-dynamic / 形状校验 / 有效性校验 / 显式字段 / 免责+品牌页脚' : `✗ 安全失败 ${pageFail} 处`)
 
-// ---------- ⑥ 打印 ----------
-console.log('—— ⑥ 打印样式 ——')
+// ---------- ⑤B OG 卡片与转发按钮（第 35 轮） ----------
+// 断的是什么：① 有 OG/Twitter 卡片（Line/微信预览不能空白）
+//             ② 预览文案【不含具体生辰】（预览卡会被二次转发）
+//             ③ 转发按钮只有 Line / WhatsApp / 复制，【不得出现消费端导流】
+console.log('—— ⑤B OG 卡片与转发 ——')
+let ogFail = 0
+{
+  if (!page.includes('export async function generateMetadata')) { ogFail++; fail('分享页缺 generateMetadata（OG 卡片无处生成）') }
+  if (!page.includes('openGraph')) { ogFail++; fail('分享页缺 openGraph（Line/微信预览会是空白）') }
+  if (!/twitter:\s*\{/.test(page)) { ogFail++; fail('分享页缺 twitter 卡片') }
+  if (!page.includes('/og-report.png')) { ogFail++; fail('分享页 OG 图未指向 /og-report.png') }
+  // ★ 隐私：generateMetadata 里不得引用 row.title（标题含出生日期），只能用品牌 + 类型
+  const metaBlock = page.slice(page.indexOf('generateMetadata'), page.indexOf('const DISCLAIMER'))
+  if (/row\.title|title:\s*row/.test(metaBlock)) { ogFail++; fail('OG 文案引用了报告标题（含生辰，会被二次转发泄露）') }
+  if (/brand_name|kindLabel/.test(metaBlock) === false) { ogFail++; fail('OG 文案未使用「品牌 + 报告类型」') }
+
+  const bar2 = readFileSync(near('src/components/reports/SharePrintBar.tsx'), 'utf8')
+  if (!bar2.includes('social-plugins.line.me')) { ogFail++; fail('缺「转发到 Line」按钮') }
+  if (!bar2.includes('wa.me')) { ogFail++; fail('缺「转发到 WhatsApp」按钮') }
+  if (!bar2.includes('clipboard')) { ogFail++; fail('缺「复制链接」按钮') }
+  // ★ 红线：分享页操作条不得出现任何指向消费端的入口（伙伴协议：不抢伙伴客户）
+  const forbidden = ['href="/"', 'href="/pricing"', '/bazi', '/liunian', '免费排盘', '免费算']
+  const hit = forbidden.filter((h) => bar2.includes(h))
+  if (hit.length) { ogFail++; fail(`操作条出现消费端导流：${hit.join(', ')}（违反「不在报告里放引导注册的广告」）`) }
+  // 转发文案不得带出生日期：只允许品牌 + 类型（匹配字段引用，不匹配注释里的说明文字）
+  if (/birthText|row\.title|input\.year/.test(bar2)) { ogFail++; fail('转发文案里出现了出生日期字段') }
+}
+console.log(ogFail === 0
+  ? '✓ OG：有 OG/Twitter 卡片、文案只用品牌+类型（不含生辰）、转发只有 Line/WhatsApp/复制、无消费端导流'
+  : `✗ OG/转发失败 ${ogFail} 处`)
+
+// ---------- ⑥ 打印样式 ——
 let printFail = 0
 const css = readFileSync(near('src/app/globals.css'), 'utf8')
 if (!css.includes('@media print')) { printFail++; fail('globals.css 缺 @media print') }

@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import { cache } from 'react'
 import { cookies } from 'next/headers'
 import { createServerSupabase } from '@/lib/supabase'
-import { isShareTokenShape, isShareActive, shareInactiveReason } from '@/lib/reportShare'
+import { isShareTokenShape, isShareActive, shareInactiveReason, shareUrl } from '@/lib/reportShare'
 import { LOCALE_COOKIE, parseLocale } from '@/lib/locale'
 import ReportOriginNote from '@/components/reports/ReportOriginNote'
 import { REPORT_KIND_LABELS, type ReportKind } from '@/lib/reportSave'
@@ -25,13 +26,61 @@ import type { LiunianResultData } from '@/components/reports/LiunianResultView'
 // ★ noindex：分享页不进搜索引擎（客户隐私 + 防重复内容稀释正页）。
 export const dynamic = 'force-dynamic'
 
-export const metadata: Metadata = {
-  title: '报告分享 | 明理',
-  description: '明理命理报告分享页。内容为传统文化分析，仅供参考娱乐。',
-  robots: { index: false, follow: false, nocache: true },
+// OpenGraph / Twitter 卡片（第 35 轮）——
+//   伙伴把链接发到 Line / WhatsApp 时，没有 OG 就是一片空白预览。
+// ★ 隐私硬约束：OG 标题/描述【不得包含具体生辰】。
+//   报告标题里有出生日期，但预览卡会被再次转发到群里 —— 生辰不该出现在那里。
+//   所以这里只用「品牌 + 报告类型」，不引用 row.title。
+export async function generateMetadata({ params }: { params: Promise<{ token: string }> }): Promise<Metadata> {
+  const { token } = await params
+  const base: Metadata = {
+    title: '报告分享 | 明理',
+    description: '明理命理报告分享页。内容为传统文化分析，仅供参考娱乐。',
+    robots: { index: false, follow: false, nocache: true },
+  }
+  if (!isShareTokenShape(token)) return base
+
+  const row = await loadShareMeta(token)
+  if (!row) return base
+
+  const kindLabel = REPORT_KIND_LABELS[row.kind] ?? '命理报告'
+  const brand = (row.brand_name ?? '').trim()
+  const title = brand ? `${brand} · ${kindLabel}` : `${kindLabel} · 明理`
+  const description = '逐条注明所引经典的命理报告，可在页面内打印或存为 PDF。'
+
+  return {
+    ...base,
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: 'article',
+      siteName: row.brand_name ? brand : '明理 mingcharts.com',
+      images: [{ url: '/og-report.png', width: 1200, height: 630, alt: title }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title,
+      description,
+      images: ['/og-report.png'],
+    },
+  }
 }
 
 const DISCLAIMER = '本报告为传统命理民俗文化分析，仅供参考娱乐，不构成医疗、投资、婚姻或其他专业建议。'
+
+/** generateMetadata 与页面共用的一次查询（cache 保证同一请求内只查一次） */
+const loadShareMeta = cache(async (token: string) => {
+  const admin = createServerSupabase()
+  const { data } = await admin
+    .from('reports')
+    .select('kind,brand_name,share_expires_at,share_revoked_at')
+    .eq('share_token', token)
+    .eq('status', 'ready')
+    .maybeSingle()
+  return (data as { kind: ReportKind; brand_name: string | null } | null) ?? null
+})
 
 interface ShareRow {
   kind: ReportKind
@@ -109,7 +158,11 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
   return (
     <main className="hw-page">
       <div className="hw-wrap hw-c-pg hw-print">
-        <SharePrintBar />
+        <SharePrintBar
+          brandName={row!.brand_name}
+          kindLabel={kindLabel}
+          shareUrl={shareUrl(token)}
+        />
 
         <header className="mb-6">
           <p className="text-xs text-ink-light/60">
