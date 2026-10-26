@@ -189,14 +189,15 @@ for (const want of ['/shengxiao/shu', '/bazi', '/article']) {
   if (!has(want)) { siteFail++; fail(`sitemap 丢了原有 ${want}`) }
 }
 const twCount = urls.filter((u) => u.includes('/tw')).length
-// 由构成推导而不是写死数字：落地页 1 + 生肖索引 1 + 伙伴页 1 + 年运入口页 1
+// 由构成推导而不是写死数字：落地页 1 + 生肖索引 1 + 伙伴页 1 + 年运入口页 1 + 太岁对照表 1
 //   + 12 属相 + 12×8 流年 + 文章索引 1 + 分类数 + 文章数
-// ★ 第 33 轮 +1：新增 /tw/liunian（繁体年运报告入口页，修 $19.99 死文本的落点）
-const expectTw = 4 + SHENGXIAO.length + SHENGXIAO.length * LIUNIAN_YEARS.length
+// ★ 第 33 轮 +1：/tw/liunian（繁体年运入口页，修 $19.99 死文本的落点）
+// ★ 第 33 轮 +1：/tw/liunian/taisui-biao（太岁对照表，可引用资产页）
+const expectTw = 5 + SHENGXIAO.length + SHENGXIAO.length * LIUNIAN_YEARS.length
   + 1 + ARTICLE_CATEGORIES.length + articles.length
 if (twCount !== expectTw) {
   siteFail++
-  fail(`/tw 条目应为 ${expectTw}（落地页+生肖索引+伙伴页+年运入口页+${SHENGXIAO.length} 属相），实际 ${twCount}`)
+  fail(`/tw 条目应为 ${expectTw}（落地页+生肖索引+伙伴页+年运入口页+太岁表+${SHENGXIAO.length} 属相），实际 ${twCount}`)
 }
 // 简体页 title 模板不得被本次改动动过
 const hansPage = readFileSync(near('app/shengxiao/[animal]/page.tsx'), 'utf8')

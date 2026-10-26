@@ -23,6 +23,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/hemun`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/ziwei`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/liunian`, changeFrequency: 'monthly', priority: 0.7 },
+    // 可引用资产页：12 生肖 × 8 年太岁对照表（第 33 轮新增，写得流年文的人会引这张表）
+    { url: `${BASE_URL}/liunian/taisui-biao`, changeFrequency: 'yearly', priority: 0.7 },
     { url: `${BASE_URL}/geo`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/daily`, changeFrequency: 'daily', priority: 0.7 }
   ]
@@ -98,6 +100,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/tw`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/tw/shengxiao`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/tw/liunian`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE_URL}/tw/liunian/taisui-biao`, changeFrequency: 'yearly', priority: 0.7 },
     { url: `${BASE_URL}/tw/partners`, changeFrequency: 'monthly', priority: 0.7 },
     ...SHENGXIAO.map(s => ({
       url: `${BASE_URL}/tw/shengxiao/${s.slug}`,

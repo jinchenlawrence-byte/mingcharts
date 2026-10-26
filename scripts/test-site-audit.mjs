@@ -124,6 +124,14 @@ for (const file of allFiles) {
 let deadLink = 0
 for (const href of hrefs) {
   if (href === '/') continue
+  // 带扩展名的视为静态资源（public/ 下的文件），按文件是否存在判定，不当路由处理。
+  // ★ 第 33 轮加：/taisui-biao.png 这类下载链接不是路由，但文件缺失仍要判红。
+  if (/\.[a-z0-9]{2,5}$/i.test(href)) {
+    if (existsSync(root + '../public' + href)) continue
+    deadLink++
+    fail(`死链：静态资源 "${href}" 在 public/ 下不存在`)
+    continue
+  }
   if (routes.has(href)) continue
   const parts = href.split('/').filter(Boolean)
   if (parts.length > 1) {
