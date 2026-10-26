@@ -31,7 +31,12 @@ function makeMockAdmin(userId, { paidSku = 'annual_report' } = {}) {
     })
   }
   const matches = (row, table, filters) =>
-    row.__table === table && filters.every(([c, v]) => row[c] === v)
+    row.__table === table && filters.every(([c, v]) => {
+      // ★ 第 34 轮：reports.status 有默认值 'ready'（supabase/partner-v2.sql），
+      //   内存替身按数据库默认值补齐，否则显式 status 过滤会把未写该字段的老行当不存在。
+      if (table === 'reports' && c === 'status' && row.status === undefined) return v === 'ready'
+      return row[c] === v
+    })
   // ★ 并发窗口模拟（REPLY-23 发现②）：db.freezeAt 开启后，下一次 select 只能看到冻结点
   //   之前的行（模拟并发事务快照：loser 的 select 早于 winner 的 insert 提交）——
   //   一次性语义，消费后自动清除；insert 的唯一约束检查始终看全量。

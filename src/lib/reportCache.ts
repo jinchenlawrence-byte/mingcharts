@@ -192,6 +192,8 @@ export async function readReportCache(
     .eq('user_id', userId)
     .eq('kind', kind)
     .eq('cache_key', cacheKey)
+    // ★ 第 34 轮：只把 ready 行当缓存命中（伙伴自助的 pending/failed 行 result={} 不可复用）
+    .eq('status', 'ready')
     .maybeSingle()
   if (error || !data) return null
   return {

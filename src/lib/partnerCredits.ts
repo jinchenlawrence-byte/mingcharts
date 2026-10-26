@@ -134,10 +134,19 @@ export async function spendPartnerUnits(
   return { ok: true, balance: await getPartnerBalance(admin, input.userId) }
 }
 
-/** 人工调整（送试用额度 / 补发 / 纠错），ref 写原因便于审计 */
+/** 人工调整的 reason：adjust=运营补发/纠错；refund=伙伴报告生成失败退额（第 34 轮） */
+export type PartnerAdjustReason = 'adjust' | 'refund'
+
+/**
+ * 人工调整（送试用额度 / 补发 / 纠错 / 伙伴报告失败退额），ref 写原因便于审计。
+ * ★ 第 34 轮扩展 reason：伙伴自助 V2 的失败退额也走这里（账本保持单一写入口），
+ *   reason='refund' 与购买退款共用 idx_partner_credits_refund_ref 幂等索引，
+ *   ref 必须带前缀（如 `refund:<reportId>`）避免与支付单号撞号。
+ *   不传 reason 时行为与旧版完全一致（reason='adjust'、ref=note）。
+ */
 export async function adjustPartnerUnits(
   admin: SupabaseClient,
-  input: { userId: string; units: number; note: string }
+  input: { userId: string; units: number; note?: string; ref?: string; reason?: PartnerAdjustReason }
 ): Promise<{ ok: boolean; balance: number; error?: string }> {
   if (!Number.isInteger(input.units) || input.units === 0) {
     return { ok: false, balance: await getPartnerBalance(admin, input.userId), error: '调整份数必须是非零整数' }
@@ -145,8 +154,8 @@ export async function adjustPartnerUnits(
   const { error } = await admin.from('partner_credits').insert({
     user_id: input.userId,
     delta: input.units,
-    reason: 'adjust',
-    ref: input.note,
+    reason: input.reason ?? 'adjust',
+    ref: input.ref ?? input.note ?? null,
   } as never)
   if (error) {
     return { ok: false, balance: await getPartnerBalance(admin, input.userId), error: `调整失败：${error.message}` }

@@ -74,6 +74,8 @@ export default function ReportDetailPage() {
         .from('reports')
         .select('id,kind,title,result,input,created_at')
         .eq('id', id)
+        // ★ 第 34 轮：pending / failed 行不可展示（result={} 会渲染成空报告）
+        .eq('status', 'ready')
         .single()
       if (error || !data) {
         // 查不到 = 不存在或非本人（RLS 过滤），不区分展示

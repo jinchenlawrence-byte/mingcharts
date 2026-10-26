@@ -45,6 +45,13 @@ export default function MyReports() {
       const { data, error } = await supabase
         .from('reports')
         .select('id,kind,title,created_at,input')
+        // ★ 第 34 轮：伙伴自助 V2 会先落 pending 行（result={}）。列表只展示 ready，
+        //   否则生成中/失败的行会显示成一条空报告。
+        .eq('status', 'ready')
+        // ★ 第 34 轮：伙伴代客户生成的报告只在 /partner 工作台出现（request_id 非空），
+        //   不属于伙伴自己的报告资产；也避免命书行点进详情因缺 chart_id 走进死胡同。
+        //   老数据 request_id 为 NULL，展示行为不变。
+        .is('request_id', null)
         .order('created_at', { ascending: false })
       if (!error && data) setRows(data as ReportRow[])
       setLoading(false)
