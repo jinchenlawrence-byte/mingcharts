@@ -213,6 +213,22 @@ EXIT=0
 
 ## 七、已知缺口
 
+0. **线上端到端已跑通（2026-10-26，取代此前「未做线上端到端」的缺口）**：测试伙伴账号 `partner.test@mingcharts.com` 在 `/partner` 生成一份命书，真实库结果：
+
+```
+账本：+2 adjust (test-account-grant-2026-10-26)
+      -1 consume ref=10010758-e607-4bd1-ae53-4412fc6f49af
+余额：1 份
+
+reports：10010758-e607-4bd1-ae53-4412fc6f49af
+  kind=fatebook  status=ready  request_id=945e453d-be1e-4b87-bbfe-73ffb58f8f8d
+  brand=mimi老师命理 / +1 8679483675
+  share_token 已生成，有效期≈90 天
+  https://www.mingcharts.com/r/FTkygvXRApQab3afpRKAdS9iirRMhLYHd8lRfkNXS80
+```
+
+即：扣费 ref = 报告 id（幂等键）、status=ready、request_id 落库、品牌位落库、90 天有效，与设计一致。**未覆盖**：失败退额与真实并发仍需人为注入，线上未验证。
+
 1. **品牌位不支持 logo/图片**（任务书禁止对象存储，本轮只收两个文本字段）。
 2. **不能自助换绑/解绑伙伴身份**：资格由 `partner_credits` 有行决定，仍要靠运营 `--grant` / 购买；无行的账号永远看不到工作台（含余额 0 的老伙伴——有行但余额 0 可以进，看到充值提示）。
 3. **pending 行没有超时回收**：若生成进程被平台杀掉，该行会长期停在 `pending`，伙伴列表显示「生成中」；用同一 requestId 重试会拿到 409（不扣费），换新 requestId 会再扣一份。建议运营侧定期清 `status='pending' AND created_at < now()-interval '30 min'`。
