@@ -209,11 +209,12 @@ const twCount = urls.filter((u) => u.includes('/tw')).length
 // ★ 第 33 轮 +1：/tw/liunian（繁体年运入口页，修 $19.99 死文本的落点）
 // ★ 第 33 轮 +1：/tw/liunian/taisui-biao（太岁对照表，可引用资产页）
 // ★ 第 35 轮 +1：/tw/liunian/2027（2027 丁未年繁体落地页）
-const expectTw = 6 + SHENGXIAO.length + SHENGXIAO.length * LIUNIAN_YEARS.length
+// ★ 第 36 轮 +1：/tw/liunian/2028（2028 戊申年繁体落地页）
+const expectTw = 7 + SHENGXIAO.length + SHENGXIAO.length * LIUNIAN_YEARS.length
   + 1 + ARTICLE_CATEGORIES.length + articles.length
 if (twCount !== expectTw) {
   siteFail++
-  fail(`/tw 条目应为 ${expectTw}（落地页+生肖索引+伙伴页+年运入口页+太岁表+2027 落地页+${SHENGXIAO.length} 属相），实际 ${twCount}`)
+  fail(`/tw 条目应为 ${expectTw}（落地页+生肖索引+伙伴页+年运入口页+太岁表+2027/2028 落地页+${SHENGXIAO.length} 属相），实际 ${twCount}`)
 }
 // 简体页 title 模板不得被本次改动动过
 const hansPage = readFileSync(near('app/shengxiao/[animal]/page.tsx'), 'utf8')

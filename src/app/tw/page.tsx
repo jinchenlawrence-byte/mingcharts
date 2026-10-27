@@ -28,8 +28,10 @@ export default function HantHome() {
         <div className="flex flex-wrap gap-3 mt-4">
           <Link href="/" className="hw-c-btnBig">免費排八字 →</Link>
           {/* ★ 2027 窗口期主入口（第 35 轮）：春节 2027-02-06，搜索高峰在 12 月中到 1 月底。
-              放在首页首屏，让内链权重集中在窗口页上，而不是只从太岁表可达。 */}
+              放在首页首屏，让内链权重集中在窗口页上，而不是只从太岁表可达。
+              第 36 轮补 2028 双入口：GSC 实测点击已落在 2028 生肖页，2027 仍在窗口期，两个都留。 */}
           <Link href="/tw/liunian/2027" className="hw-c-btnBig">2027 丁未年運勢 →</Link>
+          <Link href="/tw/liunian/2028" className="hw-c-btnBig">2028 戊申年運勢 →</Link>
           <Link href="/tw/shengxiao" className="hw-c-back self-center">先看生肖 →</Link>
         </div>
         <p className="text-xs text-ink-light/60 mt-2">排盤頁目前為簡體版</p>
