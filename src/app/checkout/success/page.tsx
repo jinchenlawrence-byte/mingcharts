@@ -36,6 +36,11 @@ const DEFAULT_LANDING: Record<string, { href: string; label: string }> = {
   // ★ 档 C：会员订阅成功后落「会员中心」（权益不在「我的报告」里）
   member_monthly: { href: '/member', label: '进入会员中心' },
   member_yearly: { href: '/member', label: '进入会员中心' },
+  // ★ 第 35 轮：伙伴额度包。额度由 webhook 入账，不进「我的报告」也不产生 entitlement，
+  //   所以落点必须是伙伴工作台；否则付款成功会被扔到一个与本次购买无关的页面。
+  partner_credits_10: { href: '/partner', label: '进入伙伴工作台' },
+  partner_credits_50: { href: '/partner', label: '进入伙伴工作台' },
+  partner_credits_200: { href: '/partner', label: '进入伙伴工作台' },
 }
 
 function SuccessInner() {
@@ -209,17 +214,24 @@ function SuccessInner() {
               <h1 className="text-xl font-bold text-ink mb-2">
                 付款已完成，但解锁正在处理中
               </h1>
-              <p className="text-sm text-ink-light mb-4">
-                支付渠道与本站的状态同步有时会延迟。若 <strong>10 分钟后</strong>仍未解锁，
-                请用你的<strong>注册邮箱</strong>联系{' '}
-                <a
-                  href="mailto:hello@mingcharts.com"
-                  className="hw-c-blueU"
-                >
-                  hello@mingcharts.com
-                </a>
-                ，并附上以下业务单号，我们会人工核对补单。
-              </p>
+              {skuId.startsWith('partner_credits') ? (
+                <p className="text-sm text-ink-light mb-4">
+                  额度由支付回调自动入账，通常 1 分钟内到账。
+                  到账后打开<strong>伙伴工作台</strong>就能看到剩余份数，不用等邮件通知。
+                </p>
+              ) : (
+                <p className="text-sm text-ink-light mb-4">
+                  支付渠道与本站的状态同步有时会延迟。若 <strong>10 分钟后</strong>仍未解锁，
+                  请用你的<strong>注册邮箱</strong>联系{' '}
+                  <a
+                    href="mailto:hello@mingcharts.com"
+                    className="hw-c-blueU"
+                  >
+                    hello@mingcharts.com
+                  </a>
+                  ，并附上以下业务单号，我们会人工核对补单。
+                </p>
+              )}
               <p className="text-xs text-ink-light/60 bg-gold/5 rounded p-2 mb-6 break-all">
                 业务单号：{ref}
               </p>
