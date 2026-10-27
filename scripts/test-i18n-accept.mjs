@@ -175,7 +175,22 @@ for (const f of ['app/tw/page.tsx', 'app/tw/shengxiao/page.tsx', 'app/tw/shengxi
   const src = readFileSync(near(f), 'utf8')
   if (src.includes("from '@/components/Nav'")) { treeFail++; fail(`${f} 引用了简体 Nav，导航会混语言`) }
 }
-console.log(treeFail === 0 ? '✓ 结构：lang=zh-Hant、cookie 同步就位、落地页链 12 属相、详情页板块齐全、未混用简体导航' : `✗ 结构失败 ${treeFail} 处`)
+// ★ 第 35 轮：结构化数据的语言信号（这条不依赖 JS，是真正给搜索引擎看的）
+//   ① 根布局的 WebSite 实体【不得】写死 inLanguage —— 它在每个页面都输出，
+//      写 zh-CN 等于在 208 个繁体页里声明简体，与 hreflang 打架
+//   ② 繁体布局必须输出 WebPage 且 inLanguage=zh-Hant
+//   ③ <html lang> 无法按路由改（App Router 限制），但客户端必须做渐进修正
+const rootLayout = readFileSync(near('app/layout.tsx'), 'utf8')
+if (/inLanguage:\s*"zh-CN"/.test(rootLayout)) {
+  treeFail++
+  fail('根布局 WebSite 仍写死 inLanguage=zh-CN（会在全部繁体页声明简体）')
+}
+const twLayout = readFileSync(near('app/tw/layout.tsx'), 'utf8')
+if (!twLayout.includes('WebPageJsonLd')) { treeFail++; fail('繁体布局未输出 WebPageJsonLd') }
+if (!twLayout.includes('inLanguage="zh-Hant"')) { treeFail++; fail('繁体 WebPageJsonLd 未声明 zh-Hant') }
+if (!sync.includes('documentElement')) { treeFail++; fail('LocaleSync 未修正 <html lang>（渐进项）') }
+
+console.log(treeFail === 0 ? '✓ 结构：lang=zh-Hant、cookie 同步就位、WebPage JSON-LD 声明 zh-Hant、根 WebSite 不再写死 zh-CN、落地页链 12 属相、详情页板块齐全、未混用简体导航' : `✗ 结构失败 ${treeFail} 处`)
 
 // ---------- ⑤ sitemap 与简体零回归 ----------
 console.log('—— ⑤ sitemap 收录 /tw 与简体零回归 ——')

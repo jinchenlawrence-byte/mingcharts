@@ -78,7 +78,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
                   "@id": "https://www.mingcharts.com/#site",
                   url: "https://www.mingcharts.com",
                   name: "明理 · 免费八字排盘",
-                  inLanguage: "zh-CN",
+                  // ★ 第 35 轮：去掉 inLanguage。这段脚本在每个页面都会输出，
+                  //   写死 zh-CN 等于在 208 个繁体页里声明「本站是简体」，与 hreflang 打架。
+                  //   站点实体不该用"某一种页面语言"标注；页面级语言改由 /tw 布局的
+                  //   WebPageJsonLd（inLanguage: zh-Hant）表达。
                   publisher: { "@id": "https://www.mingcharts.com/#org" },
                 },
               ],

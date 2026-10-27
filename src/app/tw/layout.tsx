@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import LocaleSync from '@/components/LocaleSync'
 import HantLangSwitch from '@/components/HantLangSwitch'
+import WebPageJsonLd from '@/components/WebPageJsonLd'
 import { HANT_HREFLANG, hantAlternates } from '@/lib/hant-seo'
 
 // 繁体树根布局：lang 必须与内容一致（zh-Hant），否则 Google 会按 zh-CN 处理，
@@ -29,6 +30,15 @@ export default function HantLayout({ children }: { children: React.ReactNode }) 
     <main className="hw-page" lang="zh-Hant">
       {/* 把语言写进 cookie：后续 AI 命书与收银台据此出繁体（见 lib/locale.ts） */}
       <LocaleSync locale="zh-Hant" />
+      {/* ★ 第 35 轮：页面级语言信号。根布局的 WebSite 已去掉 inLanguage（那会在
+          208 个繁体页里声明 zh-CN），改由这里逐页声明 zh-Hant。
+          路径级的 name 取不到（布局拿不到子页 metadata），故用站点名 + 繁体标识；
+          页面自身的标题仍由 metadata 输出，不影响搜索结果标题。 */}
+      <WebPageJsonLd
+        name="明理 · 免費八字排盤與生肖流年（繁體）"
+        path="/tw"
+        inLanguage="zh-Hant"
+      />
       <header className="border-b border-gold/15">
         <div className="hw-wrap flex items-center justify-between py-3">
           <Link href="/tw" className="font-bold text-lg text-ink">
