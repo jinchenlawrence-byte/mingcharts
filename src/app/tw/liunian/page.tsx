@@ -48,6 +48,12 @@ export default function HantLiunianEntry() {
         <p className="text-xs text-ink-light/60 mt-2">
           排盤頁目前為簡體版；命盤與報告內容與本頁所述一致。
         </p>
+        {/* ★ 2027 窗口期入口（第 35 轮）：年度总览页 + 太岁对照表，构成"看今年"的两条主路径 */}
+        <p className="text-sm mt-4">
+          <Link href="/tw/liunian/2027" className="hw-c-link">2027 丁未年運勢總覽 →</Link>
+          <span className="text-ink-light/40 mx-2">·</span>
+          <Link href="/tw/liunian/taisui-biao" className="hw-c-link">十二生肖太歲對照表 →</Link>
+        </p>
       </section>
 
       <section className="hw-c-box mb-6">
