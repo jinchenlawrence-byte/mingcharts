@@ -63,6 +63,46 @@ console.log('—— ② 2027 太岁关系（事实源） ——')
   else ok('2027 犯太岁为 4 个属相')
 }
 
+// ---------- ②B 文章正文点名必须与数据层一致 ----------
+// ★ 第 35 轮补：原 ② 只比对「数据层 vs 写死的期望」，等于拿事实源自证 ——
+//   它不读文章，所以把文章里的「狗：刑太岁」改成「狗：害太岁」时测试依然全绿（A 侧注入实证）。
+//   本段把断言落到【文章正文】上：每只犯太岁的生肖，必须在正文出现「<生肖>：<关系>太岁」的配对；
+//   合太岁与无犯的名单也必须在正文里逐个出现。
+console.log('—— ②B 文章正文点名（读文章，不自证） ——')
+{
+  const fanArticle = articles.find((a) => a.slug === '2027-fan-taisui-shengxiao')
+  const text = fanArticle
+    ? [fanArticle.title, fanArticle.description, ...fanArticle.sections.flatMap((s) => [s.heading, ...s.body])].join('\n')
+    : ''
+
+  /** 在给定文本里逐条核对 2027 的生肖—关系配对，返回缺失项（供牙口复用同一检查器） */
+  function checkRelations(body) {
+    const pairs = [
+      ['羊', '值'], ['牛', '冲'], ['鼠', '害'], ['狗', '刑'],
+    ]
+    const missing = pairs.filter(([animal, rel]) => {
+      // 正文写法形如「二、羊：值太岁」「三、牛：冲太岁」
+      return !new RegExp(`${animal}\\s*[:：]\\s*${rel}太岁`).test(body)
+    }).map(([animal, rel]) => `${animal}${rel}`)
+
+    const heGroup = ['兔', '马', '猪'].filter((a) => !body.includes(a))
+    const wuFanGroup = ['虎', '龙', '蛇', '猴', '鸡'].filter((a) => !body.includes(a))
+    return { missing, heGroup, wuFanGroup }
+  }
+
+  const got2 = checkRelations(text)
+  if (!fanArticle) fail('②B：找不到 2027-fan-taisui-shengxiao')
+  else if (got2.missing.length) fail(`②B：正文配对缺失/写错 → ${got2.missing.join('、')}（应为 羊值/牛冲/鼠害/狗刑）`)
+  else ok('②B：正文四类犯太岁配对与数据层一致（羊值 / 牛冲 / 鼠害 / 狗刑）')
+  if (got2.heGroup.length) fail(`②B：正文缺合太岁生肖 ${got2.heGroup.join('、')}`)
+  else ok('②B：合太岁三只（兔/马/猪）均在正文')
+  if (got2.wuFanGroup.length) fail(`②B：正文缺无犯生肖 ${got2.wuFanGroup.join('、')}`)
+  else ok('②B：无犯五只（虎/龙/蛇/猴/鸡）均在正文')
+
+  // 把检查器交给 ⑪ 牙口使用（避免牙口另写一套判据 → 判据同源）
+  globalThis.__checkTaisuiRelations = checkRelations
+}
+
 // ---------- ③ 两个日期边界 ----------
 console.log('—— ③ 春节 / 立春 双边界 ——')
 {
@@ -258,13 +298,25 @@ console.log('—— ⑩ 单一来源（不写第二份繁体正文） ——')
 // ---------- ⑪ 牙口自检 ----------
 console.log('—— ⑪ 牙口自检（狗刑→狗害 必须判红） ——')
 {
-  const fake = { ...Object.fromEntries(SHENGXIAO.map((s) => [s.slug, getLiunian(s, YEAR).relation])) }
-  const judge = (m) => m.gou === '刑'
-  if (!judge(fake)) fail('牙口失效：真数据未被判为「刑」')
-  else ok('真数据（狗刑）判绿')
-  fake.gou = '害'
-  if (judge(fake)) fail('牙口失效：把狗刑改成狗害仍判绿')
-  else ok('篡改（狗害）判红 —— 判据有效')
+  // ★ 第 35 轮补：原牙口改的是测试自己的局部对象（等于自证：改测试当然红）。
+  //   现在复用 ②B 的同一检查器，喂进【被篡改的正文】，验证"文章写错能被抓到"。
+  const check = globalThis.__checkTaisuiRelations
+  if (typeof check !== 'function') {
+    fail('牙口失效：②B 的检查器未暴露，无法做同源牙口')
+  } else {
+    const base = [
+      '二、羊：值太岁，本命年', '三、牛：冲太岁', '四、鼠：害太岁', '五、狗：刑太岁',
+      '六、兔、马、猪：合太岁', '七、虎、龙、蛇、猴、鸡：无犯',
+    ].join('\n')
+    const okCase = check(base)
+    if (okCase.missing.length) fail(`牙口失效：合法正文被判缺失 ${okCase.missing.join('、')}`)
+    else ok('真正文（狗刑）判绿')
+
+    const tampered = base.replace('五、狗：刑太岁', '五、狗：害太岁')
+    const badCase = check(tampered)
+    if (!badCase.missing.includes('狗刑')) fail('牙口失效：把「狗：刑太岁」改成「狗：害太岁」仍判绿')
+    else ok('篡改（狗刑→狗害）判红 —— 判据读到的是文章本身')
+  }
 }
 
 console.log(allPass ? '\nHANT_TAISUI_PASS' : '\nHANT_TAISUI_FAIL')
