@@ -7,6 +7,8 @@ import Link from 'next/link'
 import { localize } from '@/lib/hant'
 import type { OutputLocale } from '@/lib/locale'
 import PartnerApplyForm from './PartnerApplyForm'
+import CheckoutButton from '@/components/CheckoutButton'
+import { PARTNER_PACK_PURCHASABLE } from '@/lib/pricing'
 
 /** 批发价目表：与 docs/推广-命理师白标方案.md §4-2 同源（改价先改文档再改这里） */
 const PRICE_ROWS = [
@@ -104,8 +106,25 @@ export default function PartnerLanding({ locale }: { locale: OutputLocale }) {
         <ol className="text-sm text-ink-light space-y-2">
           <li>① {L('填下面的表，我们 48 小时内联系你（LINE / WeChat / Email 都行）')}</li>
           <li>② {L('审核通过送你 2 份，拿你自己的盘或熟客的盘试，报告不满意就别合作')}</li>
-          <li>③ {L('满意了买额度，我们给你开通入口，之后每一份你自己出')}</li>
+          <li>③ {L('满意了在这里买额度（下方按钮，需先注册账号），之后在伙伴工作台自助出报告')}</li>
         </ol>
+        {/* ★ 第 35 轮补：额度购买入口。在此之前 /api/checkout 已支持伙伴包（PARTNER_PACK_PURCHASABLE=true），
+            但页面上没有按钮 —— 伙伴想加购只能找我们手工发链接，与「自助」矛盾。
+            requireChart=false：伙伴包是账号级权益，不需要绑定某一张命盘。 */}
+        <div className="flex flex-wrap items-center gap-3 mt-4">
+          <CheckoutButton sku="partner_credits_10" available={PARTNER_PACK_PURCHASABLE} requireChart={false} returnTo="/partner">
+            {L('购买 10 份档 · $150')}
+          </CheckoutButton>
+          <CheckoutButton sku="partner_credits_50" available={PARTNER_PACK_PURCHASABLE} requireChart={false} returnTo="/partner">
+            {L('购买 50 份档 · $600')}
+          </CheckoutButton>
+          <CheckoutButton sku="partner_credits_200" available={PARTNER_PACK_PURCHASABLE} requireChart={false} returnTo="/partner">
+            {L('购买 200 份档 · $1800')}
+          </CheckoutButton>
+        </div>
+        <p className="text-xs text-ink-light/60 mt-2">
+          {L('购买后额度直接进你的账号，去「伙伴工作台」就能自己出报告，不用等我们。付款需国际信用卡。')}
+        </p>
       </section>
 
       <section className="hw-c-box mb-6">
