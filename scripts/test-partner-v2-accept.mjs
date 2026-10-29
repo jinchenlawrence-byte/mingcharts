@@ -424,7 +424,9 @@ console.log('—— ⑮ 分享页 ——')
 // ---------- ⑯ 工作台页面：字段范围 + 余额闸门 ----------
 console.log('—— ⑯ 工作台页面 ——')
 {
-  const src = readFileSync(near('src/app/partner/page.tsx'), 'utf8')
+  // ★ 第 36 轮：工作台已抽成 components/partner/PartnerWorkspace.tsx（简繁共用），
+  //   页面文件只剩薄壳；以下文案/表单断言改读组件本身。
+  const src = readFileSync(near('src/components/partner/PartnerWorkspace.tsx'), 'utf8')
   assert(src.includes('该页面仅对合作命理师开放'), '非伙伴可见「该页面仅对合作命理师开放」')
   assert(src.includes('购买额度'), '顶部有「购买额度」入口')
   assert(src.includes('BirthPlacePicker'), '复用 BirthPlacePicker（生辰/出生地）')
@@ -456,6 +458,42 @@ console.log('—— ⑰ API 接线 ——')
 
   const pkg = JSON.parse(readFileSync(near('package.json'), 'utf8'))
   assert(/test-partner-v2-accept\.mjs/.test(pkg.scripts.verify), 'verify 末尾已挂本测试')
+}
+
+// ---------- ⑱ 繁中工作台（第 36 轮） ----------
+// 断的是什么：港台伙伴（PerceptionHK / FairiesLotus / p8zi 这类）拿到的工作台
+//   必须是繁体，否则对专业用户是信任打折。判据分两层：
+//   ① 结构：/tw/partner 路由存在且传 locale=zh-Hant；/partner 传 zh-Hans
+//   ② 覆盖：组件里【凡是含中文的非注释行】都必须经过 L() —— 防止漏包导致中英/简繁混杂
+console.log('—— ⑱ 繁中工作台 ——')
+{
+  const hantRoute = readFileSync(near('src/app/tw/partner/page.tsx'), 'utf8')
+  const hansRoute = readFileSync(near('src/app/partner/page.tsx'), 'utf8')
+  const ws = readFileSync(near('src/components/partner/PartnerWorkspace.tsx'), 'utf8')
+
+  assert(/locale="zh-Hant"/.test(hantRoute), '/tw/partner 传 locale="zh-Hant"（繁体工作台）')
+  assert(/locale="zh-Hans"/.test(hansRoute), '/partner 传 locale="zh-Hans"（简体工作台）')
+  assert(/robots:\s*\{\s*index:\s*false/.test(hantRoute), '/tw/partner 设了 noindex（内部工具页）')
+  assert(/hantAlternates|'zh-Hant':\s*'\/tw\/partner'/.test(hantRoute + hansRoute), '两页均声明简繁 alternates')
+
+  assert(/const L = \(s: string\) => localize\(s, locale\)/.test(ws), '工作台定义了 L() 本地化')
+  assert(/partnersHref = locale === 'zh-Hant' \? '\/tw\/partners'/.test(ws), '繁体工作台的购买链接指向 /tw/partners')
+  assert(/locale === 'zh-Hans' \? <Nav \/> : null/.test(ws), '简体 Nav 按语言隔离（繁体树不再渲染简体导航）')
+
+  // ★ 覆盖断言：含中文的非注释行必须出现 L(
+  const lines = ws.split('\n')
+  const missed = []
+  lines.forEach((ln, i) => {
+    const t = ln.trim()
+    if (!t || t.startsWith('//') || t.startsWith('*') || t.startsWith('/*') || t.startsWith('{/*')) return
+    if (/[\u4e00-\u9fa5]/.test(ln) && !ln.includes('L(')) missed.push(`${i + 1}: ${t.slice(0, 48)}`)
+  })
+  // 模块级标签是简体原文、在渲染处经 L() 转换 —— 属设计内，白名单只放这 5 行
+  const allowed = new Set([119, 120, 121, 125, 126])
+  const realMissed = missed.filter((m) => !allowed.has(parseInt(m.split(':')[0], 10)))
+  assert(realMissed.length === 0, '工作台全部中文文案均经 L() 本地化（无漏包）')
+
+  ok('繁中工作台：/tw/partner 传 zh-Hant、购买链接走 /tw/partners、简体 Nav 已隔离、全部中文文案经 L()')
 }
 
 // ---------- 收尾 ----------
