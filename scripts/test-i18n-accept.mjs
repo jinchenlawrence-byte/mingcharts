@@ -190,6 +190,20 @@ if (!twLayout.includes('WebPageJsonLd')) { treeFail++; fail('繁体布局未输�
 if (!twLayout.includes('inLanguage="zh-Hant"')) { treeFail++; fail('繁体 WebPageJsonLd 未声明 zh-Hant') }
 if (!sync.includes('documentElement')) { treeFail++; fail('LocaleSync 未修正 <html lang>（渐进项）') }
 
+// ★ 第 36 轮：全站页脚按路径决定简繁
+//   之前 208 个繁体页的页脚一直是简体（「命理师合作」「城市数据」），
+//   这是繁体树上最刺眼的一处不一致。判据：页脚是客户端组件、按 /tw 前缀切换、且文案来自 toHant。
+const footer = readFileSync(near('components/SiteFooter.tsx'), 'utf8')
+if (!footer.includes("'use client'")) { treeFail++; fail('SiteFooter 必须是客户端组件（根布局拿不到路径）') }
+if (!/pathname\.startsWith\('\/tw'\)/.test(footer)) { treeFail++; fail('SiteFooter 未按 /tw 前缀切换简繁') }
+if (!footer.includes('toHant')) { treeFail++; fail('SiteFooter 未用 toHant 派生繁体（会写第二份文案）') }
+if (/命理师合作</.test(footer) && !footer.includes("L('命理师合作')")) {
+  treeFail++; fail('SiteFooter 的「命理师合作」未过 L()（繁体页会露简体）')
+}
+const rootLayout2 = readFileSync(near('app/layout.tsx'), 'utf8')
+if (!rootLayout2.includes('<SiteFooter />')) { treeFail++; fail('根布局未使用 SiteFooter') }
+if (rootLayout2.includes('命理师合作')) { treeFail++; fail('根布局仍有硬编码页脚文案（繁体页会露简体）') }
+
 console.log(treeFail === 0 ? '✓ 结构：lang=zh-Hant、cookie 同步就位、WebPage JSON-LD 声明 zh-Hant、根 WebSite 不再写死 zh-CN、落地页链 12 属相、详情页板块齐全、未混用简体导航' : `✗ 结构失败 ${treeFail} 处`)
 
 // ---------- ⑤ sitemap 与简体零回归 ----------

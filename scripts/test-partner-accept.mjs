@@ -163,8 +163,11 @@ for (const want of ['/partners', '/tw/partners']) {
   if (!urls.some((u) => u.endsWith(want))) { siteFail++; fail(`sitemap 缺 ${want}`) }
 }
 const layout = readFileSync(near('src/app/layout.tsx'), 'utf8')
-if (!layout.includes('href="/partners"')) { siteFail++; fail('根 layout 页脚没有 /partners 入口') }
-console.log(siteFail === 0 ? '✓ sitemap 收录简繁两版；根页脚有入口' : `✗ sitemap/入口失败 ${siteFail} 处`)
+// ★ 第 36 轮：页脚抽成 components/SiteFooter.tsx（按路径切简繁）——入口仍须存在
+const siteFooter = readFileSync(near('src/components/SiteFooter.tsx'), 'utf8')
+if (!layout.includes('<SiteFooter')) { siteFail++; fail('根 layout 未渲染 SiteFooter') }
+if (!siteFooter.includes('href="/partners"')) { siteFail++; fail('页脚没有 /partners 入口') }
+console.log(siteFail === 0 ? '✓ sitemap 收录简繁两版；页脚有入口' : `✗ sitemap/入口失败 ${siteFail} 处`)
 
 // ---------- ⑦ 伙伴包 SKU 与准入闸门（2026-10-22）----------
 console.log('—— ⑦ 伙伴包 SKU / 价格 / 闸门 ——')

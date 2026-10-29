@@ -85,16 +85,21 @@ for (const doc of ['terms.md', 'privacy.md']) {
 console.log(phFail === 0 ? '✓ 正文零占位符（模式：/\\[XXX\\]|placeholder|sole.*trader|support@|TBD/ → 0 命中）' : '✗ 占位符残留')
 
 // ---------- ⑥ 页脚 ----------
+// ★ 第 36 轮：页脚从根布局抽成 components/SiteFooter.tsx（按路径决定简繁）。
+//   法务要求不变：全站必须能到达 Terms / Privacy / 支持邮箱 ——
+//   但断言要跟着代码走：链接在 SiteFooter 里，layout 只需渲染 SiteFooter。
 let footerFail = 0
-if (!layoutSrc.includes('href="/terms"')) { footerFail++; fail('layout 不含 /terms 链接') }
-if (!layoutSrc.includes('href="/privacy"')) { footerFail++; fail('layout 不含 /privacy 链接') }
+const footerSrc = readFileSync('src/components/SiteFooter.tsx', 'utf8')
+if (!layoutSrc.includes('<SiteFooter')) { footerFail++; fail('layout 未渲染 SiteFooter（全站页脚会消失）') }
+if (!footerSrc.includes('href="/terms"')) { footerFail++; fail('SiteFooter 不含 /terms 链接') }
+if (!footerSrc.includes('href="/privacy"')) { footerFail++; fail('SiteFooter 不含 /privacy 链接') }
 // 邮箱不得在断言里硬编码字面量 → 从 terms.md 抽取
 const termsBody = getLegalBody('terms.md')
 const emailMatch = termsBody.match(/hello@mingcharts\.com/)
 const email = emailMatch ? emailMatch[0] : null
 if (!email) {
   footerFail++; fail('terms.md 正文不含支持邮箱')
-} else if (!layoutSrc.includes(email)) {
+} else if (!footerSrc.includes(email)) {
   footerFail++; fail(`layout 不含邮箱 ${email}（与 terms.md 不一致）`)
 }
 console.log(footerFail === 0 ? `✓ 页脚：含 /terms、/privacy、${email}（从 terms.md 抽取验证）` : '✗ 页脚缺失')

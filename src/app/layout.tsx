@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono, Noto_Serif_SC } from "next/font/google";
 import "./globals.css";
 import PwaRegister from "@/components/PwaRegister";
+import SiteFooter from '@/components/SiteFooter'
 import TrackPageView from "@/components/TrackPageView";
 
 const geistSans = Geist({
@@ -93,31 +94,8 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <TrackPageView />
         {/* PWA：注册 Service Worker（仅 https/localhost 生效，静默失败） */}
         <PwaRegister />
-        {/* GeoNames 署名（CC BY 4.0 要求）：全球城市数据来自 geonames.org */}
-        <footer className="mt-auto border-t border-gold/20 py-4 text-center text-[11px] text-ink/40">
-          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-            <a href="/terms" className="underline hover:text-ink/60">Terms of Service</a>
-            <span aria-hidden="true">·</span>
-            <a href="/privacy" className="underline hover:text-ink/60">Privacy Policy</a>
-            <span aria-hidden="true">·</span>
-            <a href="mailto:hello@mingcharts.com" className="underline hover:text-ink/60">hello@mingcharts.com</a>
-            <span aria-hidden="true">·</span>
-            <a href="/partners" className="underline hover:text-ink/60">命理师合作</a>
-            <span aria-hidden="true">·</span>
-            <span>
-              城市数据 ©{' '}
-              <a
-                href="https://www.geonames.org/"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline hover:text-ink/60"
-              >
-                GeoNames
-              </a>{' '}
-              （CC BY 4.0）
-            </span>
-          </div>
-        </footer>
+        {/* 页脚：按路径决定简繁（繁体树的页脚曾是简体，第 36 轮修） */}
+        <SiteFooter />
       </body>
     </html>
   );
