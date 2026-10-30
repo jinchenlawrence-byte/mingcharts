@@ -219,6 +219,11 @@ export default function PartnerWorkspace({ locale }: { locale: OutputLocale }) {
           brandName,
           brandContact,
           requestId,
+          // ★ 第 36 轮：显式传语言。此前靠 mc_locale cookie 推断 ——
+          //   伙伴若在简体页操作过，cookie 是 zh-Hans，他的客户拿到的报告会全是简体。
+          //   港台伙伴（PerceptionHK / FairiesLotus / p8zi 这类）的客户读繁体，
+          //   所以语言必须由「他当前所在的页面」决定，而不是上一次访问留下的 cookie。
+          locale,
         }),
       })
       const json = await res.json().catch(() => null)

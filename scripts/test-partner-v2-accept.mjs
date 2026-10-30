@@ -493,7 +493,13 @@ console.log('—— ⑱ 繁中工作台 ——')
   const realMissed = missed.filter((m) => !allowed.has(parseInt(m.split(':')[0], 10)))
   assert(realMissed.length === 0, '工作台全部中文文案均经 L() 本地化（无漏包）')
 
-  ok('繁中工作台：/tw/partner 传 zh-Hant、购买链接走 /tw/partners、简体 Nav 已隔离、全部中文文案经 L()')
+  // ★ 语言必须显式传给生成接口：靠 cookie 推断会让"在简体页操作过的港台伙伴"
+  //   产出简体报告给繁体客户。判据：POST body 里有 locale 字段。
+  assert(/body: JSON\.stringify\(\{[\s\S]*?locale,/.test(ws), '生成接口显式传 locale（报告语言不靠 cookie 猜）')
+  assert(/localeFromRequest/.test(readFileSync(near('src/app/api/partner/report/route.ts'), 'utf8')),
+    '生成接口用 localeFromRequest 解析语言')
+
+  ok('繁中工作台：/tw/partner 传 zh-Hant、购买链接走 /tw/partners、简体 Nav 已隔离、全部中文文案经 L()、语言显式传给生成接口')
 }
 
 // ---------- 收尾 ----------
