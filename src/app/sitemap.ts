@@ -29,6 +29,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/liunian/2027`, changeFrequency: 'monthly', priority: 0.9 },
     // 2028 戊申年落地页（第 36 轮）：GSC 实测 2028 生肖页已在拿点击，补 hub 收口
     { url: `${BASE_URL}/liunian/2028`, changeFrequency: 'monthly', priority: 0.9 },
+    // 神煞总目录（第 36 轮）：53 个查法一页看完 —— 命理师会收藏的工具页
+    { url: `${BASE_URL}/shensha`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/geo`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/daily`, changeFrequency: 'daily', priority: 0.7 }
   ]
@@ -109,6 +111,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/tw/liunian/2027`, changeFrequency: 'monthly', priority: 0.9 },
     // 2028 戊申年落地页（繁體，第 36 轮）：与 2027 同级，2028 生肖页的权重向此收口
     { url: `${BASE_URL}/tw/liunian/2028`, changeFrequency: 'monthly', priority: 0.9 },
+    // 神煞總目錄（繁體，第 36 輪）
+    { url: `${BASE_URL}/tw/shensha`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/tw/partners`, changeFrequency: 'monthly', priority: 0.7 },
     ...SHENGXIAO.map(s => ({
       url: `${BASE_URL}/tw/shengxiao/${s.slug}`,
