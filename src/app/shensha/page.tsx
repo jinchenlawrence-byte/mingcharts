@@ -36,6 +36,12 @@ export default function ShenshaIndexPage() {
             <p className="text-xs text-ink-light/60 mt-2">
               ※ 神煞是辅助，命理分析以五行生克与格局旺衰为主体，不可见煞即言凶、见贵即言吉。
             </p>
+            {/* ★ 免费钩子（第 36 轮）：从「查资料」到「查自己」的一步 */}
+            <p className="mt-4">
+              <Link href="/shensha/check" className="hw-c-btnBig inline-block">
+                输入生日，免费查你命中带哪些神煞 →
+              </Link>
+            </p>
           </header>
 
           {/* 目录锚点 */}

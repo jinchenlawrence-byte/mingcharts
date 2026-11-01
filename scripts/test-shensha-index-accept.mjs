@@ -127,6 +127,38 @@ console.log('—— ⑥ 牙口自检 ——')
   assert(dups.length === 1, '牙口判据有效：重复 1 条能被检出')
 }
 
+// ---------- ⑦ 免费查神煞（第 36 轮） ----------
+// 断的是什么：这一页是站上第一个「输入生辰→立刻有用」的免费工具，
+//   它必须 ① 走真太阳时（/api/paipan）② 只给标签不判吉凶 ③ 命中项按七类归组并链文章
+//   ④ 简繁各自前缀 ⑤ 不在索引里的神煞要有兜底（不能静默丢掉）
+console.log('—— ⑦ 免费查神煞页 ——')
+{
+  const check = readFileSync('src/components/ShenshaCheck.tsx', 'utf8')
+  const hans = readFileSync('src/app/shensha/check/page.tsx', 'utf8')
+  const hant = readFileSync('src/app/tw/shensha/check/page.tsx', 'utf8')
+
+  assert(check.includes("fetch('/api/paipan'"), '查神煞页走 /api/paipan（真太阳时校正）')
+  assert(check.includes('BirthPlacePicker'), '查神煞页带出生地选择（真太阳时需要）')
+  assert(check.includes('SHEN_SHA_SLUG'), '命中项经 SHEN_SHA_SLUG 映射到查法文章')
+  assert(/new Set|includes\(key\)/.test(check), '命中项做了去重（同一神煞多柱命中只出现一次）')
+  assert(check.includes('不作吉凶判断') || check.includes('不作吉凶判断'), '页面有「不作吉凶判断」的口径')
+  assert(check.includes('总目录可查'), '不在索引里的神煞有兜底文案（不静默丢弃）')
+  assert(/locale === 'zh-Hant' \? '\/tw' : ''/.test(check), '链接前缀按语言切换（简体无前缀 / 繁体 /tw）')
+  assert(hans.includes('locale="zh-Hans"') && hant.includes('locale="zh-Hant"'), '两页各自传对 locale')
+  assert(!hant.includes('import Nav'), '繁体页不重复引简体 Nav')
+  assert(hans.includes('alternates') && hant.includes('alternates'), '两页均声明 alternates')
+
+  // 目录页要有入口
+  const idxHans = readFileSync('src/app/shensha/page.tsx', 'utf8')
+  const idxHant = readFileSync('src/app/tw/shensha/page.tsx', 'utf8')
+  assert(idxHans.includes('/shensha/check'), '简体总目录链到查神煞页')
+  assert(idxHant.includes('/tw/shensha/check'), '繁体总目录链到查神煞页')
+
+  const sm2 = readFileSync('src/app/sitemap.ts', 'utf8')
+  assert(/\/shensha\/check`/.test(sm2), 'sitemap 收录 /shensha/check')
+  assert(/\/tw\/shensha\/check`/.test(sm2), 'sitemap 收录 /tw/shensha/check')
+}
+
 console.log('')
 if (allPass) {
   console.log('SHENSHA_INDEX_PASS')
