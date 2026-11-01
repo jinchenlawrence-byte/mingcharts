@@ -229,6 +229,27 @@ export default function ShenshaCheck({ locale }: { locale: OutputLocale }) {
             {L('※ 神煞只是辅助标签，不作吉凶判断。命理分析以五行生克、格局旺衰与运程为主。')}
           </p>
 
+          {/* ★ 第 36 轮：承接（不用新增 SKU，只推已经能买的两样）
+              · 命书 $29.99：十卷万字、逐条引证 —— 想看这些在他盘里到底怎么作用
+              · 日运会员 $9.9/月：唯一有复购的产品（每日日运 + 流月 + 追问）
+              两个目标页目前只有简体版，如实标注，不假装有繁体。 */}
+          <div className="mt-5 pt-4 border-t border-gold/15">
+            <p className="text-sm text-ink-light mb-3">
+              {L('想知道这些神煞在你盘里到底怎么作用？')}
+            </p>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link href="/pricing" className="hw-c-btnBig inline-block">
+                {L('看命书 · 十卷万字 →')}
+              </Link>
+              <Link href="/member" className="hw-c-back inline-block">
+                {L('日运会员 · 每月 $9.9')}
+              </Link>
+            </div>
+            <p className="text-[11px] text-ink-light/50 mt-2">
+              {L('（这两个页面目前为简体版；命书内容与本体逐条引证一致。）')}
+            </p>
+          </div>
+
           <p className="text-sm mt-4">
             <Link href={`${prefix}/shensha`} className="hw-c-link">{L('← 53 个神煞总目录')}</Link>
           </p>

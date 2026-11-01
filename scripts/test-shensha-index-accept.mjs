@@ -149,6 +149,15 @@ console.log('—— ⑦ 免费查神煞页 ——')
   assert(hans.includes('alternates') && hant.includes('alternates'), '两页均声明 alternates')
 
   // 目录页要有入口
+  // ★ 承接：只推已经能买的两样（命书 / 日运会员），不新增 SKU；
+  //   两个目标页目前只有简体版，如实标注（不假装有繁体）
+  assert(check.includes('href="/pricing"') && check.includes('href="/member"'),
+    '结果页承接已上线的两个产品（命书 / 日运会员）',
+    '结果页缺少承接（命书 / 日运会员）')
+  assert(check.includes('目前为简体版'),
+    '承接处如实标注目标页只有简体版',
+    '承接处未标注语言差异（会让繁体读者以为有繁体页）')
+
   const idxHans = readFileSync('src/app/shensha/page.tsx', 'utf8')
   const idxHant = readFileSync('src/app/tw/shensha/page.tsx', 'utf8')
   assert(idxHans.includes('/shensha/check'), '简体总目录链到查神煞页')
