@@ -5,9 +5,13 @@ import { sendNotification, isEndpointGone } from '@/lib/push-sender'
 import { dailyPushPayload, dailyDedupeKey, DAILY_PUSH_KIND } from '@/lib/push-copy'
 import { dailySignFor, liuRiOf } from '@/lib/daily'
 
+/** 免费日运试用的天数（注册起算，第 36 轮） */
+const DAILY_TRIAL_DAYS = 3
+
 // 每日推送触发（Vercel Cron → GET /api/cron/daily-push）。
 //   ★ 鉴权：Authorization: Bearer ${CRON_SECRET}（Vercel Cron 自动带）。
-//   ★ 对象：仅【有效会员】（profiles.member_expire_at > now）且已授权订阅者 —— 会员判定只读。
+//   ★ 对象：【有效会员】+【注册未满 DAILY_TRIAL_DAYS 天的新用户】且已授权订阅者；
+//     会员判定只读，试用只加受众、不改任何会员列（第 36 轮）。
 //   ★ 幂等：先 claimDailyLog（靠 (user_id,kind,dedupe_key) UNIQUE），成功占位者才发送。
 //   ★ 归日：全站统一 Asia/Shanghai；?date=YYYY-MM-DD 可覆写便于重测。
 export const runtime = 'nodejs'
@@ -40,8 +44,15 @@ export async function GET(req: NextRequest) {
     const admin = createServerSupabase()
     const repo = createPushRepo(admin)
 
+    // ★ 第 36 轮：受众 = 有效会员 ∪ 注册未满 3 天的新用户（免费日运试用）。
+    //   日运在 ENFORCE=false 期间本来就免费，但此前只有会员会收到推送 ——
+    //   非会员全靠自己想起我们，没有「每天回来」的理由。
+    //   把免费期接进推送：3 天内每天一条，第 4 天自然停下，留不留下由他自己决定。
     const memberIds = await repo.listActiveMemberIds(now.toISOString())
-    const subs = await repo.listActiveSubsFor(memberIds)
+    const trialSince = new Date(now.getTime() - DAILY_TRIAL_DAYS * 86400_000).toISOString()
+    const trialIds = await repo.listTrialUserIds(trialSince)
+    const audienceIds = Array.from(new Set([...memberIds, ...trialIds]))
+    const subs = await repo.listActiveSubsFor(audienceIds)
 
     // 按用户归组（一个用户可能多设备）
     const byUser = new Map<string, PushSubRow[]>()

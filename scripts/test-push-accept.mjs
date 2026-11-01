@@ -178,6 +178,9 @@ function makeMockAdmin({ tokens = {}, profiles = [], subs = [] } = {}) {
   const hit = (row, [c, op, v]) => {
     if (op === 'eq') return row[c] === v
     if (op === 'gt') return row[c] != null && String(row[c]) > String(v)
+    // ★ 第 36 轮：免费日运试用按 profiles.created_at >= since 取人。
+    //   未给 created_at 的行视为「老用户」→ 不进试用受众，保证原有用例行为不变。
+    if (op === 'gte') return row[c] != null && String(row[c]) >= String(v)
     if (op === 'is') return (row[c] ?? null) === v
     if (op === 'in') return v.includes(row[c])
     return true
@@ -189,6 +192,7 @@ function makeMockAdmin({ tokens = {}, profiles = [], subs = [] } = {}) {
     b.select = () => b
     b.eq = (c, v) => { filters.push([c, 'eq', v]); return b }
     b.gt = (c, v) => { filters.push([c, 'gt', v]); return b }
+    b.gte = (c, v) => { filters.push([c, 'gte', v]); return b }
     b.is = (c, v) => { filters.push([c, 'is', v]); return b }
     b.in = (c, v) => { filters.push([c, 'in', v]); return b }
     b.insert = (p) => { mode = 'insert'; payload = p; return b }
@@ -347,6 +351,33 @@ const jsonReq = (url, method, body, headers = {}) =>
       { headers: { Authorization: 'Bearer test-cron-secret' } }))
     assert(state.subs[0].disabled_at != null, '410 → 写 disabled_at（失效设备停用）')
     assert(state.logs[0].status === 'failed', "全失败 → push_logs.status='failed'")
+  }
+
+  // (6) 免费日运试用（第 36 轮）：注册未满 3 天的非会员也收推送；注册很早的不收
+  {
+    let sent6 = 0
+    const nowIso = new Date().toISOString()
+    const { admin, state } = makeMockAdmin({
+      profiles: [
+        { id: UID_A, is_member: false, member_expire_at: null, created_at: nowIso },
+        { id: UID_B, is_member: false, member_expire_at: null, created_at: '2020-01-01T00:00:00.000Z' },
+      ],
+      subs: [
+        { id: 1, user_id: UID_A, endpoint: 'https://ep/trial', p256dh: 'k', auth: 'a', disabled_at: null },
+        { id: 2, user_id: UID_B, endpoint: 'https://ep/old', p256dh: 'k', auth: 'a', disabled_at: null },
+      ],
+    })
+    setServerSupabaseForTest(admin)
+    setPushSenderForTest(async () => { sent6++; return { statusCode: 200, ok: true } })
+    process.env.CRON_SECRET = 'test-secret'
+    const r = await cronGET(new Request('http://localhost/api/cron/daily-push?date=2026-11-01',
+      { headers: { authorization: 'Bearer test-secret' } }))
+    const j = await r.json()
+    assert(sent6 === 1, '试用期内非会员也收到 1 条日运推送')
+    assert(j.devices === 1, '注册很早的非会员不推送（按 created_at 判定试用）')
+    const profA = state.profiles ? state.profiles.find((x) => x.id === UID_A) : null
+    assert(!profA || (profA.is_member === false && profA.member_expire_at === null),
+      '试用推送不改写任何会员列（判定只读）')
   }
 
   // 复原注入点，避免污染后续

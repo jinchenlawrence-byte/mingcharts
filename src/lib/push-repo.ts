@@ -73,9 +73,22 @@ export function createPushRepo(admin: SupabaseClient) {
       return (data ?? []).map((r) => r.id as string)
     },
 
+    /**
+     * 注册满 TRIAL 天内的新用户（免费日运试用受众，第 36 轮）。
+     * 日运本身在 ENFORCE=false 期间已免费，但没有推送就没有"每天回来"的理由 ——
+     * 会员才有推送，非会员只能靠首页想起我们。这一条把免费期也接进推送。
+     */
+    async listTrialUserIds(sinceIso: string): Promise<string[]> {
+      const { data, error } = await admin
+        .from('profiles')
+        .select('id')
+        .gte('created_at', sinceIso)
+      if (error) throw new Error(`profiles 试用查询失败: ${error.code} ${error.message}`)
+      return (data ?? []).map((r) => r.id as string)
+    },
+
     /** 给定用户集合下的活跃订阅（disabled_at IS NULL） */
-    async listActiveSubsFor(userIds: string[]): Promise<PushSubRow[]> {
-      if (userIds.length === 0) return []
+    async listActiveSubsFor(userIds: string[]): Promise<PushSubRow[]> {      if (userIds.length === 0) return []
       const { data, error } = await admin
         .from('push_subscriptions')
         .select('id,user_id,endpoint,p256dh,auth')

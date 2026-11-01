@@ -34,6 +34,12 @@ export default function HantHome() {
           <Link href="/tw/liunian/2028" className="hw-c-btnBig">2028 戊申年運勢 →</Link>
           <Link href="/tw/shengxiao" className="hw-c-back self-center">先看生肖 →</Link>
         </div>
+        {/* ★ 第 36 輪：免費工具雙入口（日運 / 查神煞）—— 給「還沒排盤、只想先看一眼」的人 */}
+        <div className="flex flex-wrap gap-x-4 gap-y-2 mt-3 text-sm">
+          <Link href="/daily" className="hw-c-link">{toHant('今日日运（免费看）')}</Link>
+          <span className="text-ink-light/30" aria-hidden="true">·</span>
+          <Link href="/tw/shensha/check" className="hw-c-link">{toHant('免费查你的神煞')}</Link>
+        </div>
         <p className="text-xs text-ink-light/60 mt-2">排盤頁目前為簡體版</p>
       </section>
 
