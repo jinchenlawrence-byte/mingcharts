@@ -63,6 +63,7 @@ export default function HantRootLayout({ children }: { children: React.ReactNode
                 <Link href="/tw/mingshu" className="hover:text-ink">命書</Link>
                 <Link href="/tw/article" className="hover:text-ink">命理知識</Link>
                 <Link href="/tw/pricing" className="hover:text-ink">價目</Link>
+                <Link href="/tw/auth" className="hover:text-ink">登入</Link>
                 {/* 语言切换：由 lib/hant.twinPath 按当前路径推导 */}
                 <HantLangSwitch />
               </nav>

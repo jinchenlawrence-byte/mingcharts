@@ -9,6 +9,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Nav from '@/components/Nav'
+import LangPromptBar from '@/components/LangPromptBar'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import { track } from '@/lib/track'
@@ -152,6 +153,7 @@ export default function Home() {
 
   return (
     <div className="hw-page" ref={rootRef}>
+      <LangPromptBar />
       <Nav />
       <main className="hw-wrap">
         {/* Hero：左表单 + 右交互示例盘 */}

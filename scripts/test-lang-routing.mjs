@@ -153,6 +153,22 @@ console.log('—— ⑧ 服务端首屏 <html lang> ——')
   if (f === 0) ok('(zh) → zh-CN、tw → zh-Hant、en → en；三棵 root layout 各挂 SiteChrome；顶层 layout 已移除')
 }
 
+// ---------- ⑨ 根路径语言提示条 / 繁体导航登录 ----------
+console.log('—— ⑨ 语言提示条与繁体登录入口 ——')
+{
+  let f = 0
+  const home = read('src/app/(zh)/HomeClient.tsx')
+  if (!home.includes('<LangPromptBar')) { f++; fail('简体首页未渲染语言提示条') }
+  const bar = read('src/components/LangPromptBar.tsx')
+  if (!bar.includes('LANG_ASKED_COOKIE')) { f++; fail('提示条未写 mc_lang_asked（会反复打扰）') }
+  if (!bar.includes('hasLanguageChoice')) { f++; fail('提示条未在已有语言选择时隐藏') }
+  if (!bar.includes('href="/tw"') || !bar.includes('href="/en"')) { f++; fail('提示条缺繁体/英文入口') }
+  if (!bar.includes('data-lang-prompt="1"')) { f++; fail('提示条缺稳定标记（HTTP 断言无法识别）') }
+  const twLayout = read('src/app/tw/layout.tsx')
+  if (!twLayout.includes('href="/tw/auth"')) { f++; fail('/tw 导航没有登录入口') }
+  if (f === 0) ok('根路径提示条三选一、写 mc_lang_asked、已选隐藏；/tw 导航含 /tw/auth')
+}
+
 // ---------- ⑦ 切换写 cookie ----------
 console.log('—— ⑦ 语言切换写 cookie ——')
 {
