@@ -45,8 +45,13 @@ for (const file of clients.slice(0, 3)) {
 console.log('—— ② 结果区只渲染英文 AI / 英文 preview ——')
 for (const file of clients.slice(0, 3)) {
   const src = read(file)
-  for (const forbidden of ['data.result', 'data.geo', 'data.chart', 'data.analysis', '<HemunResultView', '<ZiweiResultView', '<GeoResultView']) {
+  for (const forbidden of ['data.result', '<HemunResultView', '<ZiweiResultView', '<GeoResultView']) {
     assert(!src.includes(forbidden), `${file} 不引用中文结果数据/组件（${forbidden}）`)
+  }
+  // 结构化字段只允许作为英文规则表组件的入参，不得直接渲染中文结果
+  for (const token of ['data.chart', 'data.analysis', 'data.geo']) {
+    const leaked = src.split('\n').filter((l) => l.includes(token) && !l.includes('Rules'))
+    assert(leaked.length === 0, `${file} 结构化字段仅作为英文规则表入参（${token}）`)
   }
   assert(src.includes('data.ai'), `${file} 渲染 AI 英文段落`)
   assert(src.includes('data.locked?.preview'), `${file} 渲染英文 locked preview`)

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import type { ZiweiResultData } from '@/components/reports/ZiweiResultView'
+import { EnZiweiRules } from '@/components/en/EnRuleTables'
 import { getAuthToken } from '@/lib/authToken'
 
 const TITLES: Record<string, string> = {
@@ -173,7 +174,10 @@ export default function EnZiweiClient() {
                 Regenerate this report
               </button>
             </div>
-            <AiSections data={data} />
+            <EnZiweiRules chart={data.chart} analysis={data.analysis} />
+            <div className="mt-6">
+              <AiSections data={data} />
+            </div>
           </div>
         )}
       </main>

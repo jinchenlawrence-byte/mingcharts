@@ -5,7 +5,11 @@ import Link from 'next/link'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import type { HemunData } from '@/components/reports/HemunResultView'
+import type { PaipanResult } from '@/lib/paipan'
+import { EnHemunRules } from '@/components/en/EnRuleTables'
 import { getAuthToken } from '@/lib/authToken'
+
+type HemunDataEn = HemunData & { male?: PaipanResult; female?: PaipanResult }
 
 const TITLES: Record<string, string> = {
   overview: 'Overview',
@@ -111,7 +115,7 @@ export default function EnHemunClient() {
   const [female, setFemale] = useState<BirthFormState>(FEMALE_DEFAULT)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const [data, setData] = useState<HemunData | null>(null)
+  const [data, setData] = useState<HemunDataEn | null>(null)
   const [saved, setSaved] = useState<boolean | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -136,7 +140,7 @@ export default function EnHemunClient() {
       })
       const json = await res.json()
       if (json.success) {
-        setData(json.data as HemunData)
+        setData(json.data as HemunDataEn)
         setSaved(!!json.reportId)
       } else {
         setError('Could not generate the synastry report. Please try again.')
@@ -195,7 +199,10 @@ export default function EnHemunClient() {
                 Regenerate this report
               </button>
             </div>
-            <AiSections data={data} />
+            <EnHemunRules male={data.male} female={data.female} />
+            <div className="mt-6">
+              <AiSections data={data} />
+            </div>
           </div>
         )}
       </main>

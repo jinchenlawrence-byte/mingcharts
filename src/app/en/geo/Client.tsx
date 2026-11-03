@@ -5,6 +5,7 @@ import Link from 'next/link'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import type { GeoResultData } from '@/components/reports/GeoResultView'
+import { EnGeoRules } from '@/components/en/EnRuleTables'
 import { loadWorldData, searchCities } from '@/lib/worldCitiesClient'
 import { getAuthToken } from '@/lib/authToken'
 
@@ -227,7 +228,10 @@ export default function EnGeoClient() {
                 Regenerate this report
               </button>
             </div>
-            <AiSections data={data} />
+            <EnGeoRules geo={data.geo} />
+            <div className="mt-6">
+              <AiSections data={data} />
+            </div>
           </div>
         )}
       </main>

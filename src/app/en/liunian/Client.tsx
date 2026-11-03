@@ -5,6 +5,7 @@ import Link from 'next/link'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import type { LiunianResultData } from '@/components/reports/LiunianResultView'
+import { EnLiunianRules } from '@/components/en/EnRuleTables'
 import { getAuthToken } from '@/lib/authToken'
 
 const TITLES: Record<string, string> = {
@@ -191,7 +192,16 @@ export default function EnLiunianClient() {
                 Regenerate this report
               </button>
             </div>
-            <AiSections data={data} />
+            <EnLiunianRules
+              favorable={data.favorable}
+              unfavorable={data.unfavorable}
+              curDaYun={data.curDaYun ?? null}
+              liuNian={data.liuNian}
+              liuYue={data.liuYue ?? null}
+            />
+            <div className="mt-6">
+              <AiSections data={data} />
+            </div>
           </div>
         )}
       </main>

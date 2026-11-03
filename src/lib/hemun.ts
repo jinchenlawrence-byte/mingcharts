@@ -13,17 +13,17 @@ export const GAN_WX: Record<string,string> = {
 export const ZHI_WX: Record<string,string> = {
   '子':'水','丑':'土','寅':'木','卯':'木','辰':'土','巳':'火','午':'火','未':'土','申':'金','酉':'金','戌':'土','亥':'水'
 }
-const GAN_HE: Record<string,string> = { '甲':'己','己':'甲','乙':'庚','庚':'乙','丙':'辛','辛':'丙','丁':'壬','壬':'丁','戊':'癸','癸':'戊' }
+export const GAN_HE: Record<string,string> = { '甲':'己','己':'甲','乙':'庚','庚':'乙','丙':'辛','辛':'丙','丁':'壬','壬':'丁','戊':'癸','癸':'戊' }
 // ★ 冲/合/害表：复用 branchRelations.ts 单一事实源（机械别名，内容逐支一致）
-const ZHI_CHONG: Record<string,string> = LIU_CHONG
-const ZHI_HAI: Record<string,string> = LIU_HAI
-const ZHI_LIUHE: Record<string,string> = LIU_HE
-const SANHE: Array<{ group: string[]; ju: string }> = [
+export const ZHI_CHONG: Record<string,string> = LIU_CHONG
+export const ZHI_HAI: Record<string,string> = LIU_HAI
+export const ZHI_LIUHE: Record<string,string> = LIU_HE
+export const SANHE: Array<{ group: string[]; ju: string }> = [
   { group: ['申','子','辰'], ju: '水' }, { group: ['寅','午','戌'], ju: '火' },
   { group: ['巳','酉','丑'], ju: '金' }, { group: ['亥','卯','未'], ju: '木' }
 ]
 // ★ 三刑组复用 branchRelations.ts（SAN_XING_GROUPS，内容一致）
-const XING_GROUP = SAN_XING_GROUPS as readonly (readonly string[])[]
+export const XING_GROUP = SAN_XING_GROUPS as readonly (readonly string[])[]
 // 子卯（两支即成立）与自刑支：刑事实源的派生选择器（与 XIANG_XING 一致，
 // 仅在此处按「两支成立 vs 三支全」分流，避免 zhiRelation 误报三刑半刑）
 const ZI_MAO = new Set(['子', '卯'])
@@ -42,16 +42,16 @@ const NAYIN: Array<[string[],string]> = [
   [['壬子','癸丑'],'桑柘木'], [['甲寅','乙卯'],'大溪水'], [['丙辰','丁巳'],'沙中土'],
   [['戊午','己未'],'天上火'], [['庚申','辛酉'],'石榴木'], [['壬戌','癸亥'],'大海水'],
 ]
-const NAYIN_MAP: Record<string,string> = {}
+export const NAYIN_MAP: Record<string,string> = {}
 for (const [[a,b],name] of NAYIN) { NAYIN_MAP[a] = name; NAYIN_MAP[b] = name }
-const NAYIN_WX: Record<string,string> = {
+export const NAYIN_WX: Record<string,string> = {
   '海中金':'金','剑锋金':'金','白蜡金':'金','沙中金':'金','金箔金':'金','钗钏金':'金',
   '炉中火':'火','山头火':'火','霹雳火':'火','山下火':'火','覆灯火':'火','天上火':'火',
   '大林木':'木','杨柳木':'木','平地木':'木','松柏木':'木','石榴木':'木',
   '路旁土':'土','城头土':'土','屋上土':'土','壁上土':'土','大驿土':'土','沙中土':'土',
   '涧下水':'水','泉中水':'水','长流水':'水','天河水':'水','大溪水':'水','大海水':'水',
 }
-const WX_SHENG: Record<string,string> = { '木':'火','火':'土','土':'金','金':'水','水':'木' }
+export const WX_SHENG: Record<string,string> = { '木':'火','火':'土','土':'金','金':'水','水':'木' }
 
 // ───────── 类型 ─────────
 export interface HemunChart {
@@ -103,10 +103,10 @@ interface ChartBrief {
 }
 
 // ───────── 工具函数 ─────────
-function wxSheng(a: string, b: string): boolean { return WX_SHENG[a] === b }         // a 生 b
-function wxKe(a: string, b: string): boolean { return WX_SHENG[WX_SHENG[a]] === b } // a 克 b
+export function wxSheng(a: string, b: string): boolean { return WX_SHENG[a] === b }         // a 生 b
+export function wxKe(a: string, b: string): boolean { return WX_SHENG[WX_SHENG[a]] === b } // a 克 b
 // 跨日主十神：A 日主看 B 天干
-function crossTenGod(a: string, b: string): string {
+export function crossTenGod(a: string, b: string): string {
   const wa = GAN_WX[a], wb = GAN_WX[b]
   const sameYinYang = GAN.indexOf(a) % 2 === GAN.indexOf(b) % 2
   if (wa === wb) return sameYinYang ? '比肩' : '劫财'
@@ -117,7 +117,7 @@ function crossTenGod(a: string, b: string): string {
 }
 
 // 地支在一个集合中的关系
-function zhiRelation(a: string, b: string): string[] {
+export function zhiRelation(a: string, b: string): string[] {
   const out: string[] = []
   if (ZHI_CHONG[a] === b) out.push('六冲')
   if (ZHI_LIUHE[a] === b) out.push('六合')
@@ -129,7 +129,7 @@ function zhiRelation(a: string, b: string): string[] {
 }
 
 // 八字五行计数（4天干 + 4地支本气，共8字）
-function wuxingCount(c: HemunChart): Record<string, number> {
+export function wuxingCount(c: HemunChart): Record<string, number> {
   const cnt: Record<string, number> = { '木': 0,'火': 0,'土': 0,'金': 0,'水': 0 }
   const ps = [c.pillars.year, c.pillars.month, c.pillars.day, c.pillars.hour]
   for (const p of ps) { cnt[GAN_WX[p.gan]]++; cnt[ZHI_WX[p.zhi]]++ }
@@ -137,7 +137,7 @@ function wuxingCount(c: HemunChart): Record<string, number> {
 }
 
 // 旺衰 → 喜用五行类别
-function favorableWuxing(c: HemunChart): { add: string[]; reduce: string[] } {
+export function favorableWuxing(c: HemunChart): { add: string[]; reduce: string[] } {
   const dm = c.dayMaster
   const self = GAN_WX[dm]
   const yin = Object.entries(WX_SHENG).find(([, v]) => v === self)![0] // 生我者
@@ -150,7 +150,7 @@ function favorableWuxing(c: HemunChart): { add: string[]; reduce: string[] } {
     : { add: [cai, guan, shi], reduce: [yin, self] }
 }
 
-function currentDaYun(c: HemunChart, nowYear: number): { ganZhi: string; info: string } | null {
+export function currentDaYun(c: HemunChart, nowYear: number): { ganZhi: string; info: string } | null {
   const dy = (c.daYun || []).find(d => nowYear >= d.startYear && nowYear <= d.endYear)
   if (!dy) return null
   // 运之喜忌：运支五行对喜用
