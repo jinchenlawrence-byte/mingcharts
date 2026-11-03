@@ -55,7 +55,7 @@ export default function EnMingShuPage() {
             language — personality, career, marriage, health, all at once.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-4">
-            <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} highlight authPath="/en/auth">
+            <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} highlight authPath="/en/auth" returnTo="/en/checkout/success">
               Buy the Fate Book · {formatPriceUSD(SKUS.fatebook.priceUSD)}
             </CheckoutButton>
             <Link href="/en" className="bg-white text-ink px-8 py-3 rounded-full font-semibold border border-gold/20 hover:bg-gold/5 transition">

@@ -22,6 +22,10 @@ const clients = [
   'src/app/en/hemun/Client.tsx',
   'src/app/en/ziwei/Client.tsx',
   'src/app/en/geo/Client.tsx',
+  'src/app/en/account/page.tsx',
+  'src/app/en/member/page.tsx',
+  'src/app/en/reports/page.tsx',
+  'src/app/en/checkout/success/page.tsx',
 ]
 
 // ---------- ① 源码零 CJK ----------
@@ -30,12 +34,14 @@ for (const file of clients) {
   const src = read(file)
   const cjk = findCJK(src)
   assert(cjk.length === 0, `${file} 零 CJK（命中：${cjk.slice(0, 10).join('、')}）`)
-  assert(src.includes("locale: 'en'"), `${file} 请求携带 locale=en`)
+}
+for (const file of clients.slice(0, 3)) {
+  assert(read(file).includes("locale: 'en'"), `${file} 请求携带 locale=en`)
 }
 
 // ---------- ② 结果区不渲染中文规则表 ----------
 console.log('—— ② 结果区只渲染英文 AI / 英文 preview ——')
-for (const file of clients) {
+for (const file of clients.slice(0, 3)) {
   const src = read(file)
   for (const forbidden of ['data.result', 'data.geo', 'data.chart', 'data.analysis', '<HemunResultView', '<ZiweiResultView', '<GeoResultView']) {
     assert(!src.includes(forbidden), `${file} 不引用中文结果数据/组件（${forbidden}）`)
@@ -55,6 +61,20 @@ for (const [file, marker] of [
   assert(src.includes(marker), `${file} 定义英文 preview`)
   assert(src.includes("locale === 'en'"), `${file} 按 locale 选择英文 preview`)
   assert(/lockedPreview/.test(src), `${file} locked 响应使用 locale 化 preview`)
+}
+
+// ---------- ⑤ 第三步链路：导航 / 会员中心 / 支付成功 ----------
+console.log('—— ⑤ 账户、会员、报告列表与支付回跳 ——')
+{
+  const layout = read('src/app/en/layout.tsx')
+  for (const href of ['/en/reports', '/en/member', '/en/account']) {
+    assert(layout.includes(`href="${href}"`), `英文导航含 ${href}`)
+  }
+  assert(read('src/components/MembershipButton.tsx').includes('href="/en/member"'), '英文会员按钮不再落中文 /member')
+  assert(read('src/lib/waffo.ts').includes("'/en/checkout/success'"), '英文购买成功回跳 /en/checkout/success')
+  const pricing = read('src/app/en/pricing/page.tsx')
+  assert(pricing.includes('returnTo="/en/checkout/success"'), '英文定价页购买携带英文成功回跳')
+  assert(read('src/app/en/chart/Client.tsx').includes('returnTo="/en/checkout/success"'), '英文命书购买携带英文成功回跳')
 }
 
 // ---------- ④ 牙口：注入中文必须翻红 ----------

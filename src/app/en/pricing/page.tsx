@@ -152,7 +152,7 @@ export default function EnPricingPage() {
                 <li key={f} className="flex gap-2"><span className="text-[#3a66ff] shrink-0">✓</span><span>{f}</span></li>
               ))}
             </ul>
-            <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} highlight authPath="/en/auth">
+            <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} highlight authPath="/en/auth" returnTo="/en/checkout/success">
               Buy the Fate Book
             </CheckoutButton>
             <Link href="/en/mingshu" className="hw-c-blue block text-center text-sm hover:brightness-110 mt-2">
@@ -206,7 +206,7 @@ export default function EnPricingPage() {
                     <div className="text-xs text-ink-light/60 mt-1">/ use</div>
                   </div>
                 </div>
-                <CheckoutButton sku={s.id} available={waffoProductId(s.id) !== null} authPath="/en/auth">
+                <CheckoutButton sku={s.id} available={waffoProductId(s.id) !== null} authPath="/en/auth" returnTo="/en/checkout/success">
                   Buy now
                 </CheckoutButton>
               </div>
@@ -236,7 +236,7 @@ export default function EnPricingPage() {
                 <div className="text-xs text-ink-light/60 mt-1">/ {ASK_PACK_SIZE}</div>
               </div>
             </div>
-            <CheckoutButton sku="ask_pack" available={waffoProductId('ask_pack') !== null} requireChart={false} authPath="/en/auth">
+            <CheckoutButton sku="ask_pack" available={waffoProductId('ask_pack') !== null} requireChart={false} authPath="/en/auth" returnTo="/en/checkout/success">
               Buy the pack
             </CheckoutButton>
           </div>

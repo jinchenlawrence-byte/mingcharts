@@ -139,14 +139,15 @@ export interface ReportCacheHit {
  */
 export function resolveCachedHit(
   hit: ReportCacheHit,
-  opts: { unlocked: boolean; skus: string[]; targetYear: number }
+  opts: { unlocked: boolean; skus: string[]; targetYear: number; lockedPreview?: string }
 ): { reportId: string; data: Record<string, unknown> } | null {
   if (!isCacheContentUsable(hit.content)) return null
   const cachedItem = cachedTargetOf(hit.content, opts.targetYear)
   const data = recomputeEntitlementFields(hit.content, {
     unlocked: opts.unlocked,
     skus: opts.skus,
-    lockedPreview: `${opts.targetYear}年（${cachedItem?.ganZhi ?? ''}年）流年详批：事业/财运/感情/健康分维度深度解读解锁后可见。`
+    lockedPreview: opts.lockedPreview
+      ?? `${opts.targetYear}年（${cachedItem?.ganZhi ?? ''}年）流年详批：事业/财运/感情/健康分维度深度解读解锁后可见。`
   })
   return { reportId: hit.reportId, data }
 }

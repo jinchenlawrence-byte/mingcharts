@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
     // 目标流年：只能是今年/明年/后年（= 规则引擎 liuNian 三年窗口）
     const nowYear = new Date().getFullYear()
     const targetYear = toInt(body.targetYear, -1)
+    const lockedPreviewEn = `The ${targetYear} Annual Pillar report covers career, wealth, relationships and health. Unlock to read the full report.`
     if (![nowYear, nowYear + 1, nowYear + 2].includes(targetYear)) {
       return NextResponse.json(
         { error: '目标年份不合法：年运报告目前仅支持今年、明年或后年' },
@@ -102,7 +103,14 @@ export async function POST(request: NextRequest) {
     //   force=true（重新生成）与未登录用户跳过读取。
     if (!force && userId && admin) {
       const hit = await readReportCache(admin, userId, 'annual', cacheKey)
-      const resolved = hit ? resolveCachedHit(hit, { unlocked, skus: ['annual_report'], targetYear }) : null
+      const resolved = hit
+      ? resolveCachedHit(hit, {
+          unlocked,
+          skus: ['annual_report'],
+          targetYear,
+          ...(locale === 'en' ? { lockedPreview: lockedPreviewEn } : {}),
+        })
+      : null
       if (resolved) {
         // ★ 缓存命中也要带同一试读标记，避免免费用户从存量全文缓存拿到完整渲染路径
         const data = { ...resolved.data, preview: previewPayload('annual_report', unlocked) }
@@ -189,7 +197,9 @@ export async function POST(request: NextRequest) {
       free: { targetYear, liuNian: luck.liuNian, liuYue },
       locked: unlocked ? null : {
         skus: ['annual_report'],
-        preview: `${targetYear}年（${target.ganZhi}年）流年详批：事业/财运/感情/健康分维度深度解读解锁后可见。`
+        preview: locale === 'en'
+        ? lockedPreviewEn
+        : `${targetYear}年（${target.ganZhi}年）流年详批：事业/财运/感情/健康分维度深度解读解锁后可见。`
       },
       preview: previewPayload('annual_report', unlocked)
     }
