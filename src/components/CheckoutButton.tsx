@@ -22,6 +22,7 @@ export default function CheckoutButton({
   chartId: chartIdProp,
   requireChart = true,
   returnTo,
+  authPath = '/auth',
   children,
 }: {
   sku: SkuId
@@ -37,6 +38,8 @@ export default function CheckoutButton({
   requireChart?: boolean
   /** ★ 支付成功后回跳的站内路径（模块购买回原模块页看已解锁内容）；缺省走成功页默认 */
   returnTo?: string
+  /** 未登录时的登录页路径（英文树传 /en/auth）；仅路由提示，不改支付逻辑 */
+  authPath?: string
   children: React.ReactNode
 }) {
   const router = useRouter()
@@ -65,7 +68,7 @@ export default function CheckoutButton({
         data: { session },
       } = await supabase.auth.getSession()
       if (!session) {
-        router.push('/auth')
+        router.push(authPath)
         return
       }
 

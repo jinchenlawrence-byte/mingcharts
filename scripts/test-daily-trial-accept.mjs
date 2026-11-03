@@ -27,7 +27,7 @@ function assert(cond, msg, failMsg) {
 
 const REPO = readFileSync('src/lib/push-repo.ts', 'utf8')
 const ROUTE = readFileSync('src/app/api/cron/daily-push/route.ts', 'utf8')
-const HOME = readFileSync('src/app/page.tsx', 'utf8')
+const HOME = readFileSync('src/app/HomeClient.tsx', 'utf8')
 const TW_HOME = readFileSync('src/app/tw/page.tsx', 'utf8')
 
 console.log('—— ① 试用受众 ——')
@@ -64,7 +64,7 @@ console.log('—— ③ 首页入口 ——')
   assert(/href="\/shensha\/check"/.test(HOME),
     '简体首页有免费查神煞入口',
     '简体首页没有免费查神煞入口')
-  assert(/href="\/daily"/.test(TW_HOME),
+  assert(/href="\/tw\/daily"/.test(TW_HOME),
     '繁体首页有日运入口',
     '繁体首页没有日运入口')
   assert(/\/tw\/shensha\/check/.test(TW_HOME),

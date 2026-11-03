@@ -4,7 +4,8 @@ import LocaleSync from '@/components/LocaleSync'
 import SiteLangSync from '@/components/SiteLangSync'
 import HantLangSwitch from '@/components/HantLangSwitch'
 import WebPageJsonLd from '@/components/WebPageJsonLd'
-import { HANT_HREFLANG, hantAlternates } from '@/lib/hant-seo'
+import { HANT_HREFLANG } from '@/lib/hant-seo'
+import { triAlternates } from '@/lib/lang'
 
 // 繁体树根布局：lang 必须与内容一致（zh-Hant），否则 Google 会按 zh-CN 处理，
 // 前面的 hreflang 也就白写了。
@@ -17,7 +18,7 @@ export const metadata: Metadata = {
     '明理繁體版：生肖性格與流年運勢、八字命理知識。提供免費八字排盤、紫微斗數、合婚配對與萬字命書詳批。',
   alternates: {
     canonical: '/tw',
-    languages: hantAlternates('/'),
+    languages: triAlternates('/'),
   },
   openGraph: {
     locale: 'zh_TW',

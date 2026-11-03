@@ -169,10 +169,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     }))
   ]
 
+  // 英文樹（/en）：第一批收英文首页、排盘结果、价目、命书介绍；登录页 noindex 不收录。
+  // 合婚 / 紫微 / 方位 / 年运尚无英文版，不在此声明。
+  const enPages: MetadataRoute.Sitemap = [
+    { url: `${BASE_URL}/en`, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${BASE_URL}/en/chart`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE_URL}/en/pricing`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/en/mingshu`, changeFrequency: 'monthly', priority: 0.8 },
+  ]
+
   // 伙伴招募（白标 v1）：独立于内容页，优先级低但它必须可被搜到
   const partnerPages: MetadataRoute.Sitemap = [
     { url: `${BASE_URL}/partners`, changeFrequency: 'monthly', priority: 0.6 },
   ]
 
-  return [...staticPages, ...seasonPages, ...shengxiaoPages, ...baziPages, ...articlePages, ...hantPages, ...partnerPages]
+  return [...staticPages, ...seasonPages, ...shengxiaoPages, ...baziPages, ...articlePages, ...hantPages, ...enPages, ...partnerPages]
 }

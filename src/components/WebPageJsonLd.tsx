@@ -26,7 +26,7 @@ interface Props {
   /** 页面路径，如 /tw/shengxiao/shu/2027 */
   path: string
   /** 页面语言的 BCP-47 标注 */
-  inLanguage: 'zh-Hant' | 'zh-Hans'
+  inLanguage: 'zh-Hant' | 'zh-Hans' | 'en'
 }
 
 export default function WebPageJsonLd({ name, description, path, inLanguage }: Props) {

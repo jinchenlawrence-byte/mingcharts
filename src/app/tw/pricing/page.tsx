@@ -18,7 +18,7 @@ import {
 import { waffoProductId } from '@/lib/waffo-products'
 import { GRANT_LABELS } from '@/lib/grantLabels'
 import { toHant } from '@/lib/hant'
-import { hantAlternates } from '@/lib/hant-seo'
+import { triAlternates } from '@/lib/lang'
 import type { Metadata } from 'next'
 
 // 價格方案（繁體）：與 /pricing 同構、同資訊量；價格一律取自 SKUS（單一事實源）。
@@ -29,7 +29,7 @@ const H = (s: string) => toHant(s)
 export const metadata: Metadata = {
   title: `價格方案：免費排盤 · 命書報告 ${formatPriceUSD(SKUS.fatebook.priceUSD)} · 會員訂閱`,
   description: `八字命理服務價格：免費四柱排盤；${formatPriceUSD(SKUS.fatebook.priceUSD)} 解鎖萬字命書深度詳批（八字總覽、性格天賦、用神喜忌、格局成敗、調候、大運流年、事業財運、婚姻感情、子女六親、健康提示）；會員訂閱提供日運、流月等持續型內容，另含每月 ${MEMBER_ASK_PER_MONTH} 次追問，不含命書等報告。`,
-  alternates: { canonical: '/tw/pricing', languages: hantAlternates('/pricing') },
+  alternates: { canonical: '/tw/pricing', languages: triAlternates('/pricing') },
 }
 
 // 订阅类权益的中文名串（FAQ 用），逐项派生自 SUBSCRIPTION_GRANTS

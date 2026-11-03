@@ -125,6 +125,25 @@ export function findForbidden(text: string, strictBi = false): { hits: HitSenten
       }
     }
   }
+  // 英文别名：大小写不敏感；否定/限定豁免同样生效
+  for (const s of sentences) {
+    const lower = s.toLowerCase()
+    for (const w of FORBIDDEN_WORDS_EN) {
+      let idx = lower.indexOf(w)
+      while (idx >= 0) {
+        const before = lower.slice(0, idx)
+        const after = lower.slice(idx + w.length)
+        if (EN_NEG_BEFORE.test(before)) {
+          if (!skipped.some(h => h.w === w && h.s === s)) skipped.push({ w, s, kind: 'neg' })
+        } else if (EN_HEDGE_BEFORE.test(before.trim())) {
+          if (!skipped.some(h => h.w === w && h.s === s)) skipped.push({ w, s, kind: 'hedge' })
+        } else if (!hits.some(h => h.w === w && h.s === s)) {
+          hits.push({ w, s })
+        }
+        idx = lower.indexOf(w, idx + 1)
+      }
+    }
+  }
   return { hits, skipped }
 }
 
@@ -134,7 +153,22 @@ export function findForbidden(text: string, strictBi = false): { hits: HitSenten
  *  ★★ 单独成表、**不并入 FORBIDDEN_WORDS**：test-entitlement-gate 断言 FORBIDDEN_WORDS 恰为 B+C 五词。 */
 export const FORBIDDEN_WORDS_HANT = ['註定', '積極進取', '突破性進展'] as const
 
-/** 实际拦截用的全表（简体主表 + 繁体别名），仅供 findForbidden 遍历 */
+/**
+ * ★ 英文写法别名（2026-11-03，英文版上线前补）：
+ *  B/C 两类在英文里字形全变，若不补，英文命书会整片绕过合规校验。
+ *  ★ 单独成表、不并入 FORBIDDEN_WORDS（简体五词表受 test-entitlement-gate 守护）。
+ */
+export const FORBIDDEN_WORDS_EN = [
+  'guaranteed', 'destined', 'inevitable', 'definitely', 'certainly',
+  'sure to', 'breakthrough', 'aggressive', 'must ',
+] as const
+
+/** 英文禁词前的否定豁免（not / never / no / without …） */
+const EN_NEG_BEFORE = /\b(not|never|no|without|isn't|aren't|won't|cannot|can't)\b[^.!?]{0,18}$/i
+/** 英文 "certain" 的限定豁免（to a certain extent / a certain amount …） */
+const EN_HEDGE_BEFORE = /\b(to a certain|certain quantity|a certain)\s+(extent|degree|amount|level|period|range|number)$/i
+
+/** 实际拦截用的全表（简体主表 + 繁体别名 + 英文别名），仅供 findForbidden 遍历 */
 const FORBIDDEN_SCAN = [...FORBIDDEN_WORDS, ...FORBIDDEN_WORDS_HANT] as const
 
 // ★ 「一定」限定用法白名单（词后紧邻）：

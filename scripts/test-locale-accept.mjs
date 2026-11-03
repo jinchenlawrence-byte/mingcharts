@@ -19,9 +19,9 @@ process.env.AI_API_KEY = process.env.AI_API_KEY || 'test-key-not-real'
 
 const {
   parseLocale, resolveLocale, localeDirective, checkoutLanguage,
-  HANT_OUTPUT_DIRECTIVE, LOCALE_COOKIE, OUTPUT_LOCALES, localeFromRequest,
+  HANT_OUTPUT_DIRECTIVE, EN_OUTPUT_DIRECTIVE, LOCALE_COOKIE, OUTPUT_LOCALES, localeFromRequest,
 } = await import('../src/lib/locale.ts')
-const { findForbidden, FORBIDDEN_WORDS, FORBIDDEN_WORDS_HANT } = await import('../src/lib/ai-check.ts')
+const { findForbidden, FORBIDDEN_WORDS, FORBIDDEN_WORDS_HANT, FORBIDDEN_WORDS_EN } = await import('../src/lib/ai-check.ts')
 
 // ---------- ① 解析矩阵 ----------
 console.log('—— ① parseLocale / resolveLocale ——')
@@ -32,16 +32,17 @@ const ok = (v, want) => {
 }
 ok('zh-Hans', 'zh-Hans'); ok('zh-CN', 'zh-Hans'); ok('ZH-HANS', 'zh-Hans'); ok(' cn ', 'zh-Hans')
 ok('zh-Hant', 'zh-Hant'); ok('zh-TW', 'zh-Hant'); ok('zh-HK', 'zh-Hant'); ok('tw', 'zh-Hant'); ok('HANT', 'zh-Hant')
-for (const bad of ['en', '', '   ', null, undefined, 123, {}, [], 'zh']) ok(bad, null)
-if (resolveLocale('en', 'zh-Hant') !== 'zh-Hant') { parseFail++; fail('resolveLocale 未按候选顺序取第一个认得的') }
-if (resolveLocale('en', null, '{}') !== 'zh-Hans') { parseFail++; fail('resolveLocale 全认不得时应回落 zh-Hans') }
+ok('en', 'en'); ok('EN-US', 'en'); ok('english', 'en')
+for (const bad of ['', '   ', null, undefined, 123, {}, [], 'zh']) ok(bad, null)
+if (resolveLocale('en', 'zh-Hant') !== 'en') { parseFail++; fail('resolveLocale 未按候选顺序取第一个认得的（en 应胜出）') }
+if (resolveLocale('zzz', null, '{}') !== 'zh-Hans') { parseFail++; fail('resolveLocale 全认不得时应回落 zh-Hans') }
 // localeFromRequest：body 优先于 cookie
 const fakeReq = (cookieVal) => ({ cookies: { get: (n) => (n === LOCALE_COOKIE && cookieVal ? { value: cookieVal } : undefined) } })
 if (localeFromRequest(fakeReq('zh-Hant'), { locale: 'zh-Hans' }) !== 'zh-Hans') { parseFail++; fail('body.locale 应优先于 cookie') }
 if (localeFromRequest(fakeReq('zh-Hant'), {}) !== 'zh-Hant') { parseFail++; fail('body 无 locale 时应读 cookie') }
 if (localeFromRequest(fakeReq(null), {}) !== 'zh-Hans') { parseFail++; fail('既无 body 也无 cookie 时应回落 zh-Hans') }
 if (localeFromRequest(null, null) !== 'zh-Hans') { parseFail++; fail('request 为 null 时不应抛错，应回落 zh-Hans') }
-console.log(parseFail === 0 ? '✓ 解析：繁体/简体别名全中；en/空/null/数字/对象 一律 null；回落链 body ＞ cookie ＞ 默认' : `✗ 解析失败 ${parseFail} 处`)
+console.log(parseFail === 0 ? '✓ 解析：简/繁/英别名全中；空/null/数字/对象 一律 null；回落链 body ＞ cookie ＞ 默认' : `✗ 解析失败 ${parseFail} 处`)
 
 // ---------- ② 指令内容 ----------
 console.log('—— ② localeDirective 与默认零改动 ——')
@@ -51,6 +52,10 @@ if (localeDirective('zh-Hans') !== '') { dirFail++; fail('zh-Hans 必须返回�
 if (localeDirective('bogus') !== '') { dirFail++; fail('认不得的取值必须返回空串，不得误开繁体') }
 if (localeDirective(null) !== '') { dirFail++; fail('null 必须返回空串') }
 if (localeDirective('zh-Hant') !== HANT_OUTPUT_DIRECTIVE) { dirFail++; fail('zh-Hant 应返回 HANT_OUTPUT_DIRECTIVE 本体') }
+if (localeDirective('en') !== EN_OUTPUT_DIRECTIVE) { dirFail++; fail('en 应返回 EN_OUTPUT_DIRECTIVE 本体') }
+for (const needle of ['English', 'Day Master', 'Ten Gods', 'Luck Pillar', 'guaranteed', 'destined']) {
+  if (!EN_OUTPUT_DIRECTIVE.includes(needle)) { dirFail++; fail(`英文指令缺「${needle}」`) }
+}
 for (const needle of ['繁體中文', '不得繁簡混用', '干支', '註定', '積極進取', '突破性進展']) {
   if (!HANT_OUTPUT_DIRECTIVE.includes(needle)) { dirFail++; fail(`繁体指令缺纪律项「${needle}」`) }
 }
@@ -62,14 +67,14 @@ console.log(dirFail === 0 ? '✓ 指令：默认/简体/未知一律空串；繁
 // ---------- ③ 收银台语言 ----------
 console.log('—— ③ checkoutLanguage ——')
 let payFail = 0
-const CASHIER_OK = new Set(['zh-Hans', 'zh-Hant-TW', 'zh-Hant-HK']) // Waffo CashierLanguage 子集
+const CASHIER_OK = new Set(['zh-Hans', 'zh-Hant-TW', 'zh-Hant-HK', 'en']) // Waffo CashierLanguage 子集
 const pay = (v, want) => {
   const got = checkoutLanguage(v)
   if (got !== want) { payFail++; fail(`checkoutLanguage(${JSON.stringify(v)}) = ${got}，应为 ${want}`) }
   if (!CASHIER_OK.has(got)) { payFail++; fail(`checkoutLanguage(${JSON.stringify(v)}) = ${got} 不在 Waffo 允许的取值里`) }
 }
-pay(undefined, 'zh-Hans'); pay('zh-Hans', 'zh-Hans'); pay('zh-Hant', 'zh-Hant-TW'); pay('tw', 'zh-Hant-TW'); pay('garbage', 'zh-Hans')
-console.log(payFail === 0 ? '✓ 收银台：默认 zh-Hans 不变；繁体映射 zh-Hant-TW（SDK 无裸 zh-Hant）' : `✗ 收银台失败 ${payFail} 处`)
+pay(undefined, 'zh-Hans'); pay('zh-Hans', 'zh-Hans'); pay('zh-Hant', 'zh-Hant-TW'); pay('tw', 'zh-Hant-TW'); pay('en', 'en'); pay('garbage', 'zh-Hans')
+console.log(payFail === 0 ? '✓ 收银台：默认 zh-Hans 不变；繁体映射 zh-Hant-TW；英文映射 en（SDK 均支持）' : `✗ 收银台失败 ${payFail} 处`)
 
 // ---------- ④ 六个模块单一事实源 ----------
 console.log('—— ④ 六个 AI 模块接线 ——')
@@ -160,6 +165,7 @@ if (JSON.stringify([...FORBIDDEN_WORDS]) !== JSON.stringify(['必', '一定', '�
   wordFail++; fail(`FORBIDDEN_WORDS 必须仍是 B+C 五词（test-entitlement-gate 会断言），实际 ${JSON.stringify(FORBIDDEN_WORDS)}`)
 }
 if (FORBIDDEN_WORDS_HANT.length !== 3) { wordFail++; fail('FORBIDDEN_WORDS_HANT 应为 3 项（注定/积极进取/突破性进展的繁体形态）') }
+if (FORBIDDEN_WORDS_EN.length !== 9) { wordFail++; fail('FORBIDDEN_WORDS_EN 应为 9 项（英文确定性/行动指令别名）') }
 const mustHit = [
   ['这段关系註定难以长久', '註定'],
   ['投資上宜積極進取', '積極進取'],
@@ -167,6 +173,9 @@ const mustHit = [
   ['此局务必谨慎行事', '必'],
   ['你一定能实现目标', '一定'],
   ['这段关系注定难以长久', '注定'],
+  ['This relationship is destined to be short-lived', 'destined'],
+  ['Your career is guaranteed to improve this year', 'guaranteed'],
+  ['You must act aggressively now', 'aggressive'],
 ]
 for (const [text, w] of mustHit) {
   const { hits } = findForbidden(text)
@@ -175,6 +184,9 @@ for (const [text, w] of mustHit) {
 // 否定式豁免在繁体下仍生效（否则会白吃重试 → 退回规则版）
 if (findForbidden('並非註定如此').hits.length !== 0) {
   wordFail++; fail('「並非註定」应走否定豁免（繁体否定词 並非 未被识别）')
+}
+if (findForbidden('This outcome is not destined or guaranteed').hits.length !== 0) {
+  wordFail++; fail('英文否定式 should be exempt（not destined/guaranteed）')
 }
 console.log(wordFail === 0 ? '✓ 判据：繁体三词与简体五词同罪；「並非註定」正确豁免；FORBIDDEN_WORDS 仍是五词' : `✗ 判据失败 ${wordFail} 处`)
 
@@ -205,7 +217,7 @@ if (parseLocale('zh-Hant') !== 'zh-Hant') { toothFail++; fail('牙口：parseLoc
 if (localeDirective('zh-Hant') === '') { toothFail++; fail('牙口：繁体指令返回空，断言等于空转') }
 const { hits: toothHits } = findForbidden('這段關係註定难以长久')
 if (toothHits.length === 0) { toothFail++; fail('牙口：繁体禁词样本未被检出，⑤⑥ 的断言会假通过') }
-if (OUTPUT_LOCALES.length !== 2) { toothFail++; fail('牙口：OUTPUT_LOCALES 应为 2 项') }
+if (OUTPUT_LOCALES.length !== 3) { toothFail++; fail('牙口：OUTPUT_LOCALES 应为 3 项（简/繁/英）') }
 console.log(toothFail === 0 ? '✓ 牙口：解析/指令/繁体禁词/取值表 判据样本均能触发' : '✗ 牙口自检失败')
 
 console.log('\n' + (allPass ? 'LOCALE_ACCEPT_PASS' : 'LOCALE_ACCEPT_FAIL'))

@@ -8,10 +8,12 @@ import { checkDSTTransition } from '@/lib/solarTime'
 import { resolveBirthFromBody } from '@/lib/birthRequest'
 import { canViewFatebookForChart } from '@/lib/entitlement'
 import { createServerSupabase } from '@/lib/supabase'
+import { localeFromRequest } from '@/lib/locale'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
+    const locale = localeFromRequest(request, body)
     const toInt = (v: unknown, def = 0): number => {
       if (v === undefined || v === null || v === '') return def
       const n = parseInt(String(v), 10)
@@ -145,7 +147,11 @@ export async function POST(request: NextRequest) {
         },
         locked: unlocked ? null : {
           skus: ['fatebook', 'annual_report'],
-          preview: '命书深度报告含十大板块万字详批（八字总览、性格天赋、用神喜忌、格局成败、调候、大运流年、事业财运、婚姻感情、子女六亲、健康提示），解锁后可见。'
+          preview: locale === 'en'
+            ? 'The full Fate Book contains ten in-depth sections (chart overview, temperament, useful god, structure, seasonal adjustment, Luck and Annual Pillars, career, marriage, children, health), visible after unlocking.'
+            : locale === 'zh-Hant'
+              ? '命書深度報告含十大板塊萬字詳批（八字總覽、性格天賦、用神喜忌、格局成敗、調候、大運流年、事業財運、婚姻感情、子女六親、健康提示），解鎖後可見。'
+              : '命书深度报告含十大板块万字详批（八字总览、性格天赋、用神喜忌、格局成败、调候、大运流年、事业财运、婚姻感情、子女六亲、健康提示），解锁后可见。'
         },
         trueSolar: ref
           ? {

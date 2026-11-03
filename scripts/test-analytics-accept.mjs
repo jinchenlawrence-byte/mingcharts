@@ -50,14 +50,14 @@ assert(!/window\./.test(topLevel), '模块顶层不访问 window（site-audit �
 // ── ④ 接线 ─────────────────────────────────────────────────
 assert(/<TrackPageView \/>/.test(read('src/app/layout.tsx')), '根 layout 挂载 TrackPageView')
 
-const home = read('src/app/page.tsx')
+const home = read('src/app/HomeClient.tsx')
 const successIdx = home.indexOf('if (data.success)')
 const submitIdx = home.indexOf("track('paipan_submit')")
 assert(successIdx > -1 && submitIdx > successIdx && submitIdx < home.indexOf("router.push('/chart')"), '首页仅在排盘成功后记 paipan_submit')
 
 const checkout = read('src/components/CheckoutButton.tsx')
 assert(/track\('pay_click', \{ sku \}\)/.test(checkout), 'CheckoutButton 记 pay_click')
-assert(checkout.indexOf("track('pay_click'") < checkout.indexOf("router.push('/auth')"), 'pay_click 在登录跳转前记录（未登录也计入）')
+assert(checkout.indexOf("track('pay_click'") < checkout.indexOf('router.push(authPath)'), 'pay_click 在登录跳转前记录（未登录也计入；authPath 按语言树可配）')
 
 const preview = read('src/components/reports/PreviewLock.tsx')
 assert(/track\('preview_view'/.test(preview), 'UnlockCta 记 preview_view')

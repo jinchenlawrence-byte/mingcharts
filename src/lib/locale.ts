@@ -11,8 +11,8 @@
 // ★ 默认值必须是 zh-Hans：现有全部入口不带 locale，行为必须逐字不变（零回归）。
 // ★ 本文件不依赖 next/*，便于 scripts 里直接 import 做断言。
 
-/** 站内只区分两种输出语言（台/港/马新共用一套通用书面语，不拆 zh-TW / zh-HK） */
-export type OutputLocale = 'zh-Hans' | 'zh-Hant'
+/** 站内输出语言：简 / 繁（台港马新共用一套通用书面语）/ 英 */
+export type OutputLocale = 'zh-Hans' | 'zh-Hant' | 'en'
 
 export const DEFAULT_LOCALE: OutputLocale = 'zh-Hans'
 
@@ -20,12 +20,13 @@ export const DEFAULT_LOCALE: OutputLocale = 'zh-Hans'
 export const LOCALE_COOKIE = 'mc_locale'
 
 /** 允许的取值（对外暴露，便于前端与测试共用） */
-export const OUTPUT_LOCALES: readonly OutputLocale[] = ['zh-Hans', 'zh-Hant'] as const
+export const OUTPUT_LOCALES: readonly OutputLocale[] = ['zh-Hans', 'zh-Hant', 'en'] as const
 
 const HANS_ALIASES = new Set(['zh-hans', 'zh-cn', 'zh-sg', 'hans', 'cn', 'simplified', '简体', '簡體'])
 const HANT_ALIASES = new Set([
   'zh-hant', 'zh-tw', 'zh-hk', 'zh-mo', 'hant', 'tw', 'hk', 'mo', 'traditional', '繁体', '繁體',
 ])
+const EN_ALIASES = new Set(['en', 'en-us', 'en-gb', 'english'])
 
 /** 严格解析：认得的返回标准化值，认不得的返回 null（不猜测、不默认） */
 export function parseLocale(v: unknown): OutputLocale | null {
@@ -34,6 +35,7 @@ export function parseLocale(v: unknown): OutputLocale | null {
   if (!s) return null
   if (HANS_ALIASES.has(s)) return 'zh-Hans'
   if (HANT_ALIASES.has(s)) return 'zh-Hant'
+  if (EN_ALIASES.has(s)) return 'en'
   return null
 }
 
@@ -74,15 +76,29 @@ export const HANT_OUTPUT_DIRECTIVE = `
 · 費用、SKU 名稱、法律條款名稱照原文，不要自行轉換；
 · 禁用詞規則同樣適用：以繁體寫法出現（註定、積極進取、突破性進展）同樣視為違規，須改用「往往／多半／穩中求進／階段性的進展」。`
 
+/** 英文输出指令（同样不改 SYSTEM_PROMPT，只追加） */
+export const EN_OUTPUT_DIRECTIVE = `
+
+【OUTPUT LANGUAGE｜MANDATORY】Write the entire response in natural English (US spelling).
+· Keep Bazi technical terms in their standard romanised form: Bazi / Four Pillars of Destiny, Heavenly Stem, Earthly Branch, Day Master, Ten Gods, Hidden Stems, Luck Pillar (大运), Annual Pillar (流年), Five Elements, True Solar Time; do not translate stems/branches (e.g. Jia Zi) into English words.
+· Do not mix Chinese and English in the body. A short Chinese term in brackets is allowed only for a technical term on first use.
+· The same compliance rules apply: never use "guaranteed", "destined", "inevitable", "definitely", "certainly", "must", "sure to", "breakthrough" or "aggressive"; use "tends to", "often", "likely", "steady progress", "incremental progress" instead.`
+
 /** 返回追加到 system prompt 的语言指令；简体返回空串（保证默认路径逐字不变） */
 export function localeDirective(locale?: unknown): string {
-  return parseLocale(locale) === 'zh-Hant' ? HANT_OUTPUT_DIRECTIVE : ''
+  const parsed = parseLocale(locale)
+  if (parsed === 'zh-Hant') return HANT_OUTPUT_DIRECTIVE
+  if (parsed === 'en') return EN_OUTPUT_DIRECTIVE
+  return ''
 }
 
 /**
  * 收银台语言。★ Waffo 的 CashierLanguage 里没有裸 "zh-Hant"，
  * 只有 zh-Hant-TW / zh-Hant-HK —— 故繁体统一映射到 zh-Hant-TW（通用书面语最接近的档位）。
  */
-export function checkoutLanguage(locale?: unknown): 'zh-Hans' | 'zh-Hant-TW' {
-  return parseLocale(locale) === 'zh-Hant' ? 'zh-Hant-TW' : 'zh-Hans'
+export function checkoutLanguage(locale?: unknown): 'zh-Hans' | 'zh-Hant-TW' | 'en' {
+  const parsed = parseLocale(locale)
+  if (parsed === 'zh-Hant') return 'zh-Hant-TW'
+  if (parsed === 'en') return 'en'
+  return 'zh-Hans'
 }
