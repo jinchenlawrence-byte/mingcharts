@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import '@/app/globals.css'
+import LocaleSync from '@/components/LocaleSync'
 import SiteChrome from '@/components/SiteChrome'
 import SiteLangSync from '@/components/SiteLangSync'
 import WebPageJsonLd from '@/components/WebPageJsonLd'
@@ -36,6 +37,8 @@ export default function EnRootLayout({ children }: { children: React.ReactNode }
     <html lang="en" className={rootFontClassName}>
       <body className="min-h-full flex flex-col bg-paper text-ink">
         <main className="hw-page" lang="en">
+          {/* 把语言写进 mc_locale：AI 命书与收银台据此出英文 */}
+          <LocaleSync locale="en" />
           {/* 客户端双保险：服务端 lang 已正确 */}
           <SiteLangSync lang="en" />
           <WebPageJsonLd
@@ -62,17 +65,6 @@ export default function EnRootLayout({ children }: { children: React.ReactNode }
             </div>
           </header>
           {children}
-          <footer className="border-t border-gold/15 mt-10">
-            <div className="hw-wrap py-6 text-xs text-ink-light/50 space-y-2">
-              <p>
-                English edition. Traditional Chinese and Simplified Chinese versions are available
-                via the language links above; hreflang declares all three.
-              </p>
-              <p>
-                Content is traditional Chinese metaphysics, offered for reference and entertainment only.
-              </p>
-            </div>
-          </footer>
         </main>
         <SiteChrome lang="en" />
       </body>

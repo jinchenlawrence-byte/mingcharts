@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
 import { latestChartIdOf } from '@/lib/entitlement'
 import { track } from '@/lib/track'
+import { toHant } from '@/lib/hant'
 import type { SkuId } from '@/lib/pricing'
 
 // 购买按钮：登录 → 预检命盘 → POST /api/checkout → 跳转 Waffo 托管收银台。
@@ -23,6 +24,7 @@ export default function CheckoutButton({
   requireChart = true,
   returnTo,
   authPath = '/auth',
+  locale = 'zh-Hans',
   children,
 }: {
   sku: SkuId
@@ -40,17 +42,22 @@ export default function CheckoutButton({
   returnTo?: string
   /** 未登录时的登录页路径（英文树传 /en/auth）；仅路由提示，不改支付逻辑 */
   authPath?: string
+  /** 仅文案与回跳路径：支付 / 权益 / SKU 逻辑完全不变 */
+  locale?: 'zh-Hans' | 'zh-Hant' | 'en'
   children: React.ReactNode
 }) {
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [noChart, setNoChart] = useState(false)
+  const en = locale === 'en'
+  const hant = locale === 'zh-Hant'
+  const L = (s: string) => (hant ? toHant(s) : s)
 
   if (!available) {
     return (
       <div className="block text-center py-2.5 rounded-full font-semibold bg-paper-dark/40 text-ink-light/40 cursor-not-allowed">
-        即将推出
+        {en ? 'Coming soon' : L('即将推出')}
       </div>
     )
   }
@@ -95,13 +102,14 @@ export default function CheckoutButton({
         body: JSON.stringify({
           sku,
           token: session.access_token,
+          locale,
           ...(chartId ? { chartId } : {}),
           ...(returnTo ? { returnTo } : {}),
         }),
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) {
-        setError(data?.error ?? '发起支付失败，请稍后再试')
+        setError(data?.error ?? (en ? 'Could not start checkout. Please try again.' : L('发起支付失败，请稍后再试')))
         setLoading(false)
         return
       }
@@ -116,7 +124,7 @@ export default function CheckoutButton({
       }
       window.location.href = data.checkoutUrl
     } catch (e) {
-      setError(e instanceof Error ? e.message : '网络异常，请稍后再试')
+      setError(e instanceof Error ? e.message : (en ? 'Network error. Please try again.' : L('网络异常，请稍后再试')))
       setLoading(false)
     }
   }
@@ -133,18 +141,22 @@ export default function CheckoutButton({
             : 'bg-ink text-white hover:brightness-110'
         }`}
       >
-        {loading ? '正在跳转支付…' : children}
+        {loading ? (en ? 'Redirecting to checkout…' : L('正在跳转支付…')) : children}
       </button>
       {error && <p className="text-xs text-red-600 mt-2 text-center">{error}</p>}
       {noChart && (
         // ★ 无命盘：不弹 alert，页内给出可点的下一步（HANDOFF-命书一份一付 §2.3）
         <div className="mt-2 text-xs text-ink/70 bg-gold/5 border border-gold/20 rounded-md p-3 text-center">
-          <p className="mb-2">命书会围绕你排好的命盘撰写——先免费排盘，再回来看命书详批。</p>
+          <p className="mb-2">
+            {en
+              ? 'The Fate Book is written around a saved chart — cast a free chart first, then return.'
+              : L('命书会围绕你排好的命盘撰写——先免费排盘，再回来看命书详批。')}
+          </p>
           <Link
-            href="/?returnTo=/pricing"
+            href={en ? '/en' : hant ? '/tw' : '/?returnTo=/pricing'}
             className="inline-block bg-ink text-white px-4 py-1.5 rounded-full font-semibold hover:brightness-110 transition"
           >
-            去免费排盘
+            {en ? 'Cast a free chart' : L('去免费排盘')}
           </Link>
         </div>
       )}

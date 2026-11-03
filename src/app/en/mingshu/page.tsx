@@ -45,7 +45,7 @@ export default function EnMingShuPage() {
           <span className="inline-block bg-gold/10 text-ink text-xs font-semibold px-3 py-1 rounded-full mb-4">
             Six classics · AI in-depth reading
           </span>
-          <h1 className="hw-c-h1">{SKUS.fatebook.name}</h1>
+          <h1 className="hw-c-h1">Fate Book</h1>
           <p className="text-xl text-ink font-medium mb-3">
             A full-length reading that makes your Bazi chart readable
           </p>
@@ -55,7 +55,7 @@ export default function EnMingShuPage() {
             language — personality, career, marriage, health, all at once.
           </p>
           <div className="flex flex-col sm:flex-row gap-3 justify-center mt-4">
-            <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} highlight authPath="/en/auth" returnTo="/en/checkout/success">
+            <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} highlight authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
               Buy the Fate Book · {formatPriceUSD(SKUS.fatebook.priceUSD)}
             </CheckoutButton>
             <Link href="/en" className="bg-white text-ink px-8 py-3 rounded-full font-semibold border border-gold/20 hover:bg-gold/5 transition">
@@ -63,8 +63,8 @@ export default function EnMingShuPage() {
             </Link>
           </div>
           <p className="text-xs text-ink-light/50 mt-3">
-            The chart page is in English and AI-written reports are generated in English. If the AI
-            service is unavailable, a rule-engine fallback may be shown in Chinese.
+            The chart page and AI-written reports are in English. If the AI service is unavailable,
+            the ten sections are produced by the English rule-engine fallback.
           </p>
         </header>
 

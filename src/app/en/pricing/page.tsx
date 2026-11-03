@@ -8,13 +8,10 @@ import {
   type GrantId, type SkuId,
 } from '@/lib/pricing'
 import { waffoProductId } from '@/lib/waffo-products'
-import { GRANT_LABELS } from '@/lib/grantLabels'
-import { tEn } from '@/lib/i18n'
 import { triAlternates } from '@/lib/lang'
 
-// 英文價目頁（第一批）：價格與權益全部派生自 pricing.ts（單一事實源），不新增付費牆。
-// ★ 購買按鈕走既有 CheckoutButton / MembershipButton（支付與權益邏輯不改）；
-//   按鈕內部的載入/同意文案仍是中文（已知限制，見回執）。
+// English pricing page: all prices and grants derive from pricing.ts (single source of truth).
+// Checkout and membership continue to use the existing buttons; only display copy is localised.
 export const metadata: Metadata = {
   title: `Pricing: Free Bazi chart · Fate Book ${formatPriceUSD(SKUS.fatebook.priceUSD)} · Membership`,
   description:
@@ -22,16 +19,73 @@ export const metadata: Metadata = {
   alternates: { canonical: '/en/pricing', languages: triAlternates('/pricing') },
 }
 
-const E = (s: string) => tEn(s)
+// English product and entitlement names. Pricing amounts stay in lib/pricing.ts;
+// this map only translates display copy so no Chinese leaks into the English page.
+const SKU_EN: Record<SkuId, { name: string; desc: string }> = {
+  fatebook: {
+    name: 'Fate Book',
+    desc: 'A full-length reading that shows the whole chart at a glance',
+  },
+  annual_report: {
+    name: 'Annual report',
+    desc: 'Three years of Annual Pillars with monthly rhythm — this year, next year and the year after',
+  },
+  hemun: {
+    name: 'Bazi synastry',
+    desc: 'Two-chart compatibility across nine dimensions, graded by classics, classical method and folk custom',
+  },
+  ziwei_deep: {
+    name: 'Zi Wei Dou Shu in depth',
+    desc: 'Full twelve-palace chart plus twelve written sections: chart overview, temperament, palaces, career, wealth, marriage, health, Four Transformations, structure, decadal cycle, annual cycle and guidance',
+  },
+  geo: {
+    name: 'Geomancy · Cities of wealth',
+    desc: 'Directional Five Elements and city qi, with five city recommendations',
+  },
+  bundle3: {
+    name: 'Fate Book bundle',
+    desc: 'Fate Book + Zi Wei Dou Shu + Geomancy in one purchase',
+  },
+  member_monthly: {
+    name: 'Monthly membership',
+    desc: `Daily personal reading + monthly rhythm + ${MEMBER_ASK_PER_MONTH} AI questions per month`,
+  },
+  member_yearly: {
+    name: 'Annual membership',
+    desc: `Daily personal reading + monthly rhythm + ${MEMBER_ASK_PER_MONTH} AI questions per month, at a better annual rate`,
+  },
+  ask_pack: {
+    name: 'Question pack',
+    desc: `${ASK_PACK_SIZE} AI astrologer questions`,
+  },
+  partner_credits_10: { name: 'Partner report pack · 10', desc: 'Ten client reports for professional readers.' },
+  partner_credits_50: { name: 'Partner report pack · 50', desc: 'Fifty client reports for professional readers.' },
+  partner_credits_200: { name: 'Partner report pack · 200', desc: 'Two hundred client reports for professional readers.' },
+}
 
-const SUBSCRIPTION_LABELS = SUBSCRIPTION_GRANTS.map((g) => E(GRANT_LABELS[g])).join(' · ')
-const REPORT_SKU_NAMES = REPORT_GRANTS.map((g) => E(SKUS[g as keyof typeof SKUS].name)).join(' · ')
+const GRANT_EN: Record<GrantId, string> = {
+  fatebook: 'Full Fate Book (ten sections)',
+  annual_report: 'Annual report (three years)',
+  hemun: 'Bazi synastry (two charts, nine dimensions)',
+  ziwei_deep: 'Zi Wei Dou Shu (twelve palaces)',
+  geo: 'Geomancy · cities of wealth',
+  daily: 'Daily personal reading',
+  liuyue: 'Monthly rhythm',
+  jiaoyun: 'Luck Pillar change alerts',
+  multi_chart: 'Multiple charts (3–5)',
+  similar_cases: 'Classical case comparisons',
+  history: 'Daily reading archive',
+  ask: `${ASK_PACK_SIZE} AI questions`,
+}
+
+const SUBSCRIPTION_LABELS = SUBSCRIPTION_GRANTS.map((g) => GRANT_EN[g]).join(' · ')
+const REPORT_SKU_NAMES = REPORT_GRANTS.map((g) => SKU_EN[g as SkuId].name).join(' · ')
 
 const SKU_HREF: Partial<Record<SkuId, string>> = {
-  annual_report: '/tw/liunian',
-  hemun: '/tw/hemun',
-  ziwei_deep: '/tw/ziwei',
-  geo: '/tw/geo',
+  annual_report: '/en/liunian',
+  hemun: '/en/hemun',
+  ziwei_deep: '/en/ziwei',
+  geo: '/en/geo',
 }
 
 const SECTIONS = [
@@ -81,10 +135,10 @@ const COMPARE_ROWS: CompareRow[] = [
   { label: 'Next three Annual Pillars', free: false, grant: 'fatebook' },
   { label: 'Reports stored permanently', free: false, grant: 'fatebook' },
   {
-    label: E(GRANT_LABELS.annual_report), free: false, grant: 'annual_report',
+    label: GRANT_EN.annual_report, free: false, grant: 'annual_report',
     note: `${formatPriceUSD(SKUS.annual_report.priceUSD)} · covers this year, next year and the year after, each with monthly rhythm`,
   },
-  ...SUBSCRIPTION_GRANTS.map((g) => ({ label: E(GRANT_LABELS[g]), free: false, grant: g })),
+  ...SUBSCRIPTION_GRANTS.map((g) => ({ label: GRANT_EN[g], free: false, grant: g })),
   {
     label: 'AI astrologer questions', free: false, member: true,
     note: `Available after buying any report or subscribing · ${MEMBER_ASK_PER_MONTH}/month for members · ${ASK_PER_REPORT} per report · ${ASK_PER_INVITE} per referral · pack ${formatPriceUSD(SKUS.ask_pack.priceUSD)}/${ASK_PACK_SIZE}`,
@@ -136,12 +190,12 @@ export default function EnPricingPage() {
             <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#3a66ff] text-white text-xs font-semibold px-3 py-1 rounded-full">
               Most popular
             </span>
-            <h2 className="text-lg font-bold">{E(SKUS.fatebook.name)}</h2>
+            <h2 className="text-lg font-bold">{SKU_EN.fatebook.name}</h2>
             <div className="flex items-baseline gap-1">
               <span className="hw-c-pr">{formatPriceUSD(SKUS.fatebook.priceUSD)}</span>
               <span className="text-ink-light/60 text-sm">/ use</span>
             </div>
-            <p className="text-sm text-ink-light">{E(SKUS.fatebook.desc)}</p>
+            <p className="text-sm text-ink-light">{SKU_EN.fatebook.desc}</p>
             <ul className="space-y-2 text-sm text-ink/70 flex-1 my-2">
               {['Everything in the free chart', 'In-depth AI astrologer reading (DeepSeek)',
                 'Ten sections, full length, quoting the six classics',
@@ -152,7 +206,7 @@ export default function EnPricingPage() {
                 <li key={f} className="flex gap-2"><span className="text-[#3a66ff] shrink-0">✓</span><span>{f}</span></li>
               ))}
             </ul>
-            <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} highlight authPath="/en/auth" returnTo="/en/checkout/success">
+            <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} highlight authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
               Buy the Fate Book
             </CheckoutButton>
             <Link href="/en/mingshu" className="hw-c-blue block text-center text-sm hover:brightness-110 mt-2">
@@ -166,10 +220,10 @@ export default function EnPricingPage() {
               <span className="hw-c-pr">{formatPriceUSD(SKUS.member_monthly.priceUSD)}</span>
               <span className="text-ink-light/60 text-sm">/ month up</span>
             </div>
-            <p className="text-sm text-ink-light">{E(SKUS.member_monthly.desc)}</p>
+            <p className="text-sm text-ink-light">{SKU_EN.member_monthly.desc}</p>
             <ul className="space-y-2 text-sm text-ink/70 flex-1 my-2">
               {SUBSCRIPTION_GRANTS.map((g) => (
-                <li key={g} className="flex gap-2"><span className="text-[#3a66ff] shrink-0">✓</span><span>{E(GRANT_LABELS[g])}</span></li>
+                <li key={g} className="flex gap-2"><span className="text-[#3a66ff] shrink-0">✓</span><span>{GRANT_EN[g]}</span></li>
               ))}
               <li className="flex gap-2"><span className="text-[#3a66ff] shrink-0">✓</span><span>{MEMBER_ASK_PER_MONTH} AI questions per month</span></li>
               <li className="flex gap-2"><span className="text-[#3a66ff] shrink-0">✓</span><span>Annual membership {formatPriceUSD(SKUS.member_yearly.priceUSD)}/year (best value)</span></li>
@@ -193,8 +247,8 @@ export default function EnPricingPage() {
               <div key={s.id} className="hw-c-box flex flex-col gap-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h3 className="font-bold text-ink">{E(s.name)}</h3>
-                    <p className="text-sm text-ink-light mt-1">{E(s.desc)}</p>
+                    <h3 className="font-bold text-ink">{SKU_EN[s.id].name}</h3>
+                    <p className="text-sm text-ink-light mt-1">{SKU_EN[s.id].desc}</p>
                     {SKU_HREF[s.id] && (
                       <Link href={SKU_HREF[s.id]!} className="hw-c-blue inline-block text-sm hover:brightness-110 mt-2">
                         Read a sample →
@@ -206,7 +260,7 @@ export default function EnPricingPage() {
                     <div className="text-xs text-ink-light/60 mt-1">/ use</div>
                   </div>
                 </div>
-                <CheckoutButton sku={s.id} available={waffoProductId(s.id) !== null} authPath="/en/auth" returnTo="/en/checkout/success">
+                <CheckoutButton sku={s.id} available={waffoProductId(s.id) !== null} requireChart={false} authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
                   Buy now
                 </CheckoutButton>
               </div>
@@ -224,8 +278,8 @@ export default function EnPricingPage() {
           <div className="hw-c-box flex flex-col gap-4 max-w-3xl mx-auto">
             <div className="flex items-start justify-between gap-4">
               <div>
-                <h3 className="font-bold text-ink">{E(SKUS.ask_pack.name)}</h3>
-                <p className="text-sm text-ink-light mt-1">{E(SKUS.ask_pack.desc)}</p>
+                <h3 className="font-bold text-ink">{SKU_EN.ask_pack.name}</h3>
+                <p className="text-sm text-ink-light mt-1">{SKU_EN.ask_pack.desc}</p>
                 <p className="text-xs text-ink-light/60 mt-2">
                   Questions on medical, legal, investment, life-and-death or major trade-offs are not
                   judged — only tendencies are described, and every answer carries a disclaimer.
@@ -236,7 +290,7 @@ export default function EnPricingPage() {
                 <div className="text-xs text-ink-light/60 mt-1">/ {ASK_PACK_SIZE}</div>
               </div>
             </div>
-            <CheckoutButton sku="ask_pack" available={waffoProductId('ask_pack') !== null} requireChart={false} authPath="/en/auth" returnTo="/en/checkout/success">
+            <CheckoutButton sku="ask_pack" available={waffoProductId('ask_pack') !== null} requireChart={false} authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
               Buy the pack
             </CheckoutButton>
           </div>

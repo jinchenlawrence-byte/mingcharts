@@ -6,7 +6,6 @@ import SiteChrome from '@/components/SiteChrome'
 import SiteLangSync from '@/components/SiteLangSync'
 import HantLangSwitch from '@/components/HantLangSwitch'
 import WebPageJsonLd from '@/components/WebPageJsonLd'
-import { HANT_HREFLANG } from '@/lib/hant-seo'
 import { triAlternates } from '@/lib/lang'
 import { rootFontClassName } from '@/lib/site-fonts'
 import { sharedMetadata, sharedOpenGraph, siteViewport } from '@/lib/site-meta'
@@ -63,6 +62,10 @@ export default function HantRootLayout({ children }: { children: React.ReactNode
                 <Link href="/tw/mingshu" className="hover:text-ink">命書</Link>
                 <Link href="/tw/article" className="hover:text-ink">命理知識</Link>
                 <Link href="/tw/pricing" className="hover:text-ink">價目</Link>
+                <Link href="/tw/charts" className="hover:text-ink">我的命盤</Link>
+                <Link href="/tw/reports" className="hover:text-ink">我的報告</Link>
+                <Link href="/tw/member" className="hover:text-ink">會員</Link>
+                <Link href="/tw/account" className="hover:text-ink">帳戶</Link>
                 <Link href="/tw/auth" className="hover:text-ink">登入</Link>
                 {/* 语言切换：由 lib/hant.twinPath 按当前路径推导 */}
                 <HantLangSwitch />
@@ -70,15 +73,6 @@ export default function HantRootLayout({ children }: { children: React.ReactNode
             </div>
           </header>
           {children}
-          <footer className="border-t border-gold/15 mt-10">
-            <div className="hw-wrap py-6 text-xs text-ink-light/50 space-y-2">
-              <p>
-                {HANT_HREFLANG.length} 語系 hreflang 已宣告：本頁同時提供簡體與繁體版本，
-                以 <code className="text-ink-light/70">zh-Hant</code> 為繁體語系標識（涵蓋台灣／香港／澳門）。
-              </p>
-              <p>以上內容為傳統命理民俗文化，僅供參考娛樂，不構成任何決策依據。</p>
-            </div>
-          </footer>
         </main>
         <SiteChrome lang="zh-Hant" />
       </body>

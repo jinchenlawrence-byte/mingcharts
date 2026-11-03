@@ -204,7 +204,7 @@ const ROUTES = {
   'geo/route.ts': 'generateAIGeo(analysis, { locale })',
   'hemun/route.ts': 'generateAIHemun(male, female, result, { locale })',
   'checkout/route.ts': 'localeFromRequest(request, body)',
-  'membership/route.ts': 'localeFromRequest(req)',
+  'membership/route.ts': 'localeFromRequest(req, body)',
 }
 for (const [f, needle] of Object.entries(ROUTES)) {
   const src = readFileSync(new URL(`../src/app/api/${f}`, import.meta.url), 'utf8')

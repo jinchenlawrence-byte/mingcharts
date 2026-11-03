@@ -78,7 +78,9 @@ export async function POST(req: NextRequest) {
       token?: string
       plan?: string
       agreeAutoRenew?: boolean
+      locale?: string
     }
+    const entryLocale = localeFromRequest(req, body)
 
     if (!token || !planId) {
       return NextResponse.json({ error: '参数缺失' }, { status: 400 })
@@ -145,9 +147,9 @@ export async function POST(req: NextRequest) {
       buyerEmail,
       userId: user.id,
       sku,
-      returnTo: '/member',
+      returnTo: entryLocale === 'en' ? '/en/member' : entryLocale === 'zh-Hant' ? '/tw/member' : '/member',
       // 会员订阅同样按入口语言给收银台（body.locale ＞ cookie ＞ 默认）
-      locale: localeFromRequest(req),
+      locale: entryLocale,
     })
 
     return NextResponse.json({

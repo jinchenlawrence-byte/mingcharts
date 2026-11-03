@@ -19,8 +19,7 @@ const KIND_EN: Record<string, string> = {
   fatebook: 'Fate Book',
 }
 
-// English report list. The shared detail view keeps its existing route; this page only
-// translates the list shell and the kind labels.
+// English report list and English report detail route.
 export default function EnReportsPage() {
   const [rows, setRows] = useState<ReportRow[]>([])
   const [loading, setLoading] = useState(true)
@@ -67,14 +66,12 @@ export default function EnReportsPage() {
                 <p className="font-semibold text-ink">{KIND_EN[r.kind] ?? r.kind}</p>
                 <p className="text-xs text-ink-light/60">{new Date(r.created_at).toLocaleDateString('en-US')}</p>
               </div>
-              <Link href={`/reports/${r.id}`} className="hw-c-link">Open report →</Link>
+              <Link href={`/en/reports/${r.id}`} className="hw-c-link">Open report →</Link>
             </div>
           ))}
         </div>
       )}
-      <p className="text-xs text-ink-light/50 mt-6">
-        Report detail pages are shared with the Chinese edition; English AI reports are written in English.
-      </p>
+
     </div>
   )
 }

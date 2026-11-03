@@ -166,7 +166,9 @@ for (const want of ['/partners', '/tw/partners']) {
 const chrome = readFileSync(near('src/components/SiteChrome.tsx'), 'utf8')
 const siteFooter = readFileSync(near('src/components/SiteFooter.tsx'), 'utf8')
 if (!chrome.includes('<SiteFooter')) { siteFail++; fail('SiteChrome 未渲染 SiteFooter') }
-if (!siteFooter.includes('href="/partners"')) { siteFail++; fail('页脚没有 /partners 入口') }
+if (!siteFooter.includes("'/tw/partners'") || !siteFooter.includes("'/partners'")) {
+  siteFail++; fail('页脚缺少简繁伙伴入口')
+}
 console.log(siteFail === 0 ? '✓ sitemap 收录简繁两版；页脚有入口' : `✗ sitemap/入口失败 ${siteFail} 处`)
 
 // ---------- ⑦ 伙伴包 SKU 与准入闸门（2026-10-22）----------

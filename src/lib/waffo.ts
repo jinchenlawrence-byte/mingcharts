@@ -166,7 +166,11 @@ export function buildCheckoutParams(input: CheckoutParamsInput): WaffoCheckoutPa
     (safeReturnTo ? `&returnTo=${encodeURIComponent(safeReturnTo)}` : '')
   // 语言层：英文树的购买回到 /en/checkout/success；简体/繁体仍回 /checkout/success。
   // 只改成功页落点，不改鉴权、权益判定或支付参数。
-  const successPath = safeReturnTo.startsWith('/en/') ? '/en/checkout/success' : '/checkout/success'
+  const successPath = safeReturnTo.startsWith('/en/')
+    ? '/en/checkout/success'
+    : safeReturnTo.startsWith('/tw/')
+      ? '/tw/checkout/success'
+      : '/checkout/success'
   const successUrl = `${base.origin}${successPath}?${successQuery}`
   const cardOnly: PaymentMethod[] = ['card']
   return {

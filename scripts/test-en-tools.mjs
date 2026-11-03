@@ -25,6 +25,8 @@ const clients = [
   'src/app/en/account/page.tsx',
   'src/app/en/member/page.tsx',
   'src/app/en/reports/page.tsx',
+  'src/app/en/reports/[id]/page.tsx',
+  'src/app/en/pricing/page.tsx',
   'src/app/en/checkout/success/page.tsx',
 ]
 
@@ -70,7 +72,10 @@ console.log('—— ⑤ 账户、会员、报告列表与支付回跳 ——')
   for (const href of ['/en/reports', '/en/member', '/en/account']) {
     assert(layout.includes(`href="${href}"`), `英文导航含 ${href}`)
   }
-  assert(read('src/components/MembershipButton.tsx').includes('href="/en/member"'), '英文会员按钮不再落中文 /member')
+  {
+    const mb = read('src/components/MembershipButton.tsx')
+    assert(mb.includes("'/en/member'") && mb.includes("'/tw/member'"), '会员按钮按语言落 /en/member 或 /tw/member，不落中文 /member')
+  }
   assert(read('src/lib/waffo.ts').includes("'/en/checkout/success'"), '英文购买成功回跳 /en/checkout/success')
   const pricing = read('src/app/en/pricing/page.tsx')
   assert(pricing.includes('returnTo="/en/checkout/success"'), '英文定价页购买携带英文成功回跳')

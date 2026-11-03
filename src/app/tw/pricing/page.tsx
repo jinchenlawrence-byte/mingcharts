@@ -234,6 +234,7 @@ export default function HantPricingPage() {
                     <MembershipButton
                       key={s.id}
                       plan={s.id === 'member_monthly' ? 'monthly' : 'yearly'}
+                      locale="zh-Hant"
                     />
                   ))}
                 </div>
@@ -243,6 +244,9 @@ export default function HantPricingPage() {
                     sku={card.buySku}
                     available={waffoProductId(card.buySku) !== null}
                     highlight={card.highlight}
+                    authPath="/tw/auth"
+                    locale="zh-Hant"
+                    returnTo="/tw/chart"
                   >
                     {card.cta.text}
                   </CheckoutButton>
@@ -292,7 +296,14 @@ export default function HantPricingPage() {
                     <div className="text-xs text-ink-light/60 mt-1">/ 次</div>
                   </div>
                 </div>
-                <CheckoutButton sku={s.id} available={waffoProductId(s.id) !== null}>
+                <CheckoutButton
+                  sku={s.id}
+                  available={waffoProductId(s.id) !== null}
+                  requireChart={false}
+                  authPath="/tw/auth"
+                  locale="zh-Hant"
+                  returnTo="/tw/reports"
+                >
                   {H('立即購買')}
                 </CheckoutButton>
               </div>
@@ -327,6 +338,9 @@ export default function HantPricingPage() {
               sku="ask_pack"
               available={waffoProductId('ask_pack') !== null}
               requireChart={false}
+              authPath="/tw/auth"
+              locale="zh-Hant"
+              returnTo="/tw/chart"
             >
               {H('購買追問包')}
             </CheckoutButton>

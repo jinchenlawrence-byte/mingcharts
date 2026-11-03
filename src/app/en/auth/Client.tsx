@@ -192,7 +192,7 @@ export default function AuthPage() {
         <div className="hw-auth">
           <div className="hw-c-box">
             <h1 className="hw-c-secTitle hw-c-h2C">
-              {forgot ? '找回密码' : (isLogin ? '登录' : '注册')}
+              {forgot ? 'Reset password' : (isLogin ? 'Sign in' : 'Create account')}
             </h1>
 
             {/* 双标签（设计稿要素）：登录 / 注册 */}
@@ -207,7 +207,7 @@ export default function AuthPage() {
                   <input type="email" required autoComplete="email" className="hw-c-input" value={email} onChange={(e) => setEmail(e.target.value)}/>
                 </div>
 
-                {message && (<p className={`text-sm ${message.includes('成功') || message.includes('已发送') ? 'text-green-600' : 'text-red-600'}`}>
+                {message && (<p className={`text-sm ${message.includes('sent') ? 'text-green-600' : 'text-red-600'}`}>
                     {H(message)}
                   </p>)}
 
@@ -219,14 +219,14 @@ export default function AuthPage() {
                   </div>)}
 
                 <button type="submit" disabled={loading || (TURNSTILE_ENABLED && !captchaToken)} className="hw-c-btnBig">
-                  {loading ? '发送中...' : '发送重置邮件'}
+                  {loading ? 'Sending…' : 'Send reset email'}
                 </button>
               </form>) : (<form onSubmit={handleAuth} noValidate={!isLogin} className="space-y-4">
                 {/* ★ Google 第三方登录（2026-10-20，主攻海外）：开关关闭时不渲染
                 type="button" 保证不触发表单提交；新老账号口径在下方小字讲清 */}
                 {GOOGLE_ENABLED && (<>
                     <button type="button" onClick={handleGoogle} disabled={loading} className="hw-c-btnBig">
-                      {loading ? '正在跳转…' : '使用 Google 登录'}
+                      {loading ? 'Redirecting…' : 'Continue with Google'}
                     </button>
                     <p className="hw-note text-center">{H("或使用邮箱（新用户将自动创建账号）")}</p>
                   </>)}
@@ -248,12 +248,12 @@ export default function AuthPage() {
                     </div>
                     <label className="hw-agree">
                       <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)}/>
-                      <span>{H("我已阅读并同意")} <Link href="/terms" className="hw-c-link">Terms of Service</Link> and <Link href="/privacy" className="hw-c-link">Privacy Policy</Link>
+                      <span>{H("我已阅读并同意")} <Link href="/en/terms" className="hw-c-link">Terms of Service</Link> and <Link href="/en/privacy" className="hw-c-link">Privacy Policy</Link>
                       </span>
                     </label>
                   </>)}
 
-                {message && (<p className={`text-sm ${message.includes('成功') ? 'text-green-600' : 'text-red-600'}`}>
+                {message && (<p className={`text-sm ${/created|verification email|updated/i.test(message) ? 'text-green-600' : 'text-red-600'}`}>
                     {H(message)}
                   </p>)}
 
@@ -265,7 +265,7 @@ export default function AuthPage() {
                   </div>)}
 
                 <button type="submit" disabled={loading || (TURNSTILE_ENABLED && !captchaToken)} className="hw-c-btnBig">
-                  {loading ? '处理中...' : (isLogin ? '登录' : '注册')}
+                  {loading ? 'Processing…' : (isLogin ? 'Sign in' : 'Create account')}
                 </button>
               </form>)}
 

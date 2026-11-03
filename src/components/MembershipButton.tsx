@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
 import { SKUS, formatPriceUSD, type SkuId } from '@/lib/pricing'
 import { waffoProductId } from '@/lib/waffo-products'
+import { toHant } from '@/lib/hant'
 import type { PlanId } from '@/lib/membership'
 
 interface MembershipButtonProps {
@@ -39,6 +40,11 @@ export default function MembershipButton({
 }: MembershipButtonProps) {
   const router = useRouter()
   const en = locale === 'en'
+  const hant = locale === 'zh-Hant'
+  const L = (s: string) => (hant ? toHant(s) : s)
+  const authPath = en ? '/en/auth' : hant ? '/tw/auth' : '/auth'
+  const termsPath = en ? '/en/terms' : hant ? '/tw/terms' : '/terms'
+  const memberPath = en ? '/en/member' : hant ? '/tw/member' : '/member'
   const p = SKUS[PLAN_SKU[plan]]
   const available = waffoProductId(PLAN_SKU[plan]) !== null
   // ★ 默认不勾选：不得预勾（合规硬要求）
@@ -51,7 +57,7 @@ export default function MembershipButton({
     const supabase = getSupabase()
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
-      router.push(en ? '/en/auth' : '/auth')
+      router.push(authPath)
       return
     }
 
@@ -62,10 +68,10 @@ export default function MembershipButton({
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         // 服务端会二次校验；未勾选时按钮本就禁用，这里再兜一层（绝不发 true 以外的值）
-        body: JSON.stringify({ token: session.access_token, plan, agreeAutoRenew: agreed === true }),
+        body: JSON.stringify({ token: session.access_token, plan, agreeAutoRenew: agreed === true, locale }),
       })
       const data = await res.json()
-      if (!res.ok || !data.success) throw new Error(data.error || (en ? 'Could not start the subscription. Please try again.' : '开通失败'))
+      if (!res.ok || !data.success) throw new Error(data.error || (en ? 'Could not start the subscription. Please try again.' : L('开通失败')))
 
       // ★ 已登记 PROD_ → 服务端建好托管收银台会话，跳转支付。
       //   本页【不落库】：会员权益与支付流水由 Waffo webhook 写入（真实权益的唯一来源）。
@@ -76,9 +82,9 @@ export default function MembershipButton({
 
       // 内测期免费开放（PROD_ 未登记）：如实告知，不谎称「已购买」
       setDone(true)
-      setMessage(data.data?.message ?? (en ? 'Membership is free during the beta; no charge was made.' : '内测期免费开放，未产生任何扣费'))
+      setMessage(data.data?.message ?? (en ? 'Membership is free during the beta; no charge was made.' : L('内测期免费开放，未产生任何扣费')))
     } catch (e) {
-      setMessage(e instanceof Error ? e.message : (en ? 'Could not start the subscription. Please try again.' : '开通失败，请稍后重试'))
+      setMessage(e instanceof Error ? e.message : (en ? 'Could not start the subscription. Please try again.' : L('开通失败，请稍后重试')))
     } finally {
       setLoading(false)
     }
@@ -89,10 +95,10 @@ export default function MembershipButton({
     return (
       <div>
         <div className="block text-center py-2.5 rounded-full font-semibold bg-paper-dark/40 text-ink-light/40 cursor-not-allowed">
-          {en ? 'Coming soon' : '即将推出'}
+          {en ? 'Coming soon' : L('即将推出')}
         </div>
         <p className="text-xs mt-2 text-center text-ink-light/60">
-          {en ? 'Membership benefits are not open for purchase yet.' : '会员权益即将上线，暂未开放购买'}
+          {en ? 'Membership benefits are not open for purchase yet.' : L('会员权益即将上线，暂未开放购买')}
         </p>
       </div>
     )
@@ -113,14 +119,14 @@ export default function MembershipButton({
               I agree to be charged <strong className="text-ink">automatically on a recurring basis</strong> (
               {formatPriceUSD(p.priceUSD)}
               {plan === 'monthly' ? '/month' : '/year'}, cancel anytime), and I have read the{' '}
-              <Link href="/en/terms" className="text-[#3a66ff] hover:underline">Terms of Service and refund policy</Link>.
+              <Link href={termsPath} className="text-[#3a66ff] hover:underline">Terms of Service and refund policy</Link>.
             </>
           ) : (
             <>
-              我同意开通后<strong className="text-ink">按期自动扣费续订</strong>（
+              {L('我同意开通后')}<strong className="text-ink">{L('按期自动扣费续订')}</strong>（
               {formatPriceUSD(p.priceUSD)}
-              {plan === 'monthly' ? '/月' : '/年'}，可随时取消），并已阅读
-              <Link href="/terms" className="text-[#3a66ff] hover:underline">服务条款与退款政策</Link>。
+              {plan === 'monthly' ? L('/月') : L('/年')}{L('，可随时取消），并已阅读')}
+              <Link href={termsPath} className="text-[#3a66ff] hover:underline">{L('服务条款与退款政策')}</Link>。
             </>
           )}
         </span>
@@ -135,37 +141,37 @@ export default function MembershipButton({
         }
       >
         {loading
-          ? (en ? 'Processing…' : '开通中...')
+          ? (en ? 'Processing…' : L('开通中...'))
           : done
-            ? (en ? 'Active ✓' : '已开通 ✓')
+            ? (en ? 'Active ✓' : L('已开通 ✓'))
             : label || (en
               ? `Subscribe ${formatPriceUSD(p.priceUSD)}${plan === 'monthly' ? '/month' : '/year'}`
-              : `开通会员 ${formatPriceUSD(p.priceUSD)}${plan === 'monthly' ? '/月' : '/年'}`)}
+              : `${L('开通会员')} ${formatPriceUSD(p.priceUSD)}${plan === 'monthly' ? L('/月') : L('/年')}`)}
       </button>
 
       <p className="text-xs mt-2 text-ink-light/70 leading-relaxed">
         {en ? (
           <>
             Cancel: use the{' '}
-            <Link href="/en/member" className="text-[#3a66ff] hover:underline">Member Centre</Link>
+            <Link href={memberPath} className="text-[#3a66ff] hover:underline">Member Centre</Link>
             {' '}to cancel in one click; access continues until the end of the current billing period. You can also contact support through the cashier email channel.
             <br />
             AIGC notice: membership content is generated by AI using traditional astrology material. It is for reference only and is not a basis for any decision.
           </>
         ) : (
           <>
-            取消：可在
-            <Link href="/member" className="text-[#3a66ff] hover:underline">会员中心</Link>
-            一键自助取消，取消后本计费周期内仍可使用；也可通过收银台邮件入口联系客服。
+            {L('取消：可在')}
+            <Link href={memberPath} className="text-[#3a66ff] hover:underline">{L('会员中心')}</Link>
+            {L('一键自助取消，取消后本计费周期内仍可使用；也可通过收银台邮件入口联系客服。')}
             <br />
-            AIGC 提示：会员内容由 AI 结合传统命理资料生成，仅供参考，不构成任何决策建议。
+            {L('AIGC 提示：会员内容由 AI 结合传统命理资料生成，仅供参考，不构成任何决策建议。')}
           </>
         )}
       </p>
 
       {message && (
         <p className={`text-xs mt-2 text-center ${done ? 'text-green-600' : 'text-red-600'}`}>
-          {message}
+          {hant ? toHant(message) : message}
         </p>
       )}
     </div>

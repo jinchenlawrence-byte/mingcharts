@@ -563,7 +563,7 @@ export default function ChartPage() {
             {chart.locked?.preview && <p className="hw-c-dx">{H(chart.locked.preview)}</p>}
             {syncing && <p className="hw-c-syncing">{H("命书同步中，请稍候…")}</p>}
             <div style={{ maxWidth: 380, margin: '0 auto' }}>
-              <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} chartId={screenChartId ?? undefined}>{H("解锁完整命书 ·")} {FATEBOOK_PRICE}
+              <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} chartId={screenChartId ?? undefined} authPath="/tw/auth" locale="zh-Hant" returnTo="/tw/chart">{H("解锁完整命书 ·")} {FATEBOOK_PRICE}
               </CheckoutButton>
             </div>
             <p className="hw-note" style={{ marginTop: 14 }}>{H("按次购买，永久回看（会员不含报告）·")} <Link href="/tw/mingshu" className="hw-c-link">{H("查看命書詳情")}</Link>

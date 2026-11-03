@@ -3,7 +3,7 @@
 // 全站页脚：按路径决定简 / 繁 / 英
 //
 // ★ 不写第二份正文：简中为源，/tw 用 toHant 派生，/en 用英文文案。
-// ★ 链接指向对应语言版本（/tw/terms、/tw/privacy 已补；/en/terms 尚未上，英文页仍指中文条款）。
+// ★ 链接指向对应语言版本（简 / 繁 / 英三套条款、隐私与法律入口均已就位）。
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -42,6 +42,9 @@ export default function SiteFooter() {
             (CC BY 4.0)
           </span>
         </div>
+        <p className="mt-2">
+          Content is traditional Chinese metaphysics, offered for reference and entertainment only.
+        </p>
       </footer>
     )
   }
@@ -55,7 +58,7 @@ export default function SiteFooter() {
         <span aria-hidden="true">·</span>
         <a href="mailto:hello@mingcharts.com" className="underline hover:text-ink/60">hello@mingcharts.com</a>
         <span aria-hidden="true">·</span>
-        <Link href="/partners" className="underline hover:text-ink/60">{L('命理师合作')}</Link>
+        <Link href={hant ? '/tw/partners' : '/partners'} className="underline hover:text-ink/60">{L('命理师合作')}</Link>
         <span aria-hidden="true">·</span>
         {/* 页脚也给一个语言入口：报告页/分享页没有 Nav */}
         {hant ? null : <HansLangSwitch className="underline hover:text-ink/60" />}
@@ -68,6 +71,9 @@ export default function SiteFooter() {
           {L('（CC BY 4.0）')}
         </span>
       </div>
+      {hant && (
+        <p className="mt-2">以上內容為傳統命理民俗文化，僅供參考娛樂，不構成任何決策依據。</p>
+      )}
     </footer>
   )
 }

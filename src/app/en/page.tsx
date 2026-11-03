@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { triAlternates } from '@/lib/lang'
 import { SHENGXIAO } from '@/lib/shengxiaoData'
+import { branchEn, elementEn } from '@/lib/enTerms'
 import EnHomeForm from './EnHomeForm'
 
 // 英文首頁（第一批）：完整英文說明 + 真實排盤表單（→ /en/chart）。
@@ -121,10 +122,12 @@ export default function EnHome() {
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
           {SHENGXIAO.map((sx) => (
-            <Link key={sx.slug} href={`/tw/shengxiao/${sx.slug}`} className="border border-gold/20 rounded p-2 text-center text-sm hover:bg-gold/5 transition">
+            <div key={sx.slug} className="border border-gold/20 rounded p-2 text-center text-sm">
               <div className="font-semibold text-ink">{ZODIAC_EN[sx.slug] ?? sx.slug}</div>
-              <div className="text-xs text-ink-light/60">{sx.zhi} · {sx.wuxing}</div>
-            </Link>
+              <div className="text-xs text-ink-light/60">
+                {branchEn(sx.zhi) || sx.zhi} · {elementEn(sx.wuxing) || sx.wuxing}
+              </div>
+            </div>
           ))}
         </div>
       </section>

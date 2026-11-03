@@ -190,8 +190,10 @@ console.log('—— ① 源码/配置：登记一致性 / 建品脚本 / 共享�
   assert(postCode.includes("agreeAutoRenew !== true"), 'POST 只在 agreeAutoRenew === true 时继续')
   assert(postCode.includes('waffoProductId'), 'POST 以 PROD_ 是否登记判定开闸（不用 env 开关）')
   assert(postCode.includes('createCheckoutSession'), 'POST 复用共享收银台创建订阅会话')
-  assert(postCode.includes('returnTo: \'/member\'') || postCode.includes("returnTo: '/member'"),
-    '订阅成功后回跳会员中心（订阅权益不在「我的报告」）')
+  assert(
+    postCode.includes("'/en/member'") && postCode.includes("'/tw/member'") && postCode.includes("'/member'"),
+    '订阅成功后按入口语言回跳会员中心（订阅权益不在「我的报告」）',
+  )
   assert(!/admin[\s\S]*?\.from\(/.test(postCode), 'POST 仍不碰任何表（会员状态由 webhook 写入）')
   // GET 只 selct 展示列，不得下发渠道订阅单号 ORD_
   const getBody = memSrc.match(/export async function GET[\s\S]*?export async function POST/)?.[0] ?? ''
