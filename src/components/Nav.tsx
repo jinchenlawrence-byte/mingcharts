@@ -9,6 +9,7 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
+import HansLangSwitch from '@/components/HansLangSwitch'
 
 // 五行点 · 品牌标识（木火土金水）
 const DOTS = ['#3CC796', '#FF6B5B', '#F6C24F', '#D6DBE6', '#3A66FF']
@@ -94,6 +95,8 @@ export default function Nav() {
               {l.label}
             </Link>
           ))}
+          {/* 第 36 轮：简体页通往繁體版的入口（此前只有 /tw 里有简体切换，反方向没有） */}
+          <HansLangSwitch className="whitespace-nowrap text-ink/40 transition-colors hover:text-ink" />
         </div>
         {/* ★ 已登录 → 账号下拉（2026-10-20）：把 6 个账号入口收成一个菜单。
             背景：顶栏 16 项需约 1300px，而宽度上限 1080px —— 平铺必然有项被挤出屏幕

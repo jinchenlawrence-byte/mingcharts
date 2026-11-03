@@ -14,6 +14,7 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { toHant } from '@/lib/hant'
+import HansLangSwitch from '@/components/HansLangSwitch'
 
 export default function SiteFooter() {
   const pathname = usePathname() ?? ''
@@ -30,6 +31,9 @@ export default function SiteFooter() {
         <a href="mailto:hello@mingcharts.com" className="underline hover:text-ink/60">hello@mingcharts.com</a>
         <span aria-hidden="true">·</span>
         <Link href="/partners" className="underline hover:text-ink/60">{L('命理师合作')}</Link>
+        <span aria-hidden="true">·</span>
+        {/* 页脚也给一个繁體入口：报告页/分享页没有 Nav */}
+        {hant ? null : <HansLangSwitch className="underline hover:text-ink/60" />}
         <span aria-hidden="true">·</span>
         <span>
           {L('城市数据')} ©{' '}

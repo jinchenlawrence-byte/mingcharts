@@ -200,6 +200,17 @@ if (!footer.includes('toHant')) { treeFail++; fail('SiteFooter 未用 toHant 派
 if (/命理师合作</.test(footer) && !footer.includes("L('命理师合作')")) {
   treeFail++; fail('SiteFooter 的「命理师合作」未过 L()（繁体页会露简体）')
 }
+// ★ 第 36 轮：简体页必须有通往繁體版的入口（此前是单向的：只有 /tw 里有「简体」）
+const hansSwitch = readFileSync(near('components/HansLangSwitch.tsx'), 'utf8')
+if (!/twinPath\(pathname, 'zh-Hant'\)/.test(hansSwitch)) {
+  treeFail++; fail('HansLangSwitch 未用 twinPath 推导繁體路径（会写死链接）')
+}
+const navSrc = readFileSync(near('components/Nav.tsx'), 'utf8')
+// ★ 必须匹配 JSX 用法：只查名字会被 import 那一行满足（牙口实测过）
+if (!/<HansLangSwitch/.test(navSrc)) { treeFail++; fail('简中导航没有「繁體」切换入口（只有 import 不算）') }
+const footerSrc2 = readFileSync(near('components/SiteFooter.tsx'), 'utf8')
+if (!/<HansLangSwitch/.test(footerSrc2)) { treeFail++; fail('页脚没有「繁體」切换入口（只有 import 不算）') }
+
 const rootLayout2 = readFileSync(near('app/layout.tsx'), 'utf8')
 if (!rootLayout2.includes('<SiteFooter />')) { treeFail++; fail('根布局未使用 SiteFooter') }
 if (rootLayout2.includes('命理师合作')) { treeFail++; fail('根布局仍有硬编码页脚文案（繁体页会露简体）') }
