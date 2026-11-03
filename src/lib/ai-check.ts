@@ -190,6 +190,30 @@ export function containsCJK(text: string): boolean {
   return findCJK(text).length > 0
 }
 
+/**
+ * 英文干支拼音（阶段二新增，2026-11-03）：抽取文中「天干拼音 + 地支拼音」组合。
+ * ★ 只认成对出现（Jia Zi / Jia-Zi），单个 Wu 不当干支——避免把普通英文/人名误判。
+ * ★ 归一化为 "Jia Zi" 形式，便于与事实集直接比对。
+ */
+const PINYIN_GANZHI_RE =
+  /\b(Jia|Yi|Bing|Ding|Wu|Ji|Geng|Xin|Ren|Gui)[\s-]+(Zi|Chou|Yin|Mao|Chen|Si|Wu|Wei|Shen|You|Xu|Hai)\b/gi
+
+export function pinyinGanzhi(text: string): string[] {
+  const out: string[] = []
+  for (const m of text.matchAll(PINYIN_GANZHI_RE)) {
+    out.push(`${m[1][0].toUpperCase()}${m[1].slice(1).toLowerCase()} ${m[2][0].toUpperCase()}${m[2].slice(1).toLowerCase()}`)
+  }
+  return [...new Set(out)]
+}
+
+/**
+ * 英文干支溯源：返回文中出现但不在事实集内的拼音干支。
+ * @param allowed 「Jia Zi」形式的合法集合（由排盘事实集经 ganZhiEn 生成）
+ */
+export function unknownGanzhiPinyin(text: string, allowed: Set<string>): string[] {
+  return pinyinGanzhi(text).filter((gz) => !allowed.has(gz))
+}
+
 /** 英文禁词前的否定豁免（not / never / no / without …） */
 const EN_NEG_BEFORE = /\b(not|never|no|without|isn't|aren't|won't|cannot|can't)\b[^.!?]{0,18}$/i
 /** 英文 "certain" 的限定豁免（to a certain extent / a certain amount …） */

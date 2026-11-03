@@ -82,6 +82,24 @@ console.log('—— ⑤ 账户、会员、报告列表与支付回跳 ——')
   assert(read('src/app/en/chart/Client.tsx').includes('returnTo="/en/checkout/success"'), '英文命书购买携带英文成功回跳')
 }
 
+// ---------- ⑥ 阶段二：英文术语硬约束 + 拼音干支溯源 ----------
+console.log('—— ⑥ 英文术语与拼音干支溯源 ——')
+{
+  const { makeAnalysisComplianceValidator } = await import('../src/lib/aiAnalysis.ts')
+  const { pinyinGanzhi } = await import('../src/lib/ai-check.ts')
+  // 事实集只含 甲子 / 丙寅（浏览器就是这两组）
+  const v = makeAnalysisComplianceValidator(new Set(['甲子', '丙寅']), true)
+  assert(v({ overview: 'The Four Pillars of this Bazi chart begin with Jia Zi and Bing Yin. For reference only.' }) === null, '合法拼音组合（Jia Zi / Bing Yin）通过')
+  const bad = v({ overview: 'This Bazi chart has Ding Wei in the month pillar. For reference only.' })
+  assert(bad !== null && bad.includes('未溯源'), '注入未溯源拼音必须翻红（Ding Wei）')
+  assert(pinyinGanzhi('Jia Zi and jia-zi and Bing Yin').length === 2, '拼音抽取去重并归一化（Jia Zi / Bing Yin）')
+  const aiSrc = read('src/lib/aiAnalysis.ts')
+  for (const term of ['Four Pillars', 'Ten Gods', 'True Solar Time', 'Bazi']) {
+    assert(aiSrc.includes(term), `英文系统提示/板块硬约束包含术语 ${term}`)
+  }
+  assert(aiSrc.includes('EN_REQUIRED_TERMS'), '出口术语检查已接线（EN_REQUIRED_TERMS）')
+}
+
 // ---------- ④ 牙口：注入中文必须翻红 ----------
 console.log('—— ④ 零 CJK 断言牙口 ——')
 {

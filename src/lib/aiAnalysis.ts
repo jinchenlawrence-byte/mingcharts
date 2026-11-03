@@ -6,7 +6,7 @@ import { buildEnPaidAnalysis } from './enAnalysis'
 import { aiConcurrency, addUsage, logAiStats, mapWithConcurrency, newStats, parseJsonObject, requestCompletion, sectionMaxTokens } from './aiCall'
 import type { AIUsage } from './ai-types'
 import {
-  unknownGanzhi, findForbidden, containsCJK, findCJK,
+  unknownGanzhi, unknownGanzhiPinyin, findForbidden, containsCJK, findCJK,
   FORBIDDEN_WORDS_PROMPT, complianceRetryHint, complianceRetryHintEn, EN_REPORT_DISCLAIMER,
 } from './ai-check'
 import { localeDirective, type OutputLocale } from './locale'
@@ -41,16 +41,25 @@ export const SECTION_SPECS: Array<{ key: keyof AIPaidAnalysis; name: string; req
 
 // 英文十卷要求（与中文 SECTION_SPECS 同键、同信息点；英文正文零 CJK）
 export const SECTION_SPECS_EN: Array<{ key: keyof AIPaidAnalysis; name: string; requirement: string }> = [
-  { key: 'overview', name: 'Chart overview', requirement: `Write 400-500 words summarising the Day Master, month command, strength, structure, the chart's greatest strength and one point to watch, and a one-sentence life theme. End with exactly: "${EN_REPORT_DISCLAIMER}"` },
-  { key: 'personality', name: 'Temperament and talent', requirement: 'Write 500-600 words. Characterise the Day Master element, give at least two concrete traits with their stem-branch source, one clear shortcoming and its cause, and the settings where the talent works best.' },
-  { key: 'yongShen', name: 'Useful God and favourable elements', requirement: 'Write 500-600 words. Identify the Useful God, favourable and unfavourable elements, explain why this choice rather than another, and give at least three practical suggestions (industry, direction, colour or habit).' },
-  { key: 'geJuAnalysis', name: 'Structure analysis', requirement: 'Write 600-700 words. Read whether the structure is supported, whether an unfavourable god breaks it, the structure level, and explain one classical principle in plain English.' },
+  { key: 'overview', name: 'Chart overview', requirement: `Write 400-500 words summarising the Day Master, month command, strength, structure, the chart's greatest strength and one point to watch, and a one-sentence life theme. Mention "Bazi" and "Four Pillars" explicitly. End with exactly: "${EN_REPORT_DISCLAIMER}"` },
+  { key: 'personality', name: 'Temperament and talent', requirement: 'Write 500-600 words. Characterise the Day Master element, give at least two concrete traits with their stem-branch source, one clear shortcoming and its cause, and the settings where the talent works best. Use the term "Ten Gods" where you name the relevant god.' },
+  { key: 'yongShen', name: 'Useful God and favourable elements', requirement: 'Write 500-600 words. Identify the Useful God, favourable and unfavourable elements, explain why this choice rather than another, and give at least three practical suggestions (industry, direction, colour or habit). Name the "Ten Gods" explicitly at least once.' },
+  { key: 'geJuAnalysis', name: 'Structure analysis', requirement: 'Write 600-700 words. Read whether the structure is supported, whether an unfavourable god breaks it, the structure level, and explain one classical principle in plain English. Reference the "Ten Gods" by name.' },
   { key: 'tiaoHou', name: 'Seasonal adjustment', requirement: 'Write 600-700 words. Describe the seasonal condition of the Day Master in this month, whether the primary adjustment element is present, transparent or hidden, its effect on the chart level, and practical remedies if absent.' },
-  { key: 'daYunAnalysis', name: 'Luck Pillars and Annual Pillars', requirement: 'Write 800-1000 words. State the current Luck Pillar stem-branch and Ten God, whether the favourable element is actually effective, give career, wealth, health and relationship tendencies with measured wording, then review this year, next year and the year after using only the supplied facts and monthly rhythm.' },
+  { key: 'daYunAnalysis', name: 'Luck Pillars and Annual Pillars', requirement: 'Write 800-1000 words. State the current Luck Pillar stem-branch and Ten God, whether the favourable element is actually effective, give career, wealth, health and relationship tendencies with measured wording, then review this year, next year and the year after using only the supplied facts and monthly rhythm. Mention "True Solar Time" when you describe the birth-time basis, and "Ten Gods" where relevant.' },
   { key: 'career', name: 'Career and wealth', requirement: 'Write 500-600 words. Give at least two suitable industry directions, a wealth style, a trend in wealth capacity, and the timing windows that deserve effort.' },
   { key: 'marriage', name: 'Marriage and relationships', requirement: 'Write 500-600 words. Read the spouse star and spouse palace, the attachment pattern, partner traits, and at least two cautions. For a man the wealth star is the spouse star; for a woman the officer star is the spouse star.' },
   { key: 'children', name: 'Children and kin', requirement: 'Write 400-500 words. Read the children star and hour pillar, and briefly describe relationships with parents and siblings.' },
   { key: 'health', name: 'Health tendencies', requirement: 'Write 400-500 words. Link strong and weak elements to the associated organs, give at least two care priorities and three lifestyle suggestions, and include an emotional-health note. No diagnosis.' },
+]
+
+// ★ 英文术语硬约束（阶段二，2026-11-03）：实测四术语一次未出现。
+//   出口检查 + 缺哪个只定向重写对应板块（复用单板块重试，不整份重来）。
+const EN_REQUIRED_TERMS: Array<{ term: string; section: keyof AIPaidAnalysis; re: RegExp }> = [
+  { term: 'Four Pillars', section: 'overview', re: /four\s*pillars/i },
+  { term: 'Bazi', section: 'overview', re: /\bbazi\b/i },
+  { term: 'Ten Gods', section: 'yongShen', re: /ten\s*gods/i },
+  { term: 'True Solar Time', section: 'daYunAnalysis', re: /true\s*solar\s*time/i },
 ]
 
 // ★ 逐板块调用（万字补全两轮实测教训）：
@@ -96,6 +105,7 @@ Writing rules:
 5. Never use "guaranteed", "destined", "inevitable", "definitely", "certainly", "must", "sure to", "breakthrough", "aggressive", "will definitely", "bound to", "assured", "no doubt" or "promises to". Prefer "tends to", "often", "likely", "steady progress" and "incremental progress".
 6. Output must be one pure JSON object, no markdown fence, no extra text.
 7. The "overview" section must end with this sentence exactly: "${EN_REPORT_DISCLAIMER}"
+8. Use the standard industry terms throughout: "Four Pillars" (never "four columns"), "Ten Gods" (never "ten deities"), "Bazi" or "BaZi" (never "eight characters" alone), and "True Solar Time" when describing the birth-time basis. The finished report must contain all four terms at least once.
 
 Technical rules:
 A. "Transparent" means a hidden stem appears on the year, month or hour Heavenly Stem; the Day Stem is the Day Master and does not count. If the structure god is not transparent, describe it as "taking the month branch's primary qi as the structure", never as transparent.
@@ -454,6 +464,28 @@ export async function generateAIAnalysis(chart: AnalyzableChart, opts?: { locale
   const merged = {} as Record<string, string>
   specsAll.forEach((spec, i) => { merged[spec.key] = texts[i] })
   const out = { ...merged, _usage: stats.usage } as unknown as AIPaidAnalysis & { _usage?: AIUsage }
+
+  // ★ 英文术语出口检查（阶段二）：四术语缺哪个，就只重写对应板块一次
+  if (isEn) {
+    const missing = new Map<keyof AIPaidAnalysis, string[]>()
+    for (const req of EN_REQUIRED_TERMS) {
+      if (req.re.test(out[req.section])) continue
+      missing.set(req.section, [...(missing.get(req.section) ?? []), req.term])
+    }
+    for (const [section, terms] of missing) {
+      const spec = specsAll.find((s) => s.key === section)
+      if (!spec) continue
+      const list = terms.map((t) => `"${t}"`).join(', ')
+      stats.sectionRetries++
+      const rewritten = await callSection(spec, true, `Your previous text for "${spec.name}" never used the required standard term(s) ${list}. Rewrite the whole section and include ${list} naturally at least once.`)
+      if (rewritten && !validateOne({ [section]: rewritten })) {
+        out[section] = rewritten
+      } else {
+        console.warn(`[ai] English terminology rewrite failed for section ${section}: ${list}`)
+      }
+    }
+  }
+
   logAiStats(stats, { locale: opts?.locale, total: specsAll.length })
 
   // 免责兜底（prompt 早已要求原文照写，此处仅防非确定性遗漏）：overview 缺固定短语则追加
@@ -471,11 +503,22 @@ export async function generateAIAnalysis(chart: AnalyzableChart, opts?: { locale
  *   本次「接线漂移」（REPLY 复核 §四）正是教训，让接线本身也有测试覆盖（REPLY §六-2）。
  */
 export function makeAnalysisComplianceValidator(facts: Set<string>, en = false) {
+  // ★ 英文拼音事实集（阶段二，2026-11-03）：中文干支 →「Jia Zi」，只允许排盘事实集内的组合
+  const allowedPinyin = new Set<string>()
+  if (en) {
+    for (const gz of facts) {
+      const p = ganZhiEn(gz)
+      if (p) allowedPinyin.add(p)
+    }
+  }
   return <T extends object>(r: T): string | null => {
     const text = Object.values(r).filter(v => typeof v === 'string').join('')
     if (en) {
       // 英文报告红线：正文不得出现任何中日韩统一表意文字
       if (containsCJK(text)) return `检出中文字符：${findCJK(text).join('、')}`
+      // ★ 拼音干支必须来自排盘事实集：编造/笔误的 "Fake Ganzhi" 直接判不合规并定向重写该板块
+      const unknownPinyin = unknownGanzhiPinyin(text, allowedPinyin)
+      if (unknownPinyin.length) return `检出未溯源拼音干支：${unknownPinyin.join('、')}`
       const { hits } = findForbidden(text)
       if (hits.length) return `检出禁用词：${[...new Set(hits.map(h => h.w))].join('、')}`
       return null

@@ -24,6 +24,7 @@ const { containsCJK, findCJK, EN_REPORT_DISCLAIMER, FORBIDDEN_WORDS_EN } = await
 const { EN_OUTPUT_DIRECTIVE } = await import('../src/lib/locale.ts')
 const { makeAnalysisComplianceValidator } = await import('../src/lib/aiAnalysis.ts')
 const { makeAskComplianceValidator } = await import('../src/lib/aiAsk.ts')
+const { buildLuckCycles } = await import('../src/lib/analysis.ts')
 
 const chart = paipan({ year: 1990, month: 5, day: 8, hour: 14, minute: 30, gender: 1 })
 const wangShuai = getWangShuai(chart)
@@ -48,7 +49,17 @@ console.log('—— ① 英文规则版十卷零 CJK ——')
 console.log('—— ② 零 CJK 校验器牙口自检 ——')
 {
   const paid = buildEnPaidAnalysis(analyzable)
-  const validateEn = makeAnalysisComplianceValidator(new Set(), true)
+  // 中文事实集：与 aiAnalysis 生成时同口径（四柱/胎元/命宫/大运/三年流年/流月）
+  const luckNow = buildLuckCycles(analyzable, new Date())
+  const facts = new Set([
+    analyzable.pillars.year.ganZhi, analyzable.pillars.month.ganZhi,
+    analyzable.pillars.day.ganZhi, analyzable.pillars.hour.ganZhi,
+    analyzable.taiYuan, analyzable.mingGong,
+    ...analyzable.daYun.map((d) => d.ganZhi),
+    ...luckNow.liuNian.map((y) => y.ganZhi),
+    ...luckNow.liuYue.map((m) => m.ganZhi),
+  ])
+  const validateEn = makeAnalysisComplianceValidator(facts, true)
   assert(validateEn(paid) === null, '合规英文十卷被放行')
   const injected = { ...paid, overview: paid.overview + ' 这一句是中文。' }
   const reason = validateEn(injected)
