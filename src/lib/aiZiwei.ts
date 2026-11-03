@@ -2,9 +2,10 @@
 import { ZIWEI_PALACE_NAMES, type ZwChart, type ZiweiAnalysis } from './ziwei'
 import type { AIUsage } from './ai-types'
 import {
-  findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT,
+  findForbidden, FORBIDDEN_WORDS_PROMPT,
   complianceRetryHint, complianceRetryHintEn, containsCJK, findCJK,
 } from './ai-check'
+import { aiConcurrency, addUsage, logAiStats, mapWithConcurrency, newStats, parseJsonObject, requestCompletion, sectionMaxTokens } from './aiCall'
 import { localeDirective, type OutputLocale } from './locale'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
@@ -245,12 +246,6 @@ export function fallbackZiweiText(chart: ZwChart, a: ZiweiAnalysis): ZiweiAIRepo
   }
 }
 
-interface ChatCompletionResponse {
-  choices?: Array<{ message?: { content?: string } }>
-  usage?: AIUsage
-  error?: { message?: string }
-}
-
 // ★ 合规退回后的【带反馈重写】提示（2026-10-18 付费模块回退规则版事故）：
 //   提示文本已收编到 ai-check.complianceRetryHint（单一事实源，方案③）：它把
 //   【完整禁用表 + 替代白名单 + 整句示范】连同退回原因一并回灌 —— 原先只回灌命中的那个词，
@@ -270,122 +265,98 @@ export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis, o
     ? 'These are tendency-based reflections, for reference only. They are non-deterministic and are not a basis for any decision.'
     : '以上为命理倾向性分析，仅供参考，非确定性结论，不构成任何决策依据。'
 
-  // 单批 API 调用（一批板块子集；当前每批一个板块），失败返回 null
-  const callAI = async (
-    specs: Array<{ key: keyof ZiweiAIReport; name: string; requirement: string }>,
+  const specsAll = SECTION_SPECS
+  // ★ 规则版兜底（降级时按卷回退，不整份 null）
+  const ruleReport = fallbackZiweiText(chart, analysis)
+  const stats = newStats('ziwei')
+
+  // 逐板块校验：命中项点名板块与具体词，日志可直接定位
+  const validateOne = (key: keyof ZiweiAIReport, text: string): string | null => {
+    if (isEn && containsCJK(text)) return `检出中文字符 ${findCJK(text).join('、')}`
+    const hits = findForbidden(text).hits
+    if (hits.length) return `检出禁用词 ${[...new Set(hits.map(h => h.w))].join('、')}`
+    return null
+  }
+
+  const callSection = async (
+    spec: { key: keyof ZiweiAIReport; name: string; requirement: string },
+    escalated: boolean,
     feedback?: string
-  ): Promise<(Partial<ZiweiAIReport> & { _usage?: AIUsage }) | null> => {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
-    try {
-      const messages: Array<{ role: string; content: string }> = [
-        { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
-        { role: 'user', content: buildUserPrompt(chart, analysis, specs) }
-      ]
-      // 以追加一条 user 消息的方式回灌退回原因：不动 buildUserPrompt 的原始请求体，
-      // 保证「首次请求」与既有形态逐字一致（便于与历史日志/断言对齐）
-      if (feedback) messages.push({
-        role: 'user',
-        content: isEn
-          ? complianceRetryHintEn(feedback, 'a complete JSON object with the twelve Zi Wei sections')
-          : complianceRetryHint(feedback, ZIWEI_SHAPE),
-      })
+  ): Promise<string | null> => {
+    const messages: Array<{ role: string; content: string }> = [
+      { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
+      { role: 'user', content: buildUserPrompt(chart, analysis, [spec]) }
+    ]
+    // 以追加一条 user 消息的方式回灌退回原因：不动 buildUserPrompt 的原始请求体，
+    // 保证「首次请求」与既有形态逐字一致（便于与历史日志/断言对齐）
+    if (feedback) messages.push({
+      role: 'user',
+      content: isEn
+        ? complianceRetryHintEn(feedback, 'a complete JSON object with the twelve Zi Wei sections')
+        : complianceRetryHint(feedback, ZIWEI_SHAPE),
+    })
 
-      const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${AI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: AI_MODEL,
-          // ★ 单次输出上限（token 防盗用第一档）：每板块单独调用，2000 远高于单板块所需（≤700 字），不截断
-          max_tokens: 2000,
-          messages,
-          temperature: 0.8,
-          response_format: { type: 'json_object' }
-        }),
-        signal: controller.signal
-      })
-
-      const data = (await res.json()) as ChatCompletionResponse
-      if (!res.ok || data.error) {
-        console.error('[aiZiwei] API 错误:', data.error?.message || res.status)
-        return null
-      }
-
-      const content = data.choices?.[0]?.message?.content
-      if (!content) return null
-
-      const jsonText = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
-      const parsed = JSON.parse(jsonText) as Record<string, unknown>
-
-      // 校验本批键齐全且为字符串
-      const result = {} as Record<string, string>
-      for (const spec of specs) {
-        const v = parsed[spec.key]
-        if (typeof v !== 'string' || v.trim().length < 50) {
-          console.error(`[aiZiwei] 板块 ${spec.key} 缺失或过短，放弃 AI 结果`)
-          return null
-        }
-        result[spec.key] = v.trim()
-      }
-      return { ...result, _usage: data.usage } as Partial<ZiweiAIReport> & { _usage?: AIUsage }
-    } catch (err) {
-      console.error('[aiZiwei] AI 解读失败:', err instanceof Error ? err.message : err)
+    const outcome = await requestCompletion({
+      baseUrl: AI_BASE_URL,
+      apiKey: AI_API_KEY,
+      model: AI_MODEL,
+      messages,
+      maxTokens: sectionMaxTokens(spec.key, escalated),
+      temperature: 0.8,
+      timeoutMs: AI_TIMEOUT_MS,
+      stats,
+    })
+    addUsage(stats, outcome.usage)
+    if (!outcome.ok || !outcome.content) {
+      console.warn(`[aiZiwei] 板块 ${spec.key} 请求失败（${outcome.error || outcome.status}）`)
       return null
-    } finally {
-      clearTimeout(timer)
     }
+    if (outcome.truncated) {
+      console.warn(`[aiZiwei] 板块 ${spec.key} 被 max_tokens 截断，将提高预算重试`)
+      return null
+    }
+    const parsed = parseJsonObject(outcome.content)
+    if (!parsed) return null
+    const v = parsed[spec.key]
+    if (typeof v !== 'string' || v.trim().length < 50) return null
+    return v.trim()
   }
 
-  // 一次完整尝试：按 SECTION_BATCHES 分批并行调用，合并为十二板块（任一批失败则整体失败）
-  // feedback：合规退回时由 withComplianceRetry 传入；首次调用为 undefined
-  const attempt = async (feedback?: string): Promise<(ZiweiAIReport & { _usage?: AIUsage }) | null> => {
-    const batches = SECTION_BATCHES.map(keys =>
-      keys.map(k => SECTION_SPECS.find(s => s.key === k)!)
-    )
-    const results = await Promise.all(batches.map(b => callAI(b, feedback)))
-    if (results.some(r => r === null)) return null
+  // ★ 单板块重试 + 降级（用户拍板 2026-11-03 第3条）：
+  //   截断/不合规只重写该板块（预算放大一次）；仍失败则该卷回退规则版，其余板块照常保留。
+  const runSection = async (spec: { key: keyof ZiweiAIReport; name: string; requirement: string }): Promise<string> => {
+    const first = await callSection(spec, false)
+    if (first && !validateOne(spec.key, first)) return first
 
-    const merged = {} as Record<string, string>
-    const usage: AIUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
-    for (const r of results as Array<Partial<ZiweiAIReport> & { _usage?: AIUsage }>) {
-      const { _usage, ...rest } = r
-      Object.assign(merged, rest)
-      if (_usage) {
-        usage.prompt_tokens = (usage.prompt_tokens || 0) + (_usage.prompt_tokens || 0)
-        usage.completion_tokens = (usage.completion_tokens || 0) + (_usage.completion_tokens || 0)
-        usage.total_tokens = (usage.total_tokens || 0) + (_usage.total_tokens || 0)
+    const reason = first ? validateOne(spec.key, first) : '请求失败或截断'
+    if (first) {
+      stats.sectionRetries++
+      const retry = await callSection(spec, true, reason || undefined)
+      if (retry && !validateOne(spec.key, retry)) return retry
+    } else {
+      const retry = await callSection(spec, true)
+      if (retry) {
+        const err2 = validateOne(spec.key, retry)
+        if (!err2) return retry
+        stats.sectionRetries++
+        const third = await callSection(spec, true, err2)
+        if (third && !validateOne(spec.key, third)) return third
       }
     }
-    return { ...merged, _usage: usage } as unknown as ZiweiAIReport & { _usage?: AIUsage }
+    stats.degraded.push(spec.key)
+    console.warn(`[aiZiwei] 板块 ${spec.key} 连续失败（${reason}），降级为规则版该卷`)
+    return ruleReport[spec.key]
   }
 
-  // 禁用词属红线（否定式除外）：首次检出给一次重试；仍不合规放弃 AI 结果，由调用方回退规则版
-  // ★ 退回原因必须【具体到词与句子】（2026-10-18）：原先只回一句"检出禁用词"，
-  //   线上日志无法判断是哪个词触发的（「必」是单字、"一定"是词，改法完全不同），
-  //   也让重试拿不到可执行的改写依据。filter 掉 _usage 避免把对象混进待检文本。
-  const out = await withComplianceRetry(
-    attempt,
-    (r) => {
-      // 逐板块分别校验：命中时点名板块，日志可直接定位是哪一块写炸了
-      const offenders: string[] = []
-      for (const spec of SECTION_SPECS) {
-        const v = r[spec.key]
-        if (typeof v !== 'string') continue
-        if (isEn && containsCJK(v)) offenders.push(`${spec.key}：检出中文字符 ${findCJK(v).join('、')}`)
-        const hits = findForbidden(v).hits
-        if (hits.length) offenders.push(`${spec.key}：${hits.map((h) => `${h.w}｜${h.s.slice(0, 30)}`).join('；')}`)
-      }
-      if (!offenders.length) return null
-      return (isEn ? 'Compliance check failed: ' : '检出禁用词：') + offenders.join(' / ')
-    },
-    'aiZiwei'
-  )
+  // 并发阀门（AI_CONCURRENCY，默认 2）：不再一次并行打 12 个
+  const texts = await mapWithConcurrency(specsAll, aiConcurrency(), (spec) => runSection(spec))
+  const merged = {} as Record<string, string>
+  specsAll.forEach((spec, i) => { merged[spec.key] = texts[i] })
+  const out = { ...merged, _usage: stats.usage } as unknown as ZiweiAIReport & { _usage?: AIUsage }
+  logAiStats(stats, { locale: opts?.locale, total: specsAll.length })
 
   // 免责兜底（prompt 早已要求 overview 原文照写，此处仅防非确定性遗漏）：缺固定短语则追加
-  if (out && !(isEn
+  if (!(isEn
     ? /for reference only|non-deterministic/i.test(out.overview)
     : /非确定性|仅供参考|不构成/.test(out.overview))) {
     out.overview = out.overview.replace(/[。.]?$/, '') + (isEn ? ' ' : '。') + ZW_DISCLAIMER

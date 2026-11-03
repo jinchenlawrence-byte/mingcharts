@@ -13,6 +13,7 @@ import {
   complianceRetryHint, complianceRetryHintEn, containsCJK, findCJK,
 } from './ai-check'
 import { localeDirective, type OutputLocale } from './locale'
+import { aiConcurrency, addUsage, logAiStats, mapWithConcurrency, newStats, parseJsonObject, requestCompletion, sectionMaxTokens } from './aiCall'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -159,10 +160,6 @@ ${question.trim()}
 请只回答这个追问本身（150–400 字，末尾附固定免责语）。凡涉干支只能引用上面出现过者，不得自行编造；五行相克只能称"克"，不得称"冲"。`
 }
 
-interface ChatCompletionResponse {
-  choices?: Array<{ message?: { content?: string } }>
-  error?: { message?: string }
-}
 
 /**
  * 生成一条追问回答。成功且过合规 → 返回文本；否则 null（调用方返回合规兜底、不扣额度）。
@@ -176,9 +173,9 @@ export async function generateAskAnswer(chart: AnalyzableChart, question: string
   const facts = buildFacts(chart)
   const isEn = opts?.locale === 'en'
 
+  const stats = newStats('ask')
+
   const attempt = async (feedback?: string): Promise<string | null> => {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
     try {
       const messages: Array<{ role: string; content: string }> = [
         { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
@@ -191,35 +188,31 @@ export async function generateAskAnswer(chart: AnalyzableChart, question: string
           : complianceRetryHint(feedback, ASK_SHAPE),
       })
 
-      const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${AI_API_KEY}`,
-        },
-        body: JSON.stringify({
-          model: AI_MODEL,
-          // ★ 单次输出上限（token 防盗用第一档）：回答 150–400 字，800 留足余量防合规重试被截断
-          max_tokens: 800,
-          temperature: 0.7,
-          messages,
-        }),
-        signal: controller.signal,
+      const outcome = await requestCompletion({
+        baseUrl: AI_BASE_URL,
+        apiKey: AI_API_KEY,
+        model: AI_MODEL,
+        messages,
+        maxTokens: 800,
+        temperature: 0.7,
+        timeoutMs: AI_TIMEOUT_MS,
+        json: false,
       })
-      if (!res.ok) {
-        console.error('[ask] API 错误:', res.status, await res.text())
+      addUsage(stats, outcome.usage)
+      if (!outcome.ok || !outcome.content) {
+        console.warn(`[ask] API 失败（${outcome.error || outcome.status}）`)
         return null
       }
-      const data = (await res.json()) as ChatCompletionResponse
-      const content = data.choices?.[0]?.message?.content
-      if (!content) return null
+      if (outcome.truncated) {
+        console.warn('[ask] 回答被 max_tokens 截断，放弃本次结果')
+        return null
+      }
+      const content = outcome.content
       const text = content.replace(/^```(?:\w*)\s*/i, '').replace(/\s*```$/i, '').trim()
       return text.length >= 30 ? text : null
     } catch (err) {
       console.error('[ask] 生成失败:', err instanceof Error ? err.message : err)
       return null
-    } finally {
-      clearTimeout(timer)
     }
   }
 

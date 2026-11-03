@@ -11,6 +11,7 @@ import {
   complianceRetryHint, complianceRetryHintEn, containsCJK, findCJK,
 } from './ai-check'
 import { localeDirective, type OutputLocale } from './locale'
+import { aiConcurrency, addUsage, logAiStats, mapWithConcurrency, newStats, parseJsonObject, requestCompletion, sectionMaxTokens } from './aiCall'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -155,11 +156,6 @@ ${monthFlowCheck}
 ${specs.map((s, i) => `${i + 1}. ${s.key}（${s.name}）：${s.requirement}`).join('\n')}`
 }
 
-interface ChatCompletionResponse {
-  choices?: Array<{ message?: { content?: string } }>
-  usage?: AIUsage
-  error?: { message?: string }
-}
 
 // ★ 合规退回后的结构提示（配合 ai-check.complianceRetryHint 回灌退回原因，单一事实源）：
 //   与紫微模块同法——把退回原因追加为一条 user 消息，不改 buildUserPrompt，保证首次请求逐字一致。
@@ -214,9 +210,9 @@ export async function generateAILiunian(
   }
 
   // 单次 API 调用，失败返回 null
+  const stats = newStats('liunian')
+
   const attempt = async (feedback?: string): Promise<(AILiunianSections & { _usage?: AIUsage }) | null> => {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
     try {
       const messages: Array<{ role: string; content: string }> = [
         { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
@@ -229,29 +225,25 @@ export async function generateAILiunian(
           : complianceRetryHint(feedback, LIUNIAN_SHAPE),
       })
 
-      const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${AI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: AI_MODEL,
-          // ★ 单次输出上限（token 防盗用第一档）：一次调用产出全部板块，3000 留足余量不截断
-          max_tokens: 3000,
-          temperature: 0.7,
-          response_format: { type: 'json_object' },
-          messages
-        }),
-        signal: controller.signal
+      const outcome = await requestCompletion({
+        baseUrl: AI_BASE_URL,
+        apiKey: AI_API_KEY,
+        model: AI_MODEL,
+        messages,
+        maxTokens: 3000,
+        temperature: 0.7,
+        timeoutMs: AI_TIMEOUT_MS,
       })
-      if (!res.ok) {
-        console.error('[ai-liunian] API 错误:', res.status, await res.text())
+      addUsage(stats, outcome.usage)
+      if (!outcome.ok || !outcome.content) {
+        console.warn(`[ai-liunian] API 失败（${outcome.error || outcome.status}）`)
         return null
       }
-      const data = (await res.json()) as ChatCompletionResponse
-      const content = data.choices?.[0]?.message?.content
-      if (!content) return null
+      if (outcome.truncated) {
+        console.warn('[ai-liunian] 输出被 max_tokens 截断，放弃本次结果')
+        return null
+      }
+      const content = outcome.content
       const jsonText = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
       const parsed = JSON.parse(jsonText) as Record<string, unknown>
       const out = {} as AILiunianSections
@@ -263,12 +255,10 @@ export async function generateAILiunian(
         }
         out[spec.key] = v.trim()
       }
-      return { ...out, _usage: data.usage }
+      return { ...out, _usage: stats.usage }
     } catch (err) {
       console.error('[ai-liunian] AI 年运解读失败:', err instanceof Error ? err.message : err)
       return null
-    } finally {
-      clearTimeout(timer)
     }
   }
 

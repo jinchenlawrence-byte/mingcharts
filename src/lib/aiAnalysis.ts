@@ -1,10 +1,12 @@
 // AI深度解读引擎 - 规则引擎出盘定喜忌，AI负责引经据典的解读文案
 import { Solar } from 'lunar-javascript'
 import type { AnalyzableChart, PaidAnalysis } from './analysis'
-import { TIAO_HOU, buildLuckCycles } from './analysis'
+import { TIAO_HOU, buildLuckCycles, generateAnalysis } from './analysis'
+import { buildEnPaidAnalysis } from './enAnalysis'
+import { aiConcurrency, addUsage, logAiStats, mapWithConcurrency, newStats, parseJsonObject, requestCompletion, sectionMaxTokens } from './aiCall'
 import type { AIUsage } from './ai-types'
 import {
-  unknownGanzhi, withComplianceRetry, findForbidden, containsCJK, findCJK,
+  unknownGanzhi, findForbidden, containsCJK, findCJK,
   FORBIDDEN_WORDS_PROMPT, complianceRetryHint, complianceRetryHintEn, EN_REPORT_DISCLAIMER,
 } from './ai-check'
 import { localeDirective, type OutputLocale } from './locale'
@@ -338,12 +340,6 @@ Sections:
 ${sections}`
 }
 
-interface ChatCompletionResponse {
-  choices?: Array<{ message?: { content?: string } }>
-  usage?: AIUsage
-  error?: { message?: string }
-}
-
 // ★ 合规退回后的结构提示（配合 ai-check.complianceRetryHint 回灌退回原因，单一事实源）：
 //   与紫微模块同法——把退回原因追加为一条 user 消息，不改 buildUserPrompt，保证首次请求逐字一致。
 const ANALYSIS_SHAPE = '完整 JSON（命书十段：八字总览、性格天赋、用神喜忌、格局成败、调候用神、大运流年、事业财运、婚姻感情、子女六亲、健康提示）'
@@ -374,122 +370,94 @@ export async function generateAIAnalysis(chart: AnalyzableChart, opts?: { locale
     ...luckNow.liuYue.map(m => m.ganZhi)
   ])
 
-  // 单批 API 调用（一批板块子集），失败返回 null
-  const callAI = async (
-    specs: Array<{ key: keyof AIPaidAnalysis; name: string; requirement: string }>,
+  // 单板块调用：并发受限、失败可降级
+  // 单板块调用（可选提高预算 / 合规反馈）；失败、截断或结构不完整返回 null
+  const specsAll = isEn ? SECTION_SPECS_EN : SECTION_SPECS
+  // ★ 规则版兜底按语言取（英文用户降级时也不能拿到中文长文）
+  const rulePaid = isEn ? buildEnPaidAnalysis(chart) : generateAnalysis(chart)
+  const validateOne = makeAnalysisComplianceValidator(facts, isEn)
+  const stats = newStats('fatebook')
+
+  const callSection = async (
+    spec: { key: keyof AIPaidAnalysis; name: string; requirement: string },
+    escalated: boolean,
     feedback?: string
-  ): Promise<(Partial<AIPaidAnalysis> & { _usage?: AIUsage }) | null> => {
-    const controller = new AbortController()
-    const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
-    try {
-      const messages: Array<{ role: string; content: string }> = [
-        {
-          role: 'system',
-          content: isEn ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT + localeDirective(opts?.locale),
-        },
-        { role: 'user', content: isEn ? buildUserPromptEn(chart, specs) : buildUserPrompt(chart, specs) }
-      ]
-      if (feedback) messages.push({
-        role: 'user',
-        content: isEn
-          ? complianceRetryHintEn(feedback, ANALYSIS_SHAPE_EN)
-          : complianceRetryHint(feedback, ANALYSIS_SHAPE),
-      })
+  ): Promise<string | null> => {
+    const messages: Array<{ role: string; content: string }> = [
+      { role: 'system', content: isEn ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT + localeDirective(opts?.locale) },
+      { role: 'user', content: isEn ? buildUserPromptEn(chart, [spec]) : buildUserPrompt(chart, [spec]) }
+    ]
+    if (feedback) messages.push({
+      role: 'user',
+      content: isEn
+        ? complianceRetryHintEn(feedback, ANALYSIS_SHAPE_EN)
+        : complianceRetryHint(feedback, ANALYSIS_SHAPE),
+    })
 
-      const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${AI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: AI_MODEL,
-          // ★ 单次输出上限（token 防盗用第一档）：本模块每板块单独调用，2000 远高于单板块所需（≤700 字），不截断
-          max_tokens: 2000,
-          temperature: 0.7,
-          response_format: { type: 'json_object' },
-          messages
-        }),
-        signal: controller.signal
-      })
+    const outcome = await requestCompletion({
+      baseUrl: AI_BASE_URL,
+      apiKey: AI_API_KEY,
+      model: AI_MODEL,
+      maxTokens: sectionMaxTokens(spec.key, escalated),
+      messages,
+      temperature: 0.7,
+      timeoutMs: AI_TIMEOUT_MS,
+      stats,
+    })
 
-      if (!res.ok) {
-        console.error('[ai] API 错误:', res.status, await res.text())
-        return null
-      }
-
-      const data = (await res.json()) as ChatCompletionResponse
-      const content = data.choices?.[0]?.message?.content
-      if (!content) return null
-
-      // 容错：剥离可能的 markdown 代码块
-      const jsonText = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
-      const parsed = JSON.parse(jsonText) as Record<string, unknown>
-
-      // 校验本批键齐全且为字符串
-      const result = {} as Record<string, string>
-      for (const spec of specs) {
-        const v = parsed[spec.key]
-        if (typeof v !== 'string' || v.trim().length < 50) {
-          console.error(`[ai] 板块 ${spec.key} 缺失或过短，放弃 AI 结果`)
-          return null
-        }
-        result[spec.key] = v.trim()
-      }
-      return { ...result, _usage: data.usage } as Partial<AIPaidAnalysis> & { _usage?: AIUsage }
-    } catch (err) {
-      console.error('[ai] AI 解读失败:', err instanceof Error ? err.message : err)
+    addUsage(stats, outcome.usage)
+    if (!outcome.ok || !outcome.content) {
+      console.warn(`[ai] 板块 ${spec.key} 请求失败（${outcome.error || outcome.status}）`)
       return null
-    } finally {
-      clearTimeout(timer)
     }
+    // ★ 截断即失败（用户拍板 2026-11-03 第2条）：JSON 不完整不能用，重试时提高预算
+    if (outcome.truncated) {
+      console.warn(`[ai] 板块 ${spec.key} 被 max_tokens 截断，将提高预算重试`)
+      return null
+    }
+
+    const parsed = parseJsonObject(outcome.content)
+    if (!parsed) return null
+    const v = parsed[spec.key]
+    if (typeof v !== 'string' || v.trim().length < 50) return null
+    // 「不必」→「无须」（语义等价）：与旧版 wrappedAttempt 同口径，先归一化再进合规校验
+    return v.trim().replaceAll('不必', '无须')
   }
 
-  // 一次完整尝试：按板块逐个并行调用，合并为十个板块（任一批失败则整体失败）
-  const attempt = async (feedback?: string): Promise<(AIPaidAnalysis & { _usage?: AIUsage }) | null> => {
-    const specsAll = isEn ? SECTION_SPECS_EN : SECTION_SPECS
-    const batches = specsAll.map(s => [s])
-    const results = await Promise.all(batches.map(b => callAI(b, feedback)))
-    if (results.some(r => r === null)) return null
-    const merged = {} as Record<string, string>
-    const usage: AIUsage = { prompt_tokens: 0, completion_tokens: 0, total_tokens: 0 }
-    for (const r of results as Array<Partial<AIPaidAnalysis> & { _usage?: AIUsage }>) {
-      const { _usage, ...rest } = r
-      Object.assign(merged, rest)
-      if (_usage) {
-        usage.prompt_tokens = (usage.prompt_tokens || 0) + (_usage.prompt_tokens || 0)
-        usage.completion_tokens = (usage.completion_tokens || 0) + (_usage.completion_tokens || 0)
-        usage.total_tokens = (usage.total_tokens || 0) + (_usage.total_tokens || 0)
+  // ★ 单板块重试 + 降级（用户拍板 2026-11-03 第3条）：
+  const runSection = async (spec: { key: keyof AIPaidAnalysis; name: string; requirement: string }): Promise<string> => {
+    const first = await callSection(spec, false)
+    if (first && !validateOne({ [spec.key]: first })) return first
+
+    const reason = first ? validateOne({ [spec.key]: first }) : '请求失败或截断'
+    if (first) {
+      stats.sectionRetries++
+      const retry = await callSection(spec, true, reason || undefined)
+      if (retry && !validateOne({ [spec.key]: retry })) return retry
+    } else {
+      const retry = await callSection(spec, true)
+      if (retry) {
+        const err2 = validateOne({ [spec.key]: retry })
+        if (!err2) return retry
+        stats.sectionRetries++
+        const third = await callSection(spec, true, err2)
+        if (third && !validateOne({ [spec.key]: third })) return third
       }
     }
-    return { ...merged, _usage: usage } as unknown as AIPaidAnalysis & { _usage?: AIUsage }
+    stats.degraded.push(spec.key)
+    console.warn(`[ai] 板块 ${spec.key} 连续失败（${reason}），降级为规则版该卷`)
+    return rulePaid[spec.key]
   }
 
-  // 合规校验（与 aiHemun 对称接线，共享判据 ai-check.ts）：
-  //   ① 干支溯源 ② 禁用词。findForbidden 用默认口径（否定式豁免）：
-  //   「未必/不可避免」正确放行；「不必」已在 wrappedAttempt 中替换为「无须」到不了这里；
-  //   「务必/势必/必定」无否定前缀 → 拦截重试。（strictBi 物理禁「必」是合婚专属口径）
-  // ★ 历史：本模块曾只接 unknownGanzhi，绝对化措辞「务必」类会漏出（REPLY 复核 §四）。
-  //   现补齐 findForbidden 接线 —— 消除不对称，非有意差异（§8.4.4）。
-  const validate = makeAnalysisComplianceValidator(facts, isEn)
-
-  // 「不必」→「无须」（语义等价）先替换再校验，与 aiHemun 同序；英文路径不做中文替换
-  const wrappedAttempt = async (feedback?: string) => {
-    const r = await attempt(feedback)
-    if (r && !isEn) {
-      for (const k of Object.keys(r) as (keyof AIPaidAnalysis)[]) {
-        const before = r[k]
-        if (typeof before !== 'string') continue // 跳过 _usage 等非文本键
-        r[k] = before.replaceAll('不必', '无须')
-      }
-    }
-    return r
-  }
-
-  const out = await withComplianceRetry(wrappedAttempt, validate, 'ai')
+  // 并发阀门（AI_CONCURRENCY，默认 2）：不再一次并行打 10 个
+  const texts = await mapWithConcurrency(specsAll, aiConcurrency(), (spec) => runSection(spec))
+  const merged = {} as Record<string, string>
+  specsAll.forEach((spec, i) => { merged[spec.key] = texts[i] })
+  const out = { ...merged, _usage: stats.usage } as unknown as AIPaidAnalysis & { _usage?: AIUsage }
+  logAiStats(stats, { locale: opts?.locale, total: specsAll.length })
 
   // 免责兜底（prompt 早已要求原文照写，此处仅防非确定性遗漏）：overview 缺固定短语则追加
-  if (out && !(isEn
+  if (!(isEn
     ? /for reference only|non-deterministic/i.test(out.overview)
     : /非确定性|仅供参考|不构成/.test(out.overview))) {
     out.overview = out.overview.replace(/[。.。]?$/, '') + (isEn ? ' ' : '。') + ANALYSIS_DISCLAIMER

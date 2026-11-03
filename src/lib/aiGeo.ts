@@ -6,6 +6,7 @@ import {
   complianceRetryHint, complianceRetryHintEn, containsCJK, findCJK,
 } from './ai-check'
 import { localeDirective, type OutputLocale } from './locale'
+import { aiConcurrency, addUsage, logAiStats, mapWithConcurrency, newStats, parseJsonObject, requestCompletion, sectionMaxTokens } from './aiCall'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -170,6 +171,8 @@ export async function generateAIGeo(a: GeoAnalysis, opts?: { locale?: OutputLoca
     : '以上方位分析仅供参考，非确定性结论，不构成迁居决策依据；福地福人居，个人努力为本。'
 
   // 单次 API 调用，失败返回 null
+  const stats = newStats('geo')
+
   const attempt = async (feedback?: string): Promise<(GeoAIReport & { _usage?: AIUsage }) | null> => {
     try {
       const controller = new AbortController()
@@ -186,32 +189,25 @@ export async function generateAIGeo(a: GeoAnalysis, opts?: { locale?: OutputLoca
           : complianceRetryHint(feedback, GEO_SHAPE),
       })
 
-      const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${AI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: AI_MODEL,
-          // ★ 单次输出上限（token 防盗用第一档）：一次调用产出全部 8 节，4000 留足余量不截断
-          max_tokens: 4000,
-          messages,
-          temperature: 0.8,
-          response_format: { type: 'json_object' }
-        }),
-        signal: controller.signal
+      const outcome = await requestCompletion({
+        baseUrl: AI_BASE_URL,
+        apiKey: AI_API_KEY,
+        model: AI_MODEL,
+        messages,
+        maxTokens: 4000,
+        temperature: 0.8,
+        timeoutMs: AI_TIMEOUT_MS,
       })
-      clearTimeout(timer)
-
-      const data = (await res.json()) as ChatCompletionResponse
-      if (!res.ok || data.error) {
-        console.error('[aiGeo] API 错误:', data.error?.message || res.status)
+      addUsage(stats, outcome.usage)
+      if (!outcome.ok || !outcome.content) {
+        console.warn(`[aiGeo] API 失败（${outcome.error || outcome.status}）`)
         return null
       }
-
-      const content = data.choices?.[0]?.message?.content
-      if (!content) return null
+      if (outcome.truncated) {
+        console.warn('[aiGeo] 输出被 max_tokens 截断，放弃本次结果')
+        return null
+      }
+      const content = outcome.content
 
       const jsonText = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
       const parsed = JSON.parse(jsonText) as Record<string, unknown>
@@ -226,7 +222,7 @@ export async function generateAIGeo(a: GeoAnalysis, opts?: { locale?: OutputLoca
         }
         result[spec.key] = v.trim()
       }
-      return { ...result, _usage: data.usage } as unknown as GeoAIReport & { _usage?: AIUsage }
+      return { ...result, _usage: stats.usage } as unknown as GeoAIReport & { _usage?: AIUsage }
     } catch (err) {
       console.error('[aiGeo] AI 解读失败:', err instanceof Error ? err.message : err)
       return null

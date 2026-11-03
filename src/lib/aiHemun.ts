@@ -8,6 +8,7 @@ import {
   complianceRetryHint, complianceRetryHintEn, containsCJK, findCJK,
 } from './ai-check'
 import { localeDirective, type OutputLocale } from './locale'
+import { aiConcurrency, addUsage, logAiStats, mapWithConcurrency, newStats, parseJsonObject, requestCompletion, sectionMaxTokens } from './aiCall'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -110,6 +111,8 @@ export async function generateAIHemun(
     : '以上为倾向性分析，仅供参考，非确定性结论，不构成婚姻决策依据；感情经营在人。'
 
   // 单次 API 调用，失败返回 null
+  const stats = newStats('hemun')
+
   const attempt = async (feedback?: string): Promise<(AIHemunSections & { _usage?: AIUsage }) | null> => {
     const controller = new AbortController()
     const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
@@ -125,29 +128,25 @@ export async function generateAIHemun(
           : complianceRetryHint(feedback, HEMUN_SHAPE),
       })
 
-      const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${AI_API_KEY}`
-        },
-        body: JSON.stringify({
-          model: AI_MODEL,
-          // ★ 单次输出上限（token 防盗用第一档）：本模块一次调用产出全部板块（合计约 2500–3000 字），4000 留足余量不截断
-          max_tokens: 4000,
-          temperature: 0.7,
-          response_format: { type: 'json_object' },
-          messages
-        }),
-        signal: controller.signal
+      const outcome = await requestCompletion({
+        baseUrl: AI_BASE_URL,
+        apiKey: AI_API_KEY,
+        model: AI_MODEL,
+        messages,
+        maxTokens: 4000,
+        temperature: 0.7,
+        timeoutMs: AI_TIMEOUT_MS,
       })
-      if (!res.ok) {
-        console.error('[ai-hemun] API 错误:', res.status, await res.text())
+      addUsage(stats, outcome.usage)
+      if (!outcome.ok || !outcome.content) {
+        console.warn(`[ai-hemun] API 失败（${outcome.error || outcome.status}）`)
         return null
       }
-      const data = (await res.json()) as ChatCompletionResponse
-      const content = data.choices?.[0]?.message?.content
-      if (!content) return null
+      if (outcome.truncated) {
+        console.warn('[ai-hemun] 输出被 max_tokens 截断，放弃本次结果')
+        return null
+      }
+      const content = outcome.content
       const jsonText = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
       const parsed = JSON.parse(jsonText) as Record<string, unknown>
       const out = {} as AIHemunSections
@@ -159,7 +158,7 @@ export async function generateAIHemun(
         }
         out[spec.key] = v.trim()
       }
-      return { ...out, _usage: data.usage }
+      return { ...out, _usage: stats.usage }
     } catch (err) {
       console.error('[ai-hemun] AI 合婚解读失败:', err instanceof Error ? err.message : err)
       return null
