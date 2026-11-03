@@ -20,11 +20,13 @@ import type { WX } from '@/lib/geo'
 
 /** 未解锁时的 preview（入库剥离、命中重算时共用，避免两处文案漂移） */
 const GEO_LOCKED_PREVIEW = '方位总论 · 现居城市影响 · 财富/事业/贵/安居/才华五城解读 · 迁居开运建议（AI 深度解读，共 8 节）解锁后可见。'
+const GEO_LOCKED_PREVIEW_EN = 'The full English city report covers the directional overview, the current-city impact, the wealth, career, benefactor, settling and talent cities, and relocation advice. Unlock to read the full report.'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const locale = localeFromRequest(request, body)
+    const lockedPreview = locale === 'en' ? GEO_LOCKED_PREVIEW_EN : GEO_LOCKED_PREVIEW
     const toInt = (v: unknown, def = 0): number => {
       if (v === undefined || v === null || v === '') return def
       const n = parseInt(String(v), 10)
@@ -122,7 +124,7 @@ export async function POST(request: NextRequest) {
     if (userId && admin) {
       const hit = await readReportCache(admin, userId, 'geo', cacheKey)
       const resolved = hit
-        ? resolveModuleCachedHit(hit, { unlocked, skus: ['geo'], lockedPreview: GEO_LOCKED_PREVIEW })
+        ? resolveModuleCachedHit(hit, { unlocked, skus: ['geo'], lockedPreview })
         : null
       if (resolved) {
         // ★ 缓存命中也要带同一试读标记，避免免费用户从存量全文缓存拿到完整渲染路径
@@ -182,7 +184,7 @@ export async function POST(request: NextRequest) {
       // ★★ locked 在已解锁时为 null（与现在一致 ✓）；未解锁时给 preview 与 skus
       locked: unlocked ? null : {
         skus: ['geo'],
-        preview: GEO_LOCKED_PREVIEW
+        preview: lockedPreview
       },
       preview: previewPayload('geo', unlocked),
       trueSolar: ref

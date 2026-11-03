@@ -18,6 +18,7 @@ import { localeFromRequest } from '@/lib/locale'
 
 /** 未解锁时的 preview（入库剥离、命中重算时共用，避免两处文案漂移） */
 const HEMUN_LOCKED_PREVIEW = '合婚双人九维深度解读（典籍干支、古法纳音、民俗生肖分级呈现）解锁后可见。'
+const HEMUN_LOCKED_PREVIEW_EN = 'The full English synastry report covers the nine dimensions across the classical stem-branch, traditional Nayin and folk zodiac layers. Unlock to read the full report.'
 
 interface RawBirth {
   year?: unknown; month?: unknown; day?: unknown
@@ -66,6 +67,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const locale = localeFromRequest(request, body)
+    const lockedPreview = locale === 'en' ? HEMUN_LOCKED_PREVIEW_EN : HEMUN_LOCKED_PREVIEW
     const [m, f] = await Promise.all([
       parseBirth(body.male || {}, 1),
       parseBirth(body.female || {}, 0)
@@ -125,7 +127,7 @@ export async function POST(request: NextRequest) {
     if (userId && admin) {
       const hit = await readReportCache(admin, userId, 'hemun', cacheKey)
       const resolved = hit
-        ? resolveModuleCachedHit(hit, { unlocked, skus: ['hemun'], lockedPreview: HEMUN_LOCKED_PREVIEW })
+        ? resolveModuleCachedHit(hit, { unlocked, skus: ['hemun'], lockedPreview })
         : null
       if (resolved) {
         // ★ 缓存命中也要带同一试读标记，避免免费用户从存量全文缓存拿到完整渲染路径
@@ -170,7 +172,7 @@ export async function POST(request: NextRequest) {
       free: { male, female, result },
       locked: unlocked ? null : {
         skus: ['hemun'],
-        preview: HEMUN_LOCKED_PREVIEW
+        preview: lockedPreview
       },
       preview: previewPayload('hemun', unlocked)
     }

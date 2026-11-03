@@ -15,11 +15,13 @@ import { localeFromRequest } from '@/lib/locale'
 
 /** 未解锁时的 preview（入库剥离、命中重算时共用，避免两处文案漂移） */
 const ZIWEI_LOCKED_PREVIEW = '紫微十二宫深度解读（命格、性格、十二宫导读、事业、财运、婚姻、健康、生年四化、格局成败、大限十年、流年流月、趋避建议）解锁后可见。'
+const ZIWEI_LOCKED_PREVIEW_EN = 'The full English Zi Wei report covers the twelve palaces, temperament, career, wealth, marriage, health, the Four Transformations, patterns, the decade and the annual/monthly periods. Unlock to read the full report.'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const locale = localeFromRequest(request, body)
+    const lockedPreview = locale === 'en' ? ZIWEI_LOCKED_PREVIEW_EN : ZIWEI_LOCKED_PREVIEW
     const toInt = (v: unknown, def = 0): number => {
       if (v === undefined || v === null || v === '') return def
       const n = parseInt(String(v), 10)
@@ -91,7 +93,7 @@ export async function POST(request: NextRequest) {
     if (userId && admin) {
       const hit = await readReportCache(admin, userId, 'ziwei', cacheKey)
       const resolved = hit
-        ? resolveModuleCachedHit(hit, { unlocked, skus: ['ziwei_deep'], lockedPreview: ZIWEI_LOCKED_PREVIEW })
+        ? resolveModuleCachedHit(hit, { unlocked, skus: ['ziwei_deep'], lockedPreview })
         : null
       if (resolved) {
         // ★ 缓存命中也要带同一试读标记，避免免费用户从存量全文缓存拿到完整渲染路径
@@ -138,7 +140,7 @@ export async function POST(request: NextRequest) {
       free: { chart, analysis },
       locked: unlocked ? null : {
         skus: ['ziwei_deep'],
-        preview: ZIWEI_LOCKED_PREVIEW
+        preview: lockedPreview
       },
       preview: previewPayload('ziwei_deep', unlocked),
       ai,
