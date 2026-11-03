@@ -53,8 +53,12 @@ export default function EnAccountPage() {
 
   const handleLogout = async () => {
     setLoggingOut(true)
-    await getSupabase().auth.signOut()
-    router.push('/en')
+    try {
+      await getSupabase().auth.signOut()
+    } catch {
+      // Silent: the local session is already cleared; a network error must not block leaving.
+    }
+    router.replace('/en')
   }
 
   return (
@@ -90,14 +94,23 @@ export default function EnAccountPage() {
           </form>
 
           <div className="hw-c-box text-center">
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="rounded-full border border-gold/20 px-5 py-2 text-sm hover:border-ink disabled:opacity-60"
-            >
-              {loggingOut ? 'Signing out…' : 'Sign out'}
-            </button>
+            <div className="flex flex-wrap items-center justify-center gap-6 text-sm">
+              <Link href="/en/chart" className="hw-c-blue">My chart</Link>
+              <Link href="/en/reports" className="hw-c-blue">My reports</Link>
+            </div>
+            <div className="mt-6 border-t border-ink/10 pt-6">
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="mx-auto block w-full max-w-[420px] rounded-full border border-gold/20 px-6 py-3 text-sm font-bold text-ink/70 hover:border-ink hover:text-ink disabled:opacity-60"
+              >
+                {loggingOut ? 'Signing out…' : 'Sign out'}
+              </button>
+              <p className="mt-3 text-xs text-ink/45">
+                After signing out you must sign in again to open My chart, My reports and purchased content.
+              </p>
+            </div>
           </div>
         </div>
       )}
