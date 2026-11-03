@@ -79,7 +79,7 @@ export default function HantRootLayout({ children }: { children: React.ReactNode
             </div>
           </footer>
         </main>
-        <SiteChrome />
+        <SiteChrome lang="zh-Hant" />
       </body>
     </html>
   )

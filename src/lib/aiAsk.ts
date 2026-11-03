@@ -8,7 +8,10 @@
 import { Solar } from 'lunar-javascript'
 import type { AnalyzableChart } from './analysis'
 import { buildLuckCycles } from './analysis'
-import { unknownGanzhi, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
+import {
+  unknownGanzhi, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT,
+  complianceRetryHint, complianceRetryHintEn, containsCJK, findCJK,
+} from './ai-check'
 import { localeDirective, type OutputLocale } from './locale'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
@@ -171,6 +174,7 @@ export async function generateAskAnswer(chart: AnalyzableChart, question: string
     return null
   }
   const facts = buildFacts(chart)
+  const isEn = opts?.locale === 'en'
 
   const attempt = async (feedback?: string): Promise<string | null> => {
     const controller = new AbortController()
@@ -180,7 +184,12 @@ export async function generateAskAnswer(chart: AnalyzableChart, question: string
         { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
         { role: 'user', content: buildUserPrompt(chart, question) },
       ]
-      if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, ASK_SHAPE) })
+      if (feedback) messages.push({
+        role: 'user',
+        content: isEn
+          ? complianceRetryHintEn(feedback, 'a plain English answer')
+          : complianceRetryHint(feedback, ASK_SHAPE),
+      })
 
       const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
         method: 'POST',
@@ -214,12 +223,18 @@ export async function generateAskAnswer(chart: AnalyzableChart, question: string
     }
   }
 
-  return withComplianceRetry(attempt, makeAskComplianceValidator(facts), 'ask')
+  return withComplianceRetry(attempt, makeAskComplianceValidator(facts, isEn), 'ask')
 }
 
-/** 追问合规校验器（纯函数，导出供离线断言复用）：① 干支溯源 ② 禁用词 */
-export function makeAskComplianceValidator(facts: Set<string>) {
+/** 追问合规校验器（纯函数，导出供离线断言复用）：① 干支溯源 ② 禁用词 ③ 英文零 CJK */
+export function makeAskComplianceValidator(facts: Set<string>, en = false) {
   return (text: string): string | null => {
+    if (en) {
+      if (containsCJK(text)) return `检出中文字符：${findCJK(text).join('、')}`
+      const { hits } = findForbidden(text)
+      if (hits.length) return `检出禁用词：${[...new Set(hits.map(h => h.w))].join('、')}`
+      return null
+    }
     const unknown = unknownGanzhi(text, facts)
     if (unknown.length) return `检出未溯源干支：${unknown.join('、')}`
     const { hits } = findForbidden(text)

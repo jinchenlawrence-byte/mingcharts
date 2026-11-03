@@ -177,7 +177,7 @@ export default function EnPricingPage() {
             </ul>
             <div className="space-y-3">
               {MEMBER_SKUS.map((s) => (
-                <MembershipButton key={s.id} plan={s.id === 'member_monthly' ? 'monthly' : 'yearly'} />
+                <MembershipButton key={s.id} plan={s.id === 'member_monthly' ? 'monthly' : 'yearly'} locale="en" />
               ))}
             </div>
           </div>

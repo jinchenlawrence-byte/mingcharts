@@ -4,6 +4,9 @@
 // 直接把中文丟給英文頁面會出現整段中文。這裡按同一組結構化事實（四柱、十神、五行、旺衰、格局）
 // 生成英文兩卷，資訊點與中文試讀一致（不是逐句翻譯，也不刪條目）。
 // ★ 只在 locale=en 時使用；簡/繁路徑完全不變。
+// ★ 英文正文不得出現任何中日韓文字：干支一律用拼音（見 lib/enTerms.ts）。
+
+import { branchEn, ganZhiEn, stemEn } from './enTerms'
 
 const STEM_WX: Record<string, string> = {
   甲: 'Wood', 乙: 'Wood', 丙: 'Fire', 丁: 'Fire', 戊: 'Earth',
@@ -69,23 +72,25 @@ export function strengthEn(s: string): string {
 
 export function structureEn(g: string): string {
   const m = g.match(/^(.+)格$/)
-  if (!m) return g ? `the ${g} structure` : 'an unclassified structure'
-  const god = TEN_GOD[m[1]] ?? m[1]
-  return `the ${god} structure`
+  if (!m) return 'an unclassified structure'
+  const god = TEN_GOD[m[1]]
+  return god ? `the ${god} structure` : 'a named classical structure'
 }
 
 /** 起运：中文「X年Y月Z天后起运」→ 英文 */
 export function qiYunEn(s: string): string {
   const m = s.match(/(\d+)年(\d+)月(\d+)天/)
-  if (!m) return s
+  if (!m) return 'the start of the Luck Pillars is calculated from the birth date'
   return `starts ${m[1]} years ${m[2]} months ${m[3]} days after birth`
 }
 
 function gz(gz: string): string {
-  if (!gz || gz.length < 2) return gz
+  if (!gz || gz.length < 2) return ''
   const stem = gz[0]
   const branch = gz[1]
-  return `${stem}${branch} (${STEM_WX[stem] ?? '?'} over ${BRANCH_WX[branch] ?? '?'})`
+  const pinyin = ganZhiEn(gz)
+  if (!pinyin) return ''
+  return `${pinyin} (${STEM_WX[stem] ?? '?'} over ${BRANCH_WX[branch] ?? '?'})`
 }
 
 export function buildEnFatebookPreview(chart: EnPreviewInput): { free: string[]; rest: string[]; fullMinChars: number } {
@@ -102,13 +107,14 @@ export function buildEnFatebookPreview(chart: EnPreviewInput): { free: string[];
   const gods = Object.values(chart.pillars)
     .flatMap((p) => [p.tenGodGan, ...(p.tenGodCangGan ?? [])])
     .filter((g): g is string => !!g && g !== '日主')
-  const uniqueGods = [...new Set(gods)].map((g) => TEN_GOD[g] ?? g)
+  const uniqueGods = [...new Set(gods)].map((g) => TEN_GOD[g] ?? '').filter(Boolean)
   const strength = strengthEn(chart.analysis.wangShuai)
   const structure = structureEn(chart.analysis.geJu)
-  const dm = chart.dayMaster
+  const dm = stemEn(chart.dayMaster) || 'Day Master'
+  const monthBranch = branchEn(chart.pillars.month.ganZhi?.[1] ?? '') || 'birth'
 
   const volume1 = [
-    `Day Master ${dm} (${STEM_WX[dm] ?? '?'}): born in the ${chart.pillars.month.ganZhi?.[1] ?? '?'} month, the chart shows ${strength} and ${structure}.`,
+    `Day Master ${dm} (${STEM_WX[chart.dayMaster] ?? '?'}): born in the ${monthBranch} month, the chart shows ${strength} and ${structure}.`,
     `Four Pillars: year ${gz(chart.pillars.year.ganZhi)}, month ${gz(chart.pillars.month.ganZhi)}, day ${gz(chart.pillars.day.ganZhi)}, hour ${gz(chart.pillars.hour.ganZhi)}.`,
     `Five Elements: ${sorted[0]} is strongest (${counts[sorted[0]]} of eight characters), ${sorted[4]} is weakest (${counts[sorted[4]]}); ${missing.length ? `missing ${missing.join(', ')}` : 'all five elements are present'}.`,
     `Ten Gods present: ${uniqueGods.slice(0, 6).join(', ') || 'none beyond the Day Master'}. These set the working vocabulary of the chart: what supports the Day Master, what drains it, and what it is asked to manage.`,
@@ -121,7 +127,7 @@ export function buildEnFatebookPreview(chart: EnPreviewInput): { free: string[];
     return key ? GOD_TRAIT[key] : ''
   }).filter(Boolean)
   const volume2 = [
-    `Temperament of ${dm} ${STEM_WX[dm] ?? ''}: ${DAY_MASTER_TRAIT[dm] ?? 'steady, practical and self-directed.'}`,
+    `Temperament of ${dm} ${STEM_WX[chart.dayMaster] ?? ''}: ${DAY_MASTER_TRAIT[chart.dayMaster] ?? 'steady, practical and self-directed.'}`,
     godTraits.length
       ? `With ${uniqueGods.slice(0, 3).join(', ')} prominent, the character also shows ${godTraits.join('; ')}.`
       : 'No single Ten God dominates, so the temperament follows the Day Master and the balance of elements more than any one role.',

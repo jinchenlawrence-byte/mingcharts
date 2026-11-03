@@ -3,7 +3,10 @@
 import type { AnalyzableChart } from './analysis'
 import type { HemunResult } from './hemun'
 import type { AIUsage } from './ai-types'
-import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
+import {
+  findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT,
+  complianceRetryHint, complianceRetryHintEn, containsCJK, findCJK,
+} from './ai-check'
 import { localeDirective, type OutputLocale } from './locale'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
@@ -100,8 +103,11 @@ export async function generateAIHemun(
     return null
   }
 
+  const isEn = opts?.locale === 'en'
   // overview 板块固定免责语（与 SYSTEM_PROMPT 第10条一致）
-  const HEMUN_DISCLAIMER = '以上为倾向性分析，仅供参考，非确定性结论，不构成婚姻决策依据；感情经营在人。'
+  const HEMUN_DISCLAIMER = isEn
+    ? 'These are tendency-based reflections, for reference only. They are non-deterministic and are not a basis for marriage decisions; relationships are shaped by the people involved.'
+    : '以上为倾向性分析，仅供参考，非确定性结论，不构成婚姻决策依据；感情经营在人。'
 
   // 单次 API 调用，失败返回 null
   const attempt = async (feedback?: string): Promise<(AIHemunSections & { _usage?: AIUsage }) | null> => {
@@ -112,7 +118,12 @@ export async function generateAIHemun(
         { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
         { role: 'user', content: buildUserPrompt(male, female, result) }
       ]
-      if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, HEMUN_SHAPE) })
+      if (feedback) messages.push({
+        role: 'user',
+        content: isEn
+          ? complianceRetryHintEn(feedback, 'a complete JSON object with the six synastry sections')
+          : complianceRetryHint(feedback, HEMUN_SHAPE),
+      })
 
       const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
         method: 'POST',
@@ -175,7 +186,7 @@ export async function generateAIHemun(
   // 仍含则放弃 AI 结果，由调用方回退规则版
   const wrappedAttempt = async (feedback?: string) => {
     const r = await attempt(feedback)
-    if (r) {
+    if (r && !isEn) {
       const n = sanitize(r)
       if (n) { void n }
     }
@@ -183,13 +194,22 @@ export async function generateAIHemun(
   }
   const out = await withComplianceRetry(
     wrappedAttempt,
-    (r) => (hasBi(r) ? '检出物理禁用字「必」' : null),
+    (r) => {
+      const text = Object.values(r).filter((v) => typeof v === 'string').join('')
+      if (isEn) {
+        if (containsCJK(text)) return `检出中文字符：${findCJK(text).join('、')}`
+        return findForbidden(text).hits.length ? '检出禁用词' : null
+      }
+      return hasBi(r) ? '检出物理禁用字「必」' : null
+    },
     'ai-hemun'
   )
 
   // 免责兜底（prompt 早已要求原文照写，此处仅防非确定性遗漏）：overview 缺固定短语则追加
-  if (out && !/非确定性|仅供参考|不构成/.test(out.overview)) {
-    out.overview = out.overview.replace(/。?$/, '') + '。' + HEMUN_DISCLAIMER
+  if (out && !(isEn
+    ? /for reference only|non-deterministic/i.test(out.overview)
+    : /非确定性|仅供参考|不构成/.test(out.overview))) {
+    out.overview = out.overview.replace(/[。.]?$/, '') + (isEn ? ' ' : '。') + HEMUN_DISCLAIMER
   }
   return out
 }

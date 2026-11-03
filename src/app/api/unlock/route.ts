@@ -3,6 +3,7 @@ import { createServerSupabase } from '@/lib/supabase'
 import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RULES } from '@/lib/rateLimit'
 import { checkAiBudget } from '@/lib/aiBudget'
 import { generateAnalysis, type AnalyzableChart } from '@/lib/analysis'
+import { buildEnPaidAnalysis } from '@/lib/enAnalysis'
 import { generateAIAnalysis } from '@/lib/aiAnalysis'
 import { searchSimilarCases } from '@/lib/caseSearch'
 import { canViewFatebookForChart } from '@/lib/entitlement'
@@ -109,10 +110,12 @@ export async function POST(request: NextRequest) {
 
     // 优先 AI 深度解读，失败（未配置密钥/超时/格式异常）自动回退规则引擎
     const analyzable = chart as AnalyzableChart
-    // 规则引擎始终先跑：其结构化岁运（大运/流年/流月）确定性计算，AI 不参与
-    const rulePaid = generateAnalysis(analyzable)
+    // 规则引擎始终先跑：其结构化岁运（大运/流年/流月）确定性计算，AI 不参与。
+    // 英文用户回退时必须拿到英文规则版，不能把中文长文当交付物。
+    const rulePaid = locale === 'en' ? buildEnPaidAnalysis(analyzable) : generateAnalysis(analyzable)
     const aiPaid = aiBlocked ? null : await generateAIAnalysis(analyzable, { locale })
-    const similarCases = searchSimilarCases(analyzable)
+    // 古籍相似命例只有中文正文；英文交付不混入中文
+    const similarCases = locale === 'en' ? undefined : searchSimilarCases(analyzable)
     const paid = aiPaid
       ? { ...aiPaid, luckCycles: rulePaid.luckCycles, similarCases }
       : { ...rulePaid, similarCases }

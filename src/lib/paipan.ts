@@ -332,6 +332,10 @@ const NAYIN_WUXING: string[] = [
 /** 干支纳音五行（取自六十甲子纳音，供童子煞、天罗地网）。
  *  干支不成对（如「甲丑」，g、z 奇偶错位）时返回 null：shenShaOf 为导出函数，入柱可含独立干/支（合成测试即如此），
  *  此时纳音路径不生效；真实排盘四柱恒为合法干支对，不受影响 */
+export function nayinWuxingOf(gz: string): string | null {
+  return nayinWuxing(gz)
+}
+
 function nayinWuxing(gz: string): string | null {
   const g = GAN_ORDER.indexOf(gz[0])
   const z = ZHI_ORDER.indexOf(gz[1])

@@ -93,8 +93,12 @@ const footerSrc = readFileSync('src/components/SiteFooter.tsx', 'utf8')
 // ★ 2026-11-03：多 root layout 后，三棵树的公共挂件收进 components/SiteChrome.tsx
 const chromeSrc = readFileSync('src/components/SiteChrome.tsx', 'utf8')
 if (!chromeSrc.includes('<SiteFooter')) { footerFail++; fail('SiteChrome 未渲染 SiteFooter（全站页脚会消失）') }
-if (!footerSrc.includes('href="/terms"')) { footerFail++; fail('SiteFooter 不含 /terms 链接') }
-if (!footerSrc.includes('href="/privacy"')) { footerFail++; fail('SiteFooter 不含 /privacy 链接') }
+// 简体/繁体走路径推导，英文树走独立正文页（/en/terms、/en/privacy）
+if (!footerSrc.includes("'/terms'") && !footerSrc.includes('href="/terms"')) { footerFail++; fail('SiteFooter 不含 /terms 链接') }
+if (!footerSrc.includes("'/privacy'") && !footerSrc.includes('href="/privacy"')) { footerFail++; fail('SiteFooter 不含 /privacy 链接') }
+if (!footerSrc.includes('href="/en/terms"') || !footerSrc.includes('href="/en/privacy"')) {
+  footerFail++; fail('英文页脚未指向 /en/terms 与 /en/privacy')
+}
 // 邮箱不得在断言里硬编码字面量 → 从 terms.md 抽取
 const termsBody = getLegalBody('terms.md')
 const emailMatch = termsBody.match(/hello@mingcharts\.com/)

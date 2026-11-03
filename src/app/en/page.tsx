@@ -84,7 +84,7 @@ export default function EnHome() {
               A twelve-palace chart with fourteen major stars and the Four Transformations, read by
               decade and by year.
             </p>
-            <Link href="/tw/ziwei" className="hw-c-link inline-block mt-2">Open Zi Wei (Chinese edition) →</Link>
+            <Link href="/en/ziwei" className="hw-c-link inline-block mt-2">Open Zi Wei (English edition) →</Link>
           </div>
           <div className="border border-gold/20 rounded-lg p-3">
             <div className="font-bold text-ink">Bazi Synastry</div>
@@ -92,7 +92,7 @@ export default function EnHome() {
               Two charts compared: Day Pillar spouse palace, zodiac year pillars, spouse stars,
               Five Elements complementarity and Ten Gods interaction.
             </p>
-            <Link href="/tw/hemun" className="hw-c-link inline-block mt-2">Open synastry (Chinese edition) →</Link>
+            <Link href="/en/hemun" className="hw-c-link inline-block mt-2">Open synastry (English edition) →</Link>
           </div>
           <div className="border border-gold/20 rounded-lg p-3">
             <div className="font-bold text-ink">Cities &amp; direction</div>
@@ -100,7 +100,7 @@ export default function EnHome() {
               Wealth, career, benefactor, settling and talent cities, chosen by the Five Elements of
               direction relative to your birthplace.
             </p>
-            <Link href="/tw/geo" className="hw-c-link inline-block mt-2">Open geomancy (Chinese edition) →</Link>
+            <Link href="/en/geo" className="hw-c-link inline-block mt-2">Open geomancy (English edition) →</Link>
           </div>
           <div className="border border-gold/20 rounded-lg p-3">
             <div className="font-bold text-ink">Annual report</div>
@@ -108,7 +108,7 @@ export default function EnHome() {
               Three years of Annual Pillars with monthly rhythm, read against your natal chart and
               current Luck Pillar.
             </p>
-            <Link href="/tw/liunian" className="hw-c-link inline-block mt-2">Open annual report (Chinese edition) →</Link>
+            <Link href="/en/liunian" className="hw-c-link inline-block mt-2">Open annual report (English edition) →</Link>
           </div>
         </div>
       </section>

@@ -128,10 +128,10 @@ console.log('—— ⑥ /en 路由与收录 ——')
 
   const { default: sitemap } = await import('../src/app/sitemap.ts')
   const urls = sitemap().map((e) => e.url)
-  for (const p of ['/en', '/en/chart', '/en/pricing', '/en/mingshu']) {
+  for (const p of ['/en', '/en/chart', '/en/pricing', '/en/mingshu', '/en/liunian', '/en/hemun', '/en/ziwei', '/en/geo', '/en/terms', '/en/privacy']) {
     if (!urls.some((u) => u.endsWith(p))) fail(`sitemap 缺 ${p}`)
   }
-  ok('sitemap 收录 4 条英文页')
+  ok('sitemap 收录 10 条英文页')
 }
 
 // ---------- ⑧ 三棵 root layout 的服务端 lang ----------

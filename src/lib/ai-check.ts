@@ -79,6 +79,17 @@ export function complianceRetryHint(reason: string, shape = '完整 JSON'): stri
     `以与上次完全相同的结构重新输出${shape}（不要 markdown 代码块、不要任何额外文字）。`
 }
 
+/** 英文重试提示：与中文同义，但不把中文再灌回模型（英文路径必须零 CJK） */
+export function complianceRetryHintEn(reason: string, shape = 'the complete JSON object') {
+  return `★ Compliance rewrite required: your previous output failed the automatic check and must be rewritten in full.\n` +
+    `Reason: ${reason}\n` +
+    `Forbidden words (must not appear): ${FORBIDDEN_WORDS_EN.join(', ')}.\n` +
+    `Prefer: tends to, often, likely, steady progress, incremental progress, worth watching.\n` +
+    `Do not use any Chinese, Japanese or Korean character (CJK) — not even inside brackets. Write stems and branches in pinyin.\n` +
+    `Rewrite the flagged sentences as whole sentences; do not merely append "not necessarily" to dodge the check.\n` +
+    `Return ${shape} with exactly the same structure (no markdown fence, no extra text).`
+}
+
 const GANZHI_RE = /[甲乙丙丁戊己庚辛壬癸][子丑寅卯辰巳午未申酉戌亥]/g
 
 export const splitSentences = (t: string): string[] =>
@@ -161,7 +172,23 @@ export const FORBIDDEN_WORDS_HANT = ['註定', '積極進取', '突破性進展'
 export const FORBIDDEN_WORDS_EN = [
   'guaranteed', 'destined', 'inevitable', 'definitely', 'certainly',
   'sure to', 'breakthrough', 'aggressive', 'must ',
+  'will definitely', 'bound to', 'assured', 'no doubt', 'promises to',
 ] as const
+
+/** 英文报告固定免责语（三要素：仅供参考 / 非确定性 / 不构成建议） */
+export const EN_REPORT_DISCLAIMER =
+  'These are tendency-based reflections, for reference only. They are non-deterministic and are not a basis for investment or life decisions.'
+
+/** 中日韩统一表意文字检测：英文报告正文必须 0 命中 */
+const CJK_RE = /[\u4e00-\u9fff]/g
+
+export function findCJK(text: string): string[] {
+  return [...new Set(text.match(CJK_RE) ?? [])]
+}
+
+export function containsCJK(text: string): boolean {
+  return findCJK(text).length > 0
+}
 
 /** 英文禁词前的否定豁免（not / never / no / without …） */
 const EN_NEG_BEFORE = /\b(not|never|no|without|isn't|aren't|won't|cannot|can't)\b[^.!?]{0,18}$/i

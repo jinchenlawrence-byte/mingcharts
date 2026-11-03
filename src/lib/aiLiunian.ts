@@ -6,7 +6,10 @@ import { Solar } from 'lunar-javascript'
 import type { AnalyzableChart, LuckCycles, LuckLiuNianItem, LuckLiuYueItem } from './analysis'
 import { getFavorSets, TIAO_HOU } from './analysis'
 import type { AIUsage } from './ai-types'
-import { unknownGanzhi, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
+import {
+  unknownGanzhi, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT,
+  complianceRetryHint, complianceRetryHintEn, containsCJK, findCJK,
+} from './ai-check'
 import { localeDirective, type OutputLocale } from './locale'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
@@ -179,8 +182,11 @@ export async function generateAILiunian(
   const includeMonthFlow = months !== null
   const specs = includeMonthFlow ? [...SECTION_SPECS_BASE, MONTHFLOW_SPEC] : SECTION_SPECS_BASE
 
+  const isEn = opts?.locale === 'en'
   // 免责兜底语（与 SYSTEM_PROMPT 第7条一致）
-  const LIUNIAN_DISCLAIMER = '以上为流年倾向性分析，仅供参考，非确定性结论，不构成任何重大决策依据。'
+  const LIUNIAN_DISCLAIMER = isEn
+    ? 'These are tendency-based Annual Pillar reflections, for reference only. They are non-deterministic and are not a basis for any major decision.'
+    : '以上为流年倾向性分析，仅供参考，非确定性结论，不构成任何重大决策依据。'
 
   // 事实集（与 prompt 实际给出的事实逐字对齐：四柱/胎元/命宫/大运/三年流年/当年流月）
   const facts = new Set<string>([
@@ -197,6 +203,11 @@ export async function generateAILiunian(
   //   「未必/不可避免」正确放行；「不必」已在 wrappedAttempt 中替换为「无须」到不了这里
   const validate = <T extends object>(r: T): string | null => {
     const text = Object.values(r).filter(v => typeof v === 'string').join('')
+    if (isEn) {
+      if (containsCJK(text)) return `检出中文字符：${findCJK(text).join('、')}`
+      if (findForbidden(text).hits.length) return '检出禁用词'
+      return null
+    }
     if (unknownGanzhi(text, facts).length) return '检出未溯源干支'
     if (findForbidden(text).hits.length) return '检出禁用词'
     return null
@@ -211,7 +222,12 @@ export async function generateAILiunian(
         { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
         { role: 'user', content: buildUserPrompt(chart, luck, targetYear) }
       ]
-      if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, LIUNIAN_SHAPE) })
+      if (feedback) messages.push({
+        role: 'user',
+        content: isEn
+          ? complianceRetryHintEn(feedback, 'a complete JSON object with the annual sections')
+          : complianceRetryHint(feedback, LIUNIAN_SHAPE),
+      })
 
       const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
         method: 'POST',
@@ -259,15 +275,12 @@ export async function generateAILiunian(
   // 安全同义替换兜底：「不必」→「无须」（语义等价），先替换再校验，与 aiHemun/aiAnalysis 同序
   const wrappedAttempt = async (feedback?: string) => {
     const r = await attempt(feedback)
-    if (r) {
-      let n = 0
+    if (r && !isEn) {
       for (const k of Object.keys(r) as (keyof AILiunianSections)[]) {
         const before = r[k]
         if (typeof before !== 'string') continue
         r[k] = before.replaceAll('不必', '无须')
-        if (r[k] !== before) n++
       }
-      if (n) { void n }
     }
     return r
   }
@@ -275,8 +288,10 @@ export async function generateAILiunian(
   const out = await withComplianceRetry(wrappedAttempt, validate, 'ai-liunian')
 
   // 免责兜底（prompt 早已要求原文照写，此处仅防非确定性遗漏）
-  if (out && !/非确定性|仅供参考|不构成/.test(out.annualOverview)) {
-    out.annualOverview = out.annualOverview.replace(/。?$/, '') + '。' + LIUNIAN_DISCLAIMER
+  if (out && !(isEn
+    ? /for reference only|non-deterministic/i.test(out.annualOverview)
+    : /非确定性|仅供参考|不构成/.test(out.annualOverview))) {
+    out.annualOverview = out.annualOverview.replace(/[。.]?$/, '') + (isEn ? ' ' : '。') + LIUNIAN_DISCLAIMER
   }
   return out
 }

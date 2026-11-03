@@ -1,7 +1,10 @@
 // AI 紫微深度解读：规则引擎出星盘事实，AI 只做解读文案
 import { ZIWEI_PALACE_NAMES, type ZwChart, type ZiweiAnalysis } from './ziwei'
 import type { AIUsage } from './ai-types'
-import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
+import {
+  findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT,
+  complianceRetryHint, complianceRetryHintEn, containsCJK, findCJK,
+} from './ai-check'
 import { localeDirective, type OutputLocale } from './locale'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
@@ -262,7 +265,10 @@ export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis, o
     return null
   }
 
-  const ZW_DISCLAIMER = '以上为命理倾向性分析，仅供参考，非确定性结论，不构成任何决策依据。'
+  const isEn = opts?.locale === 'en'
+  const ZW_DISCLAIMER = isEn
+    ? 'These are tendency-based reflections, for reference only. They are non-deterministic and are not a basis for any decision.'
+    : '以上为命理倾向性分析，仅供参考，非确定性结论，不构成任何决策依据。'
 
   // 单批 API 调用（一批板块子集；当前每批一个板块），失败返回 null
   const callAI = async (
@@ -278,7 +284,12 @@ export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis, o
       ]
       // 以追加一条 user 消息的方式回灌退回原因：不动 buildUserPrompt 的原始请求体，
       // 保证「首次请求」与既有形态逐字一致（便于与历史日志/断言对齐）
-      if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, ZIWEI_SHAPE) })
+      if (feedback) messages.push({
+        role: 'user',
+        content: isEn
+          ? complianceRetryHintEn(feedback, 'a complete JSON object with the twelve Zi Wei sections')
+          : complianceRetryHint(feedback, ZIWEI_SHAPE),
+      })
 
       const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
         method: 'POST',
@@ -363,18 +374,21 @@ export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis, o
       for (const spec of SECTION_SPECS) {
         const v = r[spec.key]
         if (typeof v !== 'string') continue
+        if (isEn && containsCJK(v)) offenders.push(`${spec.key}：检出中文字符 ${findCJK(v).join('、')}`)
         const hits = findForbidden(v).hits
         if (hits.length) offenders.push(`${spec.key}：${hits.map((h) => `${h.w}｜${h.s.slice(0, 30)}`).join('；')}`)
       }
       if (!offenders.length) return null
-      return '检出禁用词：' + offenders.join(' / ')
+      return (isEn ? 'Compliance check failed: ' : '检出禁用词：') + offenders.join(' / ')
     },
     'aiZiwei'
   )
 
   // 免责兜底（prompt 早已要求 overview 原文照写，此处仅防非确定性遗漏）：缺固定短语则追加
-  if (out && !/非确定性|仅供参考|不构成/.test(out.overview)) {
-    out.overview = out.overview.replace(/。?$/, '') + '。' + ZW_DISCLAIMER
+  if (out && !(isEn
+    ? /for reference only|non-deterministic/i.test(out.overview)
+    : /非确定性|仅供参考|不构成/.test(out.overview))) {
+    out.overview = out.overview.replace(/[。.]?$/, '') + (isEn ? ' ' : '。') + ZW_DISCLAIMER
   }
   return out
 }

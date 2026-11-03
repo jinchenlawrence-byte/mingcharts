@@ -52,6 +52,7 @@ export default function EnRootLayout({ children }: { children: React.ReactNode }
                 <Link href="/en" className="hover:text-ink">Bazi chart</Link>
                 <Link href="/en/pricing" className="hover:text-ink">Pricing</Link>
                 <Link href="/en/mingshu" className="hover:text-ink">Fate Book</Link>
+                <Link href="/en/auth" className="hover:text-ink">Sign in</Link>
                 <Link href="/tw" className="hover:text-ink">繁體</Link>
                 <Link href="/" className="hover:text-ink">简体</Link>
               </nav>
@@ -70,7 +71,7 @@ export default function EnRootLayout({ children }: { children: React.ReactNode }
             </div>
           </footer>
         </main>
-        <SiteChrome />
+        <SiteChrome lang="en" />
       </body>
     </html>
   )

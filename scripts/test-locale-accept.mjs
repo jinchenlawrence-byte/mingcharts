@@ -165,7 +165,7 @@ if (JSON.stringify([...FORBIDDEN_WORDS]) !== JSON.stringify(['必', '一定', '�
   wordFail++; fail(`FORBIDDEN_WORDS 必须仍是 B+C 五词（test-entitlement-gate 会断言），实际 ${JSON.stringify(FORBIDDEN_WORDS)}`)
 }
 if (FORBIDDEN_WORDS_HANT.length !== 3) { wordFail++; fail('FORBIDDEN_WORDS_HANT 应为 3 项（注定/积极进取/突破性进展的繁体形态）') }
-if (FORBIDDEN_WORDS_EN.length !== 9) { wordFail++; fail('FORBIDDEN_WORDS_EN 应为 9 项（英文确定性/行动指令别名）') }
+if (FORBIDDEN_WORDS_EN.length !== 14) { wordFail++; fail('FORBIDDEN_WORDS_EN 应为 14 项（英文确定性/行动指令别名）') }
 const mustHit = [
   ['这段关系註定难以长久', '註定'],
   ['投資上宜積極進取', '積極進取'],
@@ -176,6 +176,9 @@ const mustHit = [
   ['This relationship is destined to be short-lived', 'destined'],
   ['Your career is guaranteed to improve this year', 'guaranteed'],
   ['You must act aggressively now', 'aggressive'],
+  ['This will definitely happen', 'will definitely'],
+  ['You are bound to succeed', 'bound to'],
+  ['There is no doubt about the outcome', 'no doubt'],
 ]
 for (const [text, w] of mustHit) {
   const { hits } = findForbidden(text)
@@ -188,7 +191,7 @@ if (findForbidden('並非註定如此').hits.length !== 0) {
 if (findForbidden('This outcome is not destined or guaranteed').hits.length !== 0) {
   wordFail++; fail('英文否定式 should be exempt（not destined/guaranteed）')
 }
-console.log(wordFail === 0 ? '✓ 判据：繁体三词与简体五词同罪；「並非註定」正确豁免；FORBIDDEN_WORDS 仍是五词' : `✗ 判据失败 ${wordFail} 处`)
+console.log(wordFail === 0 ? '✓ 判据：繁体三词与简体五词同罪；英文 14 项别名生效；「並非註定」与 not destined 正确豁免；FORBIDDEN_WORDS 仍是五词' : `✗ 判据失败 ${wordFail} 处`)
 
 // ---------- ⑦ 路由传参 ----------
 console.log('—— ⑦ API route 传参 ——')

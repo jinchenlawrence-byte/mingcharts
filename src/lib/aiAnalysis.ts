@@ -3,8 +3,13 @@ import { Solar } from 'lunar-javascript'
 import type { AnalyzableChart, PaidAnalysis } from './analysis'
 import { TIAO_HOU, buildLuckCycles } from './analysis'
 import type { AIUsage } from './ai-types'
-import { unknownGanzhi, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
+import {
+  unknownGanzhi, withComplianceRetry, findForbidden, containsCJK, findCJK,
+  FORBIDDEN_WORDS_PROMPT, complianceRetryHint, complianceRetryHintEn, EN_REPORT_DISCLAIMER,
+} from './ai-check'
 import { localeDirective, type OutputLocale } from './locale'
+import { branchEn, elementEn, ganZhiEn, stemEn, tenGodEn, tierEn } from './enTerms'
+import { qiYunEn, strengthEn, structureEn } from './enPreview'
 // ★ 冲/合/害表复用 branchRelations.ts 的单一事实源（HANDOFF-个性化日运 §二）
 import { LIU_CHONG, LIU_HAI, LIU_HE } from './branchRelations'
 import type { Zhi } from './branchRelations'
@@ -30,6 +35,20 @@ export const SECTION_SPECS: Array<{ key: keyof AIPaidAnalysis; name: string; req
   { key: 'marriage', name: '婚姻感情', requirement: '男命以财为妻星、女命以官为夫星，结合日支夫妻宫的刑冲合害，分析感情模式、配偶特征、婚姻趋势与注意事项。须含以下要点：配偶星在局状态（透干/藏支/不见）、日支夫妻宫的刑冲合害关系、感情模式一词定性、配偶特征简评、注意事项至少两条，500-600字。本板块正文不少于 500 字，低于下限为不合格' },
   { key: 'children', name: '子女六亲', requirement: '男命看官杀、女命看食伤为子女星，结合时柱分析子女缘；并简述与父母、兄弟姐妹的六亲关系。须含以下要点：子女星在局状态、时柱对子女缘的影响、与父母关系简评、与兄弟姐妹关系简评，400-500字。本板块正文不少于 400 字，低于下限为不合格' },
   { key: 'health', name: '健康提示', requirement: '根据五行偏旺偏弱指出对应脏腑的养护重点（木肝胆、火心脏、土脾胃、金肺、水肾），给出生活方式建议。须含以下要点：五行偏旺偏弱对应脏腑、至少两个养护重点、生活方式建议至少三条、情绪与心理层面的提示，400-500字。本板块正文不少于 400 字，低于下限为不合格' }
+]
+
+// 英文十卷要求（与中文 SECTION_SPECS 同键、同信息点；英文正文零 CJK）
+export const SECTION_SPECS_EN: Array<{ key: keyof AIPaidAnalysis; name: string; requirement: string }> = [
+  { key: 'overview', name: 'Chart overview', requirement: `Write 400-500 words summarising the Day Master, month command, strength, structure, the chart's greatest strength and one point to watch, and a one-sentence life theme. End with exactly: "${EN_REPORT_DISCLAIMER}"` },
+  { key: 'personality', name: 'Temperament and talent', requirement: 'Write 500-600 words. Characterise the Day Master element, give at least two concrete traits with their stem-branch source, one clear shortcoming and its cause, and the settings where the talent works best.' },
+  { key: 'yongShen', name: 'Useful God and favourable elements', requirement: 'Write 500-600 words. Identify the Useful God, favourable and unfavourable elements, explain why this choice rather than another, and give at least three practical suggestions (industry, direction, colour or habit).' },
+  { key: 'geJuAnalysis', name: 'Structure analysis', requirement: 'Write 600-700 words. Read whether the structure is supported, whether an unfavourable god breaks it, the structure level, and explain one classical principle in plain English.' },
+  { key: 'tiaoHou', name: 'Seasonal adjustment', requirement: 'Write 600-700 words. Describe the seasonal condition of the Day Master in this month, whether the primary adjustment element is present, transparent or hidden, its effect on the chart level, and practical remedies if absent.' },
+  { key: 'daYunAnalysis', name: 'Luck Pillars and Annual Pillars', requirement: 'Write 800-1000 words. State the current Luck Pillar stem-branch and Ten God, whether the favourable element is actually effective, give career, wealth, health and relationship tendencies with measured wording, then review this year, next year and the year after using only the supplied facts and monthly rhythm.' },
+  { key: 'career', name: 'Career and wealth', requirement: 'Write 500-600 words. Give at least two suitable industry directions, a wealth style, a trend in wealth capacity, and the timing windows that deserve effort.' },
+  { key: 'marriage', name: 'Marriage and relationships', requirement: 'Write 500-600 words. Read the spouse star and spouse palace, the attachment pattern, partner traits, and at least two cautions. For a man the wealth star is the spouse star; for a woman the officer star is the spouse star.' },
+  { key: 'children', name: 'Children and kin', requirement: 'Write 400-500 words. Read the children star and hour pillar, and briefly describe relationships with parents and siblings.' },
+  { key: 'health', name: 'Health tendencies', requirement: 'Write 400-500 words. Link strong and weak elements to the associated organs, give at least two care priorities and three lifestyle suggestions, and include an emotional-health note. No diagnosis.' },
 ]
 
 // ★ 逐板块调用（万字补全两轮实测教训）：
@@ -64,6 +83,28 @@ F. 地支藏干必须逐字引用四柱数据中列出的藏干，严禁提及�
 G. 大运、流年、流月的干支十神与吉凶倾向，以及天克地冲、岁运并临、冲合夫妻宫/月令/太岁等岁运关系，只能引用【岁运核查】中算法已算出的结果，严禁自行编造或遗漏其中的重点关系；流月以节气换月，不得说成农历初一开始。
 H. 大运段与流年段按【7 档判词】给出时段性质（大吉/吉/小吉/平/小凶/凶/大凶），但必须按【岁运核查】给出的结构病（被合/被冲/被化/被夺/深藏/孤立）点明喜用是否真正有效，并分维度（事业/财运/健康/六亲）给出倾向；判词只描述【时段性质】，不得写成承诺；不得出现"积极进取""突破性进展"这类行动指令；【流月】只用"较宜/一般/宜慎"，不得使用 7 档判词。
 I. 全文须带"命理为倾向性参考、非确定性预言"的立场，对投资、杠杆、投机等重大决策不作鼓励，必要时提示"宜守""忌投机"。`
+
+const SYSTEM_PROMPT_EN = `You are a senior practitioner of traditional Zi Ping Bazi, trained in the classical texts Zi Ping Zhen Quan, Di Tian Sui, Qiong Tong Bao Jian, Yuan Hai Zi Ping, San Ming Tong Hui and Qian Li Ming Gao.
+
+Writing rules:
+1. Every chart fact, strength assessment, structure and timing statement supplied in the user message is algorithm-confirmed. You only interpret it. Never change, deny or contradict it.
+2. Each section must stand alone, in clear natural English for a general reader. You may quote one classical principle and explain it plainly.
+3. Use measured wording such as "tends to", "often", "likely" and "worth watching". Never make absolute promises about life, death, disaster or wealth. Never frighten the reader.
+4. Never use any Chinese, Japanese or Korean character (CJK), including inside brackets. Write stems and branches in pinyin (e.g. Jia Zi).
+5. Never use "guaranteed", "destined", "inevitable", "definitely", "certainly", "must", "sure to", "breakthrough", "aggressive", "will definitely", "bound to", "assured", "no doubt" or "promises to". Prefer "tends to", "often", "likely", "steady progress" and "incremental progress".
+6. Output must be one pure JSON object, no markdown fence, no extra text.
+7. The "overview" section must end with this sentence exactly: "${EN_REPORT_DISCLAIMER}"
+
+Technical rules:
+A. "Transparent" means a hidden stem appears on the year, month or hour Heavenly Stem; the Day Stem is the Day Master and does not count. If the structure god is not transparent, describe it as "taking the month branch's primary qi as the structure", never as transparent.
+B. Ten Gods must follow the supplied data exactly.
+C. "Clash" applies only to the six clash pairs: Zi-Wu, Chou-Wei, Yin-Shen, Mao-You, Chen-Xu, Si-Hai. Element control is "control", never "clash".
+D. Seasonal adjustment must use the supplied useful-stem check; if the primary adjustment stem is present, say the season has a remedy.
+E. Review the current year first, then the next two years.
+F. Hidden stems must be quoted exactly as supplied; never mention a stem that is not listed for that branch.
+G. Luck Pillars, Annual Pillars and monthly labels must use only the supplied results. Monthly rhythm uses solar terms, not lunar month starts.
+H. Treat structure frictions honestly: a favourable element being present does not always mean it is effective. Give career, wealth, health and relationship tendencies separately. Period labels describe tone only, not promises.
+I. Keep a stance that astrology is tendency-based and non-deterministic; do not encourage investment, leverage or speculation.`
 
 const CANG_GAN: Record<string, string[]> = {
   '子': ['癸'], '丑': ['己', '癸', '辛'], '寅': ['甲', '丙', '戊'], '卯': ['乙'],
@@ -206,6 +247,97 @@ ${daYunLines}
 ${sections}`
 }
 
+// 英文版用户 prompt：所有命理事实都以英文/拼音给出，避免中文进入模型输出
+function buildUserPromptEn(
+  chart: AnalyzableChart,
+  specs: Array<{ key: keyof AIPaidAnalysis; name: string; requirement: string }> = SECTION_SPECS_EN,
+): string {
+  const p = chart.pillars
+  const gender = chart.input.gender === 1 ? 'male' : 'female'
+  const pillarLine = (label: string, pl: typeof p.year) => {
+    const gz = ganZhiEn(pl.ganZhi)
+    const ganGod = tenGodEn(pl.tenGodGan) || 'Day Master'
+    const hidden = pl.cangGan
+      .map((g, i) => `${stemEn(g)} (${tenGodEn(pl.tenGodCangGan[i]) || 'unknown role'})`)
+      .join(', ')
+    return `${label}: ${gz} — Heavenly Stem ${stemEn(pl.gan)} (${ganGod}); Earthly Branch ${branchEn(pl.zhi)} with hidden stems ${hidden || 'none'}.`
+  }
+
+  const elements = ['Wood', 'Fire', 'Earth', 'Metal', 'Water']
+  const counts: Record<string, number> = { Wood: 0, Fire: 0, Earth: 0, Metal: 0, Water: 0 }
+  for (const pl of Object.values(p)) {
+    const s = elementEn(pl.gan === '甲' || pl.gan === '乙' ? '木' : pl.gan === '丙' || pl.gan === '丁' ? '火' : pl.gan === '戊' || pl.gan === '己' ? '土' : pl.gan === '庚' || pl.gan === '辛' ? '金' : '水')
+    const b = elementEn(({ 子: '水', 丑: '土', 寅: '木', 卯: '木', 辰: '土', 巳: '火', 午: '火', 未: '土', 申: '金', 酉: '金', 戌: '土', 亥: '水' } as Record<string, string>)[pl.zhi] ?? '')
+    if (s) counts[s]++
+    if (b) counts[b]++
+  }
+  const elementLine = elements.map((e) => `${e} ${counts[e]}`).join(', ')
+
+  const tiaoStems = (TIAO_HOU[chart.dayMaster]?.[p.month.zhi] || '').split('').filter(Boolean)
+  const tiaoLine = tiaoStems.length
+    ? tiaoStems.map((g, i) => `${i === 0 ? 'primary' : `secondary ${i + 1}`}: ${stemEn(g)} (${elementEn(({ 甲: '木', 乙: '木', 丙: '火', 丁: '火', 戊: '土', 己: '土', 庚: '金', 辛: '金', 壬: '水', 癸: '水' } as Record<string, string>)[g] ?? '')})`).join('; ')
+    : 'no seasonal adjustment stem is tabulated for this Day Master and month'
+
+  const now = new Date()
+  const currentYear = now.getFullYear()
+  const luck = buildLuckCycles(chart, now)
+  const curDY = luck.daYun.find((d) => d.current)
+  const curDYLine = curDY
+    ? `${ganZhiEn(curDY.ganZhi)} (${curDY.startYear}-${curDY.endYear}); stem role ${tenGodEn(curDY.shiShenGan) || 'unknown'}, branch role ${tenGodEn(curDY.shiShenZhi) || 'unknown'}, period tone ${tierEn(curDY.tag) || 'neutral'}.`
+    : 'before the first Luck Pillar; read the Annual Pillars as the main timing layer.'
+  const yearLines = luck.liuNian
+    .filter((y) => y.year >= currentYear && y.year <= currentYear + 2)
+    .map((y) => `${y.year}: ${ganZhiEn(y.ganZhi)}; stem role ${tenGodEn(y.shiShenGan) || 'unknown'}; period tone ${tierEn(y.tag) || 'neutral'}.`)
+    .join('\n')
+  const monthTags = luck.liuYue
+    .map((m) => `month ${m.month} ${ganZhiEn(m.ganZhi)} (${tierEn(m.tag) || 'neutral'})`)
+    .join('; ')
+
+  const sections = specs
+    .map((s, i) => `${i + 1}. "${s.key}" (${s.name}): ${s.requirement}`)
+    .join('\n')
+
+  return `Write a premium English Bazi reading for the chart below. Use only the facts supplied here; do not invent stem-branch relationships.
+
+[Birth data]
+Gender: ${gender}
+Gregorian date: ${chart.input.year}-${chart.input.month}-${chart.input.day} ${chart.input.hour}:${String(chart.input.minute).padStart(2, '0')}
+Day Master: ${stemEn(chart.dayMaster)}
+Strength (fixed): ${strengthEn(chart.analysis.wangShuai)}
+Structure (fixed): ${structureEn(chart.analysis.geJu)}
+True Solar Time / start of luck: ${qiYunEn(chart.qiYun)}
+
+[Four Pillars]
+${pillarLine('Year', p.year)}
+${pillarLine('Month', p.month)}
+${pillarLine('Day', p.day)}
+${pillarLine('Hour', p.hour)}
+Conception palace: ${ganZhiEn(chart.taiYuan) || 'not available'}
+Life palace: ${ganZhiEn(chart.mingGong) || 'not available'}
+
+[Five Elements count across the eight characters]
+${elementLine}
+
+[Seasonal adjustment check]
+${tiaoLine}
+
+[Luck Pillars]
+${chart.daYun.map((d) => `${d.startYear}-${d.endYear} (from age ${d.startAge}): ${ganZhiEn(d.ganZhi)}`).join('; ')}
+
+[Algorithm-confirmed timing facts — quote these, never contradict them]
+Current year: ${currentYear}. Focus the Annual Pillar review on ${currentYear}, then the next two years.
+Current Luck Pillar: ${curDYLine}
+Annual Pillars:
+${yearLines}
+Monthly rhythm (current year): ${monthTags || 'not supplied'}
+
+[Output]
+Return one pure JSON object with exactly ${specs.length} keys. Each value is the body text for that section and may use \\n\\n. Do not use markdown fences or any extra text. All content must be English with zero CJK characters; stems and branches must be pinyin.
+
+Sections:
+${sections}`
+}
+
 interface ChatCompletionResponse {
   choices?: Array<{ message?: { content?: string } }>
   usage?: AIUsage
@@ -215,6 +347,7 @@ interface ChatCompletionResponse {
 // ★ 合规退回后的结构提示（配合 ai-check.complianceRetryHint 回灌退回原因，单一事实源）：
 //   与紫微模块同法——把退回原因追加为一条 user 消息，不改 buildUserPrompt，保证首次请求逐字一致。
 const ANALYSIS_SHAPE = '完整 JSON（命书十段：八字总览、性格天赋、用神喜忌、格局成败、调候用神、大运流年、事业财运、婚姻感情、子女六亲、健康提示）'
+const ANALYSIS_SHAPE_EN = 'a complete JSON object with the ten sections (overview, personality, yongShen, geJuAnalysis, tiaoHou, daYunAnalysis, career, marriage, children, health)'
 
 // 调用 OpenAI 兼容接口，返回解析后的文字板块；失败返回 null（调用方回退规则引擎）
 export async function generateAIAnalysis(chart: AnalyzableChart, opts?: { locale?: OutputLocale }): Promise<(AIPaidAnalysis & { _usage?: AIUsage }) | null> {
@@ -224,8 +357,11 @@ export async function generateAIAnalysis(chart: AnalyzableChart, opts?: { locale
     return null
   }
 
-  // overview 固定免责语（与 SYSTEM_PROMPT 第7条一致）
-  const ANALYSIS_DISCLAIMER = '以上为命理倾向性分析，仅供参考，非确定性结论，不构成任何投资或人生决策依据。'
+  // overview 固定免责语（与 SYSTEM_PROMPT 第7条一致；英文用 EN_REPORT_DISCLAIMER）
+  const isEn = opts?.locale === 'en'
+  const ANALYSIS_DISCLAIMER = isEn
+    ? EN_REPORT_DISCLAIMER
+    : '以上为命理倾向性分析，仅供参考，非确定性结论，不构成任何投资或人生决策依据。'
   // 事实集（与 prompt 实际给出的事实一致：四柱/胎元/命宫/九步大运/三年流年/当年流月）
   // ★ 胎元、命宫也在 prompt 中给出（逐字对齐原则：prompt 给了的事实，AI 引用不算编造）
   const luckNow = buildLuckCycles(chart, new Date())
@@ -247,10 +383,18 @@ export async function generateAIAnalysis(chart: AnalyzableChart, opts?: { locale
     const timer = setTimeout(() => controller.abort(), AI_TIMEOUT_MS)
     try {
       const messages: Array<{ role: string; content: string }> = [
-        { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
-        { role: 'user', content: buildUserPrompt(chart, specs) }
+        {
+          role: 'system',
+          content: isEn ? SYSTEM_PROMPT_EN : SYSTEM_PROMPT + localeDirective(opts?.locale),
+        },
+        { role: 'user', content: isEn ? buildUserPromptEn(chart, specs) : buildUserPrompt(chart, specs) }
       ]
-      if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, ANALYSIS_SHAPE) })
+      if (feedback) messages.push({
+        role: 'user',
+        content: isEn
+          ? complianceRetryHintEn(feedback, ANALYSIS_SHAPE_EN)
+          : complianceRetryHint(feedback, ANALYSIS_SHAPE),
+      })
 
       const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
         method: 'POST',
@@ -301,11 +445,10 @@ export async function generateAIAnalysis(chart: AnalyzableChart, opts?: { locale
     }
   }
 
-  // 一次完整尝试：按 SECTION_BATCHES 分批并行调用，合并为十个板块（任一批失败则整体失败）
+  // 一次完整尝试：按板块逐个并行调用，合并为十个板块（任一批失败则整体失败）
   const attempt = async (feedback?: string): Promise<(AIPaidAnalysis & { _usage?: AIUsage }) | null> => {
-    const batches = SECTION_BATCHES.map(keys =>
-      keys.map(k => SECTION_SPECS.find(s => s.key === k)!)
-    )
+    const specsAll = isEn ? SECTION_SPECS_EN : SECTION_SPECS
+    const batches = specsAll.map(s => [s])
     const results = await Promise.all(batches.map(b => callAI(b, feedback)))
     if (results.some(r => r === null)) return null
     const merged = {} as Record<string, string>
@@ -328,20 +471,17 @@ export async function generateAIAnalysis(chart: AnalyzableChart, opts?: { locale
   //   「务必/势必/必定」无否定前缀 → 拦截重试。（strictBi 物理禁「必」是合婚专属口径）
   // ★ 历史：本模块曾只接 unknownGanzhi，绝对化措辞「务必」类会漏出（REPLY 复核 §四）。
   //   现补齐 findForbidden 接线 —— 消除不对称，非有意差异（§8.4.4）。
-  const validate = makeAnalysisComplianceValidator(facts)
+  const validate = makeAnalysisComplianceValidator(facts, isEn)
 
-  // 「不必」→「无须」（语义等价）先替换再校验，与 aiHemun 同序
+  // 「不必」→「无须」（语义等价）先替换再校验，与 aiHemun 同序；英文路径不做中文替换
   const wrappedAttempt = async (feedback?: string) => {
     const r = await attempt(feedback)
-    if (r) {
-      let n = 0
+    if (r && !isEn) {
       for (const k of Object.keys(r) as (keyof AIPaidAnalysis)[]) {
         const before = r[k]
         if (typeof before !== 'string') continue // 跳过 _usage 等非文本键
         r[k] = before.replaceAll('不必', '无须')
-        if (r[k] !== before) n++
       }
-      if (n) { void n }
     }
     return r
   }
@@ -349,8 +489,10 @@ export async function generateAIAnalysis(chart: AnalyzableChart, opts?: { locale
   const out = await withComplianceRetry(wrappedAttempt, validate, 'ai')
 
   // 免责兜底（prompt 早已要求原文照写，此处仅防非确定性遗漏）：overview 缺固定短语则追加
-  if (out && !/非确定性|仅供参考|不构成/.test(out.overview)) {
-    out.overview = out.overview.replace(/。?$/, '') + '。' + ANALYSIS_DISCLAIMER
+  if (out && !(isEn
+    ? /for reference only|non-deterministic/i.test(out.overview)
+    : /非确定性|仅供参考|不构成/.test(out.overview))) {
+    out.overview = out.overview.replace(/[。.。]?$/, '') + (isEn ? ' ' : '。') + ANALYSIS_DISCLAIMER
   }
   return out
 }
@@ -360,9 +502,16 @@ export async function generateAIAnalysis(chart: AnalyzableChart, opts?: { locale
  * ★ 单独导出的原因：单一事实源只保证「判据一致」，不保证「每个消费者都接线」——
  *   本次「接线漂移」（REPLY 复核 §四）正是教训，让接线本身也有测试覆盖（REPLY §六-2）。
  */
-export function makeAnalysisComplianceValidator(facts: Set<string>) {
+export function makeAnalysisComplianceValidator(facts: Set<string>, en = false) {
   return <T extends object>(r: T): string | null => {
     const text = Object.values(r).filter(v => typeof v === 'string').join('')
+    if (en) {
+      // 英文报告红线：正文不得出现任何中日韩统一表意文字
+      if (containsCJK(text)) return `检出中文字符：${findCJK(text).join('、')}`
+      const { hits } = findForbidden(text)
+      if (hits.length) return `检出禁用词：${[...new Set(hits.map(h => h.w))].join('、')}`
+      return null
+    }
     // ★ 日志须带具体命中项（与 aiGeo 同规）：只报「检出未溯源干支」无法甄别是模型编造还是事实集漏项
     const unknown = unknownGanzhi(text, facts)
     if (unknown.length) return `检出未溯源干支：${unknown.join('、')}`

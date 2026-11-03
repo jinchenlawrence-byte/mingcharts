@@ -26,7 +26,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="zh-CN" className={rootFontClassName}>
       <body className="min-h-full flex flex-col bg-paper text-ink">
         {children}
-        <SiteChrome />
+        <SiteChrome lang="zh-Hans" />
       </body>
     </html>
   )

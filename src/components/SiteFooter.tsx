@@ -24,9 +24,9 @@ export default function SiteFooter() {
           <span aria-hidden="true">·</span>
           <Link href="/en/pricing" className="underline hover:text-ink/60">Pricing</Link>
           <span aria-hidden="true">·</span>
-          <Link href="/terms" className="underline hover:text-ink/60">Terms of Service (Chinese)</Link>
+          <Link href="/en/terms" className="underline hover:text-ink/60">Terms of Service</Link>
           <span aria-hidden="true">·</span>
-          <Link href="/privacy" className="underline hover:text-ink/60">Privacy Policy (Chinese)</Link>
+          <Link href="/en/privacy" className="underline hover:text-ink/60">Privacy Policy</Link>
           <span aria-hidden="true">·</span>
           <a href="mailto:hello@mingcharts.com" className="underline hover:text-ink/60">hello@mingcharts.com</a>
           <span aria-hidden="true">·</span>

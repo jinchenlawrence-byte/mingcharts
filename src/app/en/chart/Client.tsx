@@ -11,6 +11,10 @@ import { getSupabase } from '@/lib/supabase'
 import { waffoProductId } from '@/lib/waffo-products'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import { buildEnFatebookPreview, strengthEn, structureEn, qiYunEn } from '@/lib/enPreview'
+import {
+  stemEn, branchEn, ganZhiEn, tierEn, luckTagEn,
+  CHANG_SHENG_EN, SHEN_SHA_EN, parseLunarAlmanacEn,
+} from '@/lib/enTerms'
 import type { PaidAnalysis, LuckCycles, FortuneTier } from '@/lib/analysis'
 
 const FATEBOOK_PRICE = formatPriceUSD(SKUS.fatebook.priceUSD)
@@ -64,7 +68,12 @@ interface Pillar {
 
 function tenGod(g?: string): string {
   if (!g) return ''
-  return TEN_GOD[g] ?? g
+  return TEN_GOD[g] ?? ''
+}
+
+function kongWangEn(k?: string): string {
+  if (!k) return '—'
+  return [...k].map((z) => branchEn(z)).filter(Boolean).join(' · ') || '—'
 }
 
 export default function EnChartClient() {
@@ -117,24 +126,34 @@ export default function EnChartClient() {
   }
   const preview = chart.analysis.isPaid ? null : buildEnFatebookPreview(chart)
   const paid = chart.analysis.isPaid ? chart.analysis.paid ?? null : null
+  const almanac = parseLunarAlmanacEn(
+    chart.lunarDate,
+    chart.pillars.day.ganZhi[0],
+    chart.pillars.day.ganZhi[1],
+    chart.pillars.day.ganZhi,
+  )
 
   return (
     <main className="hw-page">
       <div className="hw-wrap hw-c-pg">
         <Link href="/en" className="hw-c-back">‹ New chart</Link>
-        <h1 className="hw-c-h1">Day Master {chart.dayMaster} · {STEM_WX[chart.dayMaster] ?? ''}</h1>
+        <h1 className="hw-c-h1">Day Master {stemEn(chart.dayMaster)} · {STEM_WX[chart.dayMaster] ?? ''}</h1>
         <p className="hw-c-meta">
           {chart.input.year}-{chart.input.month}-{chart.input.day} {String(chart.input.hour).padStart(2, '0')}:{String(chart.input.minute).padStart(2, '0')}
           {' · '}{chart.input.gender === 1 ? 'Male' : 'Female'}{' · '}True Solar Time: {chart.trueSolar ? `${chart.trueSolar.offsetMin >= 0 ? '+' : ''}${chart.trueSolar.offsetMin} min (${chart.trueSolar.zone})` : 'not applied'}
         </p>
-        {chart.trueSolar?.dstNotice && <div className="hw-c-warn">⚠ {chart.trueSolar.dstNotice}</div>}
+        {chart.trueSolar?.dstNotice && (
+          <div className="hw-c-warn">
+            ⚠ True Solar Time note: this birth time falls near a daylight-saving transition; the engine resolved it automatically.
+          </div>
+        )}
 
         <div className="hw-pillars" style={{ paddingTop: 28 }}>
           {pillars.map((p, i) => (
             <div key={i} className={`hw-c-pillar${i === 2 ? ' hw-day' : ''}`}>
               <span className="hw-t">{['Year', 'Month', 'Day', 'Hour'][i]}</span>
-              <span className={`hw-g hw-${(STEM_WX[p.ganZhi[0]] ?? 'water').toLowerCase()}`}>{p.ganZhi[0]}</span>
-              <span className={`hw-g hw-${(BRANCH_WX[p.ganZhi[1]] ?? 'water').toLowerCase()}`}>{p.ganZhi[1]}</span>
+              <span className={`hw-g hw-${(STEM_WX[p.ganZhi[0]] ?? 'water').toLowerCase()}`}>{stemEn(p.ganZhi[0])}</span>
+              <span className={`hw-g hw-${(BRANCH_WX[p.ganZhi[1]] ?? 'water').toLowerCase()}`}>{branchEn(p.ganZhi[1])}</span>
             </div>
           ))}
         </div>
@@ -145,10 +164,10 @@ export default function EnChartClient() {
               <thead><tr><th></th>{['Year', 'Month', 'Day', 'Hour'].map((n) => <th key={n}>{n}</th>)}</tr></thead>
               <tbody>
                 <tr><td>Ten Gods</td>{pillars.map((p, i) => <td key={i}>{tenGod(p.tenGodGan) || (i === 2 ? 'Day Master' : '')}</td>)}</tr>
-                <tr><td>Hidden Stems</td>{pillars.map((p, i) => <td key={i}>{(p.cangGan ?? []).map((g, j) => `${g}${p.tenGodCangGan?.[j] ? ` (${tenGod(p.tenGodCangGan[j])})` : ''}`).join(' · ')}</td>)}</tr>
-                <tr><td>Twelve Stages</td>{pillars.map((p, i) => <td key={i}>{p.changSheng ?? '—'}</td>)}</tr>
-                <tr><td>Auspices</td>{pillars.map((p, i) => <td key={i}>{(p.shenSha ?? []).join(' · ') || '—'}</td>)}</tr>
-                <tr><td>Void</td>{pillars.map((p, i) => <td key={i}>{p.kongWang ?? '—'}</td>)}</tr>
+                <tr><td>Hidden Stems</td>{pillars.map((p, i) => <td key={i}>{(p.cangGan ?? []).map((g, j) => `${stemEn(g)}${p.tenGodCangGan?.[j] ? ` (${tenGod(p.tenGodCangGan[j])})` : ''}`).join(' · ')}</td>)}</tr>
+                <tr><td>Twelve Stages</td>{pillars.map((p, i) => <td key={i}>{p.changSheng ? (CHANG_SHENG_EN[p.changSheng] ?? '—') : '—'}</td>)}</tr>
+                <tr><td>Auspices</td>{pillars.map((p, i) => <td key={i}>{(p.shenSha ?? []).map((s) => SHEN_SHA_EN[s] ?? 'Auspice').join(' · ') || '—'}</td>)}</tr>
+                <tr><td>Void</td>{pillars.map((p, i) => <td key={i}>{kongWangEn(p.kongWang)}</td>)}</tr>
               </tbody>
             </table>
           </div>
@@ -156,6 +175,27 @@ export default function EnChartClient() {
             Auspices follow the common conventions of Yuan Hai Zi Ping and San Ming Tong Hui; schools differ.
             They are labels, not verdicts. The reading rests on Five Elements balance and structure.
           </p>
+        </div>
+
+        <div className="hw-c-box">
+          <h3 className="hw-c-secTitle">Chart archive · lunar date, Nayin, mansion and almanac</h3>
+          <div className="hw-c-kv text-sm space-y-1">
+            <p><span>Lunar date: </span>{almanac.lunarDate}{almanac.weekday ? ` (${almanac.weekday})` : ''}</p>
+            {almanac.lunarPillars && <p><span>Lunar pillars: </span>{almanac.lunarPillars}</p>}
+            {almanac.nayin.length > 0 && (
+              <p><span>Nayin elements: </span>{['Year', 'Month', 'Day', 'Hour'].map((l, i) => almanac.nayin[i] ? `${l} ${almanac.nayin[i]}` : '').filter(Boolean).join(' · ')}</p>
+            )}
+            {almanac.mansion && <p><span>{almanac.mansion}</span>{almanac.spirit ? ` · ${almanac.spirit}` : ''}</p>}
+            {almanac.pengzu.length > 0 && (
+              <p><span>Pengzu taboos: </span>{almanac.pengzu.join('; ')}</p>
+            )}
+            {almanac.directions.length > 0 && (
+              <p><span>Directions: </span>{almanac.directions.join(' · ')}</p>
+            )}
+            {(almanac.clash || almanac.sha) && (
+              <p><span>Clash &amp; Sha: </span>{[almanac.clash, almanac.sha].filter(Boolean).join(' · ')}</p>
+            )}
+          </div>
         </div>
 
         <h2 className="hw-c-h2">Five Elements</h2>
@@ -180,9 +220,9 @@ export default function EnChartClient() {
           <div className="hw-c-box">
             <h3 className="hw-c-secTitle">Conception &amp; palaces</h3>
             <div className="hw-c-kv">
-              <p><span>Conception: </span>{chart.taiYuan}</p>
-              <p><span>Life Palace: </span>{chart.mingGong}</p>
-              <p><span>Body Palace: </span>{chart.shenGong}</p>
+              <p><span>Conception: </span>{ganZhiEn(chart.taiYuan) || '—'}</p>
+              <p><span>Life Palace: </span>{ganZhiEn(chart.mingGong) || '—'}</p>
+              <p><span>Body Palace: </span>{ganZhiEn(chart.shenGong) || '—'}</p>
             </div>
           </div>
         </div>
@@ -194,7 +234,7 @@ export default function EnChartClient() {
             const current = now >= dy.startYear && now <= dy.endYear
             return (
               <div key={i} className={current ? 'hw-c-cur' : ''}>
-                <b>{dy.ganZhi}</b>
+                <b>{ganZhiEn(dy.ganZhi)}</b>
                 <i>{dy.startAge}–{dy.startAge + 9} yrs</i>
                 <i>{dy.startYear}–{dy.endYear}</i>
                 {current && <span className="hw-c-curTag">Current</span>}
@@ -269,9 +309,9 @@ function LuckCyclesEn({ luck }: { luck: LuckCycles }) {
         <div className="flex flex-wrap gap-2">
           {luck.daYun.map((d, i) => (
             <div key={i} className={`rounded px-3 py-2 text-center border ${d.current ? 'bg-gold/5 border-amber-500' : 'bg-paper-dark/30 border-gold/15'}`}>
-              <div className="font-bold text-ink">{d.ganZhi}</div>
+              <div className="font-bold text-ink">{ganZhiEn(d.ganZhi)}</div>
               <div className="text-xs text-ink-light/60">{d.startAge}-{d.startAge + 9} yrs</div>
-              <span className={`inline-block text-[11px] px-1.5 rounded mt-1 ${FORTUNE_BADGE[d.tag]}`}>{d.tag}</span>
+              <span className={`inline-block text-[11px] px-1.5 rounded mt-1 ${FORTUNE_BADGE[d.tag]}`}>{tierEn(d.tag)}</span>
             </div>
           ))}
         </div>
@@ -282,15 +322,35 @@ function LuckCyclesEn({ luck }: { luck: LuckCycles }) {
           {luck.liuNian.map((y, i) => (
             <div key={i} className="rounded border-l-4 border-gold/20 bg-paper-dark/30 p-3">
               <div className="flex items-center justify-between gap-1">
-                <span className="font-bold text-ink">{y.year} {y.ganZhi}</span>
-                <span className={`text-[11px] px-1.5 py-0.5 rounded ${FORTUNE_BADGE[y.tag]}`}>{y.tag}</span>
+                <span className="font-bold text-ink">{y.year} {ganZhiEn(y.ganZhi)}</span>
+                <span className={`text-[11px] px-1.5 py-0.5 rounded ${FORTUNE_BADGE[y.tag]}`}>{tierEn(y.tag)}</span>
               </div>
-              <div className="text-xs text-ink-light/60 mt-1">{y.shiShenGan} governing</div>
-              <p className="text-xs text-ink/70 mt-2 leading-relaxed">{y.note}</p>
+              <div className="text-xs text-ink-light/60 mt-1">{tenGod(y.shiShenGan)} governing</div>
+              <p className="text-xs text-ink/70 mt-2 leading-relaxed">
+                This year's tone is {tierEn(y.tag) || 'neutral'}. Read it together with the current Luck Pillar and the full English report.
+              </p>
             </div>
           ))}
         </div>
       </div>
+      {(() => {
+        const current = luck.liuYueByYear?.[luck.currentYear] ?? luck.liuYue
+        if (!current?.length) return null
+        return (
+          <div className="hw-c-box">
+            <h3 className="hw-c-secTitle">Monthly rhythm · {luck.currentYear}</h3>
+            <p className="text-xs text-ink-light/60 mb-2">Monthly rhythm follows solar terms, not lunar month starts.</p>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+              {current.map((m, i) => (
+                <div key={i} className="rounded border border-gold/15 px-2 py-1.5">
+                  <div className="font-bold text-ink">{m.month} · {ganZhiEn(m.ganZhi)}</div>
+                  <div className="text-ink-light/70">{luckTagEn(m.tag) || 'Neutral'}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }

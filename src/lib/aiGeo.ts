@@ -1,7 +1,10 @@
 // AI 地理位置深度解读：规则引擎定城市与影响指数，AI 只做解读文案
 import type { GeoAnalysis } from './geo'
 import type { AIUsage } from './ai-types'
-import { findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT, complianceRetryHint } from './ai-check'
+import {
+  findForbidden, withComplianceRetry, FORBIDDEN_WORDS_PROMPT,
+  complianceRetryHint, complianceRetryHintEn, containsCJK, findCJK,
+} from './ai-check'
 import { localeDirective, type OutputLocale } from './locale'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
@@ -160,8 +163,11 @@ export async function generateAIGeo(a: GeoAnalysis, opts?: { locale?: OutputLoca
     return null
   }
 
+  const isEn = opts?.locale === 'en'
   // overview 固定免责语（与 SYSTEM_PROMPT 第6条一致）
-  const GEO_DISCLAIMER = '以上方位分析仅供参考，非确定性结论，不构成迁居决策依据；福地福人居，个人努力为本。'
+  const GEO_DISCLAIMER = isEn
+    ? 'These directional reflections are for reference only. They are non-deterministic and are not a basis for relocation decisions; personal effort matters most.'
+    : '以上方位分析仅供参考，非确定性结论，不构成迁居决策依据；福地福人居，个人努力为本。'
 
   // 单次 API 调用，失败返回 null
   const attempt = async (feedback?: string): Promise<(GeoAIReport & { _usage?: AIUsage }) | null> => {
@@ -173,7 +179,12 @@ export async function generateAIGeo(a: GeoAnalysis, opts?: { locale?: OutputLoca
         { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
         { role: 'user', content: buildUserPrompt(a) }
       ]
-      if (feedback) messages.push({ role: 'user', content: complianceRetryHint(feedback, GEO_SHAPE) })
+      if (feedback) messages.push({
+        role: 'user',
+        content: isEn
+          ? complianceRetryHintEn(feedback, 'a complete JSON object with the eight directional sections')
+          : complianceRetryHint(feedback, GEO_SHAPE),
+      })
 
       const res = await fetch(`${AI_BASE_URL}/v1/chat/completions`, {
         method: 'POST',
@@ -228,6 +239,12 @@ export async function generateAIGeo(a: GeoAnalysis, opts?: { locale?: OutputLoca
     attempt,
     (s) => {
       const t = Object.values(s).join('')
+      if (isEn) {
+        if (containsCJK(t)) return `检出中文字符：${findCJK(t).join('、')}`
+        const hits = findForbidden(t).hits
+        if (hits.length) return `检出禁用词：${hits.map(h => h.w).join('、')}（首句：${hits[0].s.slice(0, 40)}…）`
+        return null
+      }
       if (!t.includes('民俗') || !t.includes('产品设定')) return '依据分级字样缺失'
       const hits = findForbidden(t).hits
       // 命中词进日志，便于诊断模型高频违规点（w=禁用词，s=命中句）
@@ -238,8 +255,10 @@ export async function generateAIGeo(a: GeoAnalysis, opts?: { locale?: OutputLoca
   )
 
   // 免责兜底（prompt 早已要求原文照写，此处仅防非确定性遗漏）：overview 缺固定短语则追加
-  if (out && !/非确定性|仅供参考|不构成/.test(out.overview)) {
-    out.overview = out.overview.replace(/。?$/, '') + '。' + GEO_DISCLAIMER
+  if (out && !(isEn
+    ? /for reference only|non-deterministic/i.test(out.overview)
+    : /非确定性|仅供参考|不构成/.test(out.overview))) {
+    out.overview = out.overview.replace(/[。.]?$/, '') + (isEn ? ' ' : '。') + GEO_DISCLAIMER
   }
   return out
 }

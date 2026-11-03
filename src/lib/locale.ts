@@ -80,9 +80,10 @@ export const HANT_OUTPUT_DIRECTIVE = `
 export const EN_OUTPUT_DIRECTIVE = `
 
 【OUTPUT LANGUAGE｜MANDATORY】Write the entire response in natural English (US spelling).
-· Keep Bazi technical terms in their standard romanised form: Bazi / Four Pillars of Destiny, Heavenly Stem, Earthly Branch, Day Master, Ten Gods, Hidden Stems, Luck Pillar (大运), Annual Pillar (流年), Five Elements, True Solar Time; do not translate stems/branches (e.g. Jia Zi) into English words.
-· Do not mix Chinese and English in the body. A short Chinese term in brackets is allowed only for a technical term on first use.
-· The same compliance rules apply: never use "guaranteed", "destined", "inevitable", "definitely", "certainly", "must", "sure to", "breakthrough" or "aggressive"; use "tends to", "often", "likely", "steady progress", "incremental progress" instead.`
+· ZERO Chinese/Japanese/Korean characters (CJK) are allowed anywhere in the response — not even a single character inside brackets. Stems and branches must be written in pinyin (e.g. Jia Zi), not as Chinese characters.
+· Keep Bazi technical terms in their standard romanised form: Bazi / Four Pillars of Destiny, Heavenly Stem, Earthly Branch, Day Master, Ten Gods, Hidden Stems, Luck Pillar, Annual Pillar, Five Elements, True Solar Time, Zi Wei Dou Shu, Synastry.
+· Never use "guaranteed", "destined", "inevitable", "definitely", "certainly", "must", "sure to", "breakthrough", "aggressive", "will definitely", "bound to", "assured", "no doubt" or "promises to". Use "tends to", "often", "likely", "steady progress", "incremental progress" instead.
+· Any overview / annual overview section must end with this sentence exactly: "These are tendency-based reflections, for reference only. They are non-deterministic and are not a basis for investment or life decisions."`
 
 /** 返回追加到 system prompt 的语言指令；简体返回空串（保证默认路径逐字不变） */
 export function localeDirective(locale?: unknown): string {
