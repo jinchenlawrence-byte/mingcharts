@@ -1,4 +1,4 @@
-// 价格扫尾验收（REPLY-PartA复核 §五-1/2；总纲 §8.6.3）
+﻿// 价格扫尾验收（REPLY-PartA复核 §五-1/2；总纲 §8.6.3）
 // ★ 教训（事故 31）：查「某物已消失」必须用【旧形态】去搜，不是新形态。
 //   旧人民币价的旧形态＝「¥＋数字」，故扫描判据为 /¥\s*\d/，覆盖 src 全量源码（含注释）。
 import { readFileSync, readdirSync } from 'node:fs'
@@ -130,7 +130,7 @@ console.log(bareFail === 0
 
 // ---------- ⑦ ★ CTA 文案守卫（正式收费模式，2026-10-17：按钮走 Waffo 购买，价格取自 SKUS）----------
 // chart 页：删除「会员免费解锁/开通会员/内测期免费体验」误导分支，按钮为 CheckoutButton sku="fatebook"＋SKUS 价格
-const chartSrc = readFileSync(new URL('../src/app/chart/page.tsx', import.meta.url), 'utf8')
+const chartSrc = readFileSync(new URL('../src/app/(zh)/chart/page.tsx', import.meta.url), 'utf8')
 let ctaFail = 0
 const CTA_MISS = ['会员免费解锁', '开通会员', '内测期免费体验']
 for (const w of CTA_MISS) {
@@ -143,7 +143,7 @@ for (const w of CTA_HIT) {
   if (n === 0) { ctaFail++; fail(`chart 页缺披露「${w}」（模式：字符串计数）`) }
 }
 // pricing 页：年运行标注单项购买；单项卡有模块页入口
-const pricingSrc = readFileSync(new URL('../src/app/pricing/page.tsx', import.meta.url), 'utf8')
+const pricingSrc = readFileSync(new URL('../src/app/(zh)/pricing/page.tsx', import.meta.url), 'utf8')
 for (const [w, min] of [['单项购买', 1], ['单项报告', 1], ['会员不含报告', 1]]) {
   const n = pricingSrc.split(w).length - 1
   if (n < min) { ctaFail++; fail(`pricing 页「${w}」命中 ${n} < ${min}（模式：字符串计数）`) }
@@ -177,7 +177,7 @@ for (const w of noteNeeds) {
 // ★ 防误改：fatebook 的「近三年流年」是命书权益（非年运），不得被本轮文案统一误伤
 if (!pricingSrc.includes('近三年流年趋势')) { covFail++; fail('pricing 页 fatebook 行「近三年流年趋势」缺失——命书权益文案被误改') }
 // 布局页口径复核（年运模块页已正确标注三档年份，守护不回退）
-const liunianLayout = readFileSync(new URL('../src/app/liunian/layout.tsx', import.meta.url), 'utf8')
+const liunianLayout = readFileSync(new URL('../src/app/(zh)/liunian/layout.tsx', import.meta.url), 'utf8')
 for (const w of ['今年', '明年', '后年']) {
   if (!liunianLayout.includes(w)) { covFail++; fail(`liunian/layout.tsx 缺「${w}」（覆盖口径回退）`) }
 }

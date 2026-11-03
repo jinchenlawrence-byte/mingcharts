@@ -1,4 +1,4 @@
-// 命书「万字补全」＋ 公开示例命书验收（HANDOFF-万字补全与文案返修 §1.3 / §3.4）
+﻿// 命书「万字补全」＋ 公开示例命书验收（HANDOFF-万字补全与文案返修 §1.3 / §3.4）
 // A 板块字数要求（离线、进 verify）：
 //   A1 SECTION_SPECS 各板块区间【中值合计 ≥ 5600】——区间从生产代码 SECTION_SPECS 解析，未重抄字数表
 //   A2 每板块同时含「须含以下要点」与硬下限句「不少于 X 字」（防只改数字诱导注水）
@@ -212,7 +212,7 @@ if (demo) {
 
 // ---------- C 示例页 ----------
 console.log('—— C 示例页 /mingshu/demo ——')
-const PAGE_PATH = 'src/app/mingshu/demo/page.tsx'
+const PAGE_PATH = 'src/app/(zh)/mingshu/demo/page.tsx'
 let cFail = 0
 if (!existsSync(PAGE_PATH)) {
   cFail++; fail(`${PAGE_PATH} 不存在`)
@@ -232,7 +232,7 @@ if (!existsSync(PAGE_PATH)) {
 
   // C3 行为断言：真调 Page default，返回非空 JSX（§8.6.7：函数行为必须真调用）
   try {
-    const mod = await import('../src/app/mingshu/demo/page.tsx')
+    const mod = await import('../src/app/(zh)/mingshu/demo/page.tsx')
     if (typeof mod.default !== 'function') { cFail++; fail('示例页 default 不是函数') }
     else {
       const jsx = await mod.default({})
@@ -244,7 +244,7 @@ if (!existsSync(PAGE_PATH)) {
   }
 }
 // C4 /mingshu 入口链接
-const msSrc = readFileSync('src/app/mingshu/MingShuContent.tsx', 'utf8')
+const msSrc = readFileSync('src/app/(zh)/mingshu/MingShuContent.tsx', 'utf8')
 const entryHits = msSrc.match(/href="\/mingshu\/demo"/g) || []
 if (entryHits.length === 0) { cFail++; fail('/mingshu 页无 /mingshu/demo 入口链接（模式 /href="\\/mingshu\\/demo"/g，0 命中）') }
 else console.log(`✓ C4 入口：/mingshu 页含示例入口链接（模式 /href="\\/mingshu\\/demo"/g，${entryHits.length} 命中）`)

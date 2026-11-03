@@ -1,4 +1,4 @@
-// 三语路由与 IP 导向验收（2026-11-03）
+﻿// 三语路由与 IP 导向验收（2026-11-03）
 //
 // 断的是什么：
 //   ① 国家/地区 → 语言映射（TW/HK/MY/SG/GB/未知 六种输入）
@@ -88,10 +88,10 @@ console.log('—— ④ 三语 hreflang ——')
   if (!alt['zh-TW'] || !alt['zh-HK'] || !alt['zh-MO']) { f++; fail('triAlternates 缺台/港/澳地区标签') }
   // 三语页面各自 canonical + 互指
   const pages = [
-    ['src/app/page.tsx', "canonical: '/'"],
+    ['src/app/(zh)/page.tsx', "canonical: '/'"],
     ['src/app/tw/layout.tsx', "canonical: '/tw'"],
     ['src/app/en/layout.tsx', "canonical: '/en'"],
-    ['src/app/pricing/page.tsx', "canonical: '/pricing'"],
+    ['src/app/(zh)/pricing/page.tsx', "canonical: '/pricing'"],
     ['src/app/tw/pricing/page.tsx', "canonical: '/tw/pricing'"],
     ['src/app/en/pricing/page.tsx', "canonical: '/en/pricing'"],
   ]
@@ -132,6 +132,25 @@ console.log('—— ⑥ /en 路由与收录 ——')
     if (!urls.some((u) => u.endsWith(p))) fail(`sitemap 缺 ${p}`)
   }
   ok('sitemap 收录 4 条英文页')
+}
+
+// ---------- ⑧ 三棵 root layout 的服务端 lang ----------
+console.log('—— ⑧ 服务端首屏 <html lang> ——')
+{
+  let f = 0
+  const roots = [
+    ['src/app/(zh)/layout.tsx', 'zh-CN'],
+    ['src/app/tw/layout.tsx', 'zh-Hant'],
+    ['src/app/en/layout.tsx', 'en'],
+  ]
+  for (const [file, want] of roots) {
+    if (!existsSync(join(root, file))) { f++; fail(`${file} 不存在（顶层 layout 已移除，需各自 root layout）`); continue }
+    const src = read(file)
+    if (!src.includes(`lang="${want}"`)) { f++; fail(`${file} 未在服务端输出 lang="${want}"`) }
+    if (!src.includes('<SiteChrome')) { f++; fail(`${file} 未挂载 SiteChrome（会丢埋点/页脚/JSON-LD）`) }
+  }
+  if (existsSync(join(root, 'src/app/layout.tsx'))) { f++; fail('顶层 src/app/layout.tsx 仍存在，多个 root layout 不会生效') }
+  if (f === 0) ok('(zh) → zh-CN、tw → zh-Hant、en → en；三棵 root layout 各挂 SiteChrome；顶层 layout 已移除')
 }
 
 // ---------- ⑦ 切换写 cookie ----------

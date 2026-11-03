@@ -1,4 +1,4 @@
-// ★ 多命盘上限断言（档 A 2026-10-18）：multi_chart 权益的服务端配额
+﻿// ★ 多命盘上限断言（档 A 2026-10-18）：multi_chart 权益的服务端配额
 // ① 常量：MULTI_CHART_LIMIT = { free:1, member:5 }（匹配「3–5 个」文案上限）
 // ② 纯函数 chartLimitFor：覆盖 multi_chart → 5，否则 1（复用 grantsCover，口径只此一份）
 // ③ 服务端硬校验：/api/charts/save 用 chartLimitFor + 计数 + 超限 402
@@ -84,7 +84,7 @@ let feFail = 0
 const saveChart = read('src/components/SaveChart.tsx')
 if (!/\/api\/charts\/save/.test(saveChart)) { feFail++; fail('SaveChart 未改走 /api/charts/save（仍是客户端直插）') }
 if (/supabase\s*\.from\s*\(\s*['"]charts['"]\s*\)\s*\.insert/.test(saveChart)) { feFail++; fail('SaveChart 仍保留客户端直插（绕过服务端上限）') }
-const chartsPage = read('src/app/charts/page.tsx')
+const chartsPage = read('src/app/(zh)/charts/page.tsx')
 if (!/\/api\/member\/summary/.test(chartsPage)) { feFail++; fail('charts 页未取上限（未展示 n/上限）') }
 console.log(feFail === 0
   ? '✓ 前端消费：SaveChart 改走服务端保存；charts 页展示「已保存 n/上限」'

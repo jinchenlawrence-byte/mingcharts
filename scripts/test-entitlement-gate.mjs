@@ -1,4 +1,4 @@
-// ★ 门禁接线断言（HANDOFF-geo改真付费与门禁补完 §五）
+﻿// ★ 门禁接线断言（HANDOFF-geo改真付费与门禁补完 §五）
 // ① geo 试读结构——行为：真调 /api/geo POST（匿名），断言 locked 非空 + preview.only=true
 //    + free.geo 存在 + ai 未下发（未购不生成、不下发全文）
 // ② 报告门禁接线——grep route 源码：REPORT_GRANTS 每个 grant 有 reportUnlocked 调用
@@ -109,11 +109,11 @@ console.log('—— ③ 前端消费 locked（5 个页面：剥注释后匹配 .
 //   类型声明 locked?: 与解构声明 { …, locked } = data 均不匹配（后随 ?: 或 }，非 ?. / &&）
 const LOCKED_CONSUME_RE = /(\.|(?<![.\w?]))locked\s*(\?\.|&&)/
 const FRONTEND_PAGES = [
-  ['src/app/geo/page.tsx', 'src/components/reports/GeoResultView.tsx'],
-  ['src/app/ziwei/page.tsx', 'src/components/reports/ZiweiResultView.tsx'],
-  ['src/app/hemun/page.tsx', 'src/components/reports/HemunResultView.tsx'],
-  ['src/app/liunian/page.tsx', 'src/components/reports/LiunianResultView.tsx'],
-  ['src/app/chart/page.tsx'],
+  ['src/app/(zh)/geo/page.tsx', 'src/components/reports/GeoResultView.tsx'],
+  ['src/app/(zh)/ziwei/page.tsx', 'src/components/reports/ZiweiResultView.tsx'],
+  ['src/app/(zh)/hemun/page.tsx', 'src/components/reports/HemunResultView.tsx'],
+  ['src/app/(zh)/liunian/page.tsx', 'src/components/reports/LiunianResultView.tsx'],
+  ['src/app/(zh)/chart/page.tsx'],
 ]
 let feFail = 0
 for (const candidates of FRONTEND_PAGES) {

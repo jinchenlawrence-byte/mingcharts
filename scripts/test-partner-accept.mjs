@@ -1,4 +1,4 @@
-// 伙伴申请（/partners）验收断言
+﻿// 伙伴申请（/partners）验收断言
 //
 // 断的是什么：
 //   ① 校验层：必填/长度/枚举/邮箱格式/蜜罐
@@ -113,7 +113,7 @@ console.log(routeFail === 0 ? '✓ 写入口：限流在写库前、按 IP、429
 // ---------- ④ 页面与表单 ----------
 console.log('—— ④ 页面与表单 ——')
 let pageFail = 0
-const hans = readFileSync(near('src/app/partners/page.tsx'), 'utf8')
+const hans = readFileSync(near('src/app/(zh)/partners/page.tsx'), 'utf8')
 const hant = readFileSync(near('src/app/tw/partners/page.tsx'), 'utf8')
 for (const [name, src, canonical] of [
   ['简体 /partners', hans, "canonical: '/partners'"],
@@ -162,10 +162,10 @@ const urls = sitemap().map((e) => e.url)
 for (const want of ['/partners', '/tw/partners']) {
   if (!urls.some((u) => u.endsWith(want))) { siteFail++; fail(`sitemap 缺 ${want}`) }
 }
-const layout = readFileSync(near('src/app/layout.tsx'), 'utf8')
-// ★ 第 36 轮：页脚抽成 components/SiteFooter.tsx（按路径切简繁）——入口仍须存在
+// ★ 2026-11-03：多 root layout 后，全站页脚挂在 components/SiteChrome.tsx（三棵树共用）
+const chrome = readFileSync(near('src/components/SiteChrome.tsx'), 'utf8')
 const siteFooter = readFileSync(near('src/components/SiteFooter.tsx'), 'utf8')
-if (!layout.includes('<SiteFooter')) { siteFail++; fail('根 layout 未渲染 SiteFooter') }
+if (!chrome.includes('<SiteFooter')) { siteFail++; fail('SiteChrome 未渲染 SiteFooter') }
 if (!siteFooter.includes('href="/partners"')) { siteFail++; fail('页脚没有 /partners 入口') }
 console.log(siteFail === 0 ? '✓ sitemap 收录简繁两版；页脚有入口' : `✗ sitemap/入口失败 ${siteFail} 处`)
 
@@ -306,7 +306,7 @@ console.log(creditFail === 0
   }
 
   // 分享页（伙伴交付给客户的那个页面）必须渲染它，且放在标题下方而不是页脚
-  const shareSrc = readFileSync(near('src/app/r/[token]/page.tsx'), 'utf8')
+  const shareSrc = readFileSync(near('src/app/(zh)/r/[token]/page.tsx'), 'utf8')
   if (!shareSrc.includes('ReportOriginNote')) { discFail++; fail('分享页未渲染来源说明（客户看不到披露）') }
   if (!/<h1 className="hw-c-h1">\{row!\.title\}<\/h1>\s*\{?\/?\*?[\s\S]{0,220}ReportOriginNote/.test(shareSrc)) {
     discFail++; fail('来源说明不在报告标题附近（放在页脚等于没有披露）')

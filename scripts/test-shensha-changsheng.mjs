@@ -1,4 +1,4 @@
-// 免费排盘【神煞(51项)+十二长生+空亡】回归（纳入 npm run verify，纯本地不耗 API）
+﻿// 免费排盘【神煞(51项)+十二长生+空亡】回归（纳入 npm run verify，纯本地不耗 API）
 //
 // 断言纪律（总纲 §8.6）：凡断言函数行为必须真调用；入口接线靠直调 route handler 横向比对；
 // 页面文案与实现口径（SHEN_SHA_NOTE）一致性靠源码包含断言守护。
@@ -438,7 +438,7 @@ console.log('④ 入口接线断言：/api/paipan 下发 changSheng/shenSha/kong
 // ═══════════════════════════════════════════════════════════
 console.log('⑤ 页面接线断言：chart/page.tsx 含十二长生/神煞/空亡行与口径说明')
 {
-  const pageSrc = readFileSync(join(ROOT, 'src/app/chart/page.tsx'), 'utf8')
+  const pageSrc = readFileSync(join(ROOT, 'src/app/(zh)/chart/page.tsx'), 'utf8')
   check(pageSrc.includes('十二长生'), '页面含「十二长生」行标签')
   check(pageSrc.includes('神煞'), '页面含「神煞」行标签')
   check(pageSrc.includes('空亡'), '页面含「空亡」行标签')

@@ -1,4 +1,4 @@
-// ★ PWA + Web Push · 行为验收（2026-10-19）
+﻿// ★ PWA + Web Push · 行为验收（2026-10-19）
 //
 // 结构（四类断言混合）：
 //   ① 源码/配置：sw.js 三类监听、manifest 可安装判据、layout viewport/manifest、
@@ -73,12 +73,15 @@ console.log('—— ① 源码/配置：SW 监听 / manifest / viewport / env �
     "manifest 声明 display:'standalone'（可安装判据）")
   assert(manifest.includes('maskable'), 'manifest 含 maskable 图标（安卓遮罩不被裁）')
 
-  const layout = stripComments(read('src/app/layout.tsx'))
+  const layout = stripComments(read('src/app/(zh)/layout.tsx'))
   assert(layout.includes('export const viewport'), 'layout.tsx 导出 viewport（themeColor 属 viewport）')
-  assert(/manifest:\s*['"]\/manifest\.webmanifest['"]/.test(layout), 'layout.tsx metadata 挂钩 /manifest.webmanifest')
-  assert(layout.includes('<PwaRegister'), 'layout.tsx 挂载 <PwaRegister />（注册 SW）')
+  const siteMeta = stripComments(read('src/lib/site-meta.ts'))
+  assert(/manifest:\s*['"]\/manifest\.webmanifest['"]/.test(siteMeta), 'site-meta 挂钩 /manifest.webmanifest')
+  assert(layout.includes('sharedMetadata'), 'root layout 使用 sharedMetadata（三棵树同源）')
+  const chrome = stripComments(read('src/components/SiteChrome.tsx'))
+  assert(chrome.includes('<PwaRegister'), 'SiteChrome 挂载 <PwaRegister />（注册 SW）')
 
-  const memberPage = read('src/app/member/page.tsx')
+  const memberPage = read('src/app/(zh)/member/page.tsx')
   assert(memberPage.includes('PushOptIn') && memberPage.includes('<PushOptIn />'),
     'member 页插入 <PushOptIn />（会员中心为提醒开关归属地）')
 

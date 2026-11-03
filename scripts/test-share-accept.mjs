@@ -1,4 +1,4 @@
-// 分享令牌（命理师白标 v1）验收断言
+﻿// 分享令牌（命理师白标 v1）验收断言
 //
 // 断的是什么：
 //   ① 令牌形状：43 字符 base64url、随机、不重复
@@ -98,7 +98,7 @@ console.log(urlFail === 0 ? '✓ 路径：/r/<token>，绝对地址带默认域�
 // ---------- ⑤ 分享页安全 ----------
 console.log('—— ⑤ 分享页安全 ——')
 let pageFail = 0
-const page = readFileSync(near('src/app/r/[token]/page.tsx'), 'utf8')
+const page = readFileSync(near('src/app/(zh)/r/[token]/page.tsx'), 'utf8')
 if (!/robots:\s*\{\s*index:\s*false/.test(page)) { pageFail++; fail('分享页未设 noindex（客户隐私 + 防重复内容）') }
 if (!page.includes("export const dynamic = 'force-dynamic'")) { pageFail++; fail('分享页必须 force-dynamic（令牌不能进静态缓存）') }
 if (!page.includes('createServerSupabase')) { pageFail++; fail('分享页未走 service_role 查报告') }

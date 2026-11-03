@@ -1,4 +1,4 @@
-// 报告资产化验收（HANDOFF-四问题修复 §D；纪律：函数行为断言必须真调用、每条断言打命中数+模式）
+﻿// 报告资产化验收（HANDOFF-四问题修复 §D；纪律：函数行为断言必须真调用、每条断言打命中数+模式）
 // 覆盖：reports 表/RLS、saveReport 静默降级、四 route 接保存、四页面传 token、共享 View 回看分发
 import { readFileSync, existsSync } from 'node:fs'
 import { deriveReportTitle, REPORT_KIND_LABELS, saveReport } from '../src/lib/reportSave.ts'
@@ -81,10 +81,10 @@ console.log(routeFail === 0
 // ---------- ④ 四页面传 token（登录用户才保存；游客静默跳过）----------
 console.log('—— ④ 页面 token 接线 ——')
 const PAGES = [
-  ['合婚', '../src/app/hemun/page.tsx'],
-  ['紫微', '../src/app/ziwei/page.tsx'],
-  ['地理', '../src/app/geo/page.tsx'],
-  ['年运', '../src/app/liunian/page.tsx'],
+  ['合婚', '../src/app/(zh)/hemun/page.tsx'],
+  ['紫微', '../src/app/(zh)/ziwei/page.tsx'],
+  ['地理', '../src/app/(zh)/geo/page.tsx'],
+  ['年运', '../src/app/(zh)/liunian/page.tsx'],
 ]
 let pageFail = 0
 for (const [name, path] of PAGES) {
@@ -109,16 +109,16 @@ for (const [name, path] of PAGES) {
   const code = read(path)
   if (!code.includes('@/components/reports/')) { viewFail++; fail(`${name}页 未使用共享 ResultView 渲染`) }
 }
-const detailSrc = read('../src/app/reports/[id]/page.tsx')
+const detailSrc = read('../src/app/(zh)/reports/[id]/page.tsx')
 for (const v of VIEWS) {
   if (!detailSrc.includes(v)) { viewFail++; fail(`/reports/[id] 未按 kind 分发到 ${v}`) }
 }
-const listSrc = read('../src/app/reports/page.tsx')
+const listSrc = read('../src/app/(zh)/reports/page.tsx')
 for (const need of ["from('reports')", "REPORT_KIND_LABELS", "order('created_at', { ascending: false })"]) {
   if (!listSrc.includes(need)) { viewFail++; fail(`/reports 列表页缺「${need}」`) }
 }
-if (!existsSync(new URL('../src/app/reports/layout.tsx', import.meta.url))) { viewFail++; fail('缺 /reports/layout.tsx（metadata）') }
-if (!existsSync(new URL('../src/app/reports/[id]/layout.tsx', import.meta.url))) { viewFail++; fail('缺 /reports/[id]/layout.tsx（metadata）') }
+if (!existsSync(new URL('../src/app/(zh)/reports/layout.tsx', import.meta.url))) { viewFail++; fail('缺 /reports/layout.tsx（metadata）') }
+if (!existsSync(new URL('../src/app/(zh)/reports/[id]/layout.tsx', import.meta.url))) { viewFail++; fail('缺 /reports/[id]/layout.tsx（metadata）') }
 console.log(viewFail === 0
   ? `✓ 共享渲染：4 个 ResultView 组件齐备，生成页与 /reports/[id] 回看页共用；列表页查 reports 按 created_at 倒序`
   : '✗ 共享 View 断言失败')
@@ -213,7 +213,7 @@ if (canRegenContent('fatebook', { ...ANNUAL_FULL })) { gateFail++; fail('命书�
 if (canRegenContent('annual', null)) { gateFail++; fail('存档为空不得补算') }
 
 // 详情页必须走重算，不得直接渲染 row.result
-const detailCode = stripComments(read('../src/app/reports/[id]/page.tsx'))
+const detailCode = stripComments(read('../src/app/(zh)/reports/[id]/page.tsx'))
 if (!detailCode.includes('gateReportForDetail(')) { gateFail++; fail('/reports/[id] 未按当前权益重算（缺 gateReportForDetail）') }
 if (!detailCode.includes("'/api/entitlements'")) { gateFail++; fail('/reports/[id] 未取当前权益（缺 /api/entitlements）') }
 if (!detailCode.includes('canRegenContent(')) { gateFail++; fail('/reports/[id] 未按存档完整性决定是否补算（缺 canRegenContent）') }

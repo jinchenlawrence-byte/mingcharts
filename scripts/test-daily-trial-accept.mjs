@@ -1,4 +1,4 @@
-// 免费日运试用验收（第 36 轮）
+﻿// 免费日运试用验收（第 36 轮）
 //
 // 断的是什么：
 //   ① 日运推送受众 = 会员 ∪ 注册未满 3 天的新用户（此前只有会员，非会员没有任何回来的提醒）
@@ -27,7 +27,7 @@ function assert(cond, msg, failMsg) {
 
 const REPO = readFileSync('src/lib/push-repo.ts', 'utf8')
 const ROUTE = readFileSync('src/app/api/cron/daily-push/route.ts', 'utf8')
-const HOME = readFileSync('src/app/HomeClient.tsx', 'utf8')
+const HOME = readFileSync('src/app/(zh)/HomeClient.tsx', 'utf8')
 const TW_HOME = readFileSync('src/app/tw/page.tsx', 'utf8')
 
 console.log('—— ① 试用受众 ——')

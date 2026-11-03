@@ -1,4 +1,4 @@
-// 法律页验收（HANDOFF-法律页上线 §七；§8.6.7 行为断言要求）
+﻿// 法律页验收（HANDOFF-法律页上线 §七；§8.6.7 行为断言要求）
 import { existsSync, readFileSync } from 'node:fs'
 import { renderLegal, getLegalBody } from '../src/lib/legalContent.ts'
 import { miniMarkdown } from '../src/lib/miniMarkdown.ts'
@@ -8,8 +8,8 @@ const fail = (msg) => { allPass = false; console.log('  ✗ ' + msg) }
 
 // ---------- ① 页面文件存在 ----------
 let existFail = 0
-if (!existsSync('src/app/terms/page.tsx')) { existFail++; fail('src/app/terms/page.tsx 不存在') }
-if (!existsSync('src/app/privacy/page.tsx')) { existFail++; fail('src/app/privacy/page.tsx 不存在') }
+if (!existsSync('src/app/(zh)/terms/page.tsx')) { existFail++; fail('src/app/(zh)/terms/page.tsx 不存在') }
+if (!existsSync('src/app/(zh)/privacy/page.tsx')) { existFail++; fail('src/app/(zh)/privacy/page.tsx 不存在') }
 console.log(existFail === 0 ? '✓ 页面文件存在：terms/page.tsx + privacy/page.tsx' : '✗ 页面文件缺失')
 
 // ---------- ② 文本源唯一 ----------
@@ -33,7 +33,7 @@ if (hasMiddleware) {
   }
 }
 // layout.tsx 不得重定向这两个路径
-const layoutSrc = readFileSync('src/app/layout.tsx', 'utf8')
+const layoutSrc = readFileSync('src/app/(zh)/layout.tsx', 'utf8')
 if (/\b(redirect|navigate)\b.*['"]\/terms['"]/.test(layoutSrc)) {
   accessFail++; fail('layout.tsx 含对 /terms 的重定向')
 }
@@ -90,7 +90,9 @@ console.log(phFail === 0 ? '✓ 正文零占位符（模式：/\\[XXX\\]|placeho
 //   但断言要跟着代码走：链接在 SiteFooter 里，layout 只需渲染 SiteFooter。
 let footerFail = 0
 const footerSrc = readFileSync('src/components/SiteFooter.tsx', 'utf8')
-if (!layoutSrc.includes('<SiteFooter')) { footerFail++; fail('layout 未渲染 SiteFooter（全站页脚会消失）') }
+// ★ 2026-11-03：多 root layout 后，三棵树的公共挂件收进 components/SiteChrome.tsx
+const chromeSrc = readFileSync('src/components/SiteChrome.tsx', 'utf8')
+if (!chromeSrc.includes('<SiteFooter')) { footerFail++; fail('SiteChrome 未渲染 SiteFooter（全站页脚会消失）') }
 if (!footerSrc.includes('href="/terms"')) { footerFail++; fail('SiteFooter 不含 /terms 链接') }
 if (!footerSrc.includes('href="/privacy"')) { footerFail++; fail('SiteFooter 不含 /privacy 链接') }
 // 邮箱不得在断言里硬编码字面量 → 从 terms.md 抽取

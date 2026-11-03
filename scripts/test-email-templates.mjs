@@ -1,4 +1,4 @@
-// Supabase 邮件模板「仓库副本」守护（2026-10-18 新增）
+﻿// Supabase 邮件模板「仓库副本」守护（2026-10-18 新增）
 //
 // 背景（真实事故）：注册确认邮件模板一度被写成【纯文本裸链接】——163 网页邮箱不自动
 //   识别超长裸 URL，用户只能复制粘贴到地址栏才能完成确认（而 Supabase 默认模板是
@@ -90,7 +90,7 @@ console.log(tplFail === 0
 
 console.log('—— ② 与 auth/callback 页口径一致（type 枚举 + recovery 目的地）——')
 let syncFail = 0
-const cb = read('../src/app/auth/callback/page.tsx')
+const cb = read('../src/app/(zh)/auth/callback/page.tsx')
 if (!cb.includes("type !== 'signup' && type !== 'recovery'")) {
   syncFail++; fail('auth/callback 未把 type 限定为 signup/recovery（模板可用的 type 与页面接受的集合必须相同）')
 }
@@ -100,7 +100,7 @@ if (!cb.includes("verifyOtp({ token_hash: tokenHash, type })")) {
 if (!cb.includes("type === 'recovery' ? '/reset-password' : '/'")) {
   syncFail++; fail('auth/callback 未把 recovery 分派到 /reset-password（重置邮件将落到首页）')
 }
-if (!existsSync(new URL('../src/app/reset-password/page.tsx', import.meta.url))) {
+if (!existsSync(new URL('../src/app/(zh)/reset-password/page.tsx', import.meta.url))) {
   syncFail++; fail('缺 /reset-password 页面（recovery 分派的目的地不存在）')
 }
 console.log(syncFail === 0

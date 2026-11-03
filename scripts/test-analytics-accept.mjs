@@ -1,4 +1,4 @@
-// ★ 流量漏斗 · 行为验收（2026-10-21）
+﻿// ★ 流量漏斗 · 行为验收（2026-10-21）
 //
 // ① 表与安全：events 表存在、RLS 开启、零策略（客户端不可直写）
 // ② 上报接口：白名单事件名、service_role 客户端、props 只留短标量、8 键上限、字符串截断
@@ -48,9 +48,9 @@ const topLevel = trackLib.split(/export /)[0]
 assert(!/window\./.test(topLevel), '模块顶层不访问 window（site-audit 红线）')
 
 // ── ④ 接线 ─────────────────────────────────────────────────
-assert(/<TrackPageView \/>/.test(read('src/app/layout.tsx')), '根 layout 挂载 TrackPageView')
+assert(/<TrackPageView \/>/.test(read('src/components/SiteChrome.tsx')), 'SiteChrome 挂载 TrackPageView（三棵 root layout 共用）')
 
-const home = read('src/app/HomeClient.tsx')
+const home = read('src/app/(zh)/HomeClient.tsx')
 const successIdx = home.indexOf('if (data.success)')
 const submitIdx = home.indexOf("track('paipan_submit')")
 assert(successIdx > -1 && submitIdx > successIdx && submitIdx < home.indexOf("router.push('/chart')"), '首页仅在排盘成功后记 paipan_submit')
@@ -69,8 +69,8 @@ assert(/utm_source/.test(share) && /utm_medium/.test(share), '分享链接带 UT
 assert(/ml_ref/.test(share), '分享链接继续携带 ref 码')
 assert(/navigator\.share/.test(share) && /clipboard\.writeText/.test(share), '优先系统分享，降级复制链接')
 assert(/rememberRef/.test(read('src/components/TrackPageView.tsx')), '落地页记住 ref 码')
-assert(/<ShareLink/.test(read('src/app/daily/page.tsx')), '日签页挂载分享按钮')
-assert(/<ShareLink/.test(read('src/app/chart/page.tsx')), '排盘结果页挂载分享按钮')
+assert(/<ShareLink/.test(read('src/app/(zh)/daily/page.tsx')), '日签页挂载分享按钮')
+assert(/<ShareLink/.test(read('src/app/(zh)/chart/page.tsx')), '排盘结果页挂载分享按钮')
 
 // ── ④c 邀请奖励 ─────────────────────────────────────────────
 const invitesSql = read('supabase/invites.sql')

@@ -1,4 +1,4 @@
-// ★ 密码重置与账号设置验收（HANDOFF-密码重置与账号设置 §四/H4，2026-10-13）
+﻿// ★ 密码重置与账号设置验收（HANDOFF-密码重置与账号设置 §四/H4，2026-10-13）
 //
 // 断言形态说明（§四-2：文件存在与文案命中【不算数】）：
 //   · 路由存在 = page.tsx 存在 + 'use client' + 真正调用 Supabase API（非空壳）
@@ -59,13 +59,13 @@ function extractHandler(code, name) {
 // ═══════════════════════════════════════════════════════════
 console.log('—— ① 路由存在且真接线 ——')
 
-const rpPath = new URL('../src/app/reset-password/page.tsx', import.meta.url)
-const acPath = new URL('../src/app/account/page.tsx', import.meta.url)
+const rpPath = new URL('../src/app/(zh)/reset-password/page.tsx', import.meta.url)
+const acPath = new URL('../src/app/(zh)/account/page.tsx', import.meta.url)
 assert(existsSync(rpPath) && existsSync(acPath),
-  '路由存在：src/app/reset-password/page.tsx 与 src/app/account/page.tsx')
+  '路由存在：src/app/(zh)/reset-password/page.tsx 与 src/app/(zh)/account/page.tsx')
 
 {
-  const code = stripComments(read('../src/app/reset-password/page.tsx'))
+  const code = stripComments(read('../src/app/(zh)/reset-password/page.tsx'))
   assert(code.includes("'use client'"), 'reset-password 为客户端组件（非空壳）')
   assert(/updateUser\(\s*\{\s*password/.test(code),
     'reset-password 页调 updateUser({ password })（设新密码真接线）')
@@ -80,7 +80,7 @@ assert(existsSync(rpPath) && existsSync(acPath),
 }
 
 {
-  const code = stripComments(read('../src/app/account/page.tsx'))
+  const code = stripComments(read('../src/app/(zh)/account/page.tsx'))
   assert(code.includes("'use client'"), 'account 为客户端组件（非空壳）')
   assert(/updateUser\(\s*\{\s*password/.test(code),
     'account 页调 updateUser({ password })（改密真接线）')
@@ -102,11 +102,11 @@ assert(existsSync(rpPath) && existsSync(acPath),
 
 // layout 提供 metadata（use client 页不能导出 metadata；site-audit ① 同判据，此处保完整性）
 {
-  assert(existsSync(new URL('../src/app/reset-password/layout.tsx', import.meta.url))
-    && /export const metadata/.test(read('../src/app/reset-password/layout.tsx')),
+  assert(existsSync(new URL('../src/app/(zh)/reset-password/layout.tsx', import.meta.url))
+    && /export const metadata/.test(read('../src/app/(zh)/reset-password/layout.tsx')),
     'reset-password/layout.tsx 提供 metadata')
-  assert(existsSync(new URL('../src/app/account/layout.tsx', import.meta.url))
-    && /export const metadata/.test(read('../src/app/account/layout.tsx')),
+  assert(existsSync(new URL('../src/app/(zh)/account/layout.tsx', import.meta.url))
+    && /export const metadata/.test(read('../src/app/(zh)/account/layout.tsx')),
     'account/layout.tsx 提供 metadata')
 }
 
@@ -115,8 +115,8 @@ assert(existsSync(rpPath) && existsSync(acPath),
 console.log('—— ①b 大陆可达性 P0：auth/callback 代理链路 ——')
 
 {
-  const cbPath = '../src/app/auth/callback/page.tsx'
-  assert(existsSync(new URL(cbPath, import.meta.url)), '路由存在：src/app/auth/callback/page.tsx')
+  const cbPath = '../src/app/(zh)/auth/callback/page.tsx'
+  assert(existsSync(new URL(cbPath, import.meta.url)), '路由存在：src/app/(zh)/auth/callback/page.tsx')
   const code = stripComments(read(cbPath))
   assert(code.includes("'use client'"), 'auth/callback 为客户端组件（非空壳）')
   assert(/verifyOtp\(\s*\{\s*token_hash/.test(code),
@@ -144,7 +144,7 @@ console.log('—— ①b 大陆可达性 P0：auth/callback 代理链路 ——'
 // ═══════════════════════════════════════════════════════════
 console.log('—— ② /auth 忘记密码接线 ——')
 
-const authSrc = read('../src/app/auth/page.tsx')
+const authSrc = read('../src/app/(zh)/auth/page.tsx')
 const authCode = stripComments(authSrc)
 {
   assert(authCode.includes('忘记密码'), '/auth 页含「忘记密码」入口文案')
@@ -187,8 +187,8 @@ console.log('—— ③ Nav 账号设置入口 ——')
 console.log('—— ④ 未越界 ——')
 
 {
-  const rp = stripComments(read('../src/app/reset-password/page.tsx'))
-  const ac = stripComments(read('../src/app/account/page.tsx'))
+  const rp = stripComments(read('../src/app/(zh)/reset-password/page.tsx'))
+  const ac = stripComments(read('../src/app/(zh)/account/page.tsx'))
   const au = authCode
   const touched = rp + '\n' + ac + '\n' + au
   const n1 = touched.split("updateUserById").length - 1
@@ -218,7 +218,7 @@ console.log('—— ⑤ Turnstile 人机验证接线 ——')
   assert(ts.includes("'expired-callback'") && ts.includes("'error-callback'"),
     'Turnstile 过期/出错回调清 token（不残留一次性 token）')
 
-  const authTouched = stripComments(read('../src/app/auth/page.tsx'))
+  const authTouched = stripComments(read('../src/app/(zh)/auth/page.tsx'))
   assert(authTouched.includes('<Turnstile'), '/auth 页渲染 Turnstile 组件')
   assert(/TURNSTILE_ENABLED\s*=\s*!!process\.env\.NEXT_PUBLIC_TURNSTILE_SITE_KEY/.test(authTouched),
     'auth 页 TURNSTILE_ENABLED 守卫（未配 key 时按钮不禁用、调用不传 token）')
@@ -301,7 +301,7 @@ console.log('—— ⑥ Google 第三方登录 ——')
 
 {
   // auth/callback 页：三态分派
-  const cb = stripComments(read('../src/app/auth/callback/page.tsx'))
+  const cb = stripComments(read('../src/app/(zh)/auth/callback/page.tsx'))
   assert(/getSession\(/.test(cb), 'auth/callback 读会话（getSession）——OAuth 回流取会话的前提')
   assert(cb.includes('access_denied'), 'auth/callback 处理用户取消授权（access_denied）')
   assert(cb.includes('error_description'), 'auth/callback 展示渠道失败原因（error_description）')

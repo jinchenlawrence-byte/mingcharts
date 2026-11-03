@@ -1,4 +1,4 @@
-// ★ 会员订阅（档 C）· 行为验收（2026-10-18）
+﻿// ★ 会员订阅（档 C）· 行为验收（2026-10-18）
 //
 // 结构：
 //   ① 源码/配置断言：PROD_ 登记一致性、订阅商品创建脚本、checkout 共享件、
@@ -462,13 +462,13 @@ console.log('—— ④ 合规：同意框默认不勾+未勾禁用 / 自助取�
   assert(btn.includes('/member') && btn.includes('取消'), '按钮旁告知站内自助取消入口')
   assert(btn.includes('/api/membership'), '按钮走 /api/membership（服务端建会话）')
 
-  const memberSrc = read('../src/app/member/page.tsx')
+  const memberSrc = read('../src/app/(zh)/member/page.tsx')
   assert(memberSrc.includes('/api/membership/cancel'), '会员中心调取消/恢复接口（站内自助）')
   assert(memberSrc.includes("act('cancel')") && memberSrc.includes("act('reactivate')"), '会员中心含取消与恢复两个动作')
   assert(/下次续费日|会员到期日/.test(memberSrc), '会员中心显示下次续费日/会员到期日')
   assert(memberSrc.includes('WAFFO_PORTAL_URL'), '会员中心保留改卡/查账单门户入口')
 
-  const successSrc = read('../src/app/checkout/success/page.tsx')
+  const successSrc = read('../src/app/(zh)/checkout/success/page.tsx')
   assert(successSrc.includes('member_monthly') && successSrc.includes('isMemberSku'),
     '成功页对订阅 SKU 改看 /api/membership（否则订阅买家白等 15 次轮询）')
   assert(successSrc.includes('/api/membership?token='), '成功页订阅轮询用会员只读接口')

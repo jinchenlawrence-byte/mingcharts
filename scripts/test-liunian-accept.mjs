@@ -1,4 +1,4 @@
-// 年运模块验收（HANDOFF-四问题修复 §C；纪律：fallback 真调、接线断言、facts 同源、打命中数+模式）
+﻿// 年运模块验收（HANDOFF-四问题修复 §C；纪律：fallback 真调、接线断言、facts 同源、打命中数+模式）
 import { readFileSync, existsSync } from 'node:fs'
 import { fallbackLiunianText } from '../src/lib/aiLiunian.ts'
 import { findForbidden } from '../src/lib/ai-check.ts'
@@ -139,9 +139,9 @@ console.log(rFail === 0
 // ---------- ④ 页面与导航 ----------
 console.log('—— ④ /liunian 页面 ——')
 let pFail = 0
-if (!existsSync(new URL('../src/app/liunian/page.tsx', import.meta.url))) { pFail++; fail('/liunian/page.tsx 不存在') }
+if (!existsSync(new URL('../src/app/(zh)/liunian/page.tsx', import.meta.url))) { pFail++; fail('/liunian/page.tsx 不存在') }
 else {
-  const pageSrc = read('../src/app/liunian/page.tsx')
+  const pageSrc = read('../src/app/(zh)/liunian/page.tsx')
   if (!pageSrc.includes("'use client'")) { pFail++; fail('/liunian 页缺 use client') }
   for (const w of ['今年', '明年', '后年']) {
     if (!pageSrc.includes(w)) { pFail++; fail(`/liunian 年份选项缺「${w}」`) }
@@ -150,7 +150,7 @@ else {
   if (!pageSrc.includes('LiunianResultView')) { pFail++; fail('/liunian 页未用共享渲染组件') }
   if (!pageSrc.includes('会员不含报告')) { pFail++; fail('/liunian 页缺「会员不含报告」披露') }
 }
-if (!existsSync(new URL('../src/app/liunian/layout.tsx', import.meta.url))) { pFail++; fail('缺 /liunian/layout.tsx（metadata）') }
+if (!existsSync(new URL('../src/app/(zh)/liunian/layout.tsx', import.meta.url))) { pFail++; fail('缺 /liunian/layout.tsx（metadata）') }
 const viewSrc = read('../src/components/reports/LiunianResultView.tsx')
 if (!viewSrc.includes('export interface LiunianResultData')) { pFail++; fail('LiunianResultView 缺导出数据类型') }
 const navSrc = read('../src/components/Nav.tsx')

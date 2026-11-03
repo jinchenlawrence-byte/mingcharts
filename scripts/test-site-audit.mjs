@@ -1,5 +1,5 @@
-// 上线前全站体检断言（HANDOFF-上线前全站体检 §四）
-// ① metadata 齊全（页自身或由同级 layout.tsx 提供；首页 src/app/page.tsx 由根 layout.tsx 覆盖）
+﻿// 上线前全站体检断言（HANDOFF-上线前全站体检 §四）
+// ① metadata 齊全（页自身或由同级 layout.tsx 提供；首页 src/app/(zh)/page.tsx 由根 layout.tsx 覆盖）
 // ② 无 console.log/debugger/alert(（0 白名单：7 处 alert 已按拍板改为内联错误提示）
 // ③ 无用户可见占位符（字符串字面量扫 TODO/FIXME/Lorem/TBD，不扫 input 的 placeholder 属性）
 // ④ 站内链接可达（静态：抓 href 对照路由；行为：服务端页真实调用含动态路由 params，use client 页验证模块可加载）
@@ -35,7 +35,7 @@ for (const file of allFiles) {
   const content = readFileSync(file, 'utf8')
   if (META_RE.test(content)) { metaSelf++; continue }
   // 'use client' 页面由同级 layout.tsx 提供 metadata（拍板5：已为 6 个 client 页建 layout；
-  // 首页 src/app/page.tsx 由根 layout.tsx 的 title.default 覆盖，同一规则自然命中）
+  // 首页 src/app/(zh)/page.tsx 由根 layout.tsx 的 title.default 覆盖，同一规则自然命中）
   const layoutFile = file.replace(/page\.tsx$/, 'layout.tsx')
   if (existsSync(layoutFile) && META_RE.test(readFileSync(layoutFile, 'utf8'))) { metaViaLayout++; continue }
   metaFail++
@@ -114,7 +114,14 @@ for (const file of allFiles) {
   }
   if (file.endsWith('page.tsx')) {
     const rel = relOf(file)
-    let route = '/' + rel.replace(/^src\/app\//, '').replace(/\/page\.tsx$/, '')
+    // ★ 2026-11-03：简体路由移入 (zh) 路由组；路由组段不进 URL，比对前先剥掉
+    const noGroups = rel
+      .replace(/^src\/app\//, '')
+      .replace(/\/page\.tsx$/, '')
+      .split('/')
+      .filter((s) => !/^\(.*\)$/.test(s))
+      .join('/')
+    let route = '/' + noGroups
     if (route === '/') route = '/'
     // 动态段 [slug] 保留原样
     routes.add(route)
@@ -135,12 +142,15 @@ for (const href of hrefs) {
   if (routes.has(href)) continue
   const parts = href.split('/').filter(Boolean)
   if (parts.length > 1) {
-    const guessFile = root + 'app/' + parts.join('/') + '/page.tsx'
-    if (existsSync(guessFile)) continue
+    // 简体树在 (zh) 路由组内，/tw、/en 仍是实体目录；两类都试
+    const bases = [root + 'app/', root + 'app/(zh)/']
+    if (bases.some((b) => existsSync(b + parts.join('/') + '/page.tsx'))) continue
     let found = false
-    for (const seg of ['[slug]', '[year]', '[month]', '[day]', '[animal]', '[name]']) {
-      const guessDyn = root + 'app/' + parts.slice(0, -1).join('/') + '/' + seg + '/page.tsx'
-      if (existsSync(guessDyn)) { found = true; break }
+    for (const base of bases) {
+      for (const seg of ['[slug]', '[year]', '[month]', '[day]', '[animal]', '[name]']) {
+        if (existsSync(base + parts.slice(0, -1).join('/') + '/' + seg + '/page.tsx')) { found = true; break }
+      }
+      if (found) break
     }
     if (found) continue
   }
@@ -153,13 +163,13 @@ console.log(deadLink === 0
 
 // ④-行为：服务端页真实调用 default（动态路由传 params Promise，Next 15+ 约定）
 const ROUTE_MODULES = [
-  { route: '/terms', file: 'src/app/terms/page.tsx' },
-  { route: '/privacy', file: 'src/app/privacy/page.tsx' },
-  { route: '/daily', file: 'src/app/daily/page.tsx' },
-  { route: '/bazi', file: 'src/app/bazi/page.tsx' },
-  { route: '/bazi/1990', file: 'src/app/bazi/[year]/page.tsx', params: { year: '1990' } },
-  { route: '/bazi/1990/05', file: 'src/app/bazi/[year]/[month]/page.tsx', params: { year: '1990', month: '05' } },
-  { route: '/bazi/1990/05/08', file: 'src/app/bazi/[year]/[month]/[day]/page.tsx', params: { year: '1990', month: '05', day: '08' } },
+  { route: '/terms', file: 'src/app/(zh)/terms/page.tsx' },
+  { route: '/privacy', file: 'src/app/(zh)/privacy/page.tsx' },
+  { route: '/daily', file: 'src/app/(zh)/daily/page.tsx' },
+  { route: '/bazi', file: 'src/app/(zh)/bazi/page.tsx' },
+  { route: '/bazi/1990', file: 'src/app/(zh)/bazi/[year]/page.tsx', params: { year: '1990' } },
+  { route: '/bazi/1990/05', file: 'src/app/(zh)/bazi/[year]/[month]/page.tsx', params: { year: '1990', month: '05' } },
+  { route: '/bazi/1990/05/08', file: 'src/app/(zh)/bazi/[year]/[month]/[day]/page.tsx', params: { year: '1990', month: '05', day: '08' } },
 ]
 let behaviorFail = 0
 for (const { route, file, params } of ROUTE_MODULES) {
@@ -187,17 +197,17 @@ console.log(behaviorFail === 0
 
 // ④-行为（use client 页）：仅验证模块可加载、default 为函数——hooks 不可在组件渲染外调用，不执行组件体
 const CLIENT_PAGES = [
-  { route: '/', file: 'src/app/page.tsx' },
-  { route: '/chart', file: 'src/app/chart/page.tsx' },
-  { route: '/charts', file: 'src/app/charts/page.tsx' },
-  { route: '/member', file: 'src/app/member/page.tsx' },
-  { route: '/hemun', file: 'src/app/hemun/page.tsx' },
-  { route: '/ziwei', file: 'src/app/ziwei/page.tsx' },
-  { route: '/geo', file: 'src/app/geo/page.tsx' },
-  { route: '/liunian', file: 'src/app/liunian/page.tsx' },
-  { route: '/reports', file: 'src/app/reports/page.tsx' },
-  { route: '/reports/[id]', file: 'src/app/reports/[id]/page.tsx' },
-  { route: '/auth', file: 'src/app/auth/page.tsx' },
+  { route: '/', file: 'src/app/(zh)/page.tsx' },
+  { route: '/chart', file: 'src/app/(zh)/chart/page.tsx' },
+  { route: '/charts', file: 'src/app/(zh)/charts/page.tsx' },
+  { route: '/member', file: 'src/app/(zh)/member/page.tsx' },
+  { route: '/hemun', file: 'src/app/(zh)/hemun/page.tsx' },
+  { route: '/ziwei', file: 'src/app/(zh)/ziwei/page.tsx' },
+  { route: '/geo', file: 'src/app/(zh)/geo/page.tsx' },
+  { route: '/liunian', file: 'src/app/(zh)/liunian/page.tsx' },
+  { route: '/reports', file: 'src/app/(zh)/reports/page.tsx' },
+  { route: '/reports/[id]', file: 'src/app/(zh)/reports/[id]/page.tsx' },
+  { route: '/auth', file: 'src/app/(zh)/auth/page.tsx' },
 ]
 let clientFail = 0
 for (const { route, file } of CLIENT_PAGES) {
@@ -234,8 +244,8 @@ for (const file of allFiles) {
   }
 }
 const META_ROUTES = [
-  { route: '/bazi/1990', file: 'src/app/bazi/[year]/page.tsx', params: { year: '1990' } },
-  { route: '/bazi/1990/05', file: 'src/app/bazi/[year]/[month]/page.tsx', params: { year: '1990', month: '05' } },
+  { route: '/bazi/1990', file: 'src/app/(zh)/bazi/[year]/page.tsx', params: { year: '1990' } },
+  { route: '/bazi/1990/05', file: 'src/app/(zh)/bazi/[year]/[month]/page.tsx', params: { year: '1990', month: '05' } },
 ]
 let metaObjFail = 0
 for (const { route, file, params } of META_ROUTES) {

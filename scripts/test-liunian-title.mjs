@@ -1,4 +1,4 @@
-// 流年页标题退化 · 离线断言（第 32 轮）
+﻿// 流年页标题退化 · 离线断言（第 32 轮）
 //
 // 缺陷：96 页 × 简繁中 45 页 relation==='平' 的标题写成「运势详解：运势」，
 //   繁体同样「運勢詳解：運勢」；keywords 变成「2029年运势」废词。
@@ -110,7 +110,7 @@ if (ping.length === 0) fail('样本里没有 relation===\'平\' 的页面，断�
 
 // ---------- ⑥ 源码无手写第二份映射 ----------
 {
-  const files = ['../src/app/shengxiao/[animal]/[year]/page.tsx', '../src/app/tw/shengxiao/[animal]/[year]/page.tsx']
+  const files = ['../src/app/(zh)/shengxiao/[animal]/[year]/page.tsx', '../src/app/tw/shengxiao/[animal]/[year]/page.tsx']
   let hits = 0
   for (const f of files) {
     const code = read(f)

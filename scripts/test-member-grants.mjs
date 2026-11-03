@@ -1,4 +1,4 @@
-// ★ 订阅权益接线断言（档 A 2026-10-18）：把 6 项 SUBSCRIPTION_GRANTS 全部接上会员入口
+﻿// ★ 订阅权益接线断言（档 A 2026-10-18）：把 6 项 SUBSCRIPTION_GRANTS 全部接上会员入口
 // ① GRANT_LABELS 覆盖性——展示映射必须覆盖全部 grant（缺项会让会员页/定价页漏权益）
 // ② canView 接线——每个 SUBSCRIPTION_GRANT 在 api/ 下有 canView(ent, 'grant') 调用
 // ③ 文案单一事实源——pricing/member 页不得再本地定义 GRANT_LABELS，必须 import
@@ -74,14 +74,14 @@ console.log(gateFail === 0
 // ---------- ③ 文案单一事实源 ----------
 console.log('—— ③ 文案单一事实源（pricing/member 页 import GRANT_LABELS，不本地定义）——')
 let srcFail = 0
-for (const rel of ['src/app/pricing/page.tsx', 'src/app/member/page.tsx']) {
+for (const rel of ['src/app/(zh)/pricing/page.tsx', 'src/app/(zh)/member/page.tsx']) {
   if (!exists(rel)) { srcFail++; fail(`${rel} 不存在`); continue }
   const c = read(rel)
   if (!/from\s+['"]@\/lib\/grantLabels['"]/.test(c)) { srcFail++; fail(`${rel} 未 import GRANT_LABELS（文案可能漂移）`) }
   if (/const\s+GRANT_LABELS\s*[:=]/.test(c)) { srcFail++; fail(`${rel} 仍本地定义 GRANT_LABELS（须抽到共享模块）`) }
 }
 // 权益事实只认 SUBSCRIPTION_GRANTS：页面不得出现整表硬编码
-const memberSrc = exists('src/app/member/page.tsx') ? read('src/app/member/page.tsx') : ''
+const memberSrc = exists('src/app/(zh)/member/page.tsx') ? read('src/app/(zh)/member/page.tsx') : ''
 if (/['"]daily['"]\s*,\s*['"]liuyue['"]/.test(memberSrc)) { srcFail++; fail('member 页硬编码了权益字面量表') }
 console.log(srcFail === 0
   ? '✓ 文案单源：pricing/member 页均 import GRANT_LABELS，无本地权益字面量表'

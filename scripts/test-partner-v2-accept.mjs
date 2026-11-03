@@ -1,4 +1,4 @@
-// 伙伴自助 V2 离线验收（第 34 轮）
+﻿// 伙伴自助 V2 离线验收（第 34 轮）
 //
 // 判什么（HANDOFF-伙伴自助V2 §五 3–12）：
 //   · 身份判定 = partner_credits 有行；余额 0 → 409 needPurchase；预算超额 → 429 且不扣；
@@ -387,9 +387,9 @@ console.log('—— ⑫ 退额写入口 ——')
 console.log('—— ⑬ pending/failed 不可展示 ——')
 {
   const files = [
-    ['src/app/reports/page.tsx', '「我的报告」列表'],
-    ['src/app/reports/[id]/page.tsx', '报告详情页'],
-    ['src/app/r/[token]/page.tsx', '分享页'],
+    ['src/app/(zh)/reports/page.tsx', '「我的报告」列表'],
+    ['src/app/(zh)/reports/[id]/page.tsx', '报告详情页'],
+    ['src/app/(zh)/r/[token]/page.tsx', '分享页'],
     ['src/lib/reportCache.ts', '缓存读取'],
   ]
   for (const [file, label] of files) {
@@ -403,14 +403,14 @@ console.log('—— ⑭ 命书不写 charts ——')
 {
   const libSrc = readFileSync(near('src/lib/partnerReport.ts'), 'utf8')
   assert(!/from\('charts'\)/.test(libSrc), '伙伴命书不写 charts（不产生 is_paid 副作用）')
-  const shareSrc = readFileSync(near('src/app/r/[token]/page.tsx'), 'utf8')
+  const shareSrc = readFileSync(near('src/app/(zh)/r/[token]/page.tsx'), 'utf8')
   assert(/result\?\.paid/.test(shareSrc), '分享页对伙伴命书回退读 reports.result.paid')
 }
 
 // ---------- ⑮ 分享页：品牌位 + 来源披露并存 ----------
 console.log('—— ⑮ 分享页 ——')
 {
-  const src = readFileSync(near('src/app/r/[token]/page.tsx'), 'utf8')
+  const src = readFileSync(near('src/app/(zh)/r/[token]/page.tsx'), 'utf8')
   assert(src.includes('brand_name') && src.includes('brand_contact'), '分享页查询品牌两字段')
   const brandIdx = src.indexOf('{brandLine &&')
   const h1Idx = src.indexOf('<h1 className="hw-c-h1">')
@@ -468,7 +468,7 @@ console.log('—— ⑰ API 接线 ——')
 console.log('—— ⑱ 繁中工作台 ——')
 {
   const hantRoute = readFileSync(near('src/app/tw/partner/page.tsx'), 'utf8')
-  const hansRoute = readFileSync(near('src/app/partner/page.tsx'), 'utf8')
+  const hansRoute = readFileSync(near('src/app/(zh)/partner/page.tsx'), 'utf8')
   const ws = readFileSync(near('src/components/partner/PartnerWorkspace.tsx'), 'utf8')
 
   assert(/locale="zh-Hant"/.test(hantRoute), '/tw/partner 传 locale="zh-Hant"（繁体工作台）')

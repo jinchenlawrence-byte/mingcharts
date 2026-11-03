@@ -145,10 +145,10 @@ for (const [k, v] of Object.entries(expectAlt)) {
 }
 if (Object.keys(alt).length !== 6) { seoFail++; fail(`alternates 应恰为 6 键，实际 ${Object.keys(alt).length}`) }
 // 两边都必须从同一函数生成（防一边手写、一边不写 → hreflang 单向失效）
-for (const f of ['app/shengxiao/[animal]/page.tsx', 'app/tw/shengxiao/[animal]/page.tsx',
-  'app/shengxiao/[animal]/[year]/page.tsx', 'app/tw/shengxiao/[animal]/[year]/page.tsx',
-  'app/article/page.tsx', 'app/tw/article/page.tsx',
-  'app/article/[slug]/page.tsx', 'app/tw/article/[slug]/page.tsx']) {
+for (const f of ['app/(zh)/shengxiao/[animal]/page.tsx', 'app/tw/shengxiao/[animal]/page.tsx',
+  'app/(zh)/shengxiao/[animal]/[year]/page.tsx', 'app/tw/shengxiao/[animal]/[year]/page.tsx',
+  'app/(zh)/article/page.tsx', 'app/tw/article/page.tsx',
+  'app/(zh)/article/[slug]/page.tsx', 'app/tw/article/[slug]/page.tsx']) {
   const src = readFileSync(near(f), 'utf8')
   if (!src.includes('hantAlternates(')) { seoFail++; fail(`${f} 未使用 hantAlternates（hreflang 必须单一来源）`) }
   if (/hreflang|zh-Hant', '\//.test(src) && src.includes("'zh-TW':")) { seoFail++; fail(`${f} 手写了 alternates 字面量`) }
@@ -179,11 +179,11 @@ for (const f of ['app/tw/page.tsx', 'app/tw/shengxiao/page.tsx', 'app/tw/shengxi
 //   ① 根布局的 WebSite 实体【不得】写死 inLanguage —— 它在每个页面都输出，
 //      写 zh-CN 等于在 208 个繁体页里声明简体，与 hreflang 打架
 //   ② 繁体布局必须输出 WebPage 且 inLanguage=zh-Hant
-//   ③ <html lang> 无法按路由改（App Router 限制），但客户端必须做渐进修正
-const rootLayout = readFileSync(near('app/layout.tsx'), 'utf8')
-if (/inLanguage:\s*"zh-CN"/.test(rootLayout)) {
+//   ③ 站点实体 JSON-LD 不得写死 inLanguage（2026-11-03 已收进 SiteChrome）
+const chrome = readFileSync(near('components/SiteChrome.tsx'), 'utf8')
+if (/inLanguage:\s*"zh-CN"/.test(chrome)) {
   treeFail++
-  fail('根布局 WebSite 仍写死 inLanguage=zh-CN（会在全部繁体页声明简体）')
+  fail('SiteChrome 的 WebSite 仍写死 inLanguage=zh-CN（会在全部繁体页声明简体）')
 }
 const twLayout = readFileSync(near('app/tw/layout.tsx'), 'utf8')
 if (!twLayout.includes('WebPageJsonLd')) { treeFail++; fail('繁体布局未输出 WebPageJsonLd') }
@@ -211,9 +211,10 @@ if (!/<HansLangSwitch/.test(navSrc)) { treeFail++; fail('简中导航没有「�
 const footerSrc2 = readFileSync(near('components/SiteFooter.tsx'), 'utf8')
 if (!/<HansLangSwitch/.test(footerSrc2)) { treeFail++; fail('页脚没有「繁體」切换入口（只有 import 不算）') }
 
-const rootLayout2 = readFileSync(near('app/layout.tsx'), 'utf8')
-if (!rootLayout2.includes('<SiteFooter />')) { treeFail++; fail('根布局未使用 SiteFooter') }
-if (rootLayout2.includes('命理师合作')) { treeFail++; fail('根布局仍有硬编码页脚文案（繁体页会露简体）') }
+const rootLayout2 = readFileSync(near('app/(zh)/layout.tsx'), 'utf8')
+if (!rootLayout2.includes('<SiteChrome')) { treeFail++; fail('简体 root layout 未使用 SiteChrome') }
+if (!chrome.includes('<SiteFooter />')) { treeFail++; fail('SiteChrome 未使用 SiteFooter') }
+if (rootLayout2.includes('命理师合作') || chrome.includes('命理师合作')) { treeFail++; fail('root layout/SiteChrome 仍有硬编码简体页脚文案（繁体页会露简体）') }
 
 console.log(treeFail === 0 ? '✓ 结构：lang=zh-Hant、cookie 同步就位、WebPage JSON-LD 声明 zh-Hant、根 WebSite 不再写死 zh-CN、落地页链 12 属相、详情页板块齐全、未混用简体导航' : `✗ 结构失败 ${treeFail} 处`)
 
@@ -246,7 +247,7 @@ if (twCount !== expectTw) {
   fail(`/tw 条目应为 ${expectTw}（落地页+生肖索引+伙伴页+年运入口页+太岁表+2027/2028 落地页+神煞总目录+免费查神煞+${SHENGXIAO.length} 属相），实际 ${twCount}`)
 }
 // 简体页 title 模板不得被本次改动动过
-const hansPage = readFileSync(near('app/shengxiao/[animal]/page.tsx'), 'utf8')
+const hansPage = readFileSync(near('app/(zh)/shengxiao/[animal]/page.tsx'), 'utf8')
 if (!hansPage.includes('title: `属${sx.name}的命运详解')) {
   siteFail++; fail('简体生肖页的 title 模板被改了（零回归要求：繁体化不得动简体文案）')
 }

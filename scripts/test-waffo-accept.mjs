@@ -1,4 +1,4 @@
-// ★ Waffo 支付集成 · 行为验收（HANDOFF-Waffo支付集成 §九，2026-10-10）
+﻿// ★ Waffo 支付集成 · 行为验收（HANDOFF-Waffo支付集成 §九，2026-10-10）
 //
 // 结构：
 //   ① 配置/源码断言：env 模板、schema 四项变更、raw body 验签、密钥不进客户端、
@@ -322,7 +322,7 @@ assert(verifyRoute.includes('.graphql.query'), 'verify-payment 用 SDK GraphQL �
 assert(verifyRoute.includes('orderMerchantExternalId'), 'verify-payment 接收业务单号')
 assert(verifyRoute.includes("status: 403") || verifyRoute.includes('{ status: 403 }'), '越权/坏单号返 403')
 
-const successPage = read('../src/app/checkout/success/page.tsx')
+const successPage = read('../src/app/(zh)/checkout/success/page.tsx')
 assert(successPage.includes("searchParams.get('ref')"), '成功页以 URL ?ref= 为主来源')
 assert(successPage.includes('waffo_checkout_ref'), '成功页保留 sessionStorage 补充来源')
 assert(successPage.includes('POLL_MAX_TIMES = 6'), '成功页轮询上限 6 次（≈12 秒，2026-10-19 从 15 次缩短）')
@@ -332,7 +332,7 @@ assert(successPage.includes('href="/"') && successPage.includes('href="/pricing"
 assert(successPage.includes('ownedSkus.includes'), '成功页按 ownedSkus 判定（不看恒真的 canView）')
 assert(successPage.includes('/api/verify-payment'), '轮询无果后调 verify-payment 兜底')
 
-const reportsPage = read('../src/app/reports/page.tsx')
+const reportsPage = read('../src/app/(zh)/reports/page.tsx')
 assert(
   reportsPage.includes("from '@/lib/waffo-products'") && /href=\{WAFFO_PORTAL_URL\}/.test(reportsPage),
   '账户区（我的报告）引用 WAFFO_PORTAL_URL 门户链接',

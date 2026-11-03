@@ -1,4 +1,4 @@
-// 神煞索引页验收（第 36 轮）
+﻿// 神煞索引页验收（第 36 轮）
 //
 // 断的是什么：
 //   ① 53 个神煞【一个不漏、一个不多、不重复】—— 索引必须与文章库完全对齐
@@ -87,7 +87,7 @@ console.log('—— ③ 链接前缀（简 /tw 繁）——')
 // ---------- ④ 立场与口径 ----------
 console.log('—— ④ 立场口径 ——')
 {
-  const hansSrc = readFileSync('src/app/shensha/page.tsx', 'utf8')
+  const hansSrc = readFileSync('src/app/(zh)/shensha/page.tsx', 'utf8')
   const hantSrc = readFileSync('src/app/tw/shensha/page.tsx', 'utf8')
 
   assert(hansSrc.includes('不可见煞即言凶'),
@@ -134,7 +134,7 @@ console.log('—— ⑥ 牙口自检 ——')
 console.log('—— ⑦ 免费查神煞页 ——')
 {
   const check = readFileSync('src/components/ShenshaCheck.tsx', 'utf8')
-  const hans = readFileSync('src/app/shensha/check/page.tsx', 'utf8')
+  const hans = readFileSync('src/app/(zh)/shensha/check/page.tsx', 'utf8')
   const hant = readFileSync('src/app/tw/shensha/check/page.tsx', 'utf8')
 
   assert(check.includes("fetch('/api/paipan'"), '查神煞页走 /api/paipan（真太阳时校正）')
@@ -158,7 +158,7 @@ console.log('—— ⑦ 免费查神煞页 ——')
     '承接处如实标注目标页只有简体版',
     '承接处未标注语言差异（会让繁体读者以为有繁体页）')
 
-  const idxHans = readFileSync('src/app/shensha/page.tsx', 'utf8')
+  const idxHans = readFileSync('src/app/(zh)/shensha/page.tsx', 'utf8')
   const idxHant = readFileSync('src/app/tw/shensha/page.tsx', 'utf8')
   assert(idxHans.includes('/shensha/check'), '简体总目录链到查神煞页')
   assert(idxHant.includes('/tw/shensha/check'), '繁体总目录链到查神煞页')

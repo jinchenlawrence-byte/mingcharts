@@ -1,4 +1,4 @@
-// 2028 年度总览守护（2026-10-27 第 36 轮）
+﻿// 2028 年度总览守护（2026-10-27 第 36 轮）
 //
 // 断的是什么：
 //   ① 简繁两个 2028 落地页存在，且 YEAR 常量真的是 2028（不是 2027 复制后忘改）
@@ -27,7 +27,7 @@ const read = (p) => readFileSync(join(root, p), 'utf8')
 const has = (p) => existsSync(join(root, p))
 
 const YEAR = 2028
-const HANS = 'src/app/liunian/2028/page.tsx'
+const HANS = 'src/app/(zh)/liunian/2028/page.tsx'
 const HANT = 'src/app/tw/liunian/2028/page.tsx'
 const REL_ORDER = ['值', '冲', '害', '刑']
 
@@ -202,7 +202,7 @@ console.log('—— ⑦ 2027 残留（允许：安太岁三篇 + 一行互链）
   }
   // 反向：2027 页要有指向 2028 的一行
   for (const [f, needle] of [
-    ['src/app/liunian/2027/page.tsx', 'href="/liunian/2028"'],
+    ['src/app/(zh)/liunian/2027/page.tsx', 'href="/liunian/2028"'],
     ['src/app/tw/liunian/2027/page.tsx', 'href="/tw/liunian/2028"'],
   ]) {
     if (!read(f).includes(needle)) fail(`${f} 缺指向 2028 的互链`)

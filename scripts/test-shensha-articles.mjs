@@ -1,4 +1,4 @@
-// 神煞知识文章与跳转映射回归（纳入 npm run verify，纯本地不耗 API）
+﻿// 神煞知识文章与跳转映射回归（纳入 npm run verify，纯本地不耗 API）
 //
 // 三方一致性（单一事实源链）：
 //   paipan.SHEN_SHA_NAMES（51 项神煞名）
@@ -89,7 +89,7 @@ console.log('④ 空亡文章与孤儿检查')
 // ═══════════════════════════════════════════════════════════
 console.log('⑤ chart 页接线断言')
 {
-  const pageSrc = readFileSync(join(ROOT, 'src/app/chart/page.tsx'), 'utf8')
+  const pageSrc = readFileSync(join(ROOT, 'src/app/(zh)/chart/page.tsx'), 'utf8')
   check(pageSrc.includes("from '@/lib/shenshaArticles'"), 'chart 页导入 shenshaArticles 映射')
   check(pageSrc.includes('shenshaHref(') && pageSrc.includes('<Link'), '神煞名经 shenshaHref 渲染为 Link（点击跳知识文章）')
   check(pageSrc.includes('KONG_WANG_SLUG'), '空亡行挂 KONG_WANG_SLUG 知识文章链接')

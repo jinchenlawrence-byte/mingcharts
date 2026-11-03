@@ -1,15 +1,21 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
+import '@/app/globals.css'
 import LocaleSync from '@/components/LocaleSync'
+import SiteChrome from '@/components/SiteChrome'
 import SiteLangSync from '@/components/SiteLangSync'
 import HantLangSwitch from '@/components/HantLangSwitch'
 import WebPageJsonLd from '@/components/WebPageJsonLd'
 import { HANT_HREFLANG } from '@/lib/hant-seo'
 import { triAlternates } from '@/lib/lang'
+import { rootFontClassName } from '@/lib/site-fonts'
+import { sharedMetadata, sharedOpenGraph, siteViewport } from '@/lib/site-meta'
 
-// 繁体树根布局：lang 必须与内容一致（zh-Hant），否则 Google 会按 zh-CN 处理，
-// 前面的 hreflang 也就白写了。
+// 繁体树 root layout（顶层 app/layout.tsx 已移除，/tw 是独立根）。
+// ★ 服务端首屏 <html lang="zh-Hant">：不能再依赖客户端 SiteLangSync 兜底，
+//   否则 Google 首屏按 zh-CN 处理，前面 hreflang 白写。
 export const metadata: Metadata = {
+  ...sharedMetadata,
   title: {
     default: '明理 · 免費八字排盤與生肖流年（繁體）',
     template: '%s | 明理',
@@ -21,55 +27,60 @@ export const metadata: Metadata = {
     languages: triAlternates('/'),
   },
   openGraph: {
+    ...sharedOpenGraph,
     locale: 'zh_TW',
-    type: 'website',
     siteName: '明理 mingcharts.com',
   },
 }
 
-export default function HantLayout({ children }: { children: React.ReactNode }) {
+export const viewport = siteViewport
+
+export default function HantRootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <main className="hw-page" lang="zh-Hant">
-      {/* 把语言写进 cookie：后续 AI 命书与收银台据此出繁体（见 lib/locale.ts） */}
-      <LocaleSync locale="zh-Hant" />
-      <SiteLangSync lang="zh-Hant" />
-      {/* ★ 第 35 轮：页面级语言信号。根布局的 WebSite 已去掉 inLanguage（那会在
-          208 个繁体页里声明 zh-CN），改由这里逐页声明 zh-Hant。
-          路径级的 name 取不到（布局拿不到子页 metadata），故用站点名 + 繁体标识；
-          页面自身的标题仍由 metadata 输出，不影响搜索结果标题。 */}
-      <WebPageJsonLd
-        name="明理 · 免費八字排盤與生肖流年（繁體）"
-        path="/tw"
-        inLanguage="zh-Hant"
-      />
-      <header className="border-b border-gold/15">
-        <div className="hw-wrap flex items-center justify-between py-3">
-          <Link href="/tw" className="font-bold text-lg text-ink">
-            明理
-          </Link>
-          <nav className="flex flex-wrap items-center gap-4 text-sm text-ink-light">
-            <Link href="/tw" className="hover:text-ink">排盤</Link>
-            <Link href="/tw/shengxiao" className="hover:text-ink">生肖</Link>
-            <Link href="/tw/hemun" className="hover:text-ink">合婚</Link>
-            <Link href="/tw/ziwei" className="hover:text-ink">紫微</Link>
-            <Link href="/tw/mingshu" className="hover:text-ink">命書</Link>
-            <Link href="/tw/article" className="hover:text-ink">命理知識</Link>
-            <Link href="/tw/pricing" className="hover:text-ink">價目</Link>
-            {/* 语言切换：由 lib/hant.twinPath 按当前路径推导（第 33 轮修：原写死 /shengxiao） */}
-            <HantLangSwitch />
-          </nav>
-        </div>
-      </header>
-      {children}
-      <footer className="border-t border-gold/15 mt-10">
-        <div className="hw-wrap py-6 text-xs text-ink-light/50 space-y-2">
-          <p>
-            {HANT_HREFLANG.length} 語系 hreflang 已宣告：本頁同時提供簡體與繁體版本，
-            以 <code className="text-ink-light/70">zh-Hant</code> 為繁體語系標識（涵蓋台灣／香港／澳門）。
-          </p>
-          <p>以上內容為傳統命理民俗文化，僅供參考娛樂，不構成任何決策依據。</p>
-        </div>
-      </footer>
-    </main>
+    <html lang="zh-Hant" className={rootFontClassName}>
+      <body className="min-h-full flex flex-col bg-paper text-ink">
+        <main className="hw-page" lang="zh-Hant">
+          {/* 把语言写进 mc_locale：后续 AI 命书与收银台据此出繁体（见 lib/locale.ts） */}
+          <LocaleSync locale="zh-Hant" />
+          {/* 客户端双保险：服务端 lang 已正确，这里只修正极端缓存/注入场景 */}
+          <SiteLangSync lang="zh-Hant" />
+          {/* 页面级语言信号。站点实体 JSON-LD 不写 inLanguage，避免在三种语言树里声明单一语言。 */}
+          <WebPageJsonLd
+            name="明理 · 免費八字排盤與生肖流年（繁體）"
+            path="/tw"
+            inLanguage="zh-Hant"
+          />
+          <header className="border-b border-gold/15">
+            <div className="hw-wrap flex items-center justify-between py-3">
+              <Link href="/tw" className="font-bold text-lg text-ink">
+                明理
+              </Link>
+              <nav className="flex flex-wrap items-center gap-4 text-sm text-ink-light">
+                <Link href="/tw" className="hover:text-ink">排盤</Link>
+                <Link href="/tw/shengxiao" className="hover:text-ink">生肖</Link>
+                <Link href="/tw/hemun" className="hover:text-ink">合婚</Link>
+                <Link href="/tw/ziwei" className="hover:text-ink">紫微</Link>
+                <Link href="/tw/mingshu" className="hover:text-ink">命書</Link>
+                <Link href="/tw/article" className="hover:text-ink">命理知識</Link>
+                <Link href="/tw/pricing" className="hover:text-ink">價目</Link>
+                {/* 语言切换：由 lib/hant.twinPath 按当前路径推导 */}
+                <HantLangSwitch />
+              </nav>
+            </div>
+          </header>
+          {children}
+          <footer className="border-t border-gold/15 mt-10">
+            <div className="hw-wrap py-6 text-xs text-ink-light/50 space-y-2">
+              <p>
+                {HANT_HREFLANG.length} 語系 hreflang 已宣告：本頁同時提供簡體與繁體版本，
+                以 <code className="text-ink-light/70">zh-Hant</code> 為繁體語系標識（涵蓋台灣／香港／澳門）。
+              </p>
+              <p>以上內容為傳統命理民俗文化，僅供參考娛樂，不構成任何決策依據。</p>
+            </div>
+          </footer>
+        </main>
+        <SiteChrome />
+      </body>
+    </html>
   )
 }

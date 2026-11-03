@@ -1,4 +1,4 @@
-// 2027 繁体安太岁内容簇守护（2026-10-27 第 35 轮）
+﻿// 2027 繁体安太岁内容簇守护（2026-10-27 第 35 轮）
 //
 // 断的是什么：
 //   ① 文件与文章齐备：简繁两版落地页 + 3 篇文章（简繁各 3 个 URL）
@@ -36,7 +36,7 @@ const SLUGS = ['2027-an-taisui-zenme-zuo', '2027-fan-taisui-shengxiao', 'an-tais
 console.log('—— ① 文件与文章齐备 ——')
 {
   const files = [
-    'src/app/liunian/2027/page.tsx',
+    'src/app/(zh)/liunian/2027/page.tsx',
     'src/app/tw/liunian/2027/page.tsx'
   ]
   const miss = files.filter((f) => !has(f))
@@ -106,7 +106,7 @@ console.log('—— ②B 文章正文点名（读文章，不自证） ——')
 // ---------- ③ 两个日期边界 ----------
 console.log('—— ③ 春节 / 立春 双边界 ——')
 {
-  for (const f of ['src/app/liunian/2027/page.tsx', 'src/app/tw/liunian/2027/page.tsx']) {
+  for (const f of ['src/app/(zh)/liunian/2027/page.tsx', 'src/app/tw/liunian/2027/page.tsx']) {
     const src = read(f)
     const cny = /2\s*月\s*6\s*日/.test(src) || /2\/6/.test(src)
     const lichun = /2\s*月\s*4\s*日/.test(src) || /2\/4/.test(src)
@@ -119,7 +119,7 @@ console.log('—— ③ 春节 / 立春 双边界 ——')
 // ---------- ④ 12 生肖双向互链 ----------
 console.log('—— ④ 12 属相 ⇄ 落地页 ——')
 {
-  const hans = read('src/app/liunian/2027/page.tsx')
+  const hans = read('src/app/(zh)/liunian/2027/page.tsx')
   const hant = read('src/app/tw/liunian/2027/page.tsx')
   const lackHans = SHENGXIAO.filter((s) => !hans.includes(`/shengxiao/\${r.sx.slug}/\${YEAR}`))
   if (lackHans.length) fail(`简体落地页未链到：${lackHans.map((s) => s.slug).join(', ')}`)
@@ -128,7 +128,7 @@ console.log('—— ④ 12 属相 ⇄ 落地页 ——')
   else ok('繁体落地页链到 /tw 下的 12 个属相页')
 
   // 反向：属相年页要有回落地页的入口
-  const yPage = read('src/app/shengxiao/[animal]/[year]/page.tsx')
+  const yPage = read('src/app/(zh)/shengxiao/[animal]/[year]/page.tsx')
   const twYPage = read('src/app/tw/shengxiao/[animal]/[year]/page.tsx')
   if (!yPage.includes('href="/liunian/2027"')) fail('简体属相年页缺回落地页链接')
   else ok('简体属相年页有回链')
@@ -139,7 +139,7 @@ console.log('—— ④ 12 属相 ⇄ 落地页 ——')
 // ---------- ⑤ 文章 ⇄ 落地页 ----------
 console.log('—— ⑤ 文章 ⇄ 落地页双向 ——')
 {
-  const hans = read('src/app/liunian/2027/page.tsx')
+  const hans = read('src/app/(zh)/liunian/2027/page.tsx')
   const lack = SLUGS.filter((s) => !hans.includes(s))
   if (lack.length) fail(`落地页未列出文章：${lack.join(', ')}`)
   else ok('简体落地页列出 3 篇文章')
@@ -170,7 +170,7 @@ console.log('—— ⑤ 文章 ⇄ 落地页双向 ——')
 // ---------- ⑥ hreflang + sitemap ----------
 console.log('—— ⑥ hreflang / sitemap ——')
 {
-  const hans = read('src/app/liunian/2027/page.tsx')
+  const hans = read('src/app/(zh)/liunian/2027/page.tsx')
   const hant = read('src/app/tw/liunian/2027/page.tsx')
   if (!hans.includes("hantAlternates(`/liunian/${YEAR}`)")) fail('简体落地页缺 hreflang 互指')
   else ok('简体落地页 hreflang 就位')
@@ -252,7 +252,7 @@ console.log('—— ⑤b 三篇红线扫描 ——')
 // ---------- ⑤c focusYear 与默认行为 ----------
 console.log('—— ⑤c TaisuiTable focusYear ——')
 {
-  const hans = read('src/app/liunian/2027/page.tsx')
+  const hans = read('src/app/(zh)/liunian/2027/page.tsx')
   const hant = read('src/app/tw/liunian/2027/page.tsx')
   if (!hans.includes('<TaisuiTable focusYear={YEAR}')) fail('简体落地页未传 focusYear')
   else ok('简体落地页传 focusYear={YEAR}')
@@ -271,7 +271,7 @@ console.log('—— ⑤c TaisuiTable focusYear ——')
 // ---------- ⑨ 布局（简体有 Nav，繁体不重复引入） ----------
 console.log('—— ⑨ 布局 ——')
 {
-  const hans = read('src/app/liunian/2027/page.tsx')
+  const hans = read('src/app/(zh)/liunian/2027/page.tsx')
   const hant = read('src/app/tw/liunian/2027/page.tsx')
   if (!hans.includes("import Nav from '@/components/Nav'")) fail('简体落地页缺 Nav')
   else ok('简体落地页有 Nav')

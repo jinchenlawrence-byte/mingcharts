@@ -1,4 +1,4 @@
-// 太岁对照表守护（2026-10-23 第 33 轮）
+﻿// 太岁对照表守护（2026-10-23 第 33 轮）
 //
 // 断的是什么：
 //   ① 数据完整：12 生肖 × LIUNIAN_YEARS 全有值，且关系只有 值/冲/害/刑/合/平 六种
@@ -78,7 +78,7 @@ console.log('—— ③ 单一来源（禁手写繁体词表） ——')
 // ---------- ④ 两页存在 + hreflang + sitemap ----------
 console.log('—— ④ 页面 / hreflang / sitemap ——')
 {
-  const hans = read('src/app/liunian/taisui-biao/page.tsx')
+  const hans = read('src/app/(zh)/liunian/taisui-biao/page.tsx')
   const hant = read('src/app/tw/liunian/taisui-biao/page.tsx')
   if (!hans.includes("hantAlternates('/liunian/taisui-biao')")) fail('简体页缺 hreflang 互指')
   else ok('简体页 hreflang 就位')
@@ -108,7 +108,7 @@ console.log('—— ⑤ 图片卡片 ——')
     if (size < 20000) fail(`图片疑似损坏（${size} 字节）`)
     else ok(`图片存在（${Math.round(size / 1024)} KB）`)
   }
-  const hans = read('src/app/liunian/taisui-biao/page.tsx')
+  const hans = read('src/app/(zh)/liunian/taisui-biao/page.tsx')
   if (!hans.includes('/taisui-biao.png')) fail('页面未提供图片下载链接')
   else ok('页面提供下载链接')
 }
