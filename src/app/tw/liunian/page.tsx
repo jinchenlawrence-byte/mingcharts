@@ -42,12 +42,10 @@ export default function HantLiunianEntry() {
         </ul>
 
         <div className="flex flex-wrap items-center gap-3 mt-5">
-          <Link href="/" className="hw-c-btnBig">前往排盤 →</Link>
+          <Link href="/tw" className="hw-c-btnBig">前往排盤 →</Link>
           <span className="text-sm text-ink-light/70">{price}/次 · 解鎖後永久回看</span>
         </div>
-        <p className="text-xs text-ink-light/60 mt-2">
-          排盤頁目前為簡體版；命盤與報告內容與本頁所述一致。
-        </p>
+
         {/* ★ 2027 窗口期入口（第 35 轮）：年度总览页 + 太岁对照表，构成"看今年"的两条主路径
             第 36 轮补 2028：GSC 实测 2028 生肖页已在拿点击，缺 hub 收口 */}
         <p className="text-sm mt-4">

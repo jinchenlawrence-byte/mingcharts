@@ -18,10 +18,12 @@ import {
 } from '@/lib/pricing'
 import { waffoProductId } from '@/lib/waffo-products'
 import { GRANT_LABELS } from '@/lib/grantLabels'
+import { triAlternates } from '@/lib/lang'
 
 export const metadata = {
   title: `价格方案：免费排盘 · 命书报告 ${formatPriceUSD(SKUS.fatebook.priceUSD)} · 会员订阅`,
   description: `八字命理服务价格：免费四柱排盘；${formatPriceUSD(SKUS.fatebook.priceUSD)} 解锁万字命书深度详批（八字总览、性格天赋、用神喜忌、格局成败、调候、大运流年、事业财运、婚姻感情、子女六亲、健康提示）；会员订阅提供日运、流月等持续型内容，另含每月 ${MEMBER_ASK_PER_MONTH} 次追问，不含命书等报告。`,
+  alternates: { canonical: '/pricing', languages: triAlternates('/pricing') },
 }
 
 // ★ 纯展示层：grant → 中文标签已抽到 @/lib/grantLabels（单一事实源，会员中心页共用）。

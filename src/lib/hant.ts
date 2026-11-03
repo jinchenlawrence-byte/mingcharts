@@ -10,7 +10,8 @@
 // 词典用 opencc-js（cn → twp，台港通用书面语）。★ 换实现/换词典前后必须重跑
 // scripts/test-i18n-accept.mjs —— 那里钉了干支、术语、繁简混用三类断言。
 import { Converter } from 'opencc-js'
-import type { OutputLocale } from './locale'
+import type { SiteLang } from './lang'
+import { tEn } from './i18n'
 
 const convert = Converter({ from: 'cn', to: 'twp' })
 
@@ -76,9 +77,11 @@ export function toHant(text: string): string {
   return converted
 }
 
-/** 按语言取文本：简体原样返回（不跑转换器，零开销、零风险） */
-export function localize(text: string, locale: OutputLocale): string {
-  return locale === 'zh-Hant' ? toHant(text) : text
+/** 按语言取文本：简体原样返回；繁体走 toHant；英文走 i18n 词典（缺词回退中文） */
+export function localize(text: string, locale: SiteLang): string {
+  if (locale === 'zh-Hant') return toHant(text)
+  if (locale === 'en') return tEn(text)
+  return text
 }
 
 /**
@@ -98,7 +101,7 @@ export function hantTaiSui(relation: string): string {
 }
 
 /** 简繁对照的 URL 互指（hreflang 与切换器共用，避免两处手写路径） */
-export function twinPath(path: string, locale: OutputLocale): string {
+export function twinPath(path: string, locale: 'zh-Hans' | 'zh-Hant'): string {
   // 约定：繁体树在 /tw 前缀下，路径其余部分与简体一致
   const clean = path.startsWith('/') ? path : `/${path}`
   if (locale === 'zh-Hant') return clean.startsWith('/tw/') || clean === '/tw' ? clean : `/tw${clean === '/' ? '' : clean}`

@@ -1,0 +1,620 @@
+'use client';
+// ★ 排盘结果页（2026-10-17 重塑）：设计稿多页版「排盘结果页」生产实现
+// 纪律：
+//   · 样式 hw-c- 前缀并入 globals.css（site-audit ④ 在 Node 直接 import 本文件，不能用 CSS module）
+//   · 数据一律来自 /api/paipan 真排盘引擎（paipan.ts 单一事实源），五行配色仅展示层
+//   · 藏干/十二长生/神煞/空亡行与 SHEN_SHA_NOTE 口径说明受 test-shensha-changsheng.mjs ⑤ 守护，不得改写
+//   · 价格取自 SKUS（单一事实源），本文件不得硬编码价格
+import { useEffect, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import SaveChart from '@/components/SaveChart';
+import ShareLink from '@/components/ShareLink';
+import CheckoutButton from '@/components/CheckoutButton';
+import AskPanel from '@/components/AskPanel';
+import { getSupabase } from '@/lib/supabase';
+import { waffoProductId } from '@/lib/waffo-products';
+import { SKUS, formatPriceUSD } from '@/lib/pricing';
+import { shenshaHref, KONG_WANG_SLUG, CHANG_SHENG_SLUG } from '@/lib/shenshaArticles';
+import type { PaidAnalysis, LuckCycles, LuckTag, FortuneTier } from '@/lib/analysis';
+import { toHant } from '@/lib/hant';
+// 繁體鏡像：JSX 文案經 H() 轉繁；動態資料（規則版/AI 文本）另以 H 包裹
+const H = (s: string) => toHant(s);
+// 价格一律取自 SKUS（单一事实源），本文件不得硬编码价格
+const FATEBOOK_PRICE = formatPriceUSD(SKUS.fatebook.priceUSD);
+// ── 五行展示映射（仅展示层；排盘算法见 src/lib/paipan.ts）──
+const GAN_WX: Record<string, string> = {
+    '甲': 'wood', '乙': 'wood', '丙': 'fire', '丁': 'fire', '戊': 'earth', '己': 'earth',
+    '庚': 'metal', '辛': 'metal', '壬': 'water', '癸': 'water',
+};
+const ZHI_WX: Record<string, string> = {
+    '寅': 'wood', '卯': 'wood', '巳': 'fire', '午': 'fire',
+    '辰': 'earth', '戌': 'earth', '丑': 'earth', '未': 'earth',
+    '申': 'metal', '酉': 'metal', '亥': 'water', '子': 'water',
+};
+const WX_CN: Record<string, string> = { wood: '木', fire: '火', earth: '土', metal: '金', water: '水' };
+const WX_BG: Record<string, string> = { wood: '#3CC796', fire: '#FF6B5B', earth: '#F6C24F', metal: '#D6DBE6', water: '#3A66FF' };
+const WX_ORDER = ['wood', 'fire', 'earth', 'metal', 'water'] as const;
+const WX_DESC: Record<string, string> = {
+    wood: H('如树，向上生长，重成长与仁心。'),
+    fire: H('如火，热烈外放，重表达与行动。'),
+    earth: H('如山，稳重厚实，重信用与承载。'),
+    metal: H('如金，果断利落，重原则与边界。'),
+    water: H('如水，灵动聪慧，重洞察与变通。'),
+};
+const CN_NUM = ['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'];
+const H_VOLS = ['八字總覽', '性格天賦', '用神喜忌', '格局成敗', '調候用神', '大運流年', '事業財運', '婚姻感情', '子女六親', '健康提示'];
+// 命书十卷：与解锁后「六书精要」十章一一对应（顺序即 paid 字段顺序）
+const VOLS = H_VOLS;
+const PAID_KEYS = ['overview', 'personality', 'yongShen', 'geJuAnalysis', 'tiaoHou', 'daYunAnalysis', 'career', 'marriage', 'children', 'health'] as const;
+interface ChartData {
+    input: {
+        year: number;
+        month: number;
+        day: number;
+        hour: number;
+        minute: number;
+        gender: number;
+    };
+    lunarDate: string;
+    pillars: {
+        year: {
+            ganZhi: string;
+            tenGodGan: string;
+            cangGan: string[];
+            tenGodCangGan: string[];
+            changSheng?: string;
+            shenSha?: string[];
+            kongWang?: string;
+        };
+        month: {
+            ganZhi: string;
+            tenGodGan: string;
+            cangGan: string[];
+            tenGodCangGan: string[];
+            changSheng?: string;
+            shenSha?: string[];
+            kongWang?: string;
+        };
+        day: {
+            ganZhi: string;
+            tenGodGan: string;
+            cangGan: string[];
+            tenGodCangGan: string[];
+            changSheng?: string;
+            shenSha?: string[];
+            kongWang?: string;
+        };
+        hour: {
+            ganZhi: string;
+            tenGodGan: string;
+            cangGan: string[];
+            tenGodCangGan: string[];
+            changSheng?: string;
+            shenSha?: string[];
+            kongWang?: string;
+        };
+    };
+    dayMaster: string;
+    taiYuan: string;
+    mingGong: string;
+    shenGong: string;
+    qiYun: string;
+    daYun: Array<{
+        ganZhi: string;
+        startAge: number;
+        startYear: number;
+        endYear: number;
+    }>;
+    analysis: {
+        wangShuai: string;
+        geJu: string;
+        isPaid: boolean;
+        paid?: PaidAnalysis;
+    };
+    trueSolar?: {
+        offsetMin: number;
+        zone: string;
+        dstNotice: string | null;
+    };
+    // ★ 门禁（§8.5.1）：未解锁时给 preview 与 skus，已解锁为 null
+    locked?: {
+        skus: string[];
+        preview: string;
+    } | null;
+    // ★ 命书试读（2026-10-21）：未解锁时由 /api/paipan 用规则引擎下发，前两卷全文 + 其余八卷短引
+    free?: {
+        fatebookPreview?: {
+            free: string[];
+            rest: string[];
+            fullMinChars?: number;
+        } | null;
+    } | null;
+}
+// ★ 大运/流年 7 档判词配色（FortuneTier）：文字标签本身即判词，不只靠颜色区分（色盲可达）
+//   大吉/吉/小吉 → emerald 系（深→浅梯度）；平 → amber 中性；小凶/凶/大凶 → red 系（浅→深梯度）
+const FORTUNE_BADGE: Record<FortuneTier, string> = {
+    '大吉': 'bg-emerald-100 text-emerald-800',
+    '吉': 'bg-emerald-50 text-emerald-700',
+    '小吉': 'bg-emerald-50 text-emerald-600',
+    '平': 'bg-gold/5 text-amber-600',
+    '小凶': 'bg-red-50 text-red-600',
+    '凶': 'bg-red-100 text-red-700',
+    '大凶': 'bg-red-200 text-red-800'
+};
+const FORTUNE_BORDER: Record<FortuneTier, string> = {
+    '大吉': 'border-emerald-400', '吉': 'border-emerald-300', '小吉': 'border-emerald-200',
+    '平': 'border-gold/20',
+    '小凶': 'border-red-200', '凶': 'border-red-300', '大凶': 'border-red-400'
+};
+// 流月标签配色（LuckTag——流月红线：只用 较宜/一般/宜慎 三档，不用 7 档判词）
+// ★ 本页共三套样式表：FORTUNE_BADGE/BORDER（7 档＝大运/流年）、TAG_BADGE/BORDER（旧 5 档键集合＝流月，实际只产出三档）、DOMAIN_BADGE（分维度）
+// ★ '大防' 死键已清（任务20步骤④）：产出者为零（7 档判词不含、流月内联三档不含、日运 DAILY_TAGS 排除），故类型放开为 Partial
+const TAG_BADGE: Partial<Record<LuckTag, string>> = {
+    '较宜': 'bg-emerald-50 text-emerald-600',
+    '平顺': 'bg-paper-dark/40 text-ink-light/60',
+    '一般': 'bg-gold/5 text-amber-600',
+    '宜慎': 'bg-orange-100 text-orange-700'
+};
+const TAG_BORDER: Partial<Record<LuckTag, string>> = {
+    '较宜': 'border-emerald-200', '平顺': 'border-gold/15', '一般': 'border-gold/20',
+    '宜慎': 'border-orange-300'
+};
+// 分维度倾向徽章（大运四维度）
+const DOMAIN_BADGE: Record<'吉' | '平' | '滞', string> = {
+    '吉': 'bg-emerald-50 text-emerald-600',
+    '平': 'bg-paper-dark/40 text-ink-light/60',
+    '滞': 'bg-orange-100 text-orange-700'
+};
+// 付费内容：大运 → 流年 → 流月 三层岁运时间轴
+function LuckCyclesView({ luck }: {
+    luck: LuckCycles;
+}) {
+    const curDY = luck.daYun.find(d => d.current);
+    const nowMonth = new Date().getMonth() + 1;
+    return (<div className="space-y-4">
+      {/* 大运 */}
+      <div className="hw-c-box">
+        <h3 className="hw-c-secTitle">{H("岁运时间轴 · 大运")}</h3>
+        <p className="text-xs text-ink-light/60 mb-3">{H("大运十年一步，以节气换运；干支十神与吉凶由规则引擎推算")}</p>
+        <div className="flex flex-wrap gap-2">
+          {luck.daYun.map((d, i) => (<div key={i} className={`rounded px-3 py-2 text-center border min-w-[78px] ${d.current ? 'bg-gold/5 border-amber-500 ring-1 ring-amber-400' : 'bg-paper-dark/30 border-gold/15'}`}>
+              <div className="font-bold text-ink">{d.ganZhi}</div>
+              <div className="text-xs text-ink-light/60">{d.startAge}-{d.startAge + 9}{H("岁")}</div>
+              <span className={`inline-block text-[11px] px-1.5 rounded mt-1 ${FORTUNE_BADGE[d.tag]}`}>{d.tag}</span>
+            </div>))}
+        </div>
+        {curDY && (<div className="mt-3 text-sm text-ink/70 border-t pt-3">
+            <span className="font-medium text-ink">{H("當前")} {curDY.ganZhi} {H("運（")}{H(curDY.shiShenGan)}{H("主事）：")}</span>
+            {H(curDY.note)}
+            {curDY.relations.length > 0 && (<ul className="mt-1 text-xs text-ink-light list-disc list-inside">
+                {curDY.relations.map((r, i) => <li key={i}>{H(r)}</li>)}
+              </ul>)}
+            {/* 分维度呈现 */}
+            {curDY.domains && (<div className="mt-2 grid grid-cols-2 gap-1.5 text-xs">
+                {([['事业', curDY.domains.career], ['财运', curDY.domains.wealth], ['健康', curDY.domains.health], ['六亲', curDY.domains.relation]] as [
+                    string,
+                    {
+                        tendency: '吉' | '平' | '滞';
+                        note: string;
+                    }
+                ][]).map(([name, d]) => (<div key={name} className="rounded bg-paper-dark/30 p-1.5">
+                    <span className={`inline-block text-[10px] px-1 rounded mr-1 ${DOMAIN_BADGE[d.tendency]}`}>{H(name)}·{H(d.tendency)}</span>
+                    <span className="text-ink-light">{H(d.note)}</span>
+                  </div>))}
+              </div>)}
+            <p className="mt-2 text-[11px] text-ink-light/40">{H("岁运为倾向性参考，非确定性预言；重大决策（投资、迁居、婚嫁）请勿仅凭此断定。")}</p>
+          </div>)}
+      </div>
+
+      {/* 流年 */}
+      <div className="hw-c-box">
+        <h3 className="hw-c-secTitle">{H("流年 · 今年起三年")}</h3>
+        <div className="grid md:grid-cols-3 gap-3">
+          {luck.liuNian.map((y, i) => (<div key={i} className={`rounded border-l-4 p-3 bg-paper-dark/30 ${FORTUNE_BORDER[y.tag]}`}>
+              <div className="flex items-center justify-between gap-1">
+                <span className="font-bold text-ink">{y.year}{H("年")} {y.ganZhi}</span>
+                <span className={`text-[11px] px-1.5 py-0.5 rounded whitespace-nowrap ${FORTUNE_BADGE[y.tag]}`}>{H(y.tag)}</span>
+              </div>
+              <div className="text-xs text-ink-light/60 mt-1">
+                {H(y.shiShenGan)}{H("主事")}{y.daYunGanZhi ? ` · ${H('行')}${y.daYunGanZhi}${H('運')}` : ''}
+              </div>
+              <p className="text-xs text-ink/70 mt-2 leading-relaxed">{H(y.note)}</p>
+              {y.relations.length > 0 && (<ul className="mt-2 text-[11px] text-ink-light space-y-0.5">
+                  {y.relations.map((r, j) => <li key={j}>· {H(r)}</li>)}
+                </ul>)}
+            </div>))}
+        </div>
+      </div>
+
+      {/* 流月 */}
+      <div className="hw-c-box">
+        <h3 className="hw-c-secTitle">{H("流月 · 当年十二个节令月")}</h3>
+        <p className="text-xs text-ink-light/60 mb-3">{H("命理以节气换月（非农历初一）：如寅月自立春起，丑月至次年小寒前")}</p>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+          {luck.liuYue.map((m, i) => (<div key={i} className={`rounded border-l-2 bg-paper-dark/30 p-2 ${TAG_BORDER[m.tag]} ${m.month === nowMonth ? 'ring-1 ring-amber-400' : ''}`}>
+              <div className="flex justify-between items-center gap-1">
+                <span className="text-xs font-medium text-ink/70">{m.month}{H("月·")}{H(m.jieQi)}</span>
+                <span className={`text-[10px] px-1 rounded ${TAG_BADGE[m.tag]}`}>{H(m.tag)}</span>
+              </div>
+              <div className="text-sm font-bold text-ink mt-0.5">
+                {m.ganZhi} <span className="text-[10px] font-normal text-ink-light/60">{H(m.shiShenGan)}</span>
+              </div>
+              <div className="text-[10px] text-ink-light/40">{H(m.rangeLabel)}</div>
+              {m.relations.length > 0 && (<div className="text-[10px] text-ink-light/60 mt-0.5">{m.relations.map(H).join('；')}</div>)}
+            </div>))}
+        </div>
+      </div>
+    </div>);
+}
+export default function ChartPage() {
+    const router = useRouter();
+    const [chart, setChart] = useState<ChartData | null>(null);
+    const [screenChartId, setScreenChartId] = useState<string | null>(null);
+    const [syncing, setSyncing] = useState(false);
+    const syncedRef = useRef(false);
+    useEffect(() => {
+        const stored = localStorage.getItem('currentChart');
+        if (stored) {
+            setChart(JSON.parse(stored));
+        }
+        else {
+            router.push('/tw');
+        }
+    }, [router]);
+    // ★ 回看同步（2026-10-18）：每次进命盘页都经 /api/unlock 同步一次——
+    //   已购盘走服务端快路径（存量全文秒回＋补插「我的报告」行，不重跑 AI）；
+    //   新购盘在 webhook 落账后由成功页确认解锁再进入；未购盘 402 并落库返回
+    //   chartId 供购买精确绑定。syncedRef 保证每次挂载只调一次，防 setChart 循环。
+    useEffect(() => {
+        if (!chart || syncedRef.current)
+            return;
+        syncedRef.current = true;
+        setSyncing(true);
+        (async () => {
+            try {
+                const supabase = getSupabase();
+                const { data: { session } } = await supabase.auth.getSession();
+                if (session) {
+                    const res = await fetch('/api/unlock', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ token: session.access_token, chart, locale: 'zh-Hant' }),
+                    });
+                    const out = await res.json().catch(() => null);
+                    if (out?.chartId)
+                        setScreenChartId(out.chartId);
+                    if (res.ok && out?.success && out?.data?.chartData) {
+                        setChart(out.data.chartData);
+                        localStorage.setItem('currentChart', JSON.stringify(out.data.chartData));
+                    }
+                }
+            }
+            catch {
+                // 同步失败不影响浏览：未购按锁定展示，购买回退「最新一张」兜底
+            }
+            setSyncing(false);
+        })();
+    }, [chart]);
+    if (!chart) {
+        return (<main className="hw-page flex min-h-screen items-center justify-center">
+        <p className="hw-c-meta">{H("正在取盘…")}</p>
+      </main>);
+    }
+    const pillarNames = ['年柱', '月柱', '日柱', '时柱'].map(H);
+    const pillars = [chart.pillars.year, chart.pillars.month, chart.pillars.day, chart.pillars.hour];
+    const nowYearNum = new Date().getFullYear();
+    const dayWx = GAN_WX[chart.dayMaster] ?? 'water';
+    const pad = (n: number) => (n < 10 ? '0' : '') + n;
+    // 农历仅取「日期＋四柱干支」段（纳音/星宿/彭祖百忌/方位/冲煞在下方「命盘档案」条还原展示）
+    const lunarShort = chart.lunarDate.split('纳音')[0].trim();
+    // 命盘档案拆解：农历 toFullString 的方括号分段
+    // 实测格式：一九九〇年四月十四 庚午(马)年 … 巳(蛇)时 纳音[四柱纳音] 星期X 西方白虎 星宿[觜火猴](凶)
+    //           彭祖百忌[…] 喜神方位[巽](东南) 阳贵神方位[…] 阴贵神方位[…] 福神方位[…] 财神方位[…] 冲[(丁卯)兔] 煞[东]
+    const fullLunar = chart.lunarDate;
+    const bracketOf = (label: string) => fullLunar.match(new RegExp(label + '\\[([^\\]]*)\\]'))?.[1]?.trim() ?? '';
+    const naYin = bracketOf('纳音').split(/\s+/).filter(Boolean).join(' · ');
+    const xiuXiang = fullLunar.match(/([东南西北]方(?:青龙|白虎|朱雀|玄武))/)?.[1] ?? '';
+    const xiu = bracketOf('星宿');
+    const xiuJi = fullLunar.match(/星宿\[[^\]]*\]\((吉|凶|平)\)/)?.[1] ?? '';
+    const pengZu = bracketOf('彭祖百忌').replace(/\s+/g, '，');
+    const fangWei = [...fullLunar.matchAll(/(喜神|阳贵神|阴贵神|福神|财神)方位\[([^\]]+)\]\(([^)]+)\)/g)]
+        .map((m) => `${m[1]}${m[3]}（${m[2]}）`).join(' · ');
+    const chong = fullLunar.match(/冲\[([^\]]*)\]/)?.[1]?.replace(/\(/g, '（').replace(/\)/g, '）') ?? '';
+    const sha = bracketOf('煞');
+    // 五行分布：四天干＋四地支（藏干/合化不计入，仅作快速印象）
+    const wxCount: Record<string, number> = { wood: 0, fire: 0, earth: 0, metal: 0, water: 0 };
+    for (const p of pillars) {
+        const g = GAN_WX[p.ganZhi[0]];
+        const z = ZHI_WX[p.ganZhi[1]];
+        if (g)
+            wxCount[g]++;
+        if (z)
+            wxCount[z]++;
+    }
+    const lack = WX_ORDER.filter((k) => wxCount[k] === 0);
+    const paid = chart.analysis.isPaid ? chart.analysis.paid ?? null : null;
+    const paidRows: [
+        string,
+        string
+    ][] | null = paid
+        ? VOLS.map((title, i) => [title, H(paid[PAID_KEYS[i]])])
+        : null;
+    // ★ 命书试读：仅未解锁时有值（服务端规则引擎生成，零 AI）
+    const fatebookPreview = !chart.analysis.isPaid ? chart.free?.fatebookPreview ?? null : null;
+    return (<main className="hw-page">
+      <div className="hw-wrap hw-c-pg">
+        <Link href="/tw" className="hw-c-back">{H("‹ 重新排盤")}</Link>
+        <h1 className="hw-c-h1">{H("日主")} {chart.dayMaster}{WX_CN[dayWx]}</h1>
+        <p className="hw-c-meta">
+          {chart.input.year}{H("年")}{chart.input.month}{H("月")}{chart.input.day}{H("日")} {pad(chart.input.hour)}:{pad(chart.input.minute)}
+          {' · '}{chart.input.gender === 1 ? '乾造' : '坤造'} {H("· 農曆")}{H(lunarShort)}
+        </p>
+        <p className="hw-c-dx">{H("你的日主属")}{WX_CN[dayWx]}，{WX_DESC[dayWx]}</p>
+
+        {/* 夏令时切换点提示：出生时刻本身在 gap/重复时刻上（旧命盘无此字段时不显示） */}
+        {chart.trueSolar?.dstNotice && (<div className="hw-c-warn">⚠ {H(chart.trueSolar.dstNotice)}</div>)}
+
+        {/* 四柱（五行配色柱卡；日柱抬升） */}
+        <div className="hw-pillars" style={{ paddingTop: 28 }}>
+          {pillars.map((p, i) => (<div key={i} className={`hw-c-pillar${i === 2 ? ' hw-day' : ''}`} style={{ '--i': i } as CSSProperties}>
+              <span className="hw-t">{pillarNames[i]}</span>
+              <span className={`hw-g hw-${GAN_WX[p.ganZhi[0]] ?? 'water'}`}>{p.ganZhi[0]}</span>
+              <span className={`hw-g hw-${ZHI_WX[p.ganZhi[1]] ?? 'water'}`}>{p.ganZhi[1]}</span>
+            </div>))}
+        </div>
+        <div className="hw-legend" aria-label={H("五行配色")}>
+          {WX_ORDER.map((k) => (<span key={k}><i style={{ background: WX_BG[k] }}/>{WX_CN[k]}</span>))}
+        </div>
+
+        {/* 命盘档案：纳音 / 星宿 / 彭祖百忌 / 方位 / 冲煞（农历 toFullString 全量信息，设计稿省略、此处以档案条还原） */}
+        {(naYin || pengZu || fangWei || xiu) && (<div className="hw-c-box" style={{ marginTop: 14 }}>
+            <div className="hw-c-kv" style={{ lineHeight: 1.9 }}>
+              {naYin && (<p>
+                  <span>{H("納音：")}</span>{H(naYin)}<span style={{ marginLeft: 6 }}>{H("（年 · 月 · 日 · 時）")}</span>
+                </p>)}
+              {xiu && (<p>
+                  <span>{H("星宿：")}</span>{H(xiuXiang)}{xiuXiang && ' · '}{H(xiu)}
+                  {xiuJi && <span style={{ opacity: 0.6 }}>（{H(xiuJi)}）</span>}
+                </p>)}
+              {pengZu && <p><span>{H("彭祖百忌：")}</span>{H(pengZu)}</p>}
+              {fangWei && <p><span>{H("方位：")}</span>{H(fangWei)}</p>}
+              {(chong || sha) && (<p>
+                  <span>{H("沖煞：")}</span>{chong && `${H('沖')}${H(chong)}`}{chong && sha ? ' · ' : ''}{sha && `${H('煞')}${H(sha)}`}
+                </p>)}
+            </div>
+          </div>)}
+
+        {/* 天干/地支/十二长生/神煞/空亡 明细（test-shensha-changsheng.mjs ⑤ 逐字守护） */}
+        <div className="hw-c-box hw-c-boxFlush">
+          <div className="hw-c-tableWrap">
+            <table className="hw-c-table">
+              <thead>
+                <tr>
+                  <th aria-label={H("项目")}></th>
+                  {pillarNames.map((n, i) => <th key={i}>{n}</th>)}
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>{H("天干")}</td>
+                  {pillars.map((p, i) => (<td key={i}>
+                      {p.ganZhi[0]}
+                      {(p.tenGodGan || i === 2) && (<span style={{ opacity: 0.6, fontSize: 12 }}>（{H(p.tenGodGan || '日主')}）</span>)}
+                    </td>))}
+                </tr>
+                <tr>
+                  <td>{H("地支")}</td>
+                  {pillars.map((p, i) => (<td key={i}>{p.ganZhi[1]}</td>))}
+                </tr>
+                <tr>
+                  <td>{H("藏干")}</td>
+                  {pillars.map((p, i) => (<td key={i}>
+                      {p.cangGan.map((g, j) => (<span key={j}>
+                          {j > 0 && '　'}
+                          {g}
+                          {p.tenGodCangGan?.[j] && (<span style={{ opacity: 0.6, fontSize: 12 }}>（{H(p.tenGodCangGan[j])}）</span>)}
+                        </span>))}
+                    </td>))}
+                </tr>
+                {/* 十二长生 / 神煞 / 空亡：新排盘才有此字段，旧命盘（localStorage 旧数据）不显示 */}
+                {pillars.some(p => p.changSheng) && (<tr>
+                    <td>{H("十二长生")}</td>
+                    {pillars.map((p, i) => (<td key={i}>
+                        {p.changSheng
+                    ? <Link href={`/tw/article/${CHANG_SHENG_SLUG}`} className="hw-c-link">{H(p.changSheng)}</Link>
+                    : '—'}
+                      </td>))}
+                  </tr>)}
+                {pillars.some(p => p.shenSha && p.shenSha.length > 0) && (<tr>
+                    <td>{H("神煞")}</td>
+                    {pillars.map((p, i) => (<td key={i}>
+                        {p.shenSha && p.shenSha.length > 0
+                    ? (
+                    /* 竖排：每柱神煞各占一行，列内居中。横排时整行拼接会把表格撑到溢出
+                       （横滚条），竖排后列宽只由最长单个神煞名决定。 */
+                    <div className="flex flex-col items-center gap-0.5">
+                              {p.shenSha.map((name, j) => {
+                            const href = shenshaHref(name);
+                            return href
+                                ? <Link key={j} href={`/tw${href}`} className="hw-c-link">{H(name)}</Link>
+                                : <span key={j}>{H(name)}</span>;
+                        })}
+                            </div>)
+                    : '—'}
+                      </td>))}
+                  </tr>)}
+                {pillars.some(p => p.kongWang) && (<tr>
+                    <td>{H("空亡")}</td>
+                    {pillars.map((p, i) => (<td key={i}>
+                        {p.kongWang
+                    ? <Link href={`/tw/article/${KONG_WANG_SLUG}`} className="hw-c-link">{H(p.kongWang)}</Link>
+                    : '—'}
+                      </td>))}
+                  </tr>)}
+              </tbody>
+            </table>
+          </div>
+          {/* 口径说明：文案与 src/lib/paipan.ts 的 SHEN_SHA_NOTE 同步（测试守护一致性） */}
+          <p className="hw-c-fine">{H("神煞取法依《渊海子平》《三命通会》通行口径：天乙贵人、文昌贵人、禄神、羊刃、太极贵人、福星贵人、国印贵人、金舆、红艳煞、天官贵人、天厨贵人自日干起（羊刃仅阳干），学堂、词馆依日干取长生、临官之干支；桃花、驿马、华盖、将星、劫煞、灾煞、亡神、六厄自年支、日支起（三合局取支，六厄取局之死位），金匮取年支三合局之帝旺；孤辰寡宿、红鸾、天喜、元辰、勾绞煞、血刃、破碎自年支起（元辰依阳男阴女取年支冲前一位、阴男阳女取冲后一位，勾绞煞取年支前、后三辰，血刃依《果老星宗》驾后神煞戌上起子逆行，破碎即暗金的煞子午卯酉见巳、寅申巳亥见酉、辰戌丑未见丑）；天德贵人、月德贵人、天医、天赦、四废、月德合、天德合自月支起（天赦、四废见于日柱，月德合、天德合各取月德、天德之合）；魁罡、阴阳差错、十恶大败、孤鸾煞、九丑日取自日柱干支（九丑日为乙卯、己卯、辛卯、乙酉、己酉、辛酉、戊子、戊午、壬子、壬午十日），三奇贵人取年月日或月日时天干顺布；童子煞依月支季节（春秋寅子、冬夏卯未辰）或年柱纳音（金木命见午卯、水火命见酉戌、土命见辰巳）查日支、时支，德秀贵人自月支起见四柱天干（《三命通会》），金神取乙丑、己巳、癸酉见于日柱、时柱，飞刃自日干起（仅阳干、羊刃对冲），流霞自日干起，天罗地网依年柱纳音（火命见戌亥、水土命见辰巳，金木命不论）查日支、时支，六秀日、十灵日取自日柱干支；空亡为各柱干支所在旬空之二支。均为传统民俗论法（童子煞属民俗传说），流派间取法或有差异，仅供参考、非确定性，不构成任何决策建议。")} </p>
+          <p className="hw-c-fine">{H("点击神煞、十二长生、空亡名称可查看对应知识文章（命理知识 › 神煞查询）。")} </p>
+        </div>
+
+        {/* 五行分布 */}
+        <h2 className="hw-c-h2">{H("五行分布")}</h2>
+        <div className="hw-c-bar5">
+          {WX_ORDER.map((k) => wxCount[k] > 0 ? (<span key={k} className={`hw-${k}`} style={{ flex: wxCount[k] }}>
+                {WX_CN[k]}{wxCount[k]}
+              </span>) : null)}
+        </div>
+        <p className="hw-c-dx" style={{ marginTop: 12 }}>
+          {lack.length > 0 ? H(`五行缺：${lack.map((k) => WX_CN[k]).join('、')}。`) : H('五行俱全。')}
+        </p>
+        <p className="hw-note">{H("按四柱天干＋地支八字统计；藏干与地支合化未计入，仅作快速印象。")}</p>
+
+        {/* 格局旺衰 / 胎元命宫 */}
+        <div className="hw-c-two" style={{ marginTop: 20 }}>
+          <div className="hw-c-box">
+            <h3 className="hw-c-secTitle">{H("格局旺衰")}</h3>
+            <div className="hw-c-kv">
+              <p><span>{H("旺衰：")}</span>{H(chart.analysis.wangShuai)}</p>
+              <p><span>{H("格局：")}</span>{H(chart.analysis.geJu)}</p>
+              <p><span>{H("起運：")}</span>{H(chart.qiYun)}</p>
+            </div>
+          </div>
+          <div className="hw-c-box">
+            <h3 className="hw-c-secTitle">{H("胎元命宫")}</h3>
+            <div className="hw-c-kv">
+              <p><span>{H("胎元：")}</span>{H(chart.taiYuan)}</p>
+              <p><span>{H("命宮：")}</span>{H(chart.mingGong)}</p>
+              <p><span>{H("身宮：")}</span>{H(chart.shenGong)}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* 大运时间轴（当前大运描黑圈；干支天干按五行着色） */}
+        <h2 className="hw-c-h2">{H("大运")}</h2>
+        <div className="hw-c-dy">
+          {chart.daYun.map((dy, i) => {
+            const isCurrent = nowYearNum >= dy.startYear && nowYearNum <= dy.endYear;
+            const tx = GAN_WX[dy.ganZhi[0]] ?? 'water';
+            return (<div key={i} className={isCurrent ? 'hw-c-cur' : ''}>
+                <b className={`hw-tx-${tx}`}>{dy.ganZhi}</b>
+                <i>{dy.startAge}–{dy.startAge + 9}{H("岁")}</i>
+                <i>{dy.startYear}–{dy.endYear}</i>
+                {isCurrent && <span className="hw-c-curTag">{H("当前")}</span>}
+              </div>);
+        })}
+        </div>
+        <p className="hw-note">{H("起運：")}{H(chart.qiYun)}{H("。大運十年一步，以節氣精確換運；當前大運的吉凶細斷見解鎖後的「大運流年」卷。")}</p>
+
+        {/* 保存命盘 */}
+        <SaveChart locale="zh-Hant" />
+
+        {/* 分享：带 utm_source=share，用于统计分享带来的访问（结果页是最自然的传播点） */}
+        <div className="mt-4 text-center">
+          <ShareLink path="/tw/chart" title={H("明理 · 免費八字排盤")} text={H("用生辰排一張盤，看看十卷命書怎麼說")} label={H("分享給朋友排盤")} locale="zh-Hant" />
+        </div>
+
+        {/* 命书十卷 */}
+        <h2 className="hw-c-h2">{H("命书十卷")}</h2>
+        <div className={`hw-c-vols${chart.analysis.isPaid ? '' : ' hw-c-locked'}`}>
+          {VOLS.map((v, i) => (<span key={v}><i>{H("卷")}{CN_NUM[i]}</i>{v}</span>))}
+        </div>
+
+        {/* ★ 命书试读（2026-10-21）：前两卷规则版全文免费；其余八卷只给短引并做模糊处理。
+            全部由服务端规则引擎按本盘推算，不调用 AI；完整命书仍是 AI 精批。
+            ★ 防误解：顶部「试读 · 规则版简批」徽章 + 每卷末注明「本节 N 字，完整版为 AI 另写」+ 试读/付费分隔条，
+              避免用户把规则版这点字当成命书全文（2026-10-21 用户反馈）。 */}
+        {fatebookPreview && (<div className="hw-pv">
+            <div className="hw-pv-head">
+              <div className="hw-pv-headRow">
+                <h3 className="hw-c-secTitle">{H("命书试读")}</h3>
+                <span className="hw-pv-badge">{H("试读 · 规则版简批")}</span>
+              </div>
+              <p className="hw-c-meta">{H("下面两卷是")}<b className="hw-pv-em">{H("规则版简批")}</b>{H("：由规则引擎按你的四柱直接推算，只给结论，不调用 AI，\n                因此篇幅短、没有展开。付费命书是")}<b className="hw-pv-em">{H("另一套写法")}</b>{H("——AI 依据同盘逐卷精批")} {fatebookPreview.fullMinChars ? <>{H("，十卷合计不少于")} {fatebookPreview.fullMinChars} {H("字")}</> : <>{H("，十卷合计约万字")}</>}{H("，并附岁运时间轴与古籍命例。")} </p>
+            </div>
+
+            {fatebookPreview.free.map((text, i) => (<article key={VOLS[i]} className="hw-c-box hw-pv-card">
+                <h4 className="hw-pv-title"><i>{H("卷")}{CN_NUM[i]}</i>{VOLS[i]}</h4>
+                <p className="hw-c-body">{H(text)}</p>
+                <p className="hw-pv-cap">{H("規則版簡批 · 本節")} {text.length} {H("字；完整命書此卷為 AI 精批版本，非本節擴寫")} </p>
+              </article>))}
+
+            <div className="hw-pv-div"><span>{H("试读到此为止 · 以下八卷属完整命书")}</span></div>
+
+            <div className="hw-pv-rest">
+              {fatebookPreview.rest.map((text, i) => {
+                const idx = i + 2;
+                return (<div key={VOLS[idx]} className="hw-pv-lock">
+                    <h4 className="hw-pv-title"><i>{H("卷")}{CN_NUM[idx]}</i>{VOLS[idx]}</h4>
+                    {/* 短引仅作「确有内容」的视觉证据，模糊后不提供可读信息 */}
+                    <p className="hw-c-body hw-pv-blur" aria-hidden="true">{H(text)}</p>
+                    <span className="hw-pv-chip">{H("解锁后查看全文")}</span>
+                  </div>);
+            })}
+            </div>
+            <p className="hw-pv-note">{H("以上八卷的规则版底稿已按你的命盘算好；解锁后由 AI 逐卷重写精批，与这两卷试读不是同一份文字。")} </p>
+          </div>)}
+
+        {/* 付费解锁区（正式收费：Waffo 托管收银台按次购买，价格取自 SKUS 单一事实源） */}
+        {!chart.analysis.isPaid && (<div className="hw-c-cta">
+            {chart.locked?.preview && <p className="hw-c-dx">{H(chart.locked.preview)}</p>}
+            {syncing && <p className="hw-c-syncing">{H("命书同步中，请稍候…")}</p>}
+            <div style={{ maxWidth: 380, margin: '0 auto' }}>
+              <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} chartId={screenChartId ?? undefined}>{H("解锁完整命书 ·")} {FATEBOOK_PRICE}
+              </CheckoutButton>
+            </div>
+            <p className="hw-note" style={{ marginTop: 14 }}>{H("按次购买，永久回看（会员不含报告）·")} <Link href="/tw/mingshu" className="hw-c-link">{H("查看命書詳情")}</Link>
+            </p>
+          </div>)}
+
+        {/* 已解锁：完整命理分析（六书精要十章 + 岁运时间轴 + 古籍相似命例） */}
+        {paidRows && paid && (<div className="space-y-4" style={{ marginTop: 20 }}>
+            {paid.luckCycles && <LuckCyclesView luck={paid.luckCycles}/>}
+            {paidRows.map(([title, text], i) => (<div key={title} className="hw-c-box">
+                <h3 className="hw-c-secTitle">{H("卷")}{CN_NUM[i]} · {title}</h3>
+                <p className="hw-c-body">{text}</p>
+              </div>))}
+
+            {/* 古籍相似命例（规则引擎检索，旧命盘无此数据时不显示） */}
+            {paid.similarCases && paid.similarCases.length > 0 && (<div className="hw-c-box">
+                <h3 className="hw-c-secTitle">{H("古籍相似命例")}</h3>
+                <p className="text-xs text-ink-light/60 mb-3">{H("从《子平真诠》《滴天髓》《三命通会》等典籍命例库中按四柱结构相似度检索，供参照印证（仅供学习参考）")} </p>
+                <div className="space-y-3">
+                  {paid.similarCases.map((c, i) => (<div key={i} className={`rounded-lg border p-3 ${c.exact ? 'border-amber-400 bg-gold/5' : 'border-gold/15'}`}>
+                      <div className="flex flex-wrap items-baseline gap-2 mb-1">
+                        <span className="font-bold text-ink">
+                          {c.person ? H(c.person) : H('未具名命造')}
+                        </span>
+                        <span className="text-sm text-ink/70">
+                          {c.pillars.year} {c.pillars.month} {c.pillars.day} {c.pillars.hour}
+                        </span>
+                        {c.exact && (<span className="text-xs bg-amber-600 text-white px-2 py-0.5 rounded">{H("四柱全同")}</span>)}
+                        <span className="text-xs text-ink-light/40 ml-auto">{H(c.source)}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mb-1">
+                        {c.matches.map((m, j) => (<span key={j} className="text-xs bg-gold/10 text-ink/70 px-1.5 py-0.5 rounded">{H(m)}</span>))}
+                      </div>
+                      {c.readings && c.readings.length > 1 ? (<div className="space-y-2 mt-2">
+                          {c.readings.map((r, j) => (<div key={j} className="border-l-2 border-gold/20 pl-3">
+                              <div className="text-xs text-amber-600 mb-0.5">
+                                {H(r.source.split(' ')[0])}{r.person ? ` · ${H(r.person)}` : ''}
+                              </div>
+                              <p className="text-sm text-ink/70 leading-relaxed">
+                                {H(r.text.length > 220 ? r.text.slice(0, 220) + '…' : r.text)}
+                              </p>
+                            </div>))}
+                        </div>) : (<p className="text-sm text-ink/70 leading-relaxed">{H(c.text)}</p>)}
+                    </div>))}
+                </div>
+              </div>)}
+          </div>)}
+
+        {/* ★ AI 追问：与付费内容绑定——买过任一报告或已是会员即可使用（面板自查 allowed，未付费不渲染）。
+            原先嵌在「解锁区」内，导致没买命书的会员虽有额度却看不到入口；现移到解锁区之外。 */}
+        <AskPanel chartId={screenChartId} chart={chart} locale="zh-Hant" />
+      </div>
+    </main>);
+}

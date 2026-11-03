@@ -106,6 +106,30 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // ★ 与简体页一一对应，hreflang 双向；不要在这里放未镜像的路径（会出现「声明了但没有页」）
   const hantPages: MetadataRoute.Sitemap = [
     { url: `${BASE_URL}/tw`, changeFrequency: 'monthly', priority: 0.8 },
+    // 繁體工具／內容頁（與簡體同名路由一一對應，hreflang 雙向）
+    // ★ 帳戶／交易頁（/tw/auth、/tw/charts、/tw/reports、/tw/chart）不進 sitemap（noindex）
+    { url: `${BASE_URL}/tw/hemun`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/tw/ziwei`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/tw/geo`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE_URL}/tw/mingshu`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/tw/mingshu/demo`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${BASE_URL}/tw/daily`, changeFrequency: 'daily', priority: 0.7 },
+    { url: `${BASE_URL}/tw/pricing`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/tw/terms`, changeFrequency: 'yearly', priority: 0.4 },
+    { url: `${BASE_URL}/tw/privacy`, changeFrequency: 'yearly', priority: 0.4 },
+    // 節氣 / 節日（繁體）：與簡體同名路由一一對應（24 + 10 + 2 個索引）
+    { url: `${BASE_URL}/tw/jieqi`, changeFrequency: 'monthly', priority: 0.7 },
+    ...JIEQI.map(j => ({
+      url: `${BASE_URL}/tw/jieqi/${j.slug}`,
+      changeFrequency: 'yearly' as const,
+      priority: 0.6,
+    })),
+    { url: `${BASE_URL}/tw/jieri`, changeFrequency: 'yearly', priority: 0.6 },
+    ...JIERI.map(j => ({
+      url: `${BASE_URL}/tw/jieri/${j.slug}`,
+      changeFrequency: 'yearly' as const,
+      priority: 0.6,
+    })),
     { url: `${BASE_URL}/tw/shengxiao`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/tw/liunian`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/tw/liunian/taisui-biao`, changeFrequency: 'yearly', priority: 0.7 },

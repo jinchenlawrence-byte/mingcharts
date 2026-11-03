@@ -1,23 +1,28 @@
-'use client'
+﻿'use client'
 
 // 站内分享按钮（2026-10-21）：优先调用系统分享（手机原生面板），不支持则复制链接。
 // ★ 分享链接统一带上 utm_source=share&utm_medium=referral，若本机存过 ref 码则一并带上，
 //   这样新访客的首次触达能被 events 表记为「分享来源」，未来接入邀请奖励时无需改链路。
 import { useState } from 'react'
 import { getSupabase } from '@/lib/supabase'
+import { localize } from '@/lib/hant'
+import type { SiteLang } from '@/lib/lang'
 
 export default function ShareLink({
   path,
   title,
   text,
   label = '分享给朋友',
+  locale = 'zh-Hans',
 }: {
   /** 站内路径，如 /chart、/daily */
   path: string
   title: string
   text?: string
   label?: string
+  locale?: SiteLang
 }) {
+  const L = (s: string) => localize(s, locale)
   const [copied, setCopied] = useState(false)
 
   const handleShare = async () => {
@@ -61,7 +66,7 @@ export default function ShareLink({
       onClick={handleShare}
       className="inline-block rounded-full border border-ink/20 px-4 py-2 text-sm font-semibold text-ink transition hover:border-ink/40"
     >
-      {copied ? '链接已复制' : label}
+      {copied ? L('链接已复制') : L(label)}
     </button>
   )
 }

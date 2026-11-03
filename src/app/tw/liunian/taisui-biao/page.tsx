@@ -54,8 +54,8 @@ export default function HantTaisuiTablePage() {
           <li>• <strong className="text-ink">最後別只看生肖</strong>：生肖只是年支一支，完整八字要看四柱、大運與流年三者的關係。</li>
         </ul>
         <p className="text-sm text-ink-light mt-3">
-          想看自己這一年的完整情況：<Link href="/" className="hw-c-link">排一次盤 →</Link>
-          <span className="text-xs text-ink-light/60 ml-2">排盤頁目前為簡體版</span>
+          想看自己這一年的完整情況：<Link href="/tw" className="hw-c-link">排一次盤 →</Link>
+
         </p>
         <p className="text-sm text-ink-light mt-2">
           只看 2027 丁未年：<Link href="/tw/liunian/2027" className="hw-c-link">2027 年運勢總覽（誰犯太歲、各是什麼關係）→</Link>

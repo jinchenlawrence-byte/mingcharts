@@ -1,15 +1,9 @@
 'use client'
 
-// 全站页脚（第 36 轮）：按路径决定简繁
+// 全站页脚：按路径决定简 / 繁 / 英
 //
-// 为什么是客户端组件：页脚在根布局里，根布局拿不到当前路径，
-// 而它服务全部 208 个繁体页 —— 之前繁体页的页脚一直是简体
-// （「命理师合作」「城市数据」「以上内容为传统命理民俗文化」全是简体），
-// 这是繁体树上最刺眼的一处不一致。
-//
-// ★ 不写第二份文案：以简体为源，/tw 路径下用 lib/hant 的 toHant 派生。
-// ★ 链接保持指向简体页（/terms、/privacy、/partners）—— 那几页没有繁体版，
-//   若改成 /tw/terms 会 404。文案繁体、目标页简体，是当前最诚实的处理。
+// ★ 不写第二份正文：简中为源，/tw 用 toHant 派生，/en 用英文文案。
+// ★ 链接指向对应语言版本（/tw/terms、/tw/privacy 已补；/en/terms 尚未上，英文页仍指中文条款）。
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
@@ -18,31 +12,57 @@ import HansLangSwitch from '@/components/HansLangSwitch'
 
 export default function SiteFooter() {
   const pathname = usePathname() ?? ''
+  const en = pathname.startsWith('/en')
   const hant = pathname.startsWith('/tw')
   const L = (s: string) => (hant ? toHant(s) : s)
+
+  if (en) {
+    return (
+      <footer className="mt-auto border-t border-gold/20 py-4 text-center text-[11px] text-ink/40">
+        <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
+          <Link href="/en" className="underline hover:text-ink/60">Home</Link>
+          <span aria-hidden="true">·</span>
+          <Link href="/en/pricing" className="underline hover:text-ink/60">Pricing</Link>
+          <span aria-hidden="true">·</span>
+          <Link href="/terms" className="underline hover:text-ink/60">Terms of Service (Chinese)</Link>
+          <span aria-hidden="true">·</span>
+          <Link href="/privacy" className="underline hover:text-ink/60">Privacy Policy (Chinese)</Link>
+          <span aria-hidden="true">·</span>
+          <a href="mailto:hello@mingcharts.com" className="underline hover:text-ink/60">hello@mingcharts.com</a>
+          <span aria-hidden="true">·</span>
+          <Link href="/" className="underline hover:text-ink/60">简体中文</Link>
+          <span aria-hidden="true">·</span>
+          <Link href="/tw" className="underline hover:text-ink/60">繁體中文</Link>
+          <span aria-hidden="true">·</span>
+          <span>
+            City data ©{' '}
+            <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink/60">
+              GeoNames
+            </a>{' '}
+            (CC BY 4.0)
+          </span>
+        </div>
+      </footer>
+    )
+  }
 
   return (
     <footer className="mt-auto border-t border-gold/20 py-4 text-center text-[11px] text-ink/40">
       <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-        <Link href="/terms" className="underline hover:text-ink/60">Terms of Service</Link>
+        <Link href={hant ? '/tw/terms' : '/terms'} className="underline hover:text-ink/60">Terms of Service</Link>
         <span aria-hidden="true">·</span>
-        <Link href="/privacy" className="underline hover:text-ink/60">Privacy Policy</Link>
+        <Link href={hant ? '/tw/privacy' : '/privacy'} className="underline hover:text-ink/60">Privacy Policy</Link>
         <span aria-hidden="true">·</span>
         <a href="mailto:hello@mingcharts.com" className="underline hover:text-ink/60">hello@mingcharts.com</a>
         <span aria-hidden="true">·</span>
         <Link href="/partners" className="underline hover:text-ink/60">{L('命理师合作')}</Link>
         <span aria-hidden="true">·</span>
-        {/* 页脚也给一个繁體入口：报告页/分享页没有 Nav */}
+        {/* 页脚也给一个语言入口：报告页/分享页没有 Nav */}
         {hant ? null : <HansLangSwitch className="underline hover:text-ink/60" />}
         <span aria-hidden="true">·</span>
         <span>
           {L('城市数据')} ©{' '}
-          <a
-            href="https://www.geonames.org/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="underline hover:text-ink/60"
-          >
+          <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink/60">
             GeoNames
           </a>{' '}
           {L('（CC BY 4.0）')}

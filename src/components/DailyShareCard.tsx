@@ -1,7 +1,9 @@
-'use client'
+﻿'use client'
 
 // 通用日签分享卡：纯前端 canvas 绘制＋导出 PNG，带产品标识（HANDOFF §4.3，免费获客层）。
 import { useState } from 'react'
+import { localize } from '@/lib/hant'
+import type { SiteLang } from '@/lib/lang'
 
 interface Props {
   dateLabel: string      // 如 2026年10月8日
@@ -10,6 +12,7 @@ interface Props {
   sign: string
   disclaimer: string
   boundary: string       // 子时（23:00）起为次日
+  locale?: SiteLang
 }
 
 const W = 750
@@ -32,6 +35,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
 }
 
 export default function DailyShareCard(props: Props) {
+  const L = (s: string) => localize(s, props.locale ?? 'zh-Hans')
   const [imgUrl, setImgUrl] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
 
@@ -63,15 +67,15 @@ export default function DailyShareCard(props: Props) {
       ctx.fillText('明理', center, 92)
       ctx.fillStyle = '#a16207'
       ctx.font = '22px "PingFang SC", "Microsoft YaHei", sans-serif'
-      ctx.fillText('八字命理 · 每日日签', center, 132)
+      ctx.fillText(L('八字命理 · 每日日签'), center, 132)
 
       // 日期 ＋ 干支
       ctx.fillStyle = '#78350f'
       ctx.font = '600 34px "Songti SC", "SimSun", serif'
-      ctx.fillText(`${props.dateLabel} · ${props.liuRi}日`, center, 232)
+      ctx.fillText(`${props.dateLabel} · ${props.liuRi}${L('日')}`, center, 232)
       ctx.fillStyle = '#a16207'
       ctx.font = '24px "PingFang SC", "Microsoft YaHei", sans-serif'
-      ctx.fillText(`六十甲子第 ${props.jiaziIndex} 位`, center, 278)
+      ctx.fillText(L(`六十甲子第 ${props.jiaziIndex} 位`), center, 278)
 
       // 分隔细线
       ctx.strokeStyle = '#e7c48d'
@@ -92,16 +96,16 @@ export default function DailyShareCard(props: Props) {
       // 晚子时约定 ＋ 免责
       ctx.fillStyle = '#8a6d4b'
       ctx.font = '22px "PingFang SC", "Microsoft YaHei", sans-serif'
-      ctx.fillText(`★ ${props.boundary}`, center, H - 196)
+      ctx.fillText(`★ ${L(props.boundary)}`, center, H - 196)
       ctx.fillStyle = '#a98c66'
       ctx.font = '20px "PingFang SC", "Microsoft YaHei", sans-serif'
-      const discLines = wrapText(ctx, props.disclaimer, W - 200)
+      const discLines = wrapText(ctx, L(props.disclaimer), W - 200)
       discLines.forEach((ln, i) => ctx.fillText(ln, center, H - 148 + i * 30))
 
       // 底部标识
       ctx.fillStyle = '#92400e'
       ctx.font = '600 24px "Songti SC", "SimSun", serif'
-      ctx.fillText('明理 mingcharts.com · 免费排盘', center, H - 64)
+      ctx.fillText(L('明理 mingcharts.com · 免费排盘'), center, H - 64)
 
       setImgUrl(canvas.toDataURL('image/png'))
     } finally {
@@ -117,22 +121,22 @@ export default function DailyShareCard(props: Props) {
         disabled={busy}
         className="inline-block bg-amber-600 text-white px-6 py-2.5 rounded-full font-semibold hover:bg-amber-700 transition disabled:opacity-60"
       >
-        {busy ? '绘制中…' : '生成分享图'}
+        {busy ? L('绘制中…') : L('生成分享图')}
       </button>
       {imgUrl && (
         <div className="mt-5">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={imgUrl}
-            alt="每日日签分享卡"
+            alt={L('每日日签分享卡')}
             className="max-w-full sm:max-w-sm mx-auto rounded-lg shadow-lg border border-amber-100"
           />
           <a
             href={imgUrl}
-            download={`日签-${props.liuRi}.png`}
+            download={`${L('日签')}-${props.liuRi}.png`}
             className="inline-block mt-3 text-sm text-ink/70 underline underline-offset-2"
           >
-            下载图片
+            {L('下载图片')}
           </a>
         </div>
       )}

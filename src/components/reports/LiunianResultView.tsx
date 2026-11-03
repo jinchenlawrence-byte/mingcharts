@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 // 年运报告共享渲染组件：/liunian 生成页 与 /reports/[id] 回看页共用，防止双渲染器漂移
 import type { LuckLiuNianItem, LuckLiuYueItem, LuckDaYunItem } from '@/lib/analysis'
@@ -6,6 +6,8 @@ import type { Pillar } from '@/lib/paipan'
 import type { AILiunianSections } from '@/lib/aiLiunian'
 import { isRuleVersion } from '@/lib/reportGate'
 import { LockedCard, UnlockCta } from '@/components/reports/PreviewLock'
+import { localize } from '@/lib/hant'
+import type { SiteLang } from '@/lib/lang'
 
 export interface LiunianResultData {
   targetYear: number
@@ -65,14 +67,17 @@ const WX_COLOR: Record<string, string> = {
   '金': 'text-yellow-600', '水': 'text-blue-700'
 }
 
-export default function LiunianResultView({ data, onRegen, regenBusy }: {
+export default function LiunianResultView({ data, onRegen, regenBusy, locale = 'zh-Hans' }: {
   data: LiunianResultData
   /** ★ 规则版兜底时的「重新生成」出口（生成页/回看页下传）；无此能力时不传＝不显示 */
   onRegen?: () => void
   regenBusy?: boolean
+  /** 繁體樹傳 zh-Hant（UI 文案与规则版正文一并轉繁；AI 全文由 locale 直出） */
+  locale?: SiteLang
 }) {
+  const L = (s: string) => localize(s, locale)
   const target = data.liuNian.find(y => y.year === data.targetYear)
-  const gender = data.input.gender === 1 ? '男' : '女'
+  const gender = data.input.gender === 1 ? L('男') : L('女')
   const pillarLine = (pl: Pillar) => pl.ganZhi
   // ★ 付费用户拿到规则版兜底（AI 结果未过合规校验）时，标签旁必须给出口，否则只能要求退款
   const ruleVersion = isRuleVersion(data.aiSource)
@@ -85,14 +90,14 @@ export default function LiunianResultView({ data, onRegen, regenBusy }: {
       <div className="hw-c-box hw-c-boxLg">
         <div className="flex flex-wrap items-center gap-3 mb-4">
           <h2 className="hw-c-h1">
-            {data.targetYear}年 · {target?.ganZhi}年流年详批
+            {data.targetYear}{L('年')} · {target?.ganZhi}{L('年流年详批')}
           </h2>
           {target && (
             <span className={`px-3 py-1 rounded-full border text-sm font-medium ${TAG_STYLE[target.tag] || TAG_STYLE['一般']}`}>
-              {target.tag}
+              {L(target.tag)}
             </span>
           )}
-          <span className="text-xs text-ink-light/60 ml-auto">{data.aiSource}</span>
+          <span className="text-xs text-ink-light/60 ml-auto">{L(data.aiSource)}</span>
         </div>
         {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
         {ruleVersion && onRegen && (
@@ -103,50 +108,50 @@ export default function LiunianResultView({ data, onRegen, regenBusy }: {
               disabled={regenBusy}
               className="px-4 py-1.5 rounded-full border border-gold/20 bg-white text-sm font-medium text-ink hover:border-ink transition disabled:opacity-50"
             >
-              {regenBusy ? '重新生成中...' : '免费重新生成'}
+              {regenBusy ? L('重新生成中...') : L('免费重新生成')}
             </button>
-            <span className="text-xs text-ink-light/50">不额外收费 · AI 将重写全文并覆盖本报告</span>
+            <span className="text-xs text-ink-light/50">{L('不额外收费 · AI 将重写全文并覆盖本报告')}</span>
           </div>
         )}
 
         {/* 命主与四柱摘要 */}
         <div className="hw-c-tile text-sm">
           <p className="mb-2 text-ink-light">
-            {gender}命 · 公历 {data.input.year}-{data.input.month}-{data.input.day} {data.input.hour}时
-            {data.input.minute > 0 ? `${data.input.minute}分` : ''}
-            <span className="text-ink-light/60 ml-2">农历 {data.lunarDate}</span>
+            {gender}{L('命 · 公历')} {data.input.year}-{data.input.month}-{data.input.day} {data.input.hour}{L('时')}
+            {data.input.minute > 0 ? `${data.input.minute}${L('分')}` : ''}
+            <span className="text-ink-light/60 ml-2">{L('农历')} {L(data.lunarDate)}</span>
           </p>
           <p className="tracking-widest text-lg font-semibold text-ink mb-2">
             {pillarLine(data.pillars.year)}　{pillarLine(data.pillars.month)}　
             {pillarLine(data.pillars.day)}　{pillarLine(data.pillars.hour)}
           </p>
           <p className="text-ink-light">
-            日主 <span className="font-semibold">{data.dayMaster}</span>
-            　旺衰 <span className="font-semibold">{data.wangShuai}</span>
-            　格局 <span className="font-semibold">{data.geJu}</span>
-            　胎元 {data.taiYuan}　命宫 {data.mingGong}
+            {L('日主')} <span className="font-semibold">{data.dayMaster}</span>
+            　{L('旺衰')} <span className="font-semibold">{L(data.wangShuai)}</span>
+            　{L('格局')} <span className="font-semibold">{L(data.geJu)}</span>
+            　{L('胎元')} {data.taiYuan}　{L('命宫')} {data.mingGong}
           </p>
           <p className="text-ink-light mt-1">
-            喜用五行：
+            {L('喜用五行：')}
             {data.favorable.map(w => (
-              <span key={w} className={`font-semibold mx-0.5 ${WX_COLOR[w] || ''}`}>{w}</span>
+              <span key={w} className={`font-semibold mx-0.5 ${WX_COLOR[w] || ''}`}>{L(w)}</span>
             ))}
-            　忌神：{data.unfavorable.join('、') || '无'}
+            　{L('忌神：')}{data.unfavorable.map(L).join('、') || L('无')}
           </p>
           {data.dstNotice && (
-            <p className="text-xs text-ink/70 mt-2">提示：{data.dstNotice}</p>
+            <p className="text-xs text-ink/70 mt-2">{L('提示：')}{L(data.dstNotice)}</p>
           )}
         </div>
 
         {/* 当前大运 */}
         {data.curDaYun && (
           <div className="mt-3 text-sm text-ink/70 bg-gold/5 border border-gold/20 rounded-[16px] p-3">
-            <span className="font-semibold">当前大运：</span>
-            {data.curDaYun.ganZhi}（{data.curDaYun.startYear}-{data.curDaYun.endYear}年，{data.curDaYun.startAge}岁起）
-            　运干{data.curDaYun.shiShenGan}、运支本气{data.curDaYun.shiShenZhi}
-            　倾向【{data.curDaYun.tag}】
+            <span className="font-semibold">{L('当前大运：')}</span>
+            {data.curDaYun.ganZhi}（{data.curDaYun.startYear}-{data.curDaYun.endYear}{L('年，')}{data.curDaYun.startAge}{L('岁起')}）
+            　{L('运干')}{L(data.curDaYun.shiShenGan)}{L('、运支本气')}{L(data.curDaYun.shiShenZhi)}
+            　{L('倾向【')}{L(data.curDaYun.tag)}{L('】')}
             {data.curDaYun.structuralIssues?.length ? (
-              <span className="text-ink/70">　结构病：{data.curDaYun.structuralIssues.join('；')}</span>
+              <span className="text-ink/70">　{L('结构病：')}{data.curDaYun.structuralIssues.map(L).join('；')}</span>
             ) : null}
           </div>
         )}
@@ -154,7 +159,7 @@ export default function LiunianResultView({ data, onRegen, regenBusy }: {
 
       {/* 三年流年概览 */}
       <div className="hw-c-box hw-c-boxLg">
-        <h3 className="hw-c-h3">流年概览（过去应期回看 + 未来三年）</h3>
+        <h3 className="hw-c-h3">{L('流年概览（过去应期回看 + 未来三年）')}</h3>
         <div className="grid md:grid-cols-3 gap-3">
           {data.liuNian.map(y => {
             const isTarget = y.year === data.targetYear
@@ -163,16 +168,16 @@ export default function LiunianResultView({ data, onRegen, regenBusy }: {
               <div key={y.year}
                 className={`hw-c-tile text-sm ${isTarget ? 'hw-c-tileOn' : ''} ${isPast ? 'opacity-80' : ''}`}>
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-bold text-ink">{y.year}年</span>
+                  <span className="font-bold text-ink">{y.year}{L('年')}</span>
                   <span className="tracking-wider">{y.ganZhi}</span>
                   <span className={`px-2 py-0.5 rounded border text-xs ${TAG_STYLE[y.tag] || TAG_STYLE['一般']}`}>
-                    {y.tag}
+                    {L(y.tag)}
                   </span>
-                  {isPast && <span className="text-xs text-ink-light/60 ml-auto">已过·应期</span>}
-                  {isTarget && <span className="text-xs text-ink-light ml-auto">本次详批</span>}
+                  {isPast && <span className="text-xs text-ink-light/60 ml-auto">{L('已过·应期')}</span>}
+                  {isTarget && <span className="text-xs text-ink-light ml-auto">{L('本次详批')}</span>}
                 </div>
-                <p className="text-ink-light">{y.shiShenGan}主事 · {y.shiShenZhi}</p>
-                {y.note && <p className="text-ink-light/60 mt-1 text-xs leading-relaxed">{y.note}</p>}
+                <p className="text-ink-light">{L(y.shiShenGan)}{L('主事 ·')} {L(y.shiShenZhi)}</p>
+                {y.note && <p className="text-ink-light/60 mt-1 text-xs leading-relaxed">{L(y.note)}</p>}
               </div>
             )
           })}
@@ -189,9 +194,9 @@ export default function LiunianResultView({ data, onRegen, regenBusy }: {
             <div key={key} className="hw-c-box hw-c-boxLg">
               <h3 className="hw-c-h3 flex items-center gap-2">
                 <span className="w-1.5 h-5 bg-gold rounded-sm inline-block" />
-                {name}
+                {L(name)}
               </h3>
-              <div className="text-ink/70 leading-relaxed whitespace-pre-wrap text-[15px]">{text}</div>
+              <div className="text-ink/70 leading-relaxed whitespace-pre-wrap text-[15px]">{L(text)}</div>
             </div>
           )
         })}
@@ -201,13 +206,13 @@ export default function LiunianResultView({ data, onRegen, regenBusy }: {
       {/* 流月表（当年/明年/后年均有，往年无）；试读时只给标题 + 占位 */}
       {!previewMode && data.liuYue && data.liuYue.length > 0 && (
         <div className="hw-c-box hw-c-boxLg">
-          <h3 className="hw-c-h3">{data.targetYear}年流月节奏（节气换月）</h3>
+          <h3 className="hw-c-h3">{data.targetYear}{L('年流月节奏（节气换月）')}</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-sm">
             {data.liuYue.map(m => (
               <div key={m.month} className={`rounded-[16px] border p-2.5 ${TAG_STYLE[m.tag] || TAG_STYLE['一般']}`}>
-                <p className="font-semibold">{m.month}月 · {m.ganZhi}</p>
-                <p className="text-xs opacity-80">{m.jieQi}起 {m.rangeLabel}</p>
-                <p className="text-xs mt-1">{m.shiShenGan}主事 · {m.tag}</p>
+                <p className="font-semibold">{m.month}{L('月 ·')} {m.ganZhi}</p>
+                <p className="text-xs opacity-80">{L(m.jieQi)}{L('起')} {L(m.rangeLabel)}</p>
+                <p className="text-xs mt-1">{L(m.shiShenGan)}{L('主事 ·')} {L(m.tag)}</p>
               </div>
             ))}
           </div>
@@ -215,23 +220,23 @@ export default function LiunianResultView({ data, onRegen, regenBusy }: {
       )}
       {/* 有流月数据才给锁定卡：往年（超出三年范围）该板块本来就不存在，给卡会误导 */}
       {previewMode && data.liuYue && data.liuYue.length > 0 && (
-        <LockedCard title={`${data.targetYear}年流月节奏（节气换月）`} />
+        <LockedCard title={L(`${data.targetYear}年流月节奏（节气换月）`)} locale={locale} />
       )}
 
       {/* ★ 试读：6 个 AI 板块只给标题 + 模糊占位（route 未生成、未下发全文） */}
       {previewMode && !data.ai && (
         <div className="space-y-3">
-          <h2 className="hw-c-h1">年运深度解读</h2>
-          {AI_SECTIONS.map(({ key, name }) => <LockedCard key={key} title={name} />)}
+          <h2 className="hw-c-h1">{L('年运深度解读')}</h2>
+          {AI_SECTIONS.map(({ key, name }) => <LockedCard key={key} title={L(name)} locale={locale} />)}
         </div>
       )}
 
       {/* ★ 未解锁：锁定区末尾统一解锁按钮 */}
-      {data.locked && <UnlockCta skus={data.locked.skus} preview={data.locked.preview} />}
+      {data.locked && <UnlockCta skus={data.locked.skus} preview={data.locked.preview ? L(data.locked.preview) : undefined} locale={locale} returnTo={locale === 'zh-Hant' ? '/tw/reports' : '/reports'} />}
 
       {/* 免责声明 */}
       <p className="text-xs text-ink-light/60 text-center leading-relaxed">
-        本报告由规则引擎排盘定喜忌、AI 据事实撰写解读，为倾向性参考，非确定性结论，不构成任何重大决策依据；重大事项请结合实际理性判断。
+        {L('本报告由规则引擎排盘定喜忌、AI 据事实撰写解读，为倾向性参考，非确定性结论，不构成任何重大决策依据；重大事项请结合实际理性判断。')}
       </p>
     </div>
   )

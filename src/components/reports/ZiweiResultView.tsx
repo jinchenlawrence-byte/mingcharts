@@ -8,6 +8,8 @@ import type { ZiweiAIReport } from '@/lib/aiZiwei'
 import { isRuleVersion } from '@/lib/reportGate'
 import { PREVIEW_FREE } from '@/lib/reportPreview'
 import { LockedCard, UnlockCta } from '@/components/reports/PreviewLock'
+import { localize } from '@/lib/hant'
+import type { SiteLang } from '@/lib/lang'
 
 export interface ZiweiResultData {
   chart: ZwChart
@@ -67,12 +69,15 @@ const SECTIONS: Array<[keyof ZiweiAIReport, string]> = [
   ['advice', '趋避建议']
 ]
 
-export default function ZiweiResultView({ data, onRegen, regenBusy }: {
+export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh-Hans' }: {
   data: ZiweiResultData
   /** ★ 规则版兜底时的「重新生成」出口（模块页下传）；回看页无此能力时不传＝不显示 */
   onRegen?: () => void
   regenBusy?: boolean
+  /** 繁體樹傳 zh-Hant（UI 文案与规则版正文一并轉繁；AI 全文由 locale 直出） */
+  locale?: SiteLang
 }) {
+  const L = (s: string) => localize(s, locale)
   const { chart, analysis, ai, aiSource, trueSolar, locked } = data
   const [selected, setSelected] = useState<number | null>(chart.mingIndex)
   // ★ 付费用户拿到规则版兜底（AI 结果未过合规校验）时，标签旁必须给出口，否则只能要求退款
@@ -116,33 +121,33 @@ export default function ZiweiResultView({ data, onRegen, regenBusy }: {
                 }`}>
                 <div className="flex items-baseline justify-between">
                   <span className={`text-xs md:text-sm font-bold ${isMing ? 'text-ink' : 'text-ink/70'}`}>
-                    {p.name}
+                    {L(p.name)}
                   </span>
                   <span className="text-[10px] text-ink-light/60">{p.ganZhi}</span>
                 </div>
                 <div className="mt-0.5 space-y-px">
                   {p.majorStars.length === 0 && (
-                    <div className="text-[10px] md:text-xs text-ink-light/60">空宫</div>
+                    <div className="text-[10px] md:text-xs text-ink-light/60">{L('空宫')}</div>
                   )}
                   {p.majorStars.map((s) => (
                     <div key={s.name} className="flex items-baseline gap-0.5">
                       <span className={`text-[11px] md:text-xs font-medium ${s.mutagen ? MUTAGEN_COLOR[s.mutagen] : 'text-ink'}`}>
-                        {s.name}{s.mutagen ? '·' + s.mutagen : ''}
+                        {L(s.name)}{s.mutagen ? '·' + L(s.mutagen) : ''}
                       </span>
-                      {s.brightness && <span className="text-[9px] text-ink-light/60">{s.brightness}</span>}
+                      {s.brightness && <span className="text-[9px] text-ink-light/60">{L(s.brightness)}</span>}
                     </div>
                   ))}
                 </div>
                 <div className="mt-0.5 text-[9px] md:text-[10px] text-ink-light/60 truncate">
-                  {p.minorStars.slice(0, 4).map((s) => s.name).join(' ')}
+                  {p.minorStars.slice(0, 4).map((s) => L(s.name)).join(' ')}
                   {p.minorStars.length > 4 ? '…' : ''}
                 </div>
                 <div className="mt-0.5 flex flex-wrap gap-0.5">
-                  {isMing && <span className="text-[9px] bg-cinnabar text-white px-1 rounded">命</span>}
-                  {p.isBodyPalace && <span className="text-[9px] bg-indigo-500 text-white px-1 rounded">身</span>}
-                  {isDecadal && <span className="text-[9px] bg-gold/50 text-white px-1 rounded">大限</span>}
-                  {isYearly && <span className="text-[9px] bg-green-600 text-white px-1 rounded">流年</span>}
-                  {isXiaoxian && <span className="text-[9px] bg-paper-dark/300 text-white px-1 rounded">小限</span>}
+                  {isMing && <span className="text-[9px] bg-cinnabar text-white px-1 rounded">{L('命')}</span>}
+                  {p.isBodyPalace && <span className="text-[9px] bg-indigo-500 text-white px-1 rounded">{L('身')}</span>}
+                  {isDecadal && <span className="text-[9px] bg-gold/50 text-white px-1 rounded">{L('大限')}</span>}
+                  {isYearly && <span className="text-[9px] bg-green-600 text-white px-1 rounded">{L('流年')}</span>}
+                  {isXiaoxian && <span className="text-[9px] bg-paper-dark/300 text-white px-1 rounded">{L('小限')}</span>}
                 </div>
               </button>
             )
@@ -151,28 +156,28 @@ export default function ZiweiResultView({ data, onRegen, regenBusy }: {
           {/* 中宫信息 */}
           <div style={{ gridRow: '2 / 4', gridColumn: '2 / 4' }}
             className="hidden md:flex flex-col items-center justify-center rounded-[20px] border border-gold/25 bg-paper-dark/20 p-4 text-center">
-                <div className="hw-c-h3 mb-1">紫微命盘</div>
-            <div className="text-xs text-ink-light mb-2">{chart.lunarDate}</div>
+                <div className="hw-c-h3 mb-1">{L('紫微命盘')}</div>
+            <div className="text-xs text-ink-light mb-2">{L(chart.lunarDate)}</div>
             {trueSolar && (
               <div className="text-[10px] text-purple-500 mb-1">
-                真太阳时：{trueSolar.offsetMin >= 0 ? '+' : ''}{trueSolar.offsetMin} 分钟
+                {L('真太阳时：')}{trueSolar.offsetMin >= 0 ? '+' : ''}{trueSolar.offsetMin} {L('分钟')}
                 （{trueSolar.zone}）
               </div>
             )}
             {trueSolar?.dstNotice && (
               <div className="text-[10px] text-amber-600 mb-1 max-w-[90%]">
-                {trueSolar.dstNotice}
+                {L(trueSolar.dstNotice)}
               </div>
             )}
-            <div className="text-xs text-ink-light">{chart.fiveElementsClass}</div>
-            <div className="text-xs text-ink-light mt-1">命主 {chart.soul} · 身主 {chart.body}</div>
+            <div className="text-xs text-ink-light">{L(chart.fiveElementsClass)}</div>
+            <div className="text-xs text-ink-light mt-1">{L('命主')} {L(chart.soul)} · {L('身主')} {L(chart.body)}</div>
             <div className="mt-3">
               <div className="text-3xl font-bold text-ink/70">{analysis.score}</div>
-              <div className="text-xs text-ink-light">{analysis.scoreLabel}</div>
+              <div className="text-xs text-ink-light">{L(analysis.scoreLabel)}</div>
             </div>
           </div>
         </div>
-        <p className="text-xs text-ink-light/60 text-center mt-3">点击宫位查看详细星曜</p>
+        <p className="text-xs text-ink-light/60 text-center mt-3">{L('点击宫位查看详细星曜')}</p>
       </div>
 
       {/* 选中宫位详情 */}
@@ -183,32 +188,32 @@ export default function ZiweiResultView({ data, onRegen, regenBusy }: {
             return (
               <div>
                 <h3 className="hw-c-h3">
-                  {p.name}宫 · {p.ganZhi}
-                  {p.isBodyPalace && <span className="ml-2 text-xs bg-ink text-white px-2 py-0.5 rounded-full">身宫</span>}
+                  {L(p.name)}{L('宫')} · {p.ganZhi}
+                  {p.isBodyPalace && <span className="ml-2 text-xs bg-ink text-white px-2 py-0.5 rounded-full">{L('身宫')}</span>}
                 </h3>
                 <div className="grid md:grid-cols-2 gap-3 text-sm">
                   <div>
-                    <div className="text-xs text-ink-light/60 mb-1">主星</div>
+                    <div className="text-xs text-ink-light/60 mb-1">{L('主星')}</div>
                     {p.majorStars.length === 0 ? (
-                      <div className="text-ink-light/60">空宫，借对宫主星为用：
-                        {chart.palaces[(p.index + 6) % 12].majorStars.map((s) => s.name).join('、') || '对宫亦空'}
+                      <div className="text-ink-light/60">{L('空宫，借对宫主星为用：')}
+                        {chart.palaces[(p.index + 6) % 12].majorStars.map((s) => L(s.name)).join('、') || L('对宫亦空')}
                       </div>
                     ) : (
                       p.majorStars.map((s) => (
                         <span key={s.name} className={`mr-2 ${s.mutagen ? MUTAGEN_COLOR[s.mutagen] + ' font-semibold' : ''}`}>
-                          {s.name}{s.brightness ? '(' + s.brightness + ')' : ''}{s.mutagen ? '化' + s.mutagen : ''}
+                          {L(s.name)}{s.brightness ? '(' + L(s.brightness) + ')' : ''}{s.mutagen ? L('化') + L(s.mutagen) : ''}
                         </span>
                       ))
                     )}
                   </div>
                   <div>
-                    <div className="text-xs text-ink-light/60 mb-1">辅星杂曜</div>
+                    <div className="text-xs text-ink-light/60 mb-1">{L('辅星杂曜')}</div>
                     <div className="text-ink/70">
-                      {[...p.minorStars.map((s) => s.name), ...p.adjectiveStars].join('、') || '无'}
+                      {[...p.minorStars.map((s) => L(s.name)), ...p.adjectiveStars.map(L)].join('、') || L('无')}
                     </div>
                   </div>
                 </div>
-                <div className="text-xs text-ink-light/60 mt-2">长生十二神：{p.changsheng12}　|　大限年龄：{p.decadalRange[0]}-{p.decadalRange[1]}岁</div>
+                <div className="text-xs text-ink-light/60 mt-2">{L('长生十二神：')}{L(p.changsheng12)}　|　{L('大限年龄：')}{p.decadalRange[0]}-{p.decadalRange[1]}{L('岁')}</div>
               </div>
             )
           })()}
@@ -217,14 +222,14 @@ export default function ZiweiResultView({ data, onRegen, regenBusy }: {
 
       {/* 格局 */}
       <div className="hw-c-box hw-c-boxLg">
-        <h3 className="hw-c-h3">传统格局</h3>
+        <h3 className="hw-c-h3">{L('传统格局')}</h3>
         <div className="space-y-2">
           {analysis.patterns.map((p) => (
             <div key={p.name} className="flex items-start gap-2">
-              <span className={`text-xs px-2 py-0.5 rounded mt-0.5 ${PATTERN_BADGE[p.level]}`}>{p.level}</span>
+              <span className={`text-xs px-2 py-0.5 rounded mt-0.5 ${PATTERN_BADGE[p.level]}`}>{L(p.level)}</span>
               <div>
-                <span className="font-medium text-ink">{p.name}</span>
-                <span className="text-sm text-ink-light ml-2">{p.note}</span>
+                <span className="font-medium text-ink">{L(p.name)}</span>
+                <span className="text-sm text-ink-light ml-2">{L(p.note)}</span>
               </div>
             </div>
           ))}
@@ -233,14 +238,14 @@ export default function ZiweiResultView({ data, onRegen, regenBusy }: {
 
       {/* 生年四化 */}
       <div className="hw-c-box hw-c-boxLg">
-        <h3 className="hw-c-h3">生年四化</h3>
+        <h3 className="hw-c-h3">{L('生年四化')}</h3>
         <div className="grid md:grid-cols-2 gap-3">
           {analysis.transforms.map((t) => (
             <div key={t.star} className="rounded-md border border-gold/15 p-3">
               <div className={`font-semibold ${MUTAGEN_COLOR[t.type]}`}>
-                {t.star}化{t.type} · {t.palace}宫
+                {L(t.star)}{L('化')}{L(t.type)} · {L(t.palace)}{L('宫')}
               </div>
-              <p className="text-sm text-ink-light mt-1">{t.note}</p>
+              <p className="text-sm text-ink-light mt-1">{L(t.note)}</p>
             </div>
           ))}
         </div>
@@ -249,26 +254,26 @@ export default function ZiweiResultView({ data, onRegen, regenBusy }: {
       {/* 大限/流年（试读：仅免费板块全量，其余锁定） */}
       {freePeriods.map(({ key, p }) => (
         <div key={key} className="hw-c-box hw-c-boxLg">
-            <h3 className="hw-c-h3">{p.title}</h3>
+            <h3 className="hw-c-h3">{L(p.title)}</h3>
           <div className="text-sm text-ink/70 mb-2">
-            {p.ganZhi}，命宫坐原局<span className="font-medium">{p.basePalace}</span>宫
-            {p.range && <span className="text-ink-light/60">（{p.range}）</span>}
+            {p.ganZhi}{L('，命宫坐原局')}<span className="font-medium">{L(p.basePalace)}</span>{L('宫')}
+            {p.range && <span className="text-ink-light/60">（{L(p.range)}）</span>}
           </div>
-          <div className="text-sm text-ink/70 mb-2">星曜：{p.stars.join('、')}</div>
-          <div className="text-sm text-ink/70 mb-2">四化：{p.transforms.join('；')}</div>
+          <div className="text-sm text-ink/70 mb-2">{L('星曜：')}{p.stars.map(L).join('、')}</div>
+          <div className="text-sm text-ink/70 mb-2">{L('四化：')}{p.transforms.map(L).join('；')}</div>
           <div className="flex flex-wrap gap-1">
             {p.tags.map((t) => (
-              <span key={t} className="text-xs bg-purple-100 text-ink/70 px-2 py-0.5 rounded">{t}</span>
+              <span key={t} className="text-xs bg-purple-100 text-ink/70 px-2 py-0.5 rounded">{L(t)}</span>
             ))}
           </div>
         </div>
       ))}
       {/* ★ 试读：大限 / 流年只给标题 + 模糊占位（DOM 不含真实正文） */}
-      {lockedPeriods.map(({ key, p }) => <LockedCard key={key} title={p.title} />)}
+      {lockedPeriods.map(({ key, p }) => <LockedCard key={key} title={L(p.title)} locale={locale} />)}
 
       {ai && (
         <div className="space-y-4">
-          <h2 className="hw-c-h1">深度解读 · {aiSource}</h2>
+          <h2 className="hw-c-h1">{L('深度解读 ·')} {L(aiSource)}</h2>
           {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
           {ruleVersion && onRegen && (
             <div className="flex flex-wrap items-center gap-3">
@@ -278,9 +283,9 @@ export default function ZiweiResultView({ data, onRegen, regenBusy }: {
                 disabled={regenBusy}
                 className="px-4 py-1.5 rounded-full border border-gold/20 bg-white text-sm font-medium text-ink hover:border-ink transition disabled:opacity-50"
               >
-                {regenBusy ? '重新生成中...' : '免费重新生成'}
+                {regenBusy ? L('重新生成中...') : L('免费重新生成')}
               </button>
-              <span className="text-xs text-ink-light/50">不额外收费 · AI 将重写全文并覆盖本报告</span>
+              <span className="text-xs text-ink-light/50">{L('不额外收费 · AI 将重写全文并覆盖本报告')}</span>
             </div>
           )}
           {/* ★ 按【存在键】渲染（2026-10-18）：老报告（库里 6 键）照旧显示原有板块，
@@ -292,8 +297,8 @@ export default function ZiweiResultView({ data, onRegen, regenBusy }: {
             })
             .map(([key, title]) => (
               <div key={key} className="hw-c-box hw-c-boxLg">
-                <h3 className="hw-c-h3">{title}</h3>
-                <p className="text-sm text-ink/70 leading-relaxed whitespace-pre-line">{ai[key]}</p>
+                <h3 className="hw-c-h3">{L(title)}</h3>
+                <p className="text-sm text-ink/70 leading-relaxed whitespace-pre-line">{L(ai[key] as string)}</p>
               </div>
             ))}
         </div>
@@ -302,13 +307,13 @@ export default function ZiweiResultView({ data, onRegen, regenBusy }: {
       {/* ★ 试读：12 个 AI 板块只给标题 + 模糊占位（route 未生成、未下发全文） */}
       {previewMode && !ai && (
         <div className="space-y-3">
-          <h2 className="hw-c-h1">深度解读</h2>
-          {SECTIONS.map(([key, title]) => <LockedCard key={key} title={title} />)}
+          <h2 className="hw-c-h1">{L('深度解读')}</h2>
+          {SECTIONS.map(([key, title]) => <LockedCard key={key} title={L(title)} locale={locale} />)}
         </div>
       )}
 
       {/* ★ 未解锁：锁定区末尾统一解锁按钮 */}
-      {locked && <UnlockCta skus={locked.skus} preview={locked.preview} />}
+      {locked && <UnlockCta skus={locked.skus} preview={locked.preview ? L(locked.preview) : undefined} locale={locale} returnTo={locale === 'zh-Hant' ? '/tw/reports' : '/reports'} />}
     </div>
   )
 }

@@ -5,10 +5,12 @@ import ShareLink from '@/components/ShareLink'
 import PersonalDailySection from '@/components/PersonalDailySection'
 import { dailySignFor } from '@/lib/daily'
 import { DAILY_SIGN_DAY_BOUNDARY } from '@/data/daily-signs'
+import { hantAlternates } from '@/lib/hant-seo'
 
 export const metadata = {
   title: '每日日签：今日一省 · 免费通用日签',
   description: '按当日干支取传统历法意象的每日一省，非吉凶预测；子时（23:00）起为次日，免费查看与分享。',
+  alternates: { canonical: '/daily', languages: hantAlternates('/daily') },
 }
 
 // 常用时区建议（可键入任意 IANA 时区）

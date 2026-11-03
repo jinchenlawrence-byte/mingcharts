@@ -62,8 +62,7 @@ export default function HantArticleIndex() {
           <p className="text-sm text-ink/70 mb-4">
             學完理論知識，輸入您的出生時辰，獲取屬於自己的八字命盤和完整命理分析。
           </p>
-          <Link href="/" className="hw-c-btnBig">立即免費排盤 →</Link>
-          <p className="text-xs text-ink-light/60 mt-2">排盤頁目前為簡體版</p>
+          <Link href="/tw" className="hw-c-btnBig">立即免費排盤 →</Link>
         </div>
       </div>
     </div>

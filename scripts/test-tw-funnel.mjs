@@ -48,21 +48,31 @@ console.log('—— ① 繁体树无 /bazi 链接 ——')
   else ok(`${twFiles.length} 个繁体 tsx 文件中无 href="/bazi"`)
 }
 
-// ---------- ② 每个 CTA 页面都有语言提示 ----------
-console.log('—— ② 语言提示齐全 ——')
+// ---------- ② 每个 CTA 页面都指向繁體排盤入口 ----------
+console.log('—— ② CTA 指向 /tw ——')
 {
-  // 这 5 个文件各有一处正文 CTA（layout 的是导航，不要求小字）
-  const mustHint = [
+  // 繁体补完轮后 /tw 已是真正的排盘首页，原来的「排盘页目前为简体版」提示必须撤掉，
+  // 且所有繁体 CTA 不得再回到简体首页。
+  const mustCta = [
     'src/app/tw/page.tsx',
     'src/app/tw/article/page.tsx',
     'src/app/tw/shengxiao/page.tsx',
     'src/app/tw/shengxiao/[animal]/page.tsx',
     'src/app/tw/shengxiao/[animal]/[year]/page.tsx',
     'src/app/tw/liunian/page.tsx',
+    'src/app/tw/liunian/taisui-biao/page.tsx',
   ]
-  const missing = mustHint.filter((f) => !read(f).includes('目前為簡體版'))
-  if (missing.length) fail(`缺「排盤頁目前為簡體版」提示：${missing.join(', ')}`)
-  else ok(`${mustHint.length} 个 CTA 页面都带语言提示`)
+  // /tw 自身就是排盘首页（表单即入口），不要求它再链回自己
+  const missing = mustCta.filter((f) => {
+    const src = read(f)
+    if (f === 'src/app/tw/page.tsx') return !/action=""|onSubmit=\{handleSubmit\}/.test(src)
+    return !/href="\/tw"/.test(src)
+  })
+  if (missing.length) fail(`繁体 CTA 未指向 /tw：${missing.join(', ')}`)
+  else ok(`${mustCta.length} 个繁体 CTA 页面均可排盘（/tw 表单或指向 /tw）`)
+  const stale = twSrc.filter(({ src }) => src.includes('目前為簡體版'))
+  if (stale.length) fail(`仍保留过期的「排盤頁目前為簡體版」提示：${stale.map(b => b.f).join(', ')}`)
+  else ok('已无「排盤頁目前為簡體版」过期提示')
 }
 
 // ---------- ③ 繁体流年页的年运报告是真链接 ----------

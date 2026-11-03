@@ -1,18 +1,25 @@
-'use client'
+﻿'use client'
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { localize } from '@/lib/hant'
+import type { SiteLang } from '@/lib/lang'
 
 interface BirthFormProps {
   ctaText?: string
   className?: string
+  /** 繁體樹傳 zh-Hant；預設 zh-Hans 保證簡體頁逐字不變 */
+  locale?: SiteLang
+  /** 排盤結果頁路徑（繁體樹傳 /tw/chart） */
+  chartPath?: string
 }
 
 /**
  * 可复用的出生信息排盘表单。
  * 提交后调用 /api/paipan，将结果写入 localStorage 并跳转到 /chart（结果页自带付费解锁）。
  */
-export default function BirthForm({ ctaText = '开始排盘', className = '' }: BirthFormProps) {
+export default function BirthForm({ ctaText = '开始排盘', className = '', locale = 'zh-Hans', chartPath = '/chart' }: BirthFormProps) {
+  const L = (s: string) => localize(s, locale)
   const router = useRouter()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -47,12 +54,12 @@ export default function BirthForm({ ctaText = '开始排盘', className = '' }: 
       const data = await res.json()
       if (data.success) {
         localStorage.setItem('currentChart', JSON.stringify(data.data))
-        router.push('/chart')
+        router.push(chartPath)
       } else {
-        setError(data.error || '排盘失败，请检查输入')
+        setError(data.error || L('排盘失败，请检查输入'))
       }
     } catch {
-      setError('网络错误，请稍后重试')
+      setError(L('网络错误，请稍后重试'))
     } finally {
       setLoading(false)
     }
@@ -62,7 +69,7 @@ export default function BirthForm({ ctaText = '开始排盘', className = '' }: 
     <form onSubmit={handleSubmit} className={`space-y-4 ${className}`}>
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-ink/70 mb-1">年</label>
+          <label className="block text-sm font-medium text-ink/70 mb-1">{L('年')}</label>
           <input
             type="number"
             required
@@ -73,7 +80,7 @@ export default function BirthForm({ ctaText = '开始排盘', className = '' }: 
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink/70 mb-1">月</label>
+          <label className="block text-sm font-medium text-ink/70 mb-1">{L('月')}</label>
           <input
             type="number"
             required
@@ -89,7 +96,7 @@ export default function BirthForm({ ctaText = '开始排盘', className = '' }: 
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-ink/70 mb-1">日</label>
+          <label className="block text-sm font-medium text-ink/70 mb-1">{L('日')}</label>
           <input
             type="number"
             required
@@ -102,7 +109,7 @@ export default function BirthForm({ ctaText = '开始排盘', className = '' }: 
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink/70 mb-1">时</label>
+          <label className="block text-sm font-medium text-ink/70 mb-1">{L('时')}</label>
           <input
             type="number"
             required
@@ -118,7 +125,7 @@ export default function BirthForm({ ctaText = '开始排盘', className = '' }: 
 
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label className="block text-sm font-medium text-ink/70 mb-1">分</label>
+          <label className="block text-sm font-medium text-ink/70 mb-1">{L('分')}</label>
           <input
             type="number"
             min="0"
@@ -130,23 +137,23 @@ export default function BirthForm({ ctaText = '开始排盘', className = '' }: 
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-ink/70 mb-1">性别</label>
+          <label className="block text-sm font-medium text-ink/70 mb-1">{L('性别')}</label>
           <select
             className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
             value={formData.gender}
             onChange={(e) => setFormData({ ...formData, gender: parseInt(e.target.value) as 1 | 0 })}
           >
-            <option value={1}>男</option>
-            <option value={0}>女</option>
+            <option value={1}>{L('男')}</option>
+            <option value={0}>{L('女')}</option>
           </select>
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-ink/70 mb-1">出生地（可选）</label>
+        <label className="block text-sm font-medium text-ink/70 mb-1">{L('出生地（可选）')}</label>
         <input
           type="text"
-          placeholder="如：杭州"
+          placeholder={L('如：杭州')}
           className="w-full px-3 py-2 border border-gold/20 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-500"
           value={formData.birthPlace}
           onChange={(e) => setFormData({ ...formData, birthPlace: e.target.value })}
@@ -158,7 +165,7 @@ export default function BirthForm({ ctaText = '开始排盘', className = '' }: 
         disabled={loading}
         className="w-full bg-amber-600 text-white py-3 rounded-md font-semibold hover:bg-amber-700 transition disabled:opacity-50"
       >
-        {loading ? '排盘中...' : ctaText}
+        {loading ? L('排盘中...') : L(ctaText)}
       </button>
 
       {error && (
@@ -166,7 +173,7 @@ export default function BirthForm({ ctaText = '开始排盘', className = '' }: 
       )}
 
       <p className="text-xs text-ink-light/60 text-center">
-        排盘结果仅供参考娱乐
+        {L('排盘结果仅供参考娱乐')}
       </p>
     </form>
   )

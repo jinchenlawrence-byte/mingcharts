@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 // AI 追问面板（内嵌 /chart 结果页）—— ask 额度的前端消费方。
 // ★ 追问与付费内容绑定（2026-10-21）：只要有任一付费内容（会员 / 任一报告 / 追问包）才渲染面板；
@@ -10,6 +10,8 @@ import { getSupabase } from '@/lib/supabase'
 import CheckoutButton from '@/components/CheckoutButton'
 import { waffoProductId } from '@/lib/waffo-products'
 import { SKUS, formatPriceUSD, MEMBER_ASK_PER_MONTH, ASK_PER_REPORT, ASK_PER_INVITE } from '@/lib/pricing'
+import { localize } from '@/lib/hant'
+import type { SiteLang } from '@/lib/lang'
 
 interface AskMessage {
   role: 'user' | 'assistant'
@@ -25,12 +27,16 @@ interface AskMessage {
 export default function AskPanel({
   chartId,
   chart,
+  locale = 'zh-Hans',
 }: {
   /** 当前命盘 id（随问答落库作 chart_id；可为空） */
   chartId?: string | null
   /** 整份命盘数据（服务端据此复用命盘事实，防 AI 编造） */
   chart: object
+  /** 繁體樹傳 zh-Hant（面板 UI 文案；AI 回答由 localeDirective 直出） */
+  locale?: SiteLang
 }) {
+  const L = (s: string) => localize(s, locale)
   const [messages, setMessages] = useState<AskMessage[]>([])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
@@ -92,7 +98,7 @@ export default function AskPanel({
       const supabase = getSupabase()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
-        setError('登录状态已失效，请重新登录。')
+        setError(L('登录状态已失效，请重新登录。'))
         setSending(false)
         return
       }
@@ -106,13 +112,13 @@ export default function AskPanel({
         if (data?.code === 'ASK_QUOTA_EXHAUSTED') {
           setExhausted(true)
           if (typeof data?.remaining === 'number') setRemaining(data.remaining)
-          setError(data?.error ?? '追问次数已用完')
+          setError(data?.error ?? L('追问次数已用完'))
         } else if (data?.code === 'ASK_REQUIRES_PAID') {
           // 权限已失效（退款/订阅过期）——直接收起面板
           setAllowed(false)
-          setError(data?.error ?? '追问需先购买任一报告或开通会员')
+          setError(data?.error ?? L('追问需先购买任一报告或开通会员'))
         } else {
-          setError(data?.error ?? '追问失败，请稍后再试')
+          setError(data?.error ?? L('追问失败，请稍后再试'))
         }
         setSending(false)
         return
@@ -130,7 +136,7 @@ export default function AskPanel({
       if (typeof data?.inviteRemaining === 'number') setInviteRemaining(data.inviteRemaining)
       if (typeof data?.remaining === 'number' && data.remaining <= 0) setExhausted(true)
     } catch (e) {
-      setError(e instanceof Error ? e.message : '网络异常，请稍后再试')
+      setError(e instanceof Error ? e.message : L('网络异常，请稍后再试'))
     }
     setSending(false)
   }
@@ -148,26 +154,24 @@ export default function AskPanel({
   return (
     <div className="hw-c-box" style={{ marginTop: 20 }}>
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h3 className="hw-c-secTitle" style={{ margin: 0 }}>追问命理师</h3>
+        <h3 className="hw-c-secTitle" style={{ margin: 0 }}>{L('追问命理师')}</h3>
         {remaining !== null && (
           <span className="text-xs text-ink-light/70">
-            剩余追问次数：<b className="text-ink">{remaining}</b>
+            {L('剩余追问次数：')}<b className="text-ink">{remaining}</b>
             {memberRemaining !== null && memberRemaining > 0 && (
-              <>（含会员本月 <b className="text-ink">{memberRemaining}</b> 次）</>
+              <>（{L('含会员本月')} <b className="text-ink">{memberRemaining}</b> {L('次')}）</>
             )}
             {reportRemaining !== null && reportRemaining > 0 && (
-              <>（含报告赠送 <b className="text-ink">{reportRemaining}</b> 次）</>
+              <>（{L('含报告赠送')} <b className="text-ink">{reportRemaining}</b> {L('次')}）</>
             )}
             {inviteRemaining !== null && inviteRemaining > 0 && (
-              <>（含邀请奖励 <b className="text-ink">{inviteRemaining}</b> 次）</>
+              <>（{L('含邀请奖励')} <b className="text-ink">{inviteRemaining}</b> {L('次')}）</>
             )}
           </span>
         )}
       </div>
       <p className="text-xs text-ink-light/60 mt-2 mb-3">
-        就你的命盘追问具体问题（如「今年事业上有哪些需要留意的地方」）。购买任一报告、开通会员或邀请好友注册后即可使用；
-        每份报告赠 {ASK_PER_REPORT} 次、每邀请 1 人赠 {ASK_PER_INVITE} 次、会员每月 {MEMBER_ASK_PER_MONTH} 次。涉医疗、法律、投资、生死与重大取舍的
-        「该不该」类问题，命理不作判决——只讲倾向，供你自行权衡。
+        {L('就你的命盘追问具体问题（如「今年事业上有哪些需要留意的地方」）。购买任一报告、开通会员或邀请好友注册后即可使用；每份报告赠')} {ASK_PER_REPORT} {L('次、每邀请 1 人赠')} {ASK_PER_INVITE} {L('次、会员每月')} {MEMBER_ASK_PER_MONTH} {L('次。涉医疗、法律、投资、生死与重大取舍的「该不该」类问题，命理不作判决——只讲倾向，供你自行权衡。')}
       </p>
 
       {/* 对话区 */}
@@ -185,11 +189,11 @@ export default function AskPanel({
                 }`}
               >
                 {m.refused && (
-                  <div className="text-xs font-semibold text-amber-600 mb-1">此类问题不以命理作判决</div>
+                  <div className="text-xs font-semibold text-amber-600 mb-1">{L('此类问题不以命理作判决')}</div>
                 )}
-                {m.text}
+                {L(m.text)}
                 {m.disclaimer && (
-                  <div className="text-[11px] text-ink-light/50 mt-2 pt-2 border-t border-black/5">{m.disclaimer}</div>
+                  <div className="text-[11px] text-ink-light/50 mt-2 pt-2 border-t border-black/5">{L(m.disclaimer)}</div>
                 )}
               </div>
             </div>
@@ -197,7 +201,7 @@ export default function AskPanel({
           {sending && (
             <div className="flex justify-start">
               <div className="rounded-2xl px-3 py-2 text-sm bg-white border border-[#dedcf0] text-ink-light/60">
-                命理师正在作答…
+                {L('命理师正在作答…')}
               </div>
             </div>
           )}
@@ -210,15 +214,15 @@ export default function AskPanel({
       {quotaOut && (
         <div className="mb-3 rounded-2xl bg-gold/5 border border-gold/20 p-3">
           <p className="text-sm text-ink/80 mb-2">
-            追问次数已用完。可购买追问包（{SKUS.ask_pack.desc} · {askPrice}）继续提问。
+            {L('追问次数已用完。可购买追问包（')}{L(SKUS.ask_pack.desc)} · {askPrice}{L('）继续提问。')}
           </p>
           <CheckoutButton
             sku="ask_pack"
             available={waffoProductId('ask_pack') !== null}
             requireChart={false}
-            returnTo="/chart"
+            returnTo={locale === 'zh-Hant' ? '/tw/chart' : '/chart'}
           >
-            购买追问包 · {askPrice}
+            {L('购买追问包')} · {askPrice}
           </CheckoutButton>
         </div>
       )}
@@ -230,7 +234,7 @@ export default function AskPanel({
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={(e) => { if (e.key === 'Enter') send() }}
-          placeholder={quotaOut ? '追问次数已用完，购买追问包后可继续' : '输入你的问题…'}
+          placeholder={quotaOut ? L('追问次数已用完，购买追问包后可继续') : L('输入你的问题…')}
           maxLength={300}
           disabled={quotaOut}
           className="flex-1 rounded-full border border-[#dedcf0] px-4 py-2 text-sm outline-none focus:border-[#3a66ff] disabled:bg-paper-dark/30 disabled:cursor-not-allowed"
@@ -241,7 +245,7 @@ export default function AskPanel({
           disabled={sending || quotaOut || !input.trim()}
           className="shrink-0 rounded-full bg-ink text-white px-5 py-2 text-sm font-semibold transition hover:brightness-110 disabled:opacity-60"
         >
-          {sending ? '追问中…' : '追问'}
+          {sending ? L('追问中…') : L('追问')}
         </button>
       </div>
     </div>

@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import LocaleSync from '@/components/LocaleSync'
+import SiteLangSync from '@/components/SiteLangSync'
 import HantLangSwitch from '@/components/HantLangSwitch'
 import WebPageJsonLd from '@/components/WebPageJsonLd'
 import { HANT_HREFLANG, hantAlternates } from '@/lib/hant-seo'
@@ -30,6 +31,7 @@ export default function HantLayout({ children }: { children: React.ReactNode }) 
     <main className="hw-page" lang="zh-Hant">
       {/* 把语言写进 cookie：后续 AI 命书与收银台据此出繁体（见 lib/locale.ts） */}
       <LocaleSync locale="zh-Hant" />
+      <SiteLangSync lang="zh-Hant" />
       {/* ★ 第 35 轮：页面级语言信号。根布局的 WebSite 已去掉 inLanguage（那会在
           208 个繁体页里声明 zh-CN），改由这里逐页声明 zh-Hant。
           路径级的 name 取不到（布局拿不到子页 metadata），故用站点名 + 繁体标识；
@@ -44,10 +46,14 @@ export default function HantLayout({ children }: { children: React.ReactNode }) 
           <Link href="/tw" className="font-bold text-lg text-ink">
             明理
           </Link>
-          <nav className="flex items-center gap-4 text-sm text-ink-light">
+          <nav className="flex flex-wrap items-center gap-4 text-sm text-ink-light">
+            <Link href="/tw" className="hover:text-ink">排盤</Link>
             <Link href="/tw/shengxiao" className="hover:text-ink">生肖</Link>
-            <Link href="/" className="hover:text-ink">排盤</Link>
-            <Link href="/article" className="hover:text-ink">命理知識</Link>
+            <Link href="/tw/hemun" className="hover:text-ink">合婚</Link>
+            <Link href="/tw/ziwei" className="hover:text-ink">紫微</Link>
+            <Link href="/tw/mingshu" className="hover:text-ink">命書</Link>
+            <Link href="/tw/article" className="hover:text-ink">命理知識</Link>
+            <Link href="/tw/pricing" className="hover:text-ink">價目</Link>
             {/* 语言切换：由 lib/hant.twinPath 按当前路径推导（第 33 轮修：原写死 /shengxiao） */}
             <HantLangSwitch />
           </nav>

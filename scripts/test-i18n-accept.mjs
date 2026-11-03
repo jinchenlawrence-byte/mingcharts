@@ -236,7 +236,10 @@ const twCount = urls.filter((u) => u.includes('/tw')).length
 // ★ 第 35 轮 +1：/tw/liunian/2027（2027 丁未年繁体落地页）
 // ★ 第 36 轮 +1：/tw/liunian/2028（2028 戊申年繁体落地页）
 // ★ 第 36 轮 +2：/tw/shensha（神煞總目錄）+ /tw/shensha/check（免費查神煞）
-const expectTw = 9 + SHENGXIAO.length + SHENGXIAO.length * LIUNIAN_YEARS.length
+// ★ 繁体补完轮 +9：/tw/hemun /tw/ziwei /tw/geo /tw/mingshu /tw/mingshu/demo
+//   /tw/daily /tw/pricing /tw/terms /tw/privacy（帳戶／交易頁不進 sitemap）
+// ★ 同一轮 +36：/tw/jieqi + 24 节气 + /tw/jieri + 10 节日 + 2 个索引
+const expectTw = 54 + SHENGXIAO.length + SHENGXIAO.length * LIUNIAN_YEARS.length
   + 1 + ARTICLE_CATEGORIES.length + articles.length
 if (twCount !== expectTw) {
   siteFail++

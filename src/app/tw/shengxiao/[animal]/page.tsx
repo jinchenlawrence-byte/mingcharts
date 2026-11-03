@@ -143,8 +143,7 @@ export default async function HantShengXiaoDetail({ params }: { params: Promise<
         <p className="hw-c-dx">
           相同生肖的人命運千差萬別，因為完整八字包含年、月、日、時四柱。輸入精確的出生時辰，查看專屬命盤。
         </p>
-        <Link href="/" className="hw-c-btnBig">免費排盤 →</Link>
-        <p className="text-xs text-ink-light/60 mt-2">排盤頁目前為簡體版</p>
+        <Link href="/tw" className="hw-c-btnBig">免費排盤 →</Link>
       </div>
 
       <p className="text-center text-xs text-ink-light/40 mt-6">

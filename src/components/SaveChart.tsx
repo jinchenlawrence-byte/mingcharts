@@ -1,10 +1,13 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
+import { localize } from '@/lib/hant'
+import type { SiteLang } from '@/lib/lang'
 
-export default function SaveChart() {
+export default function SaveChart({ locale = 'zh-Hans' }: { locale?: SiteLang }) {
+  const L = (s: string) => localize(s, locale)
   const router = useRouter()
   const [status, setStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [message, setMessage] = useState('')
@@ -21,14 +24,14 @@ export default function SaveChart() {
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       setStatus('error')
-      setMessage('请先登录后再保存')
+      setMessage(L('请先登录后再保存'))
       setTimeout(() => router.push('/auth'), 1200)
       return
     }
     const stored = localStorage.getItem('currentChart')
     if (!stored) {
       setStatus('error')
-      setMessage('没有可保存的排盘结果')
+      setMessage(L('没有可保存的排盘结果'))
       return
     }
     setStatus('saving')
@@ -43,15 +46,15 @@ export default function SaveChart() {
       const out = await res.json().catch(() => null)
       if (res.status === 402) {
         setStatus('error')
-        setMessage(out?.error || '已达命盘上限，开通会员可保存更多')
+        setMessage(out?.error || L('已达命盘上限，开通会员可保存更多'))
         return
       }
-      if (!res.ok || !out?.success) throw new Error(out?.error || '保存失败')
+      if (!res.ok || !out?.success) throw new Error(out?.error || L('保存失败'))
       setStatus('saved')
-      setMessage('保存成功！可在"我的命盘"中查看')
+      setMessage(L('保存成功！可在"我的命盘"中查看'))
     } catch (e: any) {
       setStatus('error')
-      setMessage(e.message || '保存失败')
+      setMessage(e.message || L('保存失败'))
     }
   }
 
@@ -62,7 +65,7 @@ export default function SaveChart() {
         disabled={status === 'saving' || status === 'saved'}
         className="bg-amber-600 text-white px-6 py-2.5 rounded-md font-semibold hover:bg-amber-700 transition disabled:opacity-50"
       >
-        {status === 'saving' ? '保存中...' : status === 'saved' ? '已保存 ✓' : '保存此命盘'}
+        {status === 'saving' ? L('保存中...') : status === 'saved' ? L('已保存 ✓') : L('保存此命盘')}
       </button>
       {message && (
         <p className={`text-sm mt-2 ${status === 'error' ? 'text-red-600' : 'text-green-600'}`}>
@@ -70,7 +73,7 @@ export default function SaveChart() {
         </p>
       )}
       {logged === false && (
-        <p className="text-xs text-ink-light/40 mt-1">登录后可保存命盘并随时查看</p>
+        <p className="text-xs text-ink-light/40 mt-1">{L('登录后可保存命盘并随时查看')}</p>
       )}
     </div>
   )

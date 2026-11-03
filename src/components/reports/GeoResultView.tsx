@@ -11,6 +11,8 @@ import type { GeoAIReport } from '@/lib/aiGeo'
 import { isRuleVersion } from '@/lib/reportGate'
 import { PREVIEW_FREE } from '@/lib/reportPreview'
 import { LockedCard, UnlockCta } from '@/components/reports/PreviewLock'
+import { localize } from '@/lib/hant'
+import type { SiteLang } from '@/lib/lang'
 
 export interface GeoResultData {
   geo: GeoAnalysis
@@ -43,7 +45,8 @@ interface PopupState {
   hit: MarkerHit
 }
 
-function PopupCard({ p, onClose }: { p: PopupState; onClose: () => void }) {
+function PopupCard({ p, onClose, locale }: { p: PopupState; onClose: () => void; locale: SiteLang }) {
+  const L = (s: string) => localize(s, locale)
   const { hit, x, y, below } = p
   const c = hit.city
   const cat = hit.cat
@@ -59,21 +62,21 @@ function PopupCard({ p, onClose }: { p: PopupState; onClose: () => void }) {
       <button onClick={onClose}
         className="absolute top-1 right-2 text-ink-light/60 hover:text-ink-light">×</button>
       <div className="font-bold pr-4" style={{ color: cat.color }}>
-        {cat.icon} {cat.label} · {c.name}
+        {cat.icon} {L(cat.label)} · {L(c.name)}
       </div>
       <div className="text-ink-light/60 mt-1">
-        {c.region}　方位{c.fangLabel}（五行{c.menWx}{c.menWx !== c.fangWx ? `，卦位${c.fangWx}` : ''}）
-        {c.diqi ? <>　地气{c.diqi}（产品设定）</> : ''}
+        {L(c.region)}　{L('方位')}{L(c.fangLabel)}（{L('五行')}{L(c.menWx)}{c.menWx !== c.fangWx ? `，${L('卦位')}${L(c.fangWx)}` : ''}）
+        {c.diqi ? <>　{L('地气')}{L(c.diqi)}（{L('产品设定')}）</> : ''}
       </div>
       <div className="font-semibold mt-1">
-        影响指数 {c.score.toFixed(1)}（{c.impact}）
+        {L('影响指数')} {c.score.toFixed(1)}（{L(c.impact)}）
       </div>
-      <div className="text-ink-light mt-1.5 leading-relaxed">{c.reasons[0]}</div>
+      <div className="text-ink-light mt-1.5 leading-relaxed">{L(c.reasons[0] ?? '')}</div>
     </div>
   )
 }
 
-function GeoMap({ geo }: { geo: GeoAnalysis }) {
+function GeoMap({ geo, locale }: { geo: GeoAnalysis; locale: SiteLang }) {
   const wrapRef = useRef<HTMLDivElement>(null)
   const [popup, setPopup] = useState<PopupState | null>(null)
 
@@ -155,7 +158,7 @@ function GeoMap({ geo }: { geo: GeoAnalysis }) {
         ))}
         {paths.birth && (
           <g>
-            <title>出生地参照 · {paths.birth.name}</title>
+            <title>{localize('出生地参照', locale)} · {localize(paths.birth.name, locale)}</title>
             <circle cx={paths.birth.x} cy={paths.birth.y} r={6.5}
               fill="#374151" stroke="#fff" strokeWidth={1.5} />
             <text x={paths.birth.x} y={paths.birth.y + 3.2}
@@ -163,44 +166,45 @@ function GeoMap({ geo }: { geo: GeoAnalysis }) {
           </g>
         )}
       </svg>
-      {popup && <PopupCard p={popup} onClose={() => setPopup(null)} />}
+      {popup && <PopupCard p={popup} onClose={() => setPopup(null)} locale={locale} />}
     </div>
   )
 }
 
 // ---------- 城市卡片 ----------
-function CategorySection({ cat }: { cat: CategoryResult }) {
+function CategorySection({ cat, locale }: { cat: CategoryResult; locale: SiteLang }) {
+  const L = (s: string) => localize(s, locale)
   return (
     <div className="hw-c-box hw-c-boxLg">
       <h3 className="font-semibold mb-3" style={{ color: cat.color }}>
-        {cat.icon} {cat.label}
+        {cat.icon} {L(cat.label)}
         <span className="text-xs text-ink-light/60 font-normal ml-2">
-          目标{cat.targetGod} · {cat.targetWx}
+          {L('目标')}{L(cat.targetGod)} · {L(cat.targetWx)}
         </span>
       </h3>
       <div className="space-y-3">
         {cat.notice && cat.cities.length < 6 && (
           <div className="text-sm text-ink/70 bg-gold/5 border border-gold/20 rounded-md p-3">
-            {cat.notice}
+            {L(cat.notice)}
           </div>
         )}
         {cat.cities.map((c) => (
           <div key={c.name} className="rounded-md border border-gold/15 p-3">
             <div className="flex flex-wrap items-baseline gap-2">
-              <span className="font-bold text-ink">{c.name}</span>
-              <span className="text-xs text-ink-light/60">{c.region}</span>
+              <span className="font-bold text-ink">{L(c.name)}</span>
+              <span className="text-xs text-ink-light/60">{L(c.region)}</span>
               <span className="text-xs px-2 py-0.5 rounded-full text-white ml-auto"
                 style={{ background: cat.color }}>
-                {c.score.toFixed(1)}分 · {c.impact}
+                {c.score.toFixed(1)}{L('分')} · {L(c.impact)}
               </span>
             </div>
             <div className="text-xs text-ink-light/60 mt-1">
-              方位{c.fangLabel}（五行{c.menWx}{c.menWx !== c.fangWx ? `，卦位${c.fangWx}` : ''}）{c.diqi ? ` · 地气${c.diqi}（产品设定）` : ''}
+              {L('方位')}{L(c.fangLabel)}（{L('五行')}{L(c.menWx)}{c.menWx !== c.fangWx ? `，${L('卦位')}${L(c.fangWx)}` : ''}）{c.diqi ? ` · ${L('地气')}${L(c.diqi)}（${L('产品设定')}）` : ''}
             </div>
             <ul className="mt-2 space-y-1">
               {c.reasons.map((r, i) => (
                 <li key={i} className="text-sm text-ink-light flex gap-1.5">
-                  <span style={{ color: cat.color }}>·</span>{r}
+                  <span style={{ color: cat.color }}>·</span>{L(r)}
                 </li>
               ))}
             </ul>
@@ -211,12 +215,15 @@ function CategorySection({ cat }: { cat: CategoryResult }) {
   )
 }
 
-export default function GeoResultView({ data, onRegen, regenBusy }: {
+export default function GeoResultView({ data, onRegen, regenBusy, locale = 'zh-Hans' }: {
   data: GeoResultData
   /** ★ 规则版兜底时的「重新生成」出口（模块页下传）；回看页无此能力时不传＝不显示 */
   onRegen?: () => void
   regenBusy?: boolean
+  /** 繁體樹傳 zh-Hant（UI 文案与规则版正文一并轉繁；AI 全文由 locale 直出） */
+  locale?: SiteLang
 }) {
+  const L = (s: string) => localize(s, locale)
   const { geo, solar, ai, aiSource, locked } = data
   // ★ 付费用户拿到规则版兜底（AI 结果未过合规校验）时，标签旁必须给出口，否则只能要求退款
   const ruleVersion = isRuleVersion(aiSource)
@@ -236,28 +243,28 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
       <div className="hw-c-box hw-c-boxLg">
         <div className="grid md:grid-cols-2 gap-3 text-sm">
           <div>
-            <span className="text-ink-light/60">日主：</span>
-            <span className="font-medium">{geo.dayMaster}（{geo.dayWx}）· {geo.wangShuai}</span>
+            <span className="text-ink-light/60">{L('日主：')}</span>
+            <span className="font-medium">{geo.dayMaster}（{L(geo.dayWx)}）· {L(geo.wangShuai)}</span>
           </div>
           <div>
-            <span className="text-ink-light/60">喜用五行：</span>
-            <span className="text-green-700 font-medium">{geo.favorableWx.join('、')}</span>
+            <span className="text-ink-light/60">{L('喜用五行：')}</span>
+            <span className="text-green-700 font-medium">{geo.favorableWx.map(L).join('、')}</span>
           </div>
           <div>
-            <span className="text-ink-light/60">宜行方位：</span>
-            <span className="text-green-700">{geo.favorableDirections.join('、')}</span>
+            <span className="text-ink-light/60">{L('宜行方位：')}</span>
+            <span className="text-green-700">{geo.favorableDirections.map(L).join('、')}</span>
           </div>
           <div>
-            <span className="text-ink-light/60">忌行方位：</span>
-            <span className="text-red-600">{geo.unfavorableDirections.join('、')}</span>
+            <span className="text-ink-light/60">{L('忌行方位：')}</span>
+            <span className="text-red-600">{geo.unfavorableDirections.map(L).join('、')}</span>
           </div>
         </div>
         {solar && (
           <div className="mt-2 pt-2 border-t border-gray-100 text-xs text-ink-light">
-            真太阳时 {solar.offsetMin >= 0 ? '+' : ''}{solar.offsetMin} 分钟（{solar.zone}）
+            {L('真太阳时')} {solar.offsetMin >= 0 ? '+' : ''}{solar.offsetMin} {L('分钟')}（{solar.zone}）
             {solar.dstNotice && (
               <span className="ml-2 text-ink/70 bg-gold/5 border border-gold/20 rounded px-1.5 py-0.5">
-                {solar.dstNotice}
+                {L(solar.dstNotice)}
               </span>
             )}
           </div>
@@ -268,7 +275,7 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
       {geo.currentCity && (
         <div className="hw-c-box hw-c-boxLg border-l-4" style={{ borderColor: geo.currentCity.level === '吉' ? '#059669' : geo.currentCity.level === '忌' ? '#dc2626' : '#d97706' }}>
           <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
-            <h2 className="hw-c-h3">现居城市 · {geo.currentCity.name}</h2>
+            <h2 className="hw-c-h3">{L('现居城市 ·')} {L(geo.currentCity.name)}</h2>
             <div className="flex items-center gap-1.5">
               <span className={`text-[11px] rounded px-2 py-0.5 border ${
                 geo.currentCity.level === '吉'
@@ -276,78 +283,78 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
                   : geo.currentCity.level === '忌'
                     ? 'bg-red-50 border-red-200 text-red-700'
                     : 'bg-gold/5 border-gold/20 text-ink/70'
-              }`}>{geo.currentCity.level}</span>
+              }`}>{L(geo.currentCity.level)}</span>
               <span className="text-[11px] rounded px-2 py-0.5 bg-sky-50 border border-sky-200 text-sky-700">
-                影响指数 {geo.currentCity.score} · {geo.currentCity.impact}
+                {L('影响指数')} {geo.currentCity.score} · {L(geo.currentCity.impact)}
               </span>
             </div>
           </div>
           <div className="grid md:grid-cols-2 gap-2 text-sm mb-3">
             <div>
-              <span className="text-ink-light/60">主判五行：</span>
+              <span className="text-ink-light/60">{L('主判五行：')}</span>
               {geo.currentCity.primaryWx ? (
                 <>
-                  <span className="font-medium">{geo.currentCity.primaryWx}</span>
-                  <span className="text-[11px] text-ink-light/60">（来源：{geo.currentCity.primarySource}）</span>
-                  <span className="text-ink-light/60 ml-2">与日主关系：</span>
-                  <span className="font-medium">{geo.currentCity.godRelation}</span>
+                  <span className="font-medium">{L(geo.currentCity.primaryWx)}</span>
+                  <span className="text-[11px] text-ink-light/60">（{L('来源：')}{L(geo.currentCity.primarySource ?? '')}）</span>
+                  <span className="text-ink-light/60 ml-2">{L('与日主关系：')}</span>
+                  <span className="font-medium">{L(geo.currentCity.godRelation ?? '')}</span>
                   <span className={`ml-1 ${geo.currentCity.favorable ? 'text-green-700' : 'text-red-600'}`}>
-                    （{geo.currentCity.favorable ? '喜用' : '忌神'}）
+                    （{geo.currentCity.favorable ? L('喜用') : L('忌神')}）
                   </span>
                 </>
-              ) : <span className="text-ink-light/60">资料不足，无法判定</span>}
+              ) : <span className="text-ink-light/60">{L('资料不足，无法判定')}</span>}
             </div>
             <div className="text-ink-light">
               {geo.currentCity.fangWx
-                ? <>相对出生地：{geo.currentCity.fangLabel}（约 {geo.currentCity.distanceKm} 公里）</>
+                ? <>{L('相对出生地：')}{L(geo.currentCity.fangLabel ?? '')}（{L('约')} {geo.currentCity.distanceKm} {L('公里')}）</>
                 : geo.currentCity.center
-                  ? '与出生地同城近距，按中央土论'
-                  : '未提供出生地，不论相对方位'}
+                  ? L('与出生地同城近距，按中央土论')
+                  : L('未提供出生地，不论相对方位')}
             </div>
           </div>
           <div className="text-sm text-ink/70 space-y-1 mb-3">
             {geo.currentCity.effects.map((f, i) => (
-              <div key={i} className="flex gap-1.5"><span className="text-sky-400">·</span><span>{f}</span></div>
+              <div key={i} className="flex gap-1.5"><span className="text-sky-400">·</span><span>{L(f)}</span></div>
             ))}
           </div>
           <div className="text-xs bg-gold/5 rounded-[16px] border border-gold/15 p-2.5 space-y-0.5">
-            <div className="font-semibold text-ink mb-1">趋避建议</div>
+            <div className="font-semibold text-ink mb-1">{L('趋避建议')}</div>
             {geo.currentCity.advice.map((a, i) => (
-              <div key={i} className="text-ink/80">· {a}</div>
+              <div key={i} className="text-ink/80">· {L(a)}</div>
             ))}
           </div>
           <p className="text-[11px] text-ink-light/60 mt-2">
-            地气影响是长期渐染的过程，以上为趋势参考；福地福人居，心态与努力为本
+            {L('地气影响是长期渐染的过程，以上为趋势参考；福地福人居，心态与努力为本')}
           </p>
         </div>
       )}
 
       {/* 地图 */}
       <div className="hw-c-box hw-c-boxLg p-3 md:p-4">
-        <h2 className="hw-c-h3">命主方位地图</h2>
-        <GeoMap geo={mapGeo} />
+        <h2 className="hw-c-h3">{L('命主方位地图')}</h2>
+        <GeoMap geo={mapGeo} locale={locale} />
         <div className="flex flex-wrap gap-3 mt-3 text-xs text-ink-light/60">
           {freeCats.map((c) => (
             <span key={c.key} className="flex items-center gap-1">
               <span className="w-3 h-3 rounded-full inline-block" style={{ background: c.color }} />
-              {c.label}
+              {L(c.label)}
             </span>
           ))}
           <span className="flex items-center gap-1">
-            <span className="w-3 h-3 rounded-full inline-block bg-gray-700" />出生地
+            <span className="w-3 h-3 rounded-full inline-block bg-gray-700" />{L('出生地')}
           </span>
         </div>
       </div>
 
       {/* 城市明细（试读：仅 career 类别全量，其余锁定） */}
       {freeCats.map((cat) => (
-        <CategorySection key={cat.key} cat={cat} />
+        <CategorySection key={cat.key} cat={cat} locale={locale} />
       ))}
-      {lockedCats.map((cat) => <LockedCard key={cat.key} title={`${cat.icon} ${cat.label}`} />)}
+      {lockedCats.map((cat) => <LockedCard key={cat.key} title={`${cat.icon} ${L(cat.label)}`} locale={locale} />)}
 
       {ai && (
         <div className="space-y-4">
-          <h2 className="hw-c-h1">深度解读 · {aiSource}</h2>
+          <h2 className="hw-c-h1">{L('深度解读 ·')} {L(aiSource)}</h2>
           {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
           {ruleVersion && onRegen && (
             <div className="flex flex-wrap items-center gap-3">
@@ -357,9 +364,9 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
                 disabled={regenBusy}
                 className="px-4 py-1.5 rounded-full border border-gold/20 bg-white text-sm font-medium text-ink hover:border-ink transition disabled:opacity-50"
               >
-                {regenBusy ? '重新生成中...' : '免费重新生成'}
+                {regenBusy ? L('重新生成中...') : L('免费重新生成')}
               </button>
-              <span className="text-xs text-ink-light/50">不额外收费 · AI 将重写全文并覆盖本报告</span>
+              <span className="text-xs text-ink-light/50">{L('不额外收费 · AI 将重写全文并覆盖本报告')}</span>
             </div>
           )}
           {([
@@ -373,8 +380,8 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
             ['迁居开运', ai.advice]
           ] as [string, string][]).filter(([, text]) => text).map(([title, text]) => (
             <div key={title} className="hw-c-box hw-c-boxLg">
-              <h3 className="hw-c-h3">{title}</h3>
-              <p className="text-sm text-ink/70 leading-relaxed whitespace-pre-line">{text}</p>
+              <h3 className="hw-c-h3">{L(title)}</h3>
+              <p className="text-sm text-ink/70 leading-relaxed whitespace-pre-line">{L(text)}</p>
             </div>
           ))}
         </div>
@@ -383,16 +390,16 @@ export default function GeoResultView({ data, onRegen, regenBusy }: {
       {/* ★ 试读：8 个 AI 板块只给标题 + 模糊占位（route 未生成、未下发全文） */}
       {previewMode && !ai && (
         <div className="space-y-4">
-          <h2 className="hw-c-h1">深度解读</h2>
+          <h2 className="hw-c-h1">{L('深度解读')}</h2>
           {[
             '方位总论', '现居城市影响', '财富之城', '事业之城',
             '贵人之城', '安居之城', '才华之城', '迁居开运'
-          ].map(title => <LockedCard key={title} title={title} />)}
+          ].map(title => <LockedCard key={title} title={L(title)} locale={locale} />)}
         </div>
       )}
 
       {/* ★ 未解锁：锁定区末尾统一解锁按钮 */}
-      {locked && <UnlockCta skus={locked.skus} preview={locked.preview} />}
+      {locked && <UnlockCta skus={locked.skus} preview={locked.preview ? L(locked.preview) : undefined} locale={locale} returnTo={locale === 'zh-Hant' ? '/tw/reports' : '/reports'} />}
     </div>
   )
 }

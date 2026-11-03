@@ -1,0 +1,280 @@
+'use client';
+// ★ 登录/注册页（2026-10-17 风格统一）：接入 hw- 设计语言（胶囊双标签＝登录/注册）
+// 纪律：
+//   · Turnstile 三态（token/加载中/失败重试）、withTimeout、friendlyAuthError、
+//     忘记密码 try/finally 防账号枚举结构全部不动（test-account-auth.mjs 守护）
+//   · 注册态按设计稿新增：确认密码＋服务条款/隐私政策勾选；邮箱格式、密码长度、
+//     两次密码一致性在页面上提示（客户端校验，不打接口）
+//   · Google 第三方登录（2026-10-20，主攻海外）为【新增块】，不触及上述既有流程
+import { useState } from 'react';
+import Link from 'next/link';
+import { getSupabase } from '@/lib/supabase';
+import { useRouter } from 'next/navigation';
+import { safeNext } from '@/lib/safeNext';
+import Turnstile from '@/components/Turnstile';
+import { toHant } from '@/lib/hant';
+const H = (s: string) => toHant(s);
+// B 层防恶意注册：Cloudflare Turnstile（配合 Supabase Captcha protection）
+//  - 未配置 NEXT_PUBLIC_TURNSTILE_SITE_KEY 时验证码整体关闭，行为与从前一致
+//  - Supabase 后台开启 Captcha protection 后，三处 auth 调用都必须带 captchaToken
+//  - token 一次性：每次提交完成后 resetKey++ 让 widget 取新 token
+const TURNSTILE_ENABLED = !!process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
+// Google 第三方登录开关（2026-10-20，主攻海外）：
+//   未配置 NEXT_PUBLIC_GOOGLE_AUTH_ENABLED=1 时按钮【不渲染】——
+//   凭据（Google Cloud OAuth 客户端 → Supabase 后台 provider）未就绪前，
+//   绝不暴露一个点了就报错的按钮；配置好后打开开关即可生效。
+//   ★ 密钥只存在 Supabase 后台，本文件只读开关（无任何密钥）。
+const GOOGLE_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === '1';
+// 网络异常兜底（大陆可达性 P0 伴生）：fetch 挂起会让按钮永远「处理中」，
+// 请求超时强制中断并给中文指引；Failed to fetch 类错误映射成可操作的提示。
+const FETCH_TIMEOUT_MS = 20000;
+function withTimeout<T>(p: PromiseLike<T>): Promise<T> {
+    return Promise.race([
+        Promise.resolve(p),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error('请求超时')), FETCH_TIMEOUT_MS)),
+    ]);
+}
+function friendlyAuthError(raw: string): string {
+    if (/timeout|超时/i.test(raw))
+        return '请求超时：请检查网络后重试；若持续失败请更换网络（如切换 Wi‑Fi／流量）';
+    if (/Failed to fetch|NetworkError|fetch failed|Load failed|Network request failed/i.test(raw)) {
+        return '网络连接失败：请检查网络后重试；若持续失败请更换网络（如切换 Wi‑Fi／流量）';
+    }
+    // 登录失败最常见英文报错（账号不存在或密码错）——中文引导注册/找回，避免用户看不懂
+    if (/Invalid login credentials/i.test(raw)) {
+        return '邮箱或密码不正确。新用户请先注册并到邮箱点击确认链接（含垃圾邮件）；已注册请核对密码或用「忘记密码」重置';
+    }
+    return raw;
+}
+export default function AuthPage() {
+    const router = useRouter();
+    const [isLogin, setIsLogin] = useState(true);
+    const [forgot, setForgot] = useState(false);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    // 注册态（设计稿要素）：确认密码＋条款勾选
+    const [confirm, setConfirm] = useState('');
+    const [agree, setAgree] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [message, setMessage] = useState('');
+    const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+    const [tsResetKey, setTsResetKey] = useState(0);
+    // 人机验证加载失败可感知（2026-10-16 手机端静默锁死修复）：脚本被浏览器拦截时
+    // 按钮会因无 token 一直禁用——必须给出解释＋重试入口，不能无声锁死
+    const [tsFailed, setTsFailed] = useState(false);
+    const handleTsToken = (t: string | null) => {
+        setCaptchaToken(t);
+        if (t)
+            setTsFailed(false);
+    };
+    const retryTurnstile = () => {
+        setTsFailed(false);
+        setTsResetKey((k) => k + 1);
+    };
+    // 加载中占位：启用验证但尚无 token 且未失败——禁用按钮必须有解释，不能无声
+    const tsPending = TURNSTILE_ENABLED && !captchaToken && !tsFailed;
+    // 双标签切换（设计稿要素）：切换即清空上一轮的提示
+    const switchMode = (login: boolean) => {
+        setIsLogin(login);
+        setMessage('');
+    };
+    // 注册态客户端校验：邮箱格式 / 密码长度 / 两次密码一致 / 条款勾选——页内提示，不打接口
+    const validateRegister = (): string => {
+        if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+            return '邮箱格式不正确，请检查后重试';
+        if (password.length < 6)
+            return '密码长度至少 6 位';
+        if (confirm !== password)
+            return '两次输入的密码不一致';
+        if (!agree)
+            return '请先阅读并勾选同意服务条款与隐私政策';
+        return '';
+    };
+    // 忘记密码（HANDOFF-密码重置与账号设置 §一）：
+    // 走 Supabase 原生 resetPasswordForEmail，邮件链接回跳 /reset-password 设新密码。
+    // ★ redirectTo 与 Supabase Redirect URLs allowlist 中登记的地址一致（生产 https://www.mingcharts.com/reset-password）。
+    // ★★ 防账号枚举（§一-1.1 ②）：无论该邮箱是否已注册、调用成败，一律给同一句提示——
+    //     不 throw、不把 error 展示给用户。
+    const handleForgot = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setLoading(true);
+        setMessage('');
+        const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/reset-password`;
+        // ★ 防账号枚举纪律（§一-1.1 ②）：无 catch——成败都不读 error、不改变提示文案。
+        //   try/finally 保证请求挂起被 withTimeout 打断（或正常结束）后按钮必然复位，
+        //   治「一直显示处理中」卡死；失败时提示留空由用户自行重试，与原行为一致。
+        try {
+            await withTimeout(getSupabase().auth.resetPasswordForEmail(email, { redirectTo, captchaToken: captchaToken ?? undefined }));
+            setMessage('重置邮件已发送，请查收（含垃圾邮件）；若在垃圾箱请标记「非垃圾邮件」');
+        }
+        finally {
+            setLoading(false);
+            setTsResetKey((k) => k + 1);
+        }
+    };
+    // ★ Google 第三方登录（2026-10-20，主攻海外）：
+    //   · 成功时【不返回】——由 supabase-js 自行跳转 Google，故只在失败分支复位 loading
+    //     （成功路径保持 loading，避免页面跳转前被重复点击）
+    //   · 复用既有 withTimeout / friendlyAuthError；★ 不传 Turnstile token：
+    //     OAuth 端点不接受 captchaToken，Google 侧自带风控
+    //   · 回跳落 /auth/callback（与邮件确认同一路由），next 经 safeNext 白名单校验
+    const handleGoogle = async () => {
+        setLoading(true);
+        setMessage('');
+        try {
+            const next = safeNext(new URLSearchParams(window.location.search).get('next'));
+            const redirectTo = `${process.env.NEXT_PUBLIC_APP_URL}/auth/callback?next=${encodeURIComponent(next)}`;
+            const { error } = await withTimeout(getSupabase().auth.signInWithOAuth({
+                provider: 'google',
+                options: {
+                    redirectTo,
+                    // 多账号并存时不静默复用上次账号，避免用户登错号
+                    queryParams: { prompt: 'select_account' },
+                },
+            }));
+            if (error)
+                throw error;
+        }
+        catch (error: any) {
+            setMessage(friendlyAuthError(error?.message || '操作失败'));
+            setLoading(false);
+        }
+    };
+    const handleAuth = async (e: React.FormEvent) => {
+        e.preventDefault();
+        // 注册态先过客户端校验（页内提示，不触发请求）
+        if (!isLogin) {
+            const vErr = validateRegister();
+            if (vErr) {
+                setMessage(vErr);
+                return;
+            }
+        }
+        setLoading(true);
+        setMessage('');
+        try {
+            const supabase = getSupabase();
+            if (isLogin) {
+                const { error } = await withTimeout(supabase.auth.signInWithPassword({
+                    email,
+                    password,
+                    // Supabase JS v2：captcha token 必须走 options.captchaToken——客户端只从这里读并自行组装请求体；
+                    // 顶层直接传 gotrue_meta_security 会被静默丢弃（条件展开还会绕过 TS 多余属性检查，tsc 抓不到）
+                    options: { captchaToken: captchaToken ?? undefined }
+                }));
+                if (error)
+                    throw error;
+                router.push('/tw');
+            }
+            else {
+                const { error } = await withTimeout(supabase.auth.signUp({
+                    email,
+                    password,
+                    options: { captchaToken: captchaToken ?? undefined }
+                }));
+                if (error)
+                    throw error;
+                // 注册成功 ≠ 可直接登录：邮箱验证通过前 Supabase 会拒绝登录，提示里直接讲清楚流程
+                setMessage('注册成功！验证邮件已发送，请查收（含垃圾邮件）并点击邮件里的链接完成验证，再回来登录');
+            }
+        }
+        catch (error: any) {
+            const msg: string = error.message || '操作失败';
+            // 兜底：未验证邮箱就登录时 Supabase 返回英文 "Email not confirmed"，映射成中文引导
+            setMessage(/not confirmed/i.test(msg) ? '邮箱尚未验证：请先查收确认邮件（含垃圾邮件）并点击链接完成验证，再回来登录' : friendlyAuthError(msg));
+        }
+        finally {
+            setLoading(false);
+            setTsResetKey((k) => k + 1);
+        }
+    };
+    return (<main className="hw-page">
+      <div className="hw-wrap hw-c-pg">
+        <div className="hw-auth">
+          <div className="hw-c-box">
+            <h1 className="hw-c-secTitle hw-c-h2C">
+              {forgot ? '找回密码' : (isLogin ? '登录' : '注册')}
+            </h1>
+
+            {/* 双标签（设计稿要素）：登录 / 注册 */}
+            {!forgot && (<div className="hw-tabs">
+                <button type="button" aria-selected={isLogin} onClick={() => switchMode(true)}>{H("登录")}</button>
+                <button type="button" aria-selected={!isLogin} onClick={() => switchMode(false)}>{H("注册")}</button>
+              </div>)}
+
+            {forgot ? (<form onSubmit={handleForgot} className="space-y-4">
+                <div>
+                  <label className="hw-f">{H("注册邮箱")}</label>
+                  <input type="email" required autoComplete="email" className="hw-c-input" value={email} onChange={(e) => setEmail(e.target.value)}/>
+                </div>
+
+                {message && (<p className={`text-sm ${message.includes('成功') || message.includes('已发送') ? 'text-green-600' : 'text-red-600'}`}>
+                    {H(message)}
+                  </p>)}
+
+                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)}/>
+                {tsPending && (<p className="text-xs text-ink-light text-center">{H("正在加载人机验证…")}</p>)}
+                {tsFailed && (<div className="text-center space-y-2">
+                    <p className="text-sm text-red-600">{H("人机验证加载失败：请关闭浏览器的广告/拦截功能，或更换浏览器（Chrome／Edge／Safari）后重试")} </p>
+                    <button type="button" onClick={retryTurnstile} className="text-sm text-amber-600 hover:text-ink">{H("重试验证")} </button>
+                  </div>)}
+
+                <button type="submit" disabled={loading || (TURNSTILE_ENABLED && !captchaToken)} className="hw-c-btnBig">
+                  {loading ? '发送中...' : '发送重置邮件'}
+                </button>
+              </form>) : (<form onSubmit={handleAuth} noValidate={!isLogin} className="space-y-4">
+                {/* ★ Google 第三方登录（2026-10-20，主攻海外）：开关关闭时不渲染
+                type="button" 保证不触发表单提交；新老账号口径在下方小字讲清 */}
+                {GOOGLE_ENABLED && (<>
+                    <button type="button" onClick={handleGoogle} disabled={loading} className="hw-c-btnBig">
+                      {loading ? '正在跳转…' : '使用 Google 登录'}
+                    </button>
+                    <p className="hw-note text-center">{H("或使用邮箱（新用户将自动创建账号）")}</p>
+                  </>)}
+                <div>
+                  <label className="hw-f">{H("邮箱")}</label>
+                  <input type="email" required autoComplete="email" className="hw-c-input" value={email} onChange={(e) => setEmail(e.target.value)}/>
+                </div>
+
+                <div>
+                  <label className="hw-f">{H("密码")}</label>
+                  <input type="password" required minLength={6} autoComplete={isLogin ? 'current-password' : 'new-password'} className="hw-c-input" value={password} onChange={(e) => setPassword(e.target.value)}/>
+                </div>
+
+                {/* 注册多出的两项（设计稿要素）：确认密码＋服务条款勾选 */}
+                {!isLogin && (<>
+                    <div>
+                      <label className="hw-f">{H("确认密码")}</label>
+                      <input type="password" required minLength={6} autoComplete="new-password" className="hw-c-input" value={confirm} onChange={(e) => setConfirm(e.target.value)}/>
+                    </div>
+                    <label className="hw-agree">
+                      <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)}/>
+                      <span>{H("我已阅读并同意")} <Link href="/tw/terms" className="hw-c-link">{H("服務條款")}</Link>{H("與")} <Link href="/tw/privacy" className="hw-c-link">{H("隱私政策")}</Link>
+                      </span>
+                    </label>
+                  </>)}
+
+                {message && (<p className={`text-sm ${message.includes('成功') ? 'text-green-600' : 'text-red-600'}`}>
+                    {H(message)}
+                  </p>)}
+
+                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)}/>
+                {tsPending && (<p className="text-xs text-ink-light text-center">{H("正在加载人机验证…")}</p>)}
+                {tsFailed && (<div className="text-center space-y-2">
+                    <p className="text-sm text-red-600">{H("人机验证加载失败：请关闭浏览器的广告/拦截功能，或更换浏览器（Chrome／Edge／Safari）后重试")} </p>
+                    <button type="button" onClick={retryTurnstile} className="text-sm text-amber-600 hover:text-ink">{H("重试验证")} </button>
+                  </div>)}
+
+                <button type="submit" disabled={loading || (TURNSTILE_ENABLED && !captchaToken)} className="hw-c-btnBig">
+                  {loading ? '处理中...' : (isLogin ? '登录' : '注册')}
+                </button>
+              </form>)}
+
+            {forgot ? (<button onClick={() => { setForgot(false); setMessage(''); }} className="w-full mt-4 text-amber-600 hover:text-ink text-sm">{H("返回登录")} </button>) : (isLogin && (<button type="button" onClick={() => setForgot(true)} className="w-full mt-4 text-amber-600 hover:text-ink text-sm">{H("忘记密码？")} </button>))}
+
+            <p className="hw-note text-center">{H("登录后可保存你的命盘和已解锁的命书。")}</p>
+          </div>
+        </div>
+      </div>
+    </main>);
+}

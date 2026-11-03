@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 // 免費查神煞（第 36 轮）—— C 端免费钩子，也是 B 端「工具可信度」的展示
 //
@@ -15,7 +15,7 @@ import Link from 'next/link'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import { localize } from '@/lib/hant'
-import type { OutputLocale } from '@/lib/locale'
+import type { SiteLang } from '@/lib/lang'
 import { SHEN_SHA_SLUG } from '@/lib/shenshaArticles'
 import { SHENSHA_GROUPS } from '@/lib/shenshaIndex'
 
@@ -33,7 +33,7 @@ const SLUG_GROUP: Record<string, string> = (() => {
   return m
 })()
 
-export default function ShenshaCheck({ locale }: { locale: OutputLocale }) {
+export default function ShenshaCheck({ locale }: { locale: SiteLang }) {
   const L = (s: string) => localize(s, locale)
   const prefix = locale === 'zh-Hant' ? '/tw' : ''
 

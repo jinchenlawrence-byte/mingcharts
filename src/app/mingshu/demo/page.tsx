@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import demo from '@/data/demo-fatebook.json'
+import { hantAlternates } from '@/lib/hant-seo'
 
 // 公开示例命书（HANDOFF-万字补全与文案返修 §三）
 // ★ 静态资产：本页只读 src/data/demo-fatebook.json 渲染——零 AI 调用、零 IO、零登录门槛。
@@ -10,6 +11,7 @@ export const metadata: Metadata = {
   title: '示例命书 · 虚构出生资料 · 展示前约 30%',
   description:
     '公开示例命书：以虚构出生资料（1990-06-15 10:30 男 上海）生成的真实命书节选。完整展示八字总览、性格天赋、用神喜忌三个板块，其余七个板块为摘要，供你在解锁前了解命书报告的深度与文风。',
+  alternates: { canonical: '/mingshu/demo', languages: hantAlternates('/mingshu/demo') },
 }
 
 // 旧 5 档键集合（供示例快照的大运/流年/流月标签配色；'大防' 死键已清——任务20步骤④，产出者为零）
