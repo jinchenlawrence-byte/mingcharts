@@ -25,34 +25,35 @@ export function aiMaxRetries(): number {
 }
 
 /**
- * 板块 max_tokens 分档（用户拍板 2026-11-03：800/1200/2400 三档）。
+ * 板块 max_tokens 分档（用户拍板 2026-11-03：按板块分档）。
  * 键为各模块的 section key；未列出的键走 fallback（默认 2000）。
- * escalated=true 用于「该板块重试一次」，统一放大 1.5 倍。
+ * escalated=true 用于「该板块重试一次」，放大 2 倍。
  */
 const SECTION_TOKEN_TIERS: Record<string, number> = {
-  // 命书十卷
-  overview: 1200,
-  personality: 1200,
-  yongShen: 1200,
-  geJuAnalysis: 2000,
-  tiaoHou: 2000,
+  // 命书十卷（2026-11-03 实测回填：1200/800 档在「500-600 字」板块仍截断两次，故上调）
+  overview: 1600,
+  personality: 1600,
+  yongShen: 1600,
+  geJuAnalysis: 2400,
+  tiaoHou: 2400,
   daYunAnalysis: 2400,
-  career: 1200,
-  marriage: 1200,
-  children: 800,
-  health: 800,
+  career: 1600,
+  marriage: 1600,
+  children: 1200,
+  health: 1200,
   // 紫微十二卷
   palaces: 2400,
   transforms: 2000,
-  patterns: 1600,
-  decadal: 2000,
-  yearly: 1600,
-  advice: 1200,
+  patterns: 2000,
+  decadal: 2400,
+  yearly: 2000,
+  advice: 1600,
 }
 
 export function sectionMaxTokens(key: string, escalated = false, fallback = 2000): number {
   const base = SECTION_TOKEN_TIERS[key] ?? fallback
-  return escalated ? Math.min(4000, Math.round(base * 1.5)) : base
+  // 截断重试放大 2 倍（cap 4000）：实测 ×1.5 仍可能二次截断
+  return escalated ? Math.min(4000, base * 2) : base
 }
 
 /** 失败可观测（只写日志：不落用户正文、不落密钥） */
