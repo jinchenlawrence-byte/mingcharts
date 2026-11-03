@@ -7,8 +7,13 @@
 
 export type SiteLang = 'zh-Hans' | 'zh-Hant' | 'en'
 
-export const DEFAULT_SITE_LANG: SiteLang = 'en'
+// ★ 2026-11-03 止血：默认语言改为简体。
+//   此前「其他地区兜底英文」会把中国大陆等用户 307 到只有 3 页的 /en，
+//   简体首页的登录入口、排盘表单、完整导航全部消失。默认简体、不跳转。
+export const DEFAULT_SITE_LANG: SiteLang = 'zh-Hans'
 export const LANG_COOKIE = 'mc_lang'
+// 用户已看过语言提示条（或已做过选择）后置位，存在即不再做任何根路径跳转。
+export const LANG_ASKED_COOKIE = 'mc_lang_asked'
 
 const HANS_ALIASES = new Set(['zh-hans', 'zh-cn', 'zh-sg', 'hans', 'cn', 'simplified'])
 const HANT_ALIASES = new Set(['zh-hant', 'zh-tw', 'zh-hk', 'zh-mo', 'hant', 'tw', 'hk', 'traditional'])
@@ -24,15 +29,20 @@ export function parseSiteLang(v: unknown): SiteLang | null {
   return null
 }
 
+// 明确英语地区：只有这些国家才导向 /en；其余（含未知、中国大陆）一律简体。
+const EN_COUNTRIES = new Set(['GB', 'US', 'CA', 'AU', 'NZ', 'IE'])
+
 /**
- * 国家/地区 → 语言（产品规则）：
- *   台湾/香港 → 繁体；马来西亚/新加坡 → 简体；英国 → 英文；其他（含未知）→ 英文兜底。
+ * 国家/地区 → 语言（产品规则，2026-11-03 修订）：
+ *   台湾/香港/澳门 → 繁体；马来西亚/新加坡 → 简体；
+ *   英国/美国/加拿大/澳大利亚/新西兰/爱尔兰 → 英文；
+ *   其他（含未知、中国大陆）→ 简体，且调用方不跳转。
  */
 export function langFromCountry(country?: string | null): SiteLang {
   const cc = (country ?? '').trim().toUpperCase()
-  if (cc === 'TW' || cc === 'HK') return 'zh-Hant'
+  if (cc === 'TW' || cc === 'HK' || cc === 'MO') return 'zh-Hant'
   if (cc === 'MY' || cc === 'SG') return 'zh-Hans'
-  if (cc === 'GB') return 'en'
+  if (EN_COUNTRIES.has(cc)) return 'en'
   return DEFAULT_SITE_LANG
 }
 
@@ -76,8 +86,8 @@ export function triAlternates(hansPath: string): Record<string, string> {
     'zh-HK': hant,
     'zh-MO': hant,
     en,
-    // 与 IP 兜底规则一致：未识别地区默认英文，故 x-default 指英文版
-    'x-default': en,
+    // 与 IP 兜底规则一致：未识别地区默认简体，故 x-default 指简体版
+    'x-default': hans,
   }
 }
 
@@ -94,19 +104,23 @@ export function isCrawler(userAgent?: string | null): boolean {
 }
 
 /**
- * 根路径（且仅根路径）的语言决策：
- *   ① 爬虫 → null（不重定向，交给 hreflang）
- *   ② cookie 优先（用户手动切换过就永久以 cookie 为准）
- *   ③ 无 cookie → 按国家规则；无国家头（本地/非 Vercel）→ 英文兜底
- * 返回目标语言；与当前根（简体）相同时调用方不重定向。
+ * 根路径（且仅根路径）的语言决策（2026-11-03 止血后）：
+ *   ① 爬虫 → 简体，不重定向（交给 hreflang）
+ *   ② 只要存在 mc_lang 或 mc_lang_asked，就永不跳转，直接留在简体根
+ *      （用户已经被一次跳转伤过；语言入口在导航里，由用户自己点）
+ *   ③ 完全没有任何语言 cookie 的首次访问，才按国家规则；
+ *      只有明确地区（TW/HK/MO、GB/US/CA/AU/NZ/IE）会跳，
+ *      中国大陆、未知国家、无国家头 → 简体且不跳
  */
 export function decideRootLang(input: {
   cookie?: string | null
+  askedCookie?: string | null
   country?: string | null
   userAgent?: string | null
 }): SiteLang {
   if (isCrawler(input.userAgent)) return 'zh-Hans'
-  const fromCookie = parseSiteLang(input.cookie)
-  if (fromCookie) return fromCookie
+  const hasChoice =
+    (input.cookie ?? '').trim() !== '' || (input.askedCookie ?? '').trim() !== ''
+  if (hasChoice) return 'zh-Hans'
   return langFromCountry(input.country)
 }

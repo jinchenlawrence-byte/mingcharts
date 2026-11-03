@@ -26,31 +26,36 @@ const {
 console.log('—— ① 国家/地区 → 语言 ——')
 {
   const cases = [
-    ['TW', 'zh-Hant'], ['HK', 'zh-Hant'],
+    ['TW', 'zh-Hant'], ['HK', 'zh-Hant'], ['MO', 'zh-Hant'],
     ['MY', 'zh-Hans'], ['SG', 'zh-Hans'],
-    ['GB', 'en'],
-    ['US', 'en'], ['', 'en'], [null, 'en'], ['unknown', 'en'],
+    ['GB', 'en'], ['US', 'en'], ['CA', 'en'], ['AU', 'en'], ['NZ', 'en'], ['IE', 'en'],
+    ['CN', 'zh-Hans'], ['JP', 'zh-Hans'], ['', 'zh-Hans'], [null, 'zh-Hans'], ['unknown', 'zh-Hans'],
   ]
   let f = 0
   for (const [cc, want] of cases) {
     const got = langFromCountry(cc)
     if (got !== want) { f++; fail(`langFromCountry(${JSON.stringify(cc)}) = ${got}，应为 ${want}`) }
   }
-  if (f === 0) ok(`六类输入全中：TW/HK→繁、MY/SG→简、GB→英、未知/空→英兜底（${cases.length} 例）`)
+  if (f === 0) ok(`地区映射：TW/HK/MO→繁、MY/SG→简、GB/US/CA/AU/NZ/IE→英、其余（含 CN/未知/空）→简（${cases.length} 例）`)
 }
 
-// ---------- ② cookie 覆盖 IP / 爬虫 ----------
-console.log('—— ② cookie 优先与爬虫豁免 ——')
+// ---------- ② 语言 cookie 存在即不跳转 / 爬虫豁免 ----------
+console.log('—— ② 语言 cookie 存在即不跳转、爬虫豁免 ——')
 {
   let f = 0
-  if (decideRootLang({ cookie: 'en', country: 'TW', userAgent: 'Mozilla' }) !== 'en') { f++; fail('cookie=en 时 TW IP 仍应出英文（cookie 优先）') }
-  if (decideRootLang({ cookie: 'zh-Hant', country: 'SG', userAgent: 'Mozilla' }) !== 'zh-Hant') { f++; fail('cookie=zh-Hant 时 SG IP 仍应出繁体（cookie 优先）') }
-  if (decideRootLang({ cookie: 'zh-Hans', country: 'GB', userAgent: 'Mozilla' }) !== 'zh-Hans') { f++; fail('cookie=zh-Hans 时 GB IP 仍应出简体（cookie 优先）') }
+  if (decideRootLang({ cookie: 'en', country: 'TW', userAgent: 'Mozilla' }) !== 'zh-Hans') { f++; fail('已存在 mc_lang=en 时不得跳转，应留在简体根') }
+  if (decideRootLang({ cookie: 'zh-Hant', country: 'SG', userAgent: 'Mozilla' }) !== 'zh-Hans') { f++; fail('已存在 mc_lang=zh-Hant 时不得跳转，应留在简体根') }
+  if (decideRootLang({ askedCookie: '1', country: 'GB', userAgent: 'Mozilla' }) !== 'zh-Hans') { f++; fail('已存在 mc_lang_asked 时不得跳转，应留在简体根') }
+  if (decideRootLang({ cookie: null, country: 'TW', userAgent: 'Mozilla' }) !== 'zh-Hant') { f++; fail('首次访问 TW 应识别为繁体') }
+  if (decideRootLang({ cookie: null, country: 'GB', userAgent: 'Mozilla' }) !== 'en') { f++; fail('首次访问 GB 应识别为英文') }
+  if (decideRootLang({ cookie: null, country: 'MY', userAgent: 'Mozilla' }) !== 'zh-Hans') { f++; fail('首次访问 MY 应识别为简体') }
+  if (decideRootLang({ cookie: null, country: 'CN', userAgent: 'Mozilla' }) !== 'zh-Hans') { f++; fail('中国大陆必须落在简体且不跳转') }
+  if (decideRootLang({ cookie: null, country: null, userAgent: 'Mozilla' }) !== 'zh-Hans') { f++; fail('无国家头必须落在简体且不跳转') }
   if (decideRootLang({ cookie: null, country: 'TW', userAgent: 'Mozilla/5.0 (compatible; Googlebot/2.1)' }) !== 'zh-Hans') { f++; fail('Googlebot 不得被地理重定向（应留在简体）') }
   if (decideRootLang({ cookie: null, country: 'TW', userAgent: 'Bingbot' }) !== 'zh-Hans') { f++; fail('Bingbot 不得被地理重定向') }
   if (isCrawler('Mozilla/5.0 (Linux; Android 6.0.1; Nexus 5X Build/MMB29P) AppleWebKit/537.36 Chrome/41.0 Mobile Safari/537.36 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)') !== true) { f++; fail('isCrawler 未识别 Googlebot 真实 UA') }
   if (isCrawler('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) Safari/605.1.15') !== false) { f++; fail('isCrawler 把普通浏览器误判为爬虫') }
-  if (f === 0) ok('cookie 三种取值均覆盖 IP；Googlebot/Bingbot 不重定向；普通 UA 不误判')
+  if (f === 0) ok('mc_lang / mc_lang_asked 任一存在即不跳；首次访问仅明确地区跳；CN/未知/无头→简；爬虫不跳')
 }
 
 // ---------- ③ 路径互推与直出 ----------
@@ -77,7 +82,7 @@ console.log('—— ③ 路径互推 / 语言树直出 ——')
 console.log('—— ④ 三语 hreflang ——')
 {
   const alt = triAlternates('/pricing')
-  const need = { 'zh-Hans': '/pricing', 'zh-Hant': '/tw/pricing', en: '/en/pricing', 'x-default': '/en/pricing' }
+  const need = { 'zh-Hans': '/pricing', 'zh-Hant': '/tw/pricing', en: '/en/pricing', 'x-default': '/pricing' }
   let f = 0
   for (const [k, v] of Object.entries(need)) if (alt[k] !== v) { f++; fail(`triAlternates['${k}'] = ${alt[k]}，应为 ${v}`) }
   if (!alt['zh-TW'] || !alt['zh-HK'] || !alt['zh-MO']) { f++; fail('triAlternates 缺台/港/澳地区标签') }
@@ -106,9 +111,11 @@ console.log('—— ⑤ proxy 只导向根路径 ——')
   if (!src.includes("matcher: ['/']")) { f++; fail('proxy matcher 不是仅根路径（会重定向深链）') }
   if (!src.includes("x-vercel-ip-country")) { f++; fail('proxy 未读取 x-vercel-ip-country') }
   if (!src.includes('isCrawler') && !src.includes('decideRootLang')) { f++; fail('proxy 未做爬虫豁免（isCrawler / decideRootLang 均未接）') }
-  if (!src.includes('LANG_COOKIE')) { f++; fail('proxy 未读写 mc_lang cookie') }
+  if (!src.includes('LANG_COOKIE')) { f++; fail('proxy 未读取 mc_lang cookie') }
+  if (!src.includes('LANG_ASKED_COOKIE')) { f++; fail('proxy 未读取 mc_lang_asked cookie') }
+  if (/cookies\.set/.test(src)) { f++; fail('proxy 自动跳转不应写语言 cookie（否则第二次访问不再按地区跳）') }
   if (!src.includes('NextResponse.next()')) { f++; fail('proxy 无放行分支') }
-  if (f === 0) ok('matcher 仅 "/"；读 Vercel 国家头；爬虫豁免；cookie 读写；无头时放行不报错')
+  if (f === 0) ok('matcher 仅 "/"；读 Vercel 国家头；爬虫豁免；读两种语言 cookie 且不写；无头时放行不报错')
 }
 
 // ---------- ⑥ 英文路由与 sitemap ----------
@@ -144,10 +151,13 @@ console.log('—— 牙口自检 ——')
 {
   let f = 0
   if (langFromCountry('TW') !== 'zh-Hant') f++
-  if (decideRootLang({ cookie: 'en', country: 'TW', userAgent: '' }) !== 'en') f++
+  if (langFromCountry('MO') !== 'zh-Hant') f++
+  if (langFromCountry('JP') !== 'zh-Hans') f++
+  if (decideRootLang({ cookie: 'en', country: 'TW', userAgent: '' }) !== 'zh-Hans') f++
   if (triAlternates('/x').en !== '/en/x') f++
-  if (f) fail('牙口：映射/覆盖/hreflang 判据样本失效')
-  else ok('牙口：国家映射、cookie 覆盖、hreflang 判据均可触发')
+  if (triAlternates('/x')['x-default'] !== '/x') f++
+  if (f) fail('牙口：映射/不跳转/hreflang 判据样本失效')
+  else ok('牙口：地区映射、cookie 不跳、hreflang 判据均可触发')
 }
 
 console.log('\n' + (allPass ? 'LANG_ROUTING_PASS' : 'LANG_ROUTING_FAIL'))
