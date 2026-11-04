@@ -74,14 +74,21 @@ console.log(gateFail === 0
 // ---------- ③ 文案单一事实源 ----------
 console.log('—— ③ 文案单一事实源（pricing/member 页 import GRANT_LABELS，不本地定义）——')
 let srcFail = 0
-for (const rel of ['src/app/(zh)/pricing/page.tsx', 'src/app/(zh)/member/page.tsx']) {
+// 2026-11-04 统一第二批：会员中心实现抽到 components/member/MemberCenter.tsx（简/繁共用）。
+const MEMBER_IMPL = 'src/components/member/MemberCenter.tsx'
+for (const rel of ['src/app/(zh)/pricing/page.tsx', MEMBER_IMPL]) {
   if (!exists(rel)) { srcFail++; fail(`${rel} 不存在`); continue }
   const c = read(rel)
   if (!/from\s+['"]@\/lib\/grantLabels['"]/.test(c)) { srcFail++; fail(`${rel} 未 import GRANT_LABELS（文案可能漂移）`) }
   if (/const\s+GRANT_LABELS\s*[:=]/.test(c)) { srcFail++; fail(`${rel} 仍本地定义 GRANT_LABELS（须抽到共享模块）`) }
 }
+// 简体页面必须是共享实现的薄封装（不得另写一份）
+const zhMemberPage = exists('src/app/(zh)/member/page.tsx') ? read('src/app/(zh)/member/page.tsx') : ''
+if (!zhMemberPage.includes('MemberCenter')) { srcFail++; fail('(zh)/member/page.tsx 未复用 MemberCenter（可能又写了一份）') }
+const twMemberPage = exists('src/app/tw/member/page.tsx') ? read('src/app/tw/member/page.tsx') : ''
+if (!twMemberPage.includes("<MemberCenter locale=\"zh-Hant\" />")) { srcFail++; fail('tw/member 未复用 MemberCenter（繁体信息仍会缺失）') }
 // 权益事实只认 SUBSCRIPTION_GRANTS：页面不得出现整表硬编码
-const memberSrc = exists('src/app/(zh)/member/page.tsx') ? read('src/app/(zh)/member/page.tsx') : ''
+const memberSrc = exists(MEMBER_IMPL) ? read(MEMBER_IMPL) : ''
 if (/['"]daily['"]\s*,\s*['"]liuyue['"]/.test(memberSrc)) { srcFail++; fail('member 页硬编码了权益字面量表') }
 console.log(srcFail === 0
   ? '✓ 文案单源：pricing/member 页均 import GRANT_LABELS，无本地权益字面量表'
@@ -91,7 +98,7 @@ console.log(srcFail === 0
 console.log('—— ④ 会员页锁定态统一（提示语 + 链 /pricing）——')
 let lockFail = 0
 if (!memberSrc.includes('本项为会员权益')) { lockFail++; fail('member 页缺统一锁定提示语「本项为会员权益」') }
-if (!/href="\/pricing"/.test(memberSrc)) { lockFail++; fail('member 页锁定态未链到 /pricing') }
+if (!/href="\/pricing"|L\('\/pricing'\)/.test(memberSrc)) { lockFail++; fail('member 页锁定态未链到 /pricing') }
 console.log(lockFail === 0
   ? '✓ 会员页锁定态：统一提示语 + 链 /pricing（与 api/daily 的 closed 范式一致）'
   : `✗ 会员页锁定态缺失 ${lockFail} 处`)

@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { triAlternates } from '@/lib/lang'
 import { SHENGXIAO } from '@/lib/shengxiaoData'
 import { branchEn, elementEn } from '@/lib/enTerms'
+import { ExampleChart, TrustBar, FatebookSample, MoreQueries } from '@/components/home/HomeSections'
 import EnHomeForm from './EnHomeForm'
 
 // 英文首頁（第一批）：完整英文說明 + 真實排盤表單（→ /en/chart）。
@@ -60,7 +61,13 @@ export default function EnHome() {
           <Link href="/en/pricing" className="hw-c-btnBig">See pricing →</Link>
           <Link href="/en/mingshu" className="hw-c-btnBig">About the Fate Book →</Link>
         </div>
+
+        {/* Batch 2 parity: the interactive sample chart was only on the Chinese home page. */}
+        <ExampleChart locale="en" />
       </section>
+
+      {/* Batch 2 parity: trust bar (free charting / True Solar Time / encrypted / reference only) */}
+      <TrustBar locale="en" />
 
       <section className="hw-c-box mb-6">
         <h2 className="hw-c-secTitle">What a Bazi chart contains</h2>
@@ -131,6 +138,12 @@ export default function EnHome() {
           ))}
         </div>
       </section>
+
+      {/* Batch 2 parity: Fate Book excerpts (missing on the English home page). */}
+      <FatebookSample locale="en" />
+
+      {/* Batch 2 parity: more readings — only links whose English pages exist. */}
+      <MoreQueries locale="en" />
 
       <section className="hw-c-box mb-6">
         <h2 className="hw-c-secTitle">FAQ</h2>

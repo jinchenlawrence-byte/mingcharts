@@ -322,13 +322,13 @@ assert(verifyRoute.includes('.graphql.query'), 'verify-payment 用 SDK GraphQL �
 assert(verifyRoute.includes('orderMerchantExternalId'), 'verify-payment 接收业务单号')
 assert(verifyRoute.includes("status: 403") || verifyRoute.includes('{ status: 403 }'), '越权/坏单号返 403')
 
-const successPage = read('../src/app/(zh)/checkout/success/page.tsx')
+const successPage = read('../src/components/checkout/CheckoutSuccess.tsx')
 assert(successPage.includes("searchParams.get('ref')"), '成功页以 URL ?ref= 为主来源')
 assert(successPage.includes('waffo_checkout_ref'), '成功页保留 sessionStorage 补充来源')
 assert(successPage.includes('POLL_MAX_TIMES = 6'), '成功页轮询上限 6 次（≈12 秒，2026-10-19 从 15 次缩短）')
 assert(successPage.includes('POLL_INTERVAL_MS = 2000'), '成功页轮询间隔 2 秒')
 assert(successPage.includes('hello@mingcharts.com'), '终态文案含客服邮箱')
-assert(successPage.includes('href="/"') && successPage.includes('href="/pricing"'), '终态含返回首页/价格页链接')
+assert((successPage.includes('href="/"') || successPage.includes("L('/')")) && (successPage.includes('href="/pricing"') || successPage.includes("L('/pricing')")), '终态含返回首页/价格页链接')
 assert(successPage.includes('ownedSkus.includes'), '成功页按 ownedSkus 判定（不看恒真的 canView）')
 assert(successPage.includes('/api/verify-payment'), '轮询无果后调 verify-payment 兜底')
 

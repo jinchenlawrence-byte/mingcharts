@@ -12,22 +12,8 @@ import Nav from '@/components/Nav'
 import LangPromptBar from '@/components/LangPromptBar'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
+import { ExampleChart, TrustBar, FatebookSample, MoreQueries } from '@/components/home/HomeSections'
 import { track } from '@/lib/track'
-
-// 示例命盘（壬子日主）：点柱看释义，静态演示不调 API
-const PILLARS: {
-  t: string
-  g: string
-  b: string
-  e: ('wood' | 'fire' | 'earth' | 'metal' | 'water')[]
-  d: string
-  day?: boolean
-}[] = [
-  { t: '年柱', g: '甲', b: '辰', e: ['wood', 'earth'], d: '代表祖辈和早年的家庭环境，是你命盘的起点。' },
-  { t: '月柱', g: '丙', b: '寅', e: ['fire', 'wood'], d: '代表父母和青年阶段，也是判断格局最重要的一柱。' },
-  { t: '日柱', g: '壬', b: '子', e: ['water', 'water'], d: '日柱的天干叫「日主」，就是你自己；地支代表你的伴侣。', day: true },
-  { t: '时柱', g: '辛', b: '亥', e: ['metal', 'water'], d: '代表子女和晚年，也藏着你不常示人的一面。' },
-]
 
 const YEARS = Array.from({ length: 2026 - 1930 + 1 }, (_, i) => 1930 + i)
 const OPTS = (a: number, b: number) => Array.from({ length: b - a + 1 }, (_, i) => a + i)
@@ -82,9 +68,7 @@ export default function Home() {
     minute: '0',
     gender: 1 as 1 | 0,
   })
-  const [active, setActive] = useState(2)
   const rootRef = useRef<HTMLDivElement>(null)
-
   // 滚动显现（尊重 prefers-reduced-motion：CSS 侧已整体关闭过渡）
   useEffect(() => {
     const els = rootRef.current?.querySelectorAll('[data-rv]')
@@ -240,42 +224,11 @@ export default function Home() {
             </form>
           </div>
 
-          <div className="hw-stage">
-            <p className="hw-capT">示例命盘 · 点一点，看每一柱管什么</p>
-            <div className="hw-pillars">
-              {PILLARS.map((p, i) => (
-                <button key={p.t} type="button"
-                  className={`hw-pillar${p.day ? ' hw-day' : ''}`}
-                  style={{ '--i': i } as React.CSSProperties}
-                  aria-pressed={active === i}
-                  onClick={() => setActive(i)}>
-                  <span className="hw-t">{p.t}</span>
-                  <span className={`hw-g hw-${p.e[0]}`}>{p.g}</span>
-                  <span className={`hw-g hw-${p.e[1]}`}>{p.b}</span>
-                </button>
-              ))}
-            </div>
-            <div className="hw-panel" aria-live="polite">
-              <b>{PILLARS[active].t}</b>
-              <p>{PILLARS[active].d}</p>
-            </div>
-            <div className="hw-legend" aria-label="五行配色">
-              <span><i style={{ background: 'var(--hw-wood)' }} />木</span>
-              <span><i style={{ background: 'var(--hw-fire)' }} />火</span>
-              <span><i style={{ background: 'var(--hw-earth)' }} />土</span>
-              <span><i style={{ background: 'var(--hw-metal)' }} />金</span>
-              <span><i style={{ background: 'var(--hw-water)' }} />水</span>
-            </div>
-          </div>
+          <ExampleChart locale="zh-Hans" />
         </div>
 
         {/* 信任条 */}
-        <div className="hw-trust" data-rv aria-label="平台承诺">
-          <span><i style={{ background: 'var(--hw-wood)' }} />排盘永久免费</span>
-          <span><i style={{ background: 'var(--hw-water)' }} />真太阳时校正</span>
-          <span><i style={{ background: 'var(--hw-earth)' }} />生辰加密传输·不对外公开</span>
-          <span><i style={{ background: 'var(--hw-fire)' }} />传统文化视角·仅供参考娱乐</span>
-        </div>
+        <TrustBar locale="zh-Hans" />
 
         {/* 功能 Bento */}
         <section className="hw-section" data-rv>
@@ -330,41 +283,10 @@ export default function Home() {
         </section>
 
         {/* 样例命书节选 */}
-        <section className="hw-section" data-rv>
-          <div className="hw-sample">
-            <div className="hw-hd">
-              <b>万字命书，长什么样？</b>
-              <span>以下为示例节选 · 实际报告因人而异</span>
-            </div>
-            <div className="hw-quote">
-              <p>「日主壬水，生于孟春寅月，木旺泄气，喜金发源。」——庚金为尊，丙火为佐，二者得宜，格局自清。</p>
-              <small>—— 节选自「格局总论」章节 · 参《穷通宝鉴》论正月壬水</small>
-            </div>
-            <div className="hw-quote">
-              <p>「身旺能任财，求财可顺势而为，宜向东方、南方发展；忌孤注一掷，忌高杠杆。」</p>
-              <small>—— 节选自「求财方向」章节 · 与方位城市五行地气同一口径</small>
-            </div>
-            <div className="hw-quote">
-              <p>「现行大运天干透出合神，十年之内事业重心由转岗转向立业，稳扎稳打为上。」</p>
-              <small>—— 节选自「大运流年」章节</small>
-            </div>
-            <div className="hw-cta">
-              <a className="hw-btnInk" href="/pricing">查看完整报告</a>
-              <em>先免费排盘，再决定要不要深读</em>
-            </div>
-          </div>
-        </section>
+        <FatebookSample locale="zh-Hans" />
 
         {/* 更多查询 */}
-        <section className="hw-section" data-rv>
-          <h2 className="hw-h2">更多命理查询</h2>
-          <div className="hw-more">
-            <a href="/bazi"><b>按出生日期算命</b><span>1950–2010 每日八字</span></a>
-            <a href="/shengxiao"><b>十二生肖运势</b><span>属相配对 · 流年运势</span></a>
-            <a href="/jieqi"><b>二十四节气</b><span>月令更替 · 节气养生</span></a>
-            <a href="/article"><b>命理知识大全</b><span>入门 · 十神 · 格局</span></a>
-          </div>
-        </section>
+        <MoreQueries locale="zh-Hans" />
 
         {/* FAQ */}
         <section className="hw-section" data-rv>

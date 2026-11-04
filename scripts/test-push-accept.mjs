@@ -81,9 +81,10 @@ console.log('—— ① 源码/配置：SW 监听 / manifest / viewport / env �
   const chrome = stripComments(read('src/components/SiteChrome.tsx'))
   assert(chrome.includes('<PwaRegister'), 'SiteChrome 挂载 <PwaRegister />（注册 SW）')
 
-  const memberPage = read('src/app/(zh)/member/page.tsx')
+  // 2026-11-04 统一第二批：会员中心实现抽到共享组件（简/繁共用）。
+  const memberPage = read('src/components/member/MemberCenter.tsx')
   assert(memberPage.includes('PushOptIn') && memberPage.includes('<PushOptIn />'),
-    'member 页插入 <PushOptIn />（会员中心为提醒开关归属地）')
+    '会员中心插入 <PushOptIn />（会员中心为提醒开关归属地）')
 
   const env = read('.env.example')
   assert(/VAPID_PRIVATE_KEY[\s\S]{0,80}绝不加 NEXT_PUBLIC_/.test(env) || /绝不加 NEXT_PUBLIC_[\s\S]{0,80}VAPID_PRIVATE_KEY/.test(env),

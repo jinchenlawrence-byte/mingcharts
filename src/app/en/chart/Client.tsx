@@ -172,8 +172,17 @@ export default function EnChartClient() {
             </table>
           </div>
           <p className="hw-c-fine">
-            Auspices follow the common conventions of Yuan Hai Zi Ping and San Ming Tong Hui; schools differ.
-            They are labels, not verdicts. The reading rests on Five Elements balance and structure.
+            Auspices follow the common conventions of <b>Yuan Hai Zi Ping</b> (渊海子平) and <b>San Ming Tong Hui</b> (三命通会).
+            Benefactors such as Tian Yi Gui Ren, Wen Chang, Lu Shen, Yang Ren and Tai Ji Gui Ren are taken from the Day Stem;
+            Peach Blossom, Travelling Horse, Canopy, General Star and the main malefic stars are taken from the Year or Day Branch
+            through their three-harmony group; Tian De and Yue De come from the Month Branch; Kui Gang, Yin-Yang Error and the
+            Ten Days of Great Defeat are read from the Day Pillar itself. Void (Kong Wang) is the pair of branches missing from
+            each pillar's ten-day cycle.
+          </p>
+          <p className="hw-c-fine">
+            Schools differ in the finer rules, and some labels (such as the Children star) come from folk tradition rather than
+            the classics. Treat every auspice as a reference point, not a verdict: the reading itself rests on the balance of the
+            Five Elements and the structure of the chart.
           </p>
         </div>
 
@@ -248,11 +257,27 @@ export default function EnChartClient() {
           <ShareLink path="/en/chart" title="MingCharts · Free Bazi chart" text="Cast a chart and see what the ten volumes say" label="Share" locale="en" />
         </div>
 
+        {/* 第二批补齐：命书十卷卷名条（与简体 /chart 同款，英文卷名） */}
+        <h2 className="hw-c-h2">The ten volumes of the Fate Book</h2>
+        <div className={`hw-c-vols${chart.analysis.isPaid ? '' : ' hw-c-locked'}`}>
+          {VOLS.map((v, i) => (
+            <span key={v}><i>Vol {i + 1}</i>{v}</span>
+          ))}
+        </div>
+
         {preview && (
           <div className="hw-pv">
             <div className="hw-pv-head">
               <h3 className="hw-c-secTitle">Fate Book preview</h3>
               <span className="hw-pv-badge">Rule-engine summary · English edition</span>
+              {/* 第二批补齐：规则版 vs AI 精批的解释段（简体 L579-584，英文此前没有） */}
+              <p className="hw-c-meta">
+                The two volumes below are a <b className="hw-pv-em">rule-engine summary</b>: computed directly from your four
+                pillars, conclusions only, with no AI involved — so it is short and does not expand. The paid Fate Book is
+                <b className="hw-pv-em">a different piece of writing</b>: AI reads the same chart volume by volume, at least
+                {preview.fullMinChars ? ` ${preview.fullMinChars}` : ' ten thousand'} characters across ten volumes, with a
+                luck-cycle timeline and classical case references.
+              </p>
             </div>
             {preview.free.map((text, i) => (
               <article key={i} className="hw-c-box hw-pv-card">
@@ -292,6 +317,54 @@ export default function EnChartClient() {
                 <p className="hw-c-body whitespace-pre-line">{paid[PAID_KEYS[i]]}</p>
               </div>
             ))}
+
+            {/* 第二批补齐：古籍相似命例（简体 /chart L645+，英文此前缺失） */}
+            {paid.similarCases && paid.similarCases.length > 0 && (
+              <div className="hw-c-box">
+                <h3 className="hw-c-secTitle">Similar cases in the classics</h3>
+                <p className="text-xs text-ink-light/60 mb-3">
+                  Retrieved from the case libraries of Zi Ping Zhen Quan, Di Tian Sui and San Ming Tong Hui by structural
+                  similarity of the four pillars — for study and cross-reference only.
+                </p>
+                <div className="space-y-3">
+                  {paid.similarCases.map((c, i) => (
+                    <div key={i} className={`rounded-lg border p-3 ${c.exact ? 'border-amber-400 bg-gold/5' : 'border-gold/15'}`}>
+                      <div className="flex flex-wrap items-baseline gap-2 mb-1">
+                        <span className="font-bold text-ink">{c.person || 'Unnamed case'}</span>
+                        <span className="text-sm text-ink/70">
+                          {c.pillars.year} {c.pillars.month} {c.pillars.day} {c.pillars.hour}
+                        </span>
+                        {c.exact && (
+                          <span className="text-xs bg-amber-600 text-white px-2 py-0.5 rounded">Same four pillars</span>
+                        )}
+                        <span className="text-xs text-ink-light/40 ml-auto">{c.source}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-1 mb-1">
+                        {c.matches.map((m, j) => (
+                          <span key={j} className="text-xs bg-gold/10 text-ink/70 px-1.5 py-0.5 rounded">{m}</span>
+                        ))}
+                      </div>
+                      {c.readings && c.readings.length > 1 ? (
+                        <div className="space-y-2 mt-2">
+                          {c.readings.map((r, j) => (
+                            <div key={j} className="border-l-2 border-gold/20 pl-3">
+                              <div className="text-xs text-amber-600 mb-0.5">
+                                {r.source.split(' ')[0]}{r.person ? ` · ${r.person}` : ''}
+                              </div>
+                              <p className="text-sm text-ink/70 leading-relaxed">
+                                {r.text.length > 220 ? r.text.slice(0, 220) + '…' : r.text}
+                              </p>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-ink/70 leading-relaxed">{c.text}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 

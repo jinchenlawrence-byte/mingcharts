@@ -10,6 +10,8 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
+import { toHant } from '@/lib/hant'
+import { pathForLang, type SiteLang } from '@/lib/lang'
 import {
   pushSupported,
   needsAddToHomeScreen,
@@ -20,7 +22,8 @@ import {
 
 type State = 'loading' | 'guest' | 'unsupported' | 'ios-install' | 'off' | 'on'
 
-export default function PushOptIn() {
+export default function PushOptIn({ locale = 'zh-Hans' }: { locale?: SiteLang }) {
+  const H = (s: string) => (locale === 'zh-Hant' ? toHant(s) : s)
   const [state, setState] = useState<State>('loading')
   const [busy, setBusy] = useState(false)
   const [msg, setMsg] = useState('')
@@ -85,59 +88,59 @@ export default function PushOptIn() {
 
   return (
     <section className="hw-c-box">
-      <h2 className="font-bold text-ink mb-1">每日日运提醒</h2>
+      <h2 className="font-bold text-ink mb-1">{H('每日日运提醒')}</h2>
 
       {state === 'guest' && (
         <p className="text-sm text-ink/70 mt-1">
-          登录后可开启每日提醒，日运更新时在手机上收到通知。
-          <Link href="/auth" className="hw-c-blue ml-2 hover:brightness-110">去登录 →</Link>
+          {H('登录后可开启每日提醒，日运更新时在手机上收到通知。')}
+          <Link href={pathForLang('/auth', locale)} className="hw-c-blue ml-2 hover:brightness-110">{H('去登录 →')}</Link>
         </p>
       )}
 
       {state === 'unsupported' && (
         <p className="text-sm text-ink/70 mt-1">
-          当前浏览器不支持网页通知，无法开启每日提醒。可改用 iPhone 的 Safari、或桌面 Chrome 打开本站并「添加到主屏幕」后再开启。
+          {H('当前浏览器不支持网页通知，无法开启每日提醒。可改用 iPhone 的 Safari、或桌面 Chrome 打开本站并「添加到主屏幕」后再开启。')}
         </p>
       )}
 
       {state === 'ios-install' && (
         <>
           <p className="text-sm text-ink/70 mt-1">
-            在 iPhone / iPad 上，需先把这个站点「添加到主屏幕」，再从主屏幕打开后才能收到通知（iOS 16.4 以上）。
+            {H('在 iPhone / iPad 上，需先把这个站点「添加到主屏幕」，再从主屏幕打开后才能收到通知（iOS 16.4 以上）。')}
           </p>
           <p className="text-xs text-ink-light/70 mt-2">
-            操作：用 Safari 打开本页 → 点底部「分享」→「添加到主屏幕」→ 从主屏幕图标打开本页 → 回到这里开启提醒。
+            {H('操作：用 Safari 打开本页 → 点底部「分享」→「添加到主屏幕」→ 从主屏幕图标打开本页 → 回到这里开启提醒。')}
           </p>
         </>
       )}
 
       {state === 'off' && (
         <>
-          <p className="text-sm text-ink/70 mt-1">开启后，每天日运更新时会在你的设备上弹出提醒。</p>
+          <p className="text-sm text-ink/70 mt-1">{H('开启后，每天日运更新时会在你的设备上弹出提醒。')}</p>
           <button
             onClick={enable}
             disabled={busy}
             className="mt-3 rounded-full bg-ink px-4 py-2 text-sm font-bold text-white transition hover:brightness-110 disabled:opacity-60"
           >
-            {busy ? '处理中…' : '开启每日提醒'}
+            {busy ? H('处理中…') : H('开启每日提醒')}
           </button>
         </>
       )}
 
       {state === 'on' && (
         <>
-          <p className="text-sm text-ink/70 mt-1">已开启：每天日运更新时会收到提醒。</p>
+          <p className="text-sm text-ink/70 mt-1">{H('已开启：每天日运更新时会收到提醒。')}</p>
           <button
             onClick={disable}
             disabled={busy}
             className="mt-3 rounded-full border border-[#dedcf0] px-4 py-2 text-sm font-semibold text-ink transition hover:bg-paper-dark/40 disabled:opacity-60"
           >
-            {busy ? '处理中…' : '关闭提醒'}
+            {busy ? H('处理中…') : H('关闭提醒')}
           </button>
         </>
       )}
 
-      {msg && <p className="text-xs mt-3 text-ink-light">{msg}</p>}
+      {msg && <p className="text-xs mt-3 text-ink-light">{H(msg)}</p>}
     </section>
   )
 }

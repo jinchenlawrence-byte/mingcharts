@@ -8,6 +8,7 @@ import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import { SHENGXIAO } from '@/lib/shengxiaoData'
 import { toHant } from '@/lib/hant'
 import { categoriesWithCount, pickBySlug } from '@/lib/relatedArticles'
+import { ExampleChart, TrustBar, FatebookSample, MoreQueries } from '@/components/home/HomeSections'
 
 // 繁體首頁：與簡體首頁 / 同構、同功能（排盤表單 → 命盤結果），文案原生繁體。
 // ★ 內鏈：12 屬相 + 文章庫，保證繁中頁面不是孤島。
@@ -178,7 +179,13 @@ export default function HantHome() {
           <Link href="/tw/liunian/2028" className="hw-c-btnBig">{H('2028 戊申年運勢 →')}</Link>
           <Link href="/tw/shengxiao" className="hw-c-back self-center">{H('先看生肖 →')}</Link>
         </div>
+
+        {/* 第二批补齐（以简体为基准）：hero 交互示例盘 —— 繁体此前只有表单，没有可点的示例四柱 */}
+        <ExampleChart locale="zh-Hant" />
       </section>
+
+      {/* 第二批补齐：信任条（排盘免费/真太阳时/数据加密/仅供参考） */}
+      <TrustBar locale="zh-Hant" />
 
       <section className="hw-c-box mb-6">
         <h2 className="hw-c-secTitle">{H('排完盤，接著玩')}</h2>
@@ -255,6 +262,12 @@ export default function HantHome() {
           <Link href="/tw/article" className="hw-c-link">{H('查看全部命理知識 →')}</Link>
         </p>
       </section>
+
+      {/* 第二批补齐：命书样例节选（简体有、繁体此前缺失） */}
+      <FatebookSample locale="zh-Hant" />
+
+      {/* 第二批补齐：更多命理查询入口（只放繁体树真实存在的页面） */}
+      <MoreQueries locale="zh-Hant" />
 
       <section className="hw-c-box mb-6">
         <h2 className="hw-c-secTitle">{H('為什麼生肖只是「年支」')}</h2>

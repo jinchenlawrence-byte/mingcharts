@@ -464,13 +464,15 @@ console.log('—— ④ 合规：同意框默认不勾+未勾禁用 / 自助取�
   assert(btn.includes('/member') && btn.includes('取消'), '按钮旁告知站内自助取消入口')
   assert(btn.includes('/api/membership'), '按钮走 /api/membership（服务端建会话）')
 
-  const memberSrc = read('../src/app/(zh)/member/page.tsx')
+  // 2026-11-04 统一第二批：会员中心实现抽到共享组件（简/繁共用同一套取消/恢复接口）。
+  const memberSrc = read('../src/components/member/MemberCenter.tsx')
   assert(memberSrc.includes('/api/membership/cancel'), '会员中心调取消/恢复接口（站内自助）')
   assert(memberSrc.includes("act('cancel')") && memberSrc.includes("act('reactivate')"), '会员中心含取消与恢复两个动作')
   assert(/下次续费日|会员到期日/.test(memberSrc), '会员中心显示下次续费日/会员到期日')
   assert(memberSrc.includes('WAFFO_PORTAL_URL'), '会员中心保留改卡/查账单门户入口')
 
-  const successSrc = read('../src/app/(zh)/checkout/success/page.tsx')
+  // 2026-11-04 统一第二批：成功页实现抽到共享组件（简/繁共用）。
+  const successSrc = read('../src/components/checkout/CheckoutSuccess.tsx')
   assert(successSrc.includes('member_monthly') && successSrc.includes('isMemberSku'),
     '成功页对订阅 SKU 改看 /api/membership（否则订阅买家白等 15 次轮询）')
   assert(successSrc.includes('/api/membership?token='), '成功页订阅轮询用会员只读接口')
