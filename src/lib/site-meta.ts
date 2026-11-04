@@ -4,8 +4,11 @@ import type { Metadata, Viewport } from 'next'
 // 以前这些字段挂在 app/layout.tsx，全站继承；拆成三个 root layout 后必须各自显式带上，
 // 否则 /tw、/en 会丢 metadataBase / manifest / OG 图。
 
+// ★ 与 sitemap.ts 同样的兜底：本地/预览环境若把 NEXT_PUBLIC_APP_URL 设成 localhost，
+//   这里会把它变成全站 canonical / og:url 的域名 —— 这是最伤收录的一类事故。
+const RAW_APP_URL = process.env.NEXT_PUBLIC_APP_URL
 export const siteMetadataBase = new URL(
-  process.env.NEXT_PUBLIC_APP_URL || 'https://www.mingcharts.com',
+  RAW_APP_URL && !RAW_APP_URL.includes('localhost') ? RAW_APP_URL : 'https://www.mingcharts.com',
 )
 
 export const siteViewport: Viewport = {
