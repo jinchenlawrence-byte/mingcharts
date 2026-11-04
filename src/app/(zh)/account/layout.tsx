@@ -4,6 +4,8 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: '账号设置',
   description: '查看登录邮箱并修改账号密码。',
+  alternates: { canonical: '/account' },
+  robots: { index: false, follow: true },
 }
 
 export default function AccountLayout({ children }: { children: React.ReactNode }) {

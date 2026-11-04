@@ -185,9 +185,11 @@ if (/inLanguage:\s*"zh-CN"/.test(chrome)) {
   treeFail++
   fail('SiteChrome 的 WebSite 仍写死 inLanguage=zh-CN（会在全部繁体页声明简体）')
 }
+// ★ 2026-11-04 GSC 体检修订：根布局不再输出 WebPage JSON-LD。
+//   旧做法在每个子页都声明 url=/tw、@id=#tw#webpage，等于让 Google 把 200+ 繁体子页
+//   当成同一个「繁体首页」；页面语言改由 <html lang="zh-Hant"> 与 hreflang 表达。
 const twLayout = readFileSync(near('app/tw/layout.tsx'), 'utf8')
-if (!twLayout.includes('WebPageJsonLd')) { treeFail++; fail('繁体布局未输出 WebPageJsonLd') }
-if (!twLayout.includes('inLanguage="zh-Hant"')) { treeFail++; fail('繁体 WebPageJsonLd 未声明 zh-Hant') }
+if (twLayout.includes('WebPageJsonLd')) { treeFail++; fail('繁体根布局仍输出固定 path 的 WebPageJsonLd（子页会被标成 /tw）') }
 if (!sync.includes('documentElement')) { treeFail++; fail('LocaleSync 未修正 <html lang>（渐进项）') }
 
 // ★ 第 36 轮：全站页脚按路径决定简繁

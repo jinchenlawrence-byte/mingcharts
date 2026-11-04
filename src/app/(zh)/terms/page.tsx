@@ -1,13 +1,13 @@
 import { renderLegal } from '@/lib/legalContent'
-import { hantAlternates } from '@/lib/hant-seo'
+import { triAlternates } from '@/lib/lang'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Terms of Service',
+  title: '服务条款',
   description: '明理服务条款 — 会员订阅、退款政策、AIGC 合规条款',
   alternates: {
     canonical: '/terms',
-    languages: hantAlternates('/terms'),
+    languages: triAlternates('/terms'),
   },
 }
 

@@ -5,7 +5,6 @@ import LocaleSync from '@/components/LocaleSync'
 import SiteChrome from '@/components/SiteChrome'
 import SiteLangSync from '@/components/SiteLangSync'
 import HantLangSwitch from '@/components/HantLangSwitch'
-import WebPageJsonLd from '@/components/WebPageJsonLd'
 import { triAlternates } from '@/lib/lang'
 import { rootFontClassName } from '@/lib/site-fonts'
 import { sharedMetadata, sharedOpenGraph, siteViewport } from '@/lib/site-meta'
@@ -43,12 +42,8 @@ export default function HantRootLayout({ children }: { children: React.ReactNode
           <LocaleSync locale="zh-Hant" />
           {/* 客户端双保险：服务端 lang 已正确，这里只修正极端缓存/注入场景 */}
           <SiteLangSync lang="zh-Hant" />
-          {/* 页面级语言信号。站点实体 JSON-LD 不写 inLanguage，避免在三种语言树里声明单一语言。 */}
-          <WebPageJsonLd
-            name="明理 · 免費八字排盤與生肖流年（繁體）"
-            path="/tw"
-            inLanguage="zh-Hant"
-          />
+          {/* ★ 不再在根 layout 输出 WebPage JSON-LD：它会把每个子页都标成 /tw 首页。
+              站点级 Organization/WebSite 由 SiteChrome 输出，页面语言由 <html lang> 与 hreflang 表达。 */}
           <header className="border-b border-gold/15">
             <div className="hw-wrap flex items-center justify-between gap-3 py-3">
               <Link href="/tw" className="shrink-0 font-bold text-lg text-ink">

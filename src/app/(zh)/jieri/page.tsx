@@ -1,10 +1,13 @@
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { JIERI } from '@/lib/jieriData'
+import { hantAlternates } from '@/lib/hant-seo'
 
 export const metadata = {
   title: '中国传统节日大全：春节、元宵、端午、七夕、中秋、除夕的习俗与开运',
-  description: '中国传统节日完整介绍：春节、元宵节、清明节、端午节、七夕节、中元节、中秋节、重阳节、腊八节、小年、除夕的日期、由来、习俗禁忌与命理开运讲究。'
+  description: '中国传统节日完整介绍：春节、元宵节、清明节、端午节、七夕节、中元节、中秋节、重阳节、腊八节、小年、除夕的日期、由来、习俗禁忌与命理开运讲究。',
+  // 与 /tw/jieri 双向互指；此前简体侧完全没有输出 hreflang。
+  alternates: { canonical: '/jieri', languages: hantAlternates('/jieri') },
 }
 
 export default function JieRiIndex() {

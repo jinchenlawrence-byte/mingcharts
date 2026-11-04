@@ -9,8 +9,6 @@ const RAW_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_
 const BASE_URL = RAW_URL && !RAW_URL.includes('localhost') ? RAW_URL.replace(/\/$/, '') : 'https://www.mingcharts.com'
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const now = new Date()
-
   // 固定页面
   const staticPages: MetadataRoute.Sitemap = [
     { url: `${BASE_URL}/`, changeFrequency: 'weekly', priority: 1 },
@@ -34,7 +32,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // 免費查神煞（第 36 輪）：C 端免費鉤子，承接社媒與搜索的衝動流量
     { url: `${BASE_URL}/shensha/check`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/geo`, changeFrequency: 'monthly', priority: 0.7 },
-    { url: `${BASE_URL}/daily`, changeFrequency: 'daily', priority: 0.7 }
+    { url: `${BASE_URL}/daily`, changeFrequency: 'daily', priority: 0.7 },
+    // 简体侧核心商业页此前缺席 sitemap（繁体/英文侧都已提交），补上以保证三棵树对等。
+    { url: `${BASE_URL}/mingshu`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/pricing`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${BASE_URL}/terms`, changeFrequency: 'yearly', priority: 0.4 },
+    { url: `${BASE_URL}/privacy`, changeFrequency: 'yearly', priority: 0.4 }
   ]
 
   // 节气节日页：24节气 + 10节日
@@ -94,11 +97,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'weekly' as const,
       priority: 0.7
     })),
+    // 文章数据没有真实发布/修改时间；此前用请求时刻作 lastmod 会每次变化，
+    // Google 会判定该字段不可信并整体忽略。宁可省略。
     ...articles.map(a => ({
       url: `${BASE_URL}/article/${a.slug}`,
       changeFrequency: 'monthly' as const,
-      priority: 0.8,
-      lastModified: now
+      priority: 0.8
     }))
   ]
 
@@ -164,8 +168,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     ...articles.map(a => ({
       url: `${BASE_URL}/tw/article/${a.slug}`,
       changeFrequency: 'monthly' as const,
-      priority: 0.7,
-      lastModified: now
+      priority: 0.7
     }))
   ]
 

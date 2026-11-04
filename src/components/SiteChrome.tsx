@@ -49,7 +49,7 @@ export default function SiteChrome({ lang = 'zh-Hans' }: { lang?: SiteLang }) {
                 url: 'https://www.mingcharts.com',
                 name: SITE_NAME[lang],
                 // ★ 不写 inLanguage：这段脚本在每个页面都会输出，
-                //   写死一种语言会与 hreflang 打架；页面级语言由各语言树的 WebPageJsonLd 声明。
+                //   写死一种语言会与 hreflang 打架；页面语言由各语言树服务端的 <html lang> 表达。
                 publisher: { '@id': 'https://www.mingcharts.com/#org' },
               },
             ],

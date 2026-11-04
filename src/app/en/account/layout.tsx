@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: 'Account settings',
   description: 'Manage your MingCharts password and sign out.',
   alternates: { canonical: '/en/account', languages: triAlternates('/account') },
+  robots: { index: false, follow: true },
 }
 
 export default function EnAccountLayout({ children }: { children: React.ReactNode }) {

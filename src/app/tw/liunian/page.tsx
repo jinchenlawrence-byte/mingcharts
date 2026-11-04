@@ -1,6 +1,6 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import { hantAlternates } from '@/lib/hant-seo'
+import { triAlternates } from '@/lib/lang'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
 
 // 繁體年運報告入口頁（2026-10-23 第 33 輪）
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     '個人年運報告：以完整八字（四柱、大運、流年）推算，覆蓋今年、明年、後年三年，各含流月節奏。逐條註明所引經典，由命理師解讀。',
   alternates: {
     canonical: '/tw/liunian',
-    languages: hantAlternates('/liunian'),
+    languages: triAlternates('/liunian'),
   },
 }
 

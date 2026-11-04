@@ -4,7 +4,6 @@ import '@/app/globals.css'
 import LocaleSync from '@/components/LocaleSync'
 import SiteChrome from '@/components/SiteChrome'
 import SiteLangSync from '@/components/SiteLangSync'
-import WebPageJsonLd from '@/components/WebPageJsonLd'
 import { triAlternates } from '@/lib/lang'
 import { rootFontClassName } from '@/lib/site-fonts'
 import { sharedMetadata, sharedOpenGraph, siteViewport } from '@/lib/site-meta'
@@ -41,11 +40,8 @@ export default function EnRootLayout({ children }: { children: React.ReactNode }
           <LocaleSync locale="en" />
           {/* 客户端双保险：服务端 lang 已正确 */}
           <SiteLangSync lang="en" />
-          <WebPageJsonLd
-            name="MingCharts · Free Bazi & Four Pillars of Destiny"
-            path="/en"
-            inLanguage="en"
-          />
+          {/* ★ 不再在根 layout 输出 WebPage JSON-LD：它会把每个子页都标成 /en 首页。
+              站点级 Organization/WebSite 由 SiteChrome 输出，页面语言由 <html lang> 与 hreflang 表达。 */}
           <header className="border-b border-gold/15">
             <div className="hw-wrap flex items-center justify-between gap-3 py-3">
               <Link href="/en" className="shrink-0 font-bold text-lg text-ink">

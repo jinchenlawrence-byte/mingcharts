@@ -98,9 +98,10 @@ console.log('—— ④ /tw/liunian 与价格单一来源 ——')
   const hardcoded = /\$\d+(\.\d+)?/.test(src)
   if (hardcoded) fail('/tw/liunian 出现了写死的价格字面量')
   else ok('/tw/liunian 无写死价格数字')
-  if (!/languages:\s*hantAlternates\('\/liunian'\)/.test(src)) {
-    fail('/tw/liunian 未接 hantAlternates(/liunian)，与简体页无法互指')
-  } else ok('/tw/liunian 已接 hreflang 互指')
+  // ★ 2026-11-04 GSC 体检：/liunian 三棵树都有页面，必须用 triAlternates 把 en 也互指进去。
+  if (!/languages:\s*triAlternates\('\/liunian'\)/.test(src)) {
+    fail('/tw/liunian 未接 triAlternates(/liunian)，与简/英页面无法互指')
+  } else ok('/tw/liunian 已接三语 hreflang 互指')
 }
 
 // ---------- ⑤ sitemap 与 IndexNow 集合都含 /tw/liunian ----------

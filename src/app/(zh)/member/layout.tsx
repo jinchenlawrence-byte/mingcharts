@@ -4,6 +4,8 @@ import type { Metadata } from 'next'
 export const metadata: Metadata = {
   title: '会员中心：日运、流月、交运与古籍命例对照',
   description: '登录并保存命盘后，查看个性化日运、流月提示、交运提醒、历史日运回看与相似古籍命例对照等会员专属内容。',
+  alternates: { canonical: '/member' },
+  robots: { index: false, follow: true },
 }
 
 export default function MemberLayout({ children }: { children: React.ReactNode }) {

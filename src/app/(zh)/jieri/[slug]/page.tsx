@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { notFound } from 'next/navigation'
 import { JIERI, getJieRi } from '@/lib/jieriData'
+import { hantAlternates } from '@/lib/hant-seo'
 
 export function generateStaticParams() {
   return JIERI.map(j => ({ slug: j.slug }))
@@ -14,7 +15,11 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   return {
     title: `${jr.name}（${jr.lunarDate}）：由来、习俗、禁忌与开运讲究`,
     description: `${jr.name}又称${jr.alias}，时间为${jr.lunarDate}（${jr.solarRange}）。详解${jr.name}的由来、传统习俗、注意事项与命理开运讲究。`,
-    keywords: [jr.name, `${jr.name}习俗`, `${jr.name}的由来`, `${jr.name}几月几号`, `${jr.name}禁忌`, jr.alias]
+    keywords: [jr.name, `${jr.name}习俗`, `${jr.name}的由来`, `${jr.name}几月几号`, `${jr.name}禁忌`, jr.alias],
+    alternates: {
+      canonical: `/jieri/${jr.slug}`,
+      languages: hantAlternates(`/jieri/${jr.slug}`),
+    },
   }
 }
 

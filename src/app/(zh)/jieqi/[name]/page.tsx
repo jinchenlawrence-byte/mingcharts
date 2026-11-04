@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { notFound } from 'next/navigation'
 import { JIEQI, getJieqi } from '@/lib/jieqiData'
+import { hantAlternates } from '@/lib/hant-seo'
 
 export function generateStaticParams() {
   return JIEQI.map(j => ({ name: j.slug }))
@@ -14,7 +15,11 @@ export async function generateMetadata({ params }: { params: Promise<{ name: str
   return {
     title: `${jq.name}节气（${jq.dateRange}）：含义、三候、习俗、养生与八字月令`,
     description: `${jq.name}是二十四节气之一（${jq.dateRange}）。详解${jq.name}的含义由来、三候物候、传统习俗、节气养生方法，以及${jq.type === '节' ? `${jq.name}换${jq.monthName}、` : ''}与八字命理调候的关系。`,
-    keywords: [jq.name, `${jq.name}节气`, `${jq.name}养生`, `${jq.name}习俗`, `${jq.name}八字`, `${jq.name}几月几日`, `${jq.name}三候`]
+    keywords: [jq.name, `${jq.name}节气`, `${jq.name}养生`, `${jq.name}习俗`, `${jq.name}八字`, `${jq.name}几月几日`, `${jq.name}三候`],
+    alternates: {
+      canonical: `/jieqi/${jq.slug}`,
+      languages: hantAlternates(`/jieqi/${jq.slug}`),
+    },
   }
 }
 

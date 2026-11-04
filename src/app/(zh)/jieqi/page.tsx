@@ -1,10 +1,13 @@
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { JIEQI, SEASONS } from '@/lib/jieqiData'
+import { hantAlternates } from '@/lib/hant-seo'
 
 export const metadata = {
   title: '二十四节气详解：节气与八字命理、月令更替、节气养生',
-  description: '二十四节气完整介绍：立春、惊蛰、清明等24节气的含义、三候物候、传统习俗、节气养生，以及节气与八字月令、生肖分界（立春换年）的命理关系。'
+  description: '二十四节气完整介绍：立春、惊蛰、清明等24节气的含义、三候物候、传统习俗、节气养生，以及节气与八字月令、生肖分界（立春换年）的命理关系。',
+  // 与 /tw/jieqi 双向互指；此前简体侧完全没有输出 hreflang。
+  alternates: { canonical: '/jieqi', languages: hantAlternates('/jieqi') },
 }
 
 const SEASON_STYLE = {

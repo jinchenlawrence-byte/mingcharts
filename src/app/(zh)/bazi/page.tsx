@@ -4,6 +4,8 @@ import Nav from '@/components/Nav'
 export const metadata = {
   title: '八字算命 · 出生日期查询：1950-2010 每日八字命理分析',
   description: '按出生日期查询八字：选择出生年份，查看该年出生人的生辰八字、干支、生肖、纳音、命理分析与流年运势。1950-2010 年每日八字详解。',
+  // 该页在 sitemap 中提交，必须自指 canonical，否则 Google 会在 793 个年/月子页里自选规范页。
+  alternates: { canonical: '/bazi' },
 }
 
 export default function BaziIndex() {
