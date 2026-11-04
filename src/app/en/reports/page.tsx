@@ -2,26 +2,32 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
+import { kindLabelEn, isLegacyChineseReport, LEGACY_BADGE_EN, REGENERATE_EN } from '@/lib/enReportLabels'
 
 interface ReportRow {
   id: string
   kind: string
   title: string
   created_at: string
+  result?: unknown
 }
 
-const KIND_EN: Record<string, string> = {
-  hemun: 'Bazi synastry',
-  ziwei: 'Zi Wei Dou Shu',
-  geo: 'Geomancy',
-  annual: 'Annual report',
-  fatebook: 'Fate Book',
+const MODULE_HREF: Record<string, string> = {
+  hemun: '/en/hemun',
+  ziwei: '/en/ziwei',
+  geo: '/en/geo',
+  annual: '/en/liunian',
+  fatebook: '/en/chart',
 }
 
 // English report list and English report detail route.
 export default function EnReportsPage() {
+  const router = useRouter()
   const [rows, setRows] = useState<ReportRow[]>([])
+  const [legacyMap, setLegacyMap] = useState<Record<string, boolean>>({})
+  const [chartPayloads, setChartPayloads] = useState<Record<string, unknown>>({})
   const [loading, setLoading] = useState(true)
   const [notLogged, setNotLogged] = useState(false)
 
@@ -32,14 +38,63 @@ export default function EnReportsPage() {
       if (!session) { setNotLogged(true); setLoading(false); return }
       const { data } = await supabase
         .from('reports')
-        .select('id,kind,title,created_at')
+        .select('id,kind,title,created_at,result')
         .eq('status', 'ready')
         .is('request_id', null)
         .order('created_at', { ascending: false })
-      if (data) setRows(data as ReportRow[])
+      if (data) {
+        const list = data as ReportRow[]
+        setRows(list)
+        const map: Record<string, boolean> = {}
+        const pendingCharts: Array<{ reportId: string; chartId: string }> = []
+        for (const row of list) {
+          map[row.id] = isLegacyChineseReport(row.result)
+          if (row.kind === 'fatebook') {
+            const chartId = (row.result as { chart_id?: unknown } | undefined)?.chart_id
+            if (typeof chartId === 'string') pendingCharts.push({ reportId: row.id, chartId })
+          }
+        }
+        setLegacyMap(map)
+        // Fate Books keep their body on the chart row (chart_data.analysis.paid), not in result.
+        if (pendingCharts.length) {
+          const { data: charts } = await supabase
+            .from('charts')
+            .select('id,chart_data')
+            .in('id', pendingCharts.map((p) => p.chartId))
+          const rowsWithCharts = charts as unknown as Array<{
+            id: string
+            chart_data?: { analysis?: { paid?: unknown } }
+          }> | null
+          const paidByChart = new Map<string, unknown>()
+          const payloadByChart = new Map<string, unknown>()
+          for (const chart of rowsWithCharts ?? []) {
+            paidByChart.set(chart.id, chart.chart_data?.analysis?.paid)
+            if (chart.chart_data) payloadByChart.set(chart.id, chart.chart_data)
+          }
+          const update: Record<string, boolean> = {}
+          const payloadUpdate: Record<string, unknown> = {}
+          for (const p of pendingCharts) {
+            const paid = paidByChart.get(p.chartId)
+            if (paid && typeof paid === 'object') {
+              update[p.reportId] = isLegacyChineseReport({ ai: paid })
+            }
+            const payload = payloadByChart.get(p.chartId)
+            if (payload) payloadUpdate[p.reportId] = payload
+          }
+          if (Object.keys(update).length) setLegacyMap((prev) => ({ ...prev, ...update }))
+          if (Object.keys(payloadUpdate).length) setChartPayloads(payloadUpdate)
+        }
+      }
       setLoading(false)
     })()
   }, [])
+
+  // /en/chart replays the chart from localStorage, so a Fate Book row must seed it first.
+  const regenerateFatebook = (reportId: string) => {
+    const payload = chartPayloads[reportId]
+    if (payload) localStorage.setItem('currentChart', JSON.stringify(payload))
+    router.push('/en/chart')
+  }
 
   return (
     <div className="hw-wrap hw-c-pg">
@@ -60,15 +115,41 @@ export default function EnReportsPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {rows.map((r) => (
-            <div key={r.id} className="hw-c-box flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <p className="font-semibold text-ink">{KIND_EN[r.kind] ?? r.kind}</p>
-                <p className="text-xs text-ink-light/60">{new Date(r.created_at).toLocaleDateString('en-US')}</p>
+          {rows.map((r) => {
+            const legacy = legacyMap[r.id] === true
+            return (
+              <div key={r.id} className="hw-c-box flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">
+                    {kindLabelEn(r.kind)}
+                    {legacy && (
+                      <span className="rounded-full border border-gold/30 px-2 py-0.5 text-[11px] font-normal text-ink/60">
+                        {LEGACY_BADGE_EN}
+                      </span>
+                    )}
+                  </p>
+                  <p className="text-xs text-ink-light/60">{new Date(r.created_at).toLocaleDateString('en-US')}</p>
+                  {legacy && (
+                    <p className="mt-1 text-xs text-ink-light/70">
+                      Its body is the original Chinese report and has not been translated. Regenerating creates a new English version for this report only.
+                    </p>
+                  )}
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  {legacy && MODULE_HREF[r.kind] && (
+                    r.kind === 'fatebook' ? (
+                      <button type="button" className="hw-c-link" onClick={() => regenerateFatebook(r.id)}>
+                        {REGENERATE_EN} →
+                      </button>
+                    ) : (
+                      <Link href={MODULE_HREF[r.kind]} className="hw-c-link">{REGENERATE_EN} →</Link>
+                    )
+                  )}
+                  <Link href={`/en/reports/${r.id}`} className="hw-c-link">Open report →</Link>
+                </div>
               </div>
-              <Link href={`/en/reports/${r.id}`} className="hw-c-link">Open report →</Link>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 

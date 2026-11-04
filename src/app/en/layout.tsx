@@ -56,7 +56,7 @@ export default function EnRootLayout({ children }: { children: React.ReactNode }
                   <Link href="/en" className="hover:text-ink">Bazi chart</Link>
                   <Link href="/en/hemun" className="hover:text-ink">Synastry</Link>
                   <Link href="/en/ziwei" className="hover:text-ink">Zi Wei Dou Shu</Link>
-                  <Link href="/en/geo" className="hover:text-ink">Geomancy</Link>
+                  <Link href="/en/geo" className="hover:text-ink">Location &amp; Direction</Link>
                   <Link href="/en/liunian" className="hover:text-ink">Annual report</Link>
                   <Link href="/en/pricing" className="hover:text-ink">Pricing</Link>
                   <Link href="/en/mingshu" className="hover:text-ink">Fate Book</Link>

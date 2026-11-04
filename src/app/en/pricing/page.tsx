@@ -15,7 +15,7 @@ import { triAlternates } from '@/lib/lang'
 export const metadata: Metadata = {
   title: `Pricing: Free Bazi chart · Fate Book ${formatPriceUSD(SKUS.fatebook.priceUSD)} · Membership`,
   description:
-    'Bazi service pricing: a free Four Pillars chart; a full-length Fate Book; single reports for annual pillars, synastry, Zi Wei Dou Shu and geomancy; membership for recurring content.',
+    'Bazi service pricing: a free Four Pillars chart; a full-length Fate Book; single reports for annual pillars, synastry, Zi Wei Dou Shu and Location & Direction; membership for recurring content.',
   alternates: { canonical: '/en/pricing', languages: triAlternates('/pricing') },
 }
 
@@ -39,12 +39,12 @@ const SKU_EN: Record<SkuId, { name: string; desc: string }> = {
     desc: 'Full twelve-palace chart plus twelve written sections: chart overview, temperament, palaces, career, wealth, marriage, health, Four Transformations, structure, decadal cycle, annual cycle and guidance',
   },
   geo: {
-    name: 'Geomancy · Cities of wealth',
+    name: 'Location & Direction · Cities of wealth',
     desc: 'Directional Five Elements and city qi, with five city recommendations',
   },
   bundle3: {
     name: 'Fate Book bundle',
-    desc: 'Fate Book + Zi Wei Dou Shu + Geomancy in one purchase',
+    desc: 'Fate Book + Zi Wei Dou Shu + Location & Direction in one purchase',
   },
   member_monthly: {
     name: 'Monthly membership',
@@ -68,7 +68,7 @@ const GRANT_EN: Record<GrantId, string> = {
   annual_report: 'Annual report (three years)',
   hemun: 'Bazi synastry (two charts, nine dimensions)',
   ziwei_deep: 'Zi Wei Dou Shu (twelve palaces)',
-  geo: 'Geomancy · cities of wealth',
+  geo: 'Location & Direction · cities of wealth',
   daily: 'Daily personal reading',
   liuyue: 'Monthly rhythm',
   jiaoyun: 'Luck Pillar change alerts',

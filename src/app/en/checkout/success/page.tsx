@@ -143,7 +143,7 @@ function SuccessInner() {
     annual_report: 'Annual report',
     hemun: 'Synastry report',
     ziwei_deep: 'Zi Wei deep reading',
-    geo: 'Geomancy report',
+    geo: 'Location & Direction report',
     bundle3: 'bundle',
     member_monthly: 'Monthly membership',
     member_yearly: 'Annual membership',

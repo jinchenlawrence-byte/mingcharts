@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import { useParams } from 'next/navigation'
+import { useParams, useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
+import { kindLabelEn, isLegacyChineseReport, LEGACY_BADGE_EN, REGENERATE_EN } from '@/lib/enReportLabels'
 
 interface ReportRow {
   id: string
@@ -13,19 +14,12 @@ interface ReportRow {
   created_at: string
 }
 
-const KIND_EN: Record<string, string> = {
-  hemun: 'Bazi synastry',
-  ziwei: 'Zi Wei Dou Shu',
-  geo: 'Geomancy',
-  annual: 'Annual report',
-  fatebook: 'Fate Book',
-}
-
 const MODULE_HREF: Record<string, string> = {
   hemun: '/en/hemun',
   ziwei: '/en/ziwei',
   geo: '/en/geo',
   annual: '/en/liunian',
+  fatebook: '/en/chart',
 }
 
 const TITLES: Record<string, Record<string, string>> = {
@@ -85,10 +79,12 @@ const TITLES: Record<string, Record<string, string>> = {
 
 export default function EnReportDetailPage() {
   const params = useParams()
+  const router = useRouter()
   const id = typeof params.id === 'string' ? params.id : ''
   const [row, setRow] = useState<ReportRow | null>(null)
   const [sections, setSections] = useState<Record<string, string> | null>(null)
   const [legacyChinese, setLegacyChinese] = useState(false)
+  const [chartPayload, setChartPayload] = useState<unknown>(null)
   const [loading, setLoading] = useState(true)
   const [notLogged, setNotLogged] = useState(false)
   const [notFound, setNotFound] = useState(false)
@@ -121,6 +117,7 @@ export default function EnReportDetailPage() {
           .eq('id', result.chart_id)
           .single()
         const chartData = chartRow as unknown as { chart_data?: { analysis?: { paid?: unknown } } } | null
+        if (chartData?.chart_data) setChartPayload(chartData.chart_data)
         const paid = chartData?.chart_data?.analysis?.paid
         if (paid && typeof paid === 'object') ai = paid as Record<string, unknown>
       }
@@ -131,8 +128,8 @@ export default function EnReportDetailPage() {
           if (typeof value === 'string' && value.trim()) text[key] = value.trim()
         }
         // Old reports may hold Chinese AI text; never surface it on the English route.
-        const hasCJK = Object.values(text).some((value) => /[\u4e00-\u9fff]/.test(value))
-        if (hasCJK) setLegacyChinese(true)
+        // Same content rule as the list: clear CJK majority in the body, not any stray CJK name.
+        if (isLegacyChineseReport({ ai: text })) setLegacyChinese(true)
         else setSections(Object.keys(text).length ? text : null)
       }
       setLoading(false)
@@ -157,7 +154,14 @@ export default function EnReportDetailPage() {
         </div>
       ) : (
         <>
-          <h1 className="hw-c-h1">{KIND_EN[row.kind] ?? row.kind}</h1>
+          <h1 className="flex flex-wrap items-center gap-2 hw-c-h1">
+            {kindLabelEn(row.kind)}
+            {legacyChinese && (
+              <span className="rounded-full border border-gold/30 px-2 py-0.5 text-[11px] font-normal text-ink/60">
+                {LEGACY_BADGE_EN}
+              </span>
+            )}
+          </h1>
           <p className="hw-c-meta mb-5">{new Date(row.created_at).toLocaleDateString('en-US')}</p>
 
           {sections ? (
@@ -171,19 +175,39 @@ export default function EnReportDetailPage() {
             </div>
           ) : (
             <div className="hw-c-box text-center">
-              <p className="hw-c-body">
-                {legacyChinese
-                  ? 'This saved report was generated in Chinese before the English edition. Regenerate it to receive an English reading.'
-                  : 'This saved report has no English text yet. It may have been generated before the English edition, or the AI service returned the rule-engine version without English body text.'}
-              </p>
+              {legacyChinese ? (
+                <>
+                  <h2 className="hw-c-secTitle">{LEGACY_BADGE_EN}</h2>
+                  <p className="hw-c-body">
+                    This report&apos;s body is the original Chinese version and has not been translated.
+                    The Chinese text is deliberately not rendered on the English route.
+                    Regenerate it to receive a new English reading for this report only; no other saved report is changed.
+                  </p>
+                </>
+              ) : (
+                <p className="hw-c-body">
+                  This saved report has no English text yet. It may have been generated before the English edition, or the AI service returned the rule-engine version without English body text.
+                </p>
+              )}
               {MODULE_HREF[row.kind] && (
-                <Link href={MODULE_HREF[row.kind]} className="hw-c-btnBig inline-block mt-4">
-                  Generate this reading again
-                </Link>
+                row.kind === 'fatebook' ? (
+                  <button
+                    type="button"
+                    className="hw-c-btnBig inline-block mt-4"
+                    onClick={() => {
+                      if (chartPayload) localStorage.setItem('currentChart', JSON.stringify(chartPayload))
+                      router.push('/en/chart')
+                    }}
+                  >
+                    {REGENERATE_EN}
+                  </button>
+                ) : (
+                  <Link href={MODULE_HREF[row.kind]} className="hw-c-btnBig inline-block mt-4">
+                    {REGENERATE_EN}
+                  </Link>
+                )
               )}
-              {row.kind === 'fatebook' && (
-                <Link href="/en/chart" className="hw-c-btnBig inline-block mt-4">Open my chart</Link>
-              )}
+              <Link href="/en/reports" className="hw-c-btnBig inline-block mt-4">Back to my reports</Link>
             </div>
           )}
         </>

@@ -163,7 +163,7 @@ export default function EnGeoClient() {
       <main className="hw-wrap hw-c-pg">
         <Link href="/en" className="hw-c-back">‹ Home</Link>
         <header>
-          <h1 className="hw-c-h1">Geomancy · city directions</h1>
+          <h1 className="hw-c-h1">Location &amp; Direction · city directions</h1>
           <p className="hw-lede">Wealth, career, benefactor and talent cities, read by the Five Elements of direction relative to your birthplace.</p>
           <p className="hw-note">
             Directional Five Elements are calculated from the city's bearing relative to the birthplace.

@@ -183,7 +183,7 @@ export const EN: Record<string, string> = {
   '空宫': 'Empty palace', '命': 'Life', '身': 'Body', '大限': 'Decade', '流年': 'Annual', '小限': 'Minor limit',
 
   // ───────── 方位（Geo）─────────
-  '方位地理 · 城市解析': 'Geomancy · city analysis',
+  '方位地理 · 城市解析': 'Location & Direction · city analysis',
   '財富之城 · 事業之城 · 貴人之城 · 才華之城，按相對出生地的方位推薦城市':
     'Wealth city · Career city · Benefactor city · Talent city — recommended by direction relative to your birthplace.',
   '财富之城 · 事业之城 · 贵人之城 · 才华之城，按相对出生地的方位推荐城市':
@@ -330,7 +330,7 @@ export const EN: Record<string, string> = {
   '还没有保存的命盘，去排一个吧': 'No saved charts yet — cast one.',
   '還沒有保存的命盤，去排一個吧': 'No saved charts yet — cast one.',
   '还没有报告。完成一次合婚配对、紫微斗数、方位城市或年运分析后会自动保存到这里':
-    'No reports yet. Synastry, Zi Wei, geomancy and annual reports are saved here automatically.',
+    'No reports yet. Synastry, Zi Wei, Location & Direction and annual reports are saved here automatically.',
   '已保存': 'Saved',
   '—— 已达上限，': ' — limit reached, ', '—— 已達上限，': ' — limit reached, ',
   '开通会员': 'subscribe', '開通會員': 'subscribe', '可保存更多': ' to save more',
@@ -350,7 +350,7 @@ export const EN: Record<string, string> = {
   '（查看帳單、更換卡片、取消續費）': '(billing, cards, cancel renewal)',
   '前往支付门户 →': 'Open billing portal →', '前往支付門戶 →': 'Open billing portal →',
   '合婚、紫微、地理、年运报告生成后自动保存于此，可反复回看；已购的八字命书也会显示在这里':
-    'Synastry, Zi Wei, geomancy and annual reports are saved here automatically for repeat viewing; purchased Fate Books appear here too.',
+    'Synastry, Zi Wei, Location & Direction and annual reports are saved here automatically for repeat viewing; purchased Fate Books appear here too.',
   '报告不存在或无权查看': 'Report not found or not accessible.',
   '報告不存在或無權查看': 'Report not found or not accessible.',
   '本报告尚未包含深度解读全文': 'This report has no full in-depth text yet',
@@ -358,7 +358,7 @@ export const EN: Record<string, string> = {
   '本报告为规则版解读': 'This report is the rule-engine version',
   '本報告為規則版解讀': 'This report is the rule-engine version',
   '→ 前往重新生成': '→ Regenerate it', '← 返回我的报告': '← Back to my reports', '← 返回我的報告': '← Back to my reports',
-  '合婚详批': 'Synastry report', '紫微深度': 'Zi Wei report', '地理方位': 'Geomancy report',
+  '合婚详批': 'Synastry report', '紫微深度': 'Zi Wei report', '地理方位': 'Location & Direction report',
 
   // ───────── 账号 / 登录 ─────────
   '登录 / 注册': 'Sign in / Sign up',
@@ -499,9 +499,9 @@ export const EN: Record<string, string> = {
   '權益': 'Benefit', '权益': 'Benefit', '免費': 'Free', '免费': 'Free',
   '會員': 'Membership', '会员': 'Membership',
   '年運 / 合婚 / 紫微 / 地理為單項報告，按次單獨購買（會員不含報告），價目見上方「單項報告」。':
-    'Annual, synastry, Zi Wei and geomancy are single reports bought per use (membership excludes reports); see "Single reports" above.',
+    'Annual, synastry, Zi Wei and Location & Direction are single reports bought per use (membership excludes reports); see "Single reports" above.',
   '年运 / 合婚 / 紫微 / 地理为单项报告，按次单独购买（会员不含报告），价目见上方「单项报告」。':
-    'Annual, synastry, Zi Wei and geomancy are single reports bought per use (membership excludes reports); see "Single reports" above.',
+    'Annual, synastry, Zi Wei and Location & Direction are single reports bought per use (membership excludes reports); see "Single reports" above.',
   '常見問題': 'FAQ', '常见问题': 'FAQ',
   '先免費排盤，看看你的命盤': 'Cast a free chart and see your pillars',
   '先免费排盘，看看你的命盘': 'Cast a free chart and see your pillars',

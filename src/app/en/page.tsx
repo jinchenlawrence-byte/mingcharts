@@ -101,7 +101,7 @@ export default function EnHome() {
               Wealth, career, benefactor, settling and talent cities, chosen by the Five Elements of
               direction relative to your birthplace.
             </p>
-            <Link href="/en/geo" className="hw-c-link inline-block mt-2">Open geomancy (English edition) →</Link>
+            <Link href="/en/geo" className="hw-c-link inline-block mt-2">Open Location &amp; Direction (English edition) →</Link>
           </div>
           <div className="border border-gold/20 rounded-lg p-3">
             <div className="font-bold text-ink">Annual report</div>
