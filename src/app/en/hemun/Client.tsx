@@ -103,8 +103,8 @@ function AiSections({ data }: { data: HemunData }) {
   return (
     <div className="hw-c-box">
       <p className="hw-c-body">
-        The English report is not available for this run. The detailed rule-engine table is available
-        in the Chinese edition; please try again later.
+        The English report is not available for this run. The rule-engine synastry tables above are
+        still in English; please try again later to load the in-depth AI reading.
       </p>
     </div>
   )

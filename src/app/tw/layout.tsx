@@ -50,15 +50,17 @@ export default function HantRootLayout({ children }: { children: React.ReactNode
             inLanguage="zh-Hant"
           />
           <header className="border-b border-gold/15">
-            <div className="hw-wrap flex items-center justify-between py-3">
-              <Link href="/tw" className="font-bold text-lg text-ink">
+            <div className="hw-wrap flex items-center justify-between gap-3 py-3">
+              <Link href="/tw" className="shrink-0 font-bold text-lg text-ink">
                 明理
               </Link>
-              <nav className="flex flex-wrap items-center gap-4 text-sm text-ink-light">
+              <nav className="flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-4 overflow-x-auto whitespace-nowrap text-sm text-ink-light [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <Link href="/tw" className="hover:text-ink">排盤</Link>
                 <Link href="/tw/shengxiao" className="hover:text-ink">生肖</Link>
                 <Link href="/tw/hemun" className="hover:text-ink">合婚</Link>
                 <Link href="/tw/ziwei" className="hover:text-ink">紫微</Link>
+                <Link href="/tw/geo" className="hover:text-ink">方位城市</Link>
+                <Link href="/tw/liunian" className="hover:text-ink">年運報告</Link>
                 <Link href="/tw/mingshu" className="hover:text-ink">命書</Link>
                 <Link href="/tw/article" className="hover:text-ink">命理知識</Link>
                 <Link href="/tw/pricing" className="hover:text-ink">價目</Link>

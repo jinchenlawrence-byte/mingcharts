@@ -53,7 +53,8 @@ function AiSections({ data }: { data: LiunianResultData }) {
   return (
     <div className="hw-c-box">
       <p className="hw-c-body">
-        The English annual report is not available for this run. Please try again later.
+        The English annual reading is not available for this run. The rule-engine annual and monthly
+        tables above are still in English; please try again later.
       </p>
     </div>
   )

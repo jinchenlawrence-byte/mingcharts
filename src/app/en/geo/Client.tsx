@@ -97,8 +97,8 @@ function AiSections({ data }: { data: GeoResultData }) {
   return (
     <div className="hw-c-box">
       <p className="hw-c-body">
-        The English report is not available for this run. The detailed rule-engine city table is
-        available in the Chinese edition; please try again later.
+        The English report is not available for this run. The rule-engine city tables above are still
+        in English; please try again later to load the in-depth AI reading.
       </p>
     </div>
   )

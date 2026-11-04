@@ -74,8 +74,23 @@ for (const [file, marker] of [
 console.log('—— ⑤ 账户、会员、报告列表与支付回跳 ——')
 {
   const layout = read('src/app/en/layout.tsx')
-  for (const href of ['/en/reports', '/en/member', '/en/account']) {
+  for (const href of ['/en/hemun', '/en/ziwei', '/en/geo', '/en/liunian', '/en/reports', '/en/member', '/en/account']) {
     assert(layout.includes(`href="${href}"`), `英文导航含 ${href}`)
+  }
+  // 三套语言树的五个工具入口必须齐全且不隐藏（移动端只允许横向滚动，不得 hidden）。
+  {
+    const tw = read('src/app/tw/layout.tsx')
+    const zh = read('src/components/Nav.tsx')
+    for (const href of ['/tw/hemun', '/tw/ziwei', '/tw/geo', '/tw/liunian']) {
+      assert(tw.includes(`href="${href}"`), `繁体导航含 ${href}`)
+    }
+    for (const href of ['/hemun', '/ziwei', '/geo', '/liunian']) {
+      assert(new RegExp(`href[:=]\\s*["']${href}["']`).test(zh), `简体导航含 ${href}`)
+    }
+    for (const tree of [layout, tw]) {
+      const navSection = tree.slice(tree.indexOf('<nav'), tree.indexOf('</nav>'))
+      assert(!/hidden\s+(sm|md|lg):/.test(navSection), '导航工具项未按断点隐藏')
+    }
   }
   {
     const mb = read('src/components/MembershipButton.tsx')

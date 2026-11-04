@@ -18,9 +18,10 @@ const NAV_LINKS: { href: string; label: string; hide?: 'md' | 'lg' }[] = [
   { href: '/', label: '排盘' },
   { href: '/daily', label: '每日日签' },
   { href: '/hemun', label: '合婚配对' },
-  { href: '/ziwei', label: '紫微斗数', hide: 'md' },
-  { href: '/liunian', label: '年运报告', hide: 'lg' },
-  { href: '/geo', label: '方位城市', hide: 'lg' },
+  // 五个工具入口在手机端也不隐藏：导航行本身横向滚动，避免“移动端缺项”。
+  { href: '/ziwei', label: '紫微斗数' },
+  { href: '/liunian', label: '年运报告' },
+  { href: '/geo', label: '方位城市' },
   { href: '/bazi', label: '出生日期', hide: 'lg' },
   { href: '/shengxiao', label: '生肖运势', hide: 'lg' },
   { href: '/article', label: '命理知识', hide: 'md' },

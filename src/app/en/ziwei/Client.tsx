@@ -50,8 +50,8 @@ function AiSections({ data }: { data: ZiweiResultData }) {
   return (
     <div className="hw-c-box">
       <p className="hw-c-body">
-        The English report is not available for this run. The detailed rule-engine chart is available
-        in the Chinese edition; please try again later.
+        The English report is not available for this run. The rule-engine palace tables above are
+        still in English; please try again later to load the in-depth AI reading.
       </p>
     </div>
   )

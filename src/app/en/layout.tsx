@@ -47,12 +47,16 @@ export default function EnRootLayout({ children }: { children: React.ReactNode }
             inLanguage="en"
           />
           <header className="border-b border-gold/15">
-            <div className="hw-wrap flex flex-wrap items-center justify-between gap-3 py-3">
-              <Link href="/en" className="font-bold text-lg text-ink">
+            <div className="hw-wrap flex items-center justify-between gap-3 py-3">
+              <Link href="/en" className="shrink-0 font-bold text-lg text-ink">
                 MingCharts
               </Link>
-              <nav className="flex flex-wrap items-center gap-4 text-sm text-ink-light">
+              <nav className="flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-4 overflow-x-auto whitespace-nowrap text-sm text-ink-light [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                 <Link href="/en" className="hover:text-ink">Bazi chart</Link>
+                <Link href="/en/hemun" className="hover:text-ink">Synastry</Link>
+                <Link href="/en/ziwei" className="hover:text-ink">Zi Wei Dou Shu</Link>
+                <Link href="/en/geo" className="hover:text-ink">Geomancy</Link>
+                <Link href="/en/liunian" className="hover:text-ink">Annual report</Link>
                 <Link href="/en/pricing" className="hover:text-ink">Pricing</Link>
                 <Link href="/en/mingshu" className="hover:text-ink">Fate Book</Link>
                 <Link href="/en/reports" className="hover:text-ink">My reports</Link>
