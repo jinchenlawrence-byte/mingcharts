@@ -43,7 +43,7 @@ function loadTurnstile(): Promise<void> {
   return scriptLoading
 }
 
-export default function Turnstile({ onToken, resetKey, onError }: { onToken: (t: string | null) => void; resetKey: number; onError?: () => void }) {
+export default function Turnstile({ onToken, resetKey, onError, ariaLabel = '人机验证' }: { onToken: (t: string | null) => void; resetKey: number; onError?: () => void; ariaLabel?: string }) {
   const holderRef = useRef<HTMLDivElement | null>(null)
   const widgetIdRef = useRef<string | null>(null)
   const onTokenRef = useRef(onToken)
@@ -87,5 +87,5 @@ export default function Turnstile({ onToken, resetKey, onError }: { onToken: (t:
   }, [resetKey])
 
   if (!SITE_KEY) return null
-  return <div ref={holderRef} className="flex justify-center" aria-label="人机验证" />
+  return <div ref={holderRef} className="flex justify-center" aria-label={ariaLabel} />
 }

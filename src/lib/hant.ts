@@ -25,7 +25,34 @@ const GANZHI_RE = new RegExp(`[${GAN}][${ZHI}]`, 'g')
 //     封闭词表，转繁后必须仍是同一个词，否则筛选/统计/文案一致性全部错位
 //   注：干支/天干/藏干这类「干」字术语不能整词保护 —— 那会把「时干」的「时」一起冻住，
 //       于是改用下面的「只保护干这一个字」的规则（见 MASK_GAN_*）
-const PROTECTED_TERMS = ['小凶', '大凶', '小吉', '大吉', '凶'] as const
+//   · 斗數/北斗/斗柄/斗木獬 是「北斗」之斗；opencc 在 cn→twp 下会把「斗數」
+//     判成「鬥數」（鬥=争斗）。繁体树里「紫微斗數」本来就是繁体字面量，再过一次
+//     toHant 就会变成「紫微鬥數」，属于典型的转换误伤，故按命理术语整体保护。
+//     顺序=长词优先，避免「斗木獬」被拆开。
+const PROTECTED_TERMS = ['斗木獬', '斗數', '北斗', '斗柄', '小凶', '大凶', '小吉', '大吉', '凶'] as const
+
+// ★ 现代汉语里的「衝」（衝動/衝突/衝擊…）与命理里的「沖」（相沖/沖合/沖開）
+//   opencc 对单字「冲」一律给「衝」，不会按命理语境判断。做法是：
+//   ① 先把现代词（简/繁写法都算）整体保护，转换后还原为「衝」；
+//   ② 其余「衝」在多字文本里统一校正为「沖」。
+//   单字仍保留「衝」（既有行为，单字太岁关系由 hantTaiSui 直接给「沖」）。
+//   「衝動用神」是命理语境（冲动=冲开/引动），必须在「衝動」之前单独保护。
+const CHONG_FIXED: ReadonlyArray<readonly [string, string]> = [
+  ['衝動用神', '沖動用神'],
+  ['冲动用神', '沖動用神'],
+]
+const CHONG_MODERN: ReadonlyArray<readonly [string, string]> = [
+  ['衝動', '衝動'], ['冲动', '衝動'],
+  ['衝突', '衝突'], ['冲突', '衝突'],
+  ['衝擊', '衝擊'], ['冲击', '衝擊'],
+  ['衝勁', '衝勁'], ['冲劲', '衝勁'],
+  ['衝刺', '衝刺'], ['冲刺', '衝刺'],
+  ['衝鋒', '衝鋒'], ['冲锋', '衝鋒'],
+  ['衝出', '衝出'], ['冲出', '衝出'],
+  ['衝上', '衝上'], ['冲上', '衝上'],
+  ['衝進', '衝進'], ['冲进', '衝進'],
+  ['衝浪', '衝浪'], ['冲浪', '衝浪'],
+]
 
 // ★ 「干」字术语：命理里的 干=天干，绝不能转成「幹/乾」。
 //   只把【干字本身】打成占位符，前后字照常转换（例：时干 → 時干，而不是 时干）
@@ -43,6 +70,7 @@ const PH_OPEN = '\uE000'
 const PH_CLOSE = '\uE001'
 const PH_RE = new RegExp(`${PH_OPEN}(\\d+)${PH_CLOSE}`, 'g')
 const GAN_TOKEN = `${PH_OPEN}GAN${PH_CLOSE}`
+const CHOU_TOKEN = `${PH_OPEN}CHOU${PH_CLOSE}`
 
 /** 把干支对、术语「干」字、受保护判词替换成私有区占位符，绕开词典 */
 function mask(text: string): { masked: string; kept: string[] } {
@@ -56,7 +84,19 @@ function mask(text: string): { masked: string; kept: string[] } {
   // ② 「干」字术语：只保护 干 本身，保留前一字参与转换
   out = out.replace(MASK_GAN_AFTER, (_all, pre: string) => `${pre}${GAN_TOKEN}`)
   out = out.replace(MASK_GAN_BEFORE, (_all, post: string) => `${GAN_TOKEN}${post}`)
-  // ③ 判词整词保护
+  // ③ 地支「丑」：opencc 会把它转成「醜」（丑陋的醜），而命理里丑=地支。
+  //    只保护 丑 这个字，后面的「时/月/未」照常转换（丑时 → 丑時）。
+  out = out.replace(/丑/g, CHOU_TOKEN)
+  // ④ 现代词「衝」与命理「沖動用神」先整体保护，避免下一步被统一改成「沖」
+  for (const [term, fixed] of CHONG_FIXED) {
+    if (!out.includes(term)) continue
+    out = out.split(term).join(stash(fixed))
+  }
+  for (const [term, fixed] of CHONG_MODERN) {
+    if (!out.includes(term)) continue
+    out = out.split(term).join(stash(fixed))
+  }
+  // ⑤ 判词与命理术语整词保护
   for (const term of PROTECTED_TERMS) {
     if (!out.includes(term)) continue
     out = out.split(term).join(stash(term))
@@ -69,8 +109,10 @@ export function toHant(text: string): string {
   if (!text) return text
   const { masked, kept } = mask(text)
   let converted = convert(masked)
+  // 多字文本：除已保护的现代词外，命理语境的「衝」统一校正为「沖」（相沖/沖合/沖開/刑沖）
+  if (text.length > 1) converted = converted.replace(/衝/g, '沖')
   converted = converted.replace(PH_RE, (_all, i: string) => kept[Number(i)] ?? '')
-  converted = converted.split(GAN_TOKEN).join('干')
+  converted = converted.split(GAN_TOKEN).join('干').split(CHOU_TOKEN).join('丑')
   for (const [from, to] of POST_FIXES) {
     if (converted.includes(from)) converted = converted.split(from).join(to)
   }

@@ -37,7 +37,7 @@ export default function HantShengXiaoIndex() {
             <div key={sx.slug} className="hw-c-box">
               <div className="flex items-center justify-between mb-2">
                 <Link href={`/tw/shengxiao/${sx.slug}`} className="font-bold text-lg text-ink hover:underline">
-                  屬{sx.name}
+                  屬{toHant(sx.name)}
                 </Link>
                 <span className="text-xs text-ink-light/60">
                   地支{sx.zhi} · 五行屬{sx.wuxing}

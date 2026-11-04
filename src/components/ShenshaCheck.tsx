@@ -161,7 +161,7 @@ export default function ShenshaCheck({ locale }: { locale: SiteLang }) {
         </div>
 
         <div className="mt-2">
-          <BirthPlacePicker value={birth} onChange={setBirth} accent="blue" />
+          <BirthPlacePicker value={birth} onChange={setBirth} accent="blue" locale={locale} />
         </div>
 
         <div className="flex flex-wrap items-center gap-3 mt-4">

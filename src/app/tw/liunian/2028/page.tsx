@@ -173,7 +173,7 @@ export default function HantLiunian2028Page() {
       <p className="text-center text-xs text-ink-light/50 mt-2">
         <Link href="/tw/liunian/2027" className="hw-c-link">看 2027 丁未年運勢總覽 →</Link>
         <span className="text-ink-light/40 mx-2">·</span>
-        <Link href={`/liunian/${YEAR}`} className="hw-c-link">简体版：2028 戊申年运势总览 →</Link>
+        <Link href={`/liunian/${YEAR}`} className="hw-c-link">简体版：2028 戊申年運勢總覽 →</Link>
       </p>
     </div>
   )

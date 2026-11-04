@@ -193,7 +193,7 @@ export default function AuthPage() {
         <div className="hw-auth">
           <div className="hw-c-box">
             <h1 className="hw-c-secTitle hw-c-h2C">
-              {forgot ? '找回密码' : (isLogin ? '登录' : '注册')}
+              {H(forgot ? '找回密码' : (isLogin ? '登录' : '注册'))}
             </h1>
 
             {/* 双标签（设计稿要素）：登录 / 注册 */}
@@ -212,7 +212,7 @@ export default function AuthPage() {
                     {H(message)}
                   </p>)}
 
-                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)}/>
+                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)} ariaLabel={H('人机验证')}/>
                 {tsPending && (<p className="text-xs text-ink-light text-center">{H("正在加载人机验证…")}</p>)}
                 {tsFailed && (<div className="text-center space-y-2">
                     <p className="text-sm text-red-600">{H("人机验证加载失败：请关闭浏览器的广告/拦截功能，或更换浏览器（Chrome／Edge／Safari）后重试")} </p>
@@ -220,14 +220,14 @@ export default function AuthPage() {
                   </div>)}
 
                 <button type="submit" disabled={loading || (TURNSTILE_ENABLED && !captchaToken)} className="hw-c-btnBig">
-                  {loading ? '发送中...' : '发送重置邮件'}
+                  {H(loading ? '发送中...' : '发送重置邮件')}
                 </button>
               </form>) : (<form onSubmit={handleAuth} noValidate={!isLogin} className="space-y-4">
                 {/* ★ Google 第三方登录（2026-10-20，主攻海外）：开关关闭时不渲染
                 type="button" 保证不触发表单提交；新老账号口径在下方小字讲清 */}
                 {GOOGLE_ENABLED && (<>
                     <button type="button" onClick={handleGoogle} disabled={loading} className="hw-c-btnBig">
-                      {loading ? '正在跳转…' : '使用 Google 登录'}
+                      {H(loading ? '正在跳转…' : '使用 Google 登录')}
                     </button>
                     <p className="hw-note text-center">{H("或使用邮箱（新用户将自动创建账号）")}</p>
                   </>)}
@@ -258,7 +258,7 @@ export default function AuthPage() {
                     {H(message)}
                   </p>)}
 
-                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)}/>
+                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)} ariaLabel={H('人机验证')}/>
                 {tsPending && (<p className="text-xs text-ink-light text-center">{H("正在加载人机验证…")}</p>)}
                 {tsFailed && (<div className="text-center space-y-2">
                     <p className="text-sm text-red-600">{H("人机验证加载失败：请关闭浏览器的广告/拦截功能，或更换浏览器（Chrome／Edge／Safari）后重试")} </p>
@@ -266,7 +266,7 @@ export default function AuthPage() {
                   </div>)}
 
                 <button type="submit" disabled={loading || (TURNSTILE_ENABLED && !captchaToken)} className="hw-c-btnBig">
-                  {loading ? '处理中...' : (isLogin ? '登录' : '注册')}
+                  {H(loading ? '处理中...' : (isLogin ? '登录' : '注册'))}
                 </button>
               </form>)}
 

@@ -117,7 +117,7 @@ export default async function HantShengXiaoLiunian({ params }: { params: Promise
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 text-sm">
             <Lucky label="幸運顏色" value={toHant(sx.luckyColor.split('、')[0])} />
             <Lucky label="幸運數字" value={sx.luckyNumber} />
-            <Lucky label="本命佛" value={sx.benmingfo} />
+            <Lucky label="本命佛" value={toHant(sx.benmingfo)} />
           </div>
         </div>
 

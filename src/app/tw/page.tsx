@@ -219,7 +219,7 @@ export default function HantHome() {
               href={`/tw/shengxiao/${sx.slug}`}
               className="border border-gold/20 rounded-lg p-3 hover:bg-gold/5 transition"
             >
-              <div className="font-bold text-ink">{H('屬')}{sx.name}</div>
+              <div className="font-bold text-ink">{H('屬')}{H(sx.name)}</div>
               <div className="text-xs text-ink-light mt-1">
                 {H('地支')}{sx.zhi} · {H('五行屬')}{sx.wuxing}
               </div>

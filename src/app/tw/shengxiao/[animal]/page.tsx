@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ animal: s
   const name = toHant(sx.name)
   return {
     title: `屬${name}的命運詳解：${sx.years.slice(-4).join('、')}年屬${name}人性格財運婚姻運勢`,
-    description: `屬${name}（地支${sx.zhi}、五行屬${toHant(sx.wuxing)}）人命理解析：性格特點、事業財運、婚姻配對、健康養生、本命佛${sx.benmingfo}、幸運數字顏色，以及 2024-2031 流年運勢。`,
+    description: `屬${name}（地支${sx.zhi}、五行屬${toHant(sx.wuxing)}）人命理解析：性格特點、事業財運、婚姻配對、健康養生、本命佛${toHant(sx.benmingfo)}、幸運數字顏色，以及 2024-2031 流年運勢。`,
     alternates: {
       canonical: `/tw/shengxiao/${sx.slug}`,
       languages: hantAlternates(`/shengxiao/${sx.slug}`),
@@ -59,7 +59,7 @@ export default async function HantShengXiaoDetail({ params }: { params: Promise<
           <div>
             <h1 className="hw-c-h1">屬{name}人命運詳解</h1>
             <p className="hw-c-meta">
-              地支{sx.zhi} · 五行屬{toHant(sx.wuxing)} · 本命佛{sx.benmingfo}
+              地支{sx.zhi} · 五行屬{toHant(sx.wuxing)} · 本命佛{toHant(sx.benmingfo)}
             </p>
             <p className="text-ink-light/40 text-xs mt-1">
               出生年份（以立春為界）：{sx.years.join('、')}年
@@ -88,7 +88,7 @@ export default async function HantShengXiaoDetail({ params }: { params: Promise<
           <LuckyItem label="幸運數字" value={sx.luckyNumber} />
           <LuckyItem label="幸運顏色" value={toHant(sx.luckyColor)} />
           <LuckyItem label="有利方位" value={toHant(sx.luckyDirection)} />
-          <LuckyItem label="本命佛" value={sx.benmingfo} />
+          <LuckyItem label="本命佛" value={toHant(sx.benmingfo)} />
           <LuckyItem label="吉祥花卉" value={toHant(sx.luckyFlower)} />
           <LuckyItem label="幸運寶石" value={toHant(sx.luckyStone)} />
         </div>
