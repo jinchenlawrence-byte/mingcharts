@@ -18,6 +18,24 @@ import { decideRootLang, homeForLang, LANG_COOKIE, LANG_ASKED_COOKIE } from '@/l
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
 
+  // ★ 2026-11 收录整治：/bazi 的年/月/日 URL 统一补零。
+  //   现状 /bazi/1990/3 与 /bazi/1990/03 都返回 200 且各指自身，属于重复内容。
+  //   只做 308 永久归一，不改页面内容；日页虽 noindex，也一并归一避免抓取浪费。
+  const bazi = pathname.match(/^\/bazi\/(\d{4})(?:\/(\d{1,2})(?:\/(\d{1,2}))?)?\/?$/)
+  if (bazi) {
+    const [, year, month, day] = bazi
+    if (month) {
+      const paddedMonth = month.padStart(2, '0')
+      const paddedDay = day ? day.padStart(2, '0') : null
+      const isNormalized = month === paddedMonth && (!day || day === paddedDay)
+      if (!isNormalized) {
+        const url = request.nextUrl.clone()
+        url.pathname = `/bazi/${year}/${paddedMonth}${paddedDay ? `/${paddedDay}` : ''}`
+        return NextResponse.redirect(url, 308)
+      }
+    }
+  }
+
   // 只处理根路径。理论上 matcher 已限定，这里再兜一层，防 matcher 漂移。
   if (pathname !== '/') return NextResponse.next()
 
@@ -42,5 +60,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/'],
+  matcher: ['/', '/bazi/:path*'],
 }
