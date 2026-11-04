@@ -8,6 +8,16 @@ import { JIERI } from '@/lib/jieriData'
 const RAW_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || ''
 const BASE_URL = RAW_URL && !RAW_URL.includes('localhost') ? RAW_URL.replace(/\/$/, '') : 'https://www.mingcharts.com'
 
+/**
+ * ★ 2026-11 收录整治：732 个月页（/bazi/{year}/{MM}）暂缓提交 sitemap。
+ *
+ * 这些页面本身仍然 200、仍然可索引（不是 noindex），只是先不主动提交，
+ * 让 Google 先把抓取预算集中在 61 个已补独有内容的年页上。
+ * 等 GSC 中年页的「已编入索引 / 抓取请求」数据稳定后，再决定是否把此开关打开。
+ * 恢复提交只需要把 false 改成 true，不要顺手删掉这段注释。
+ */
+export const INCLUDE_BAZI_MONTHLY_IN_SITEMAP = false
+
 export default function sitemap(): MetadataRoute.Sitemap {
   // 固定页面
   const staticPages: MetadataRoute.Sitemap = [
@@ -71,8 +81,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
   ]
 
   // 出生日期聚合页（1950-2010 年/月）
-  // 注：不再收录 /bazi/{y}/{m}/{d} 每日页（约 2.2 万条薄内容，已设为 noindex），
-  // 只保留年、月两级聚合页，避免 sitemap 被大量低质 URL 稀释。
+  // 注：不再收录 /bazi/{y}/{m}/{d} 每日页（约 2.2 万条薄内容，已设为 noindex）。
+  // 月页（732 条）仍可访问、可索引，只是暂不从 sitemap 提交，避免稀释年页权重。
   const baziPages: MetadataRoute.Sitemap = []
   for (let y = 1950; y <= 2010; y++) {
     baziPages.push({
@@ -80,13 +90,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'yearly',
       priority: 0.6
     })
-    for (let m = 1; m <= 12; m++) {
-      const mm = String(m).padStart(2, '0')
-      baziPages.push({
-        url: `${BASE_URL}/bazi/${y}/${mm}`,
-        changeFrequency: 'yearly',
-        priority: 0.5
-      })
+    if (INCLUDE_BAZI_MONTHLY_IN_SITEMAP) {
+      for (let m = 1; m <= 12; m++) {
+        const mm = String(m).padStart(2, '0')
+        baziPages.push({
+          url: `${BASE_URL}/bazi/${y}/${mm}`,
+          changeFrequency: 'yearly',
+          priority: 0.5
+        })
+      }
     }
   }
 
