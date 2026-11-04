@@ -96,9 +96,9 @@ export default function Nav() {
               {l.label}
             </Link>
           ))}
-          {/* 第 36 轮：简体页通往繁體版的入口（此前只有 /tw 里有简体切换，反方向没有） */}
-          <HansLangSwitch className="whitespace-nowrap text-ink/40 transition-colors hover:text-ink" />
         </div>
+        {/* 语言切换固定在工具行之外，移动端横向滚动时仍始终可见 */}
+        <HansLangSwitch className="shrink-0 whitespace-nowrap text-ink/40 transition-colors hover:text-ink" />
         {/* ★ 已登录 → 账号下拉（2026-10-20）：把 6 个账号入口收成一个菜单。
             背景：顶栏 16 项需约 1300px，而宽度上限 1080px —— 平铺必然有项被挤出屏幕
             （用户两次实测：先「账号设置」被裁，钉住它之后「我的报告」又被裁）。

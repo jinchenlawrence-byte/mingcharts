@@ -54,23 +54,28 @@ export default function HantRootLayout({ children }: { children: React.ReactNode
               <Link href="/tw" className="shrink-0 font-bold text-lg text-ink">
                 明理
               </Link>
-              <nav className="flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-4 overflow-x-auto whitespace-nowrap text-sm text-ink-light [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <Link href="/tw" className="hover:text-ink">排盤</Link>
-                <Link href="/tw/shengxiao" className="hover:text-ink">生肖</Link>
-                <Link href="/tw/hemun" className="hover:text-ink">合婚</Link>
-                <Link href="/tw/ziwei" className="hover:text-ink">紫微</Link>
-                <Link href="/tw/geo" className="hover:text-ink">方位城市</Link>
-                <Link href="/tw/liunian" className="hover:text-ink">年運報告</Link>
-                <Link href="/tw/mingshu" className="hover:text-ink">命書</Link>
-                <Link href="/tw/article" className="hover:text-ink">命理知識</Link>
-                <Link href="/tw/pricing" className="hover:text-ink">價目</Link>
-                <Link href="/tw/charts" className="hover:text-ink">我的命盤</Link>
-                <Link href="/tw/reports" className="hover:text-ink">我的報告</Link>
-                <Link href="/tw/member" className="hover:text-ink">會員</Link>
-                <Link href="/tw/account" className="hover:text-ink">帳戶</Link>
-                <Link href="/tw/auth" className="hover:text-ink">登入</Link>
-                {/* 语言切换：由 lib/hant.twinPath 按当前路径推导 */}
-                <HantLangSwitch />
+              <nav className="flex min-w-0 flex-1 items-center justify-end gap-3 text-sm text-ink-light sm:gap-4">
+                <div className="flex min-w-0 flex-1 items-center justify-end gap-4 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <Link href="/tw" className="hover:text-ink">排盤</Link>
+                  <Link href="/tw/shengxiao" className="hover:text-ink">生肖</Link>
+                  <Link href="/tw/hemun" className="hover:text-ink">合婚</Link>
+                  <Link href="/tw/ziwei" className="hover:text-ink">紫微</Link>
+                  <Link href="/tw/geo" className="hover:text-ink">方位城市</Link>
+                  <Link href="/tw/liunian" className="hover:text-ink">年運報告</Link>
+                  <Link href="/tw/mingshu" className="hover:text-ink">命書</Link>
+                  <Link href="/tw/article" className="hover:text-ink">命理知識</Link>
+                  <Link href="/tw/pricing" className="hover:text-ink">價目</Link>
+                  <Link href="/tw/charts" className="hover:text-ink">我的命盤</Link>
+                  <Link href="/tw/reports" className="hover:text-ink">我的報告</Link>
+                  <Link href="/tw/member" className="hover:text-ink">會員</Link>
+                  <Link href="/tw/account" className="hover:text-ink">帳戶</Link>
+                </div>
+                {/* 登入与语言切换固定在右侧，不随工具行滚动，移动端也始终可见。 */}
+                <div className="flex shrink-0 items-center gap-3">
+                  <Link href="/tw/auth" className="hover:text-ink">登入</Link>
+                  {/* 语言切换：由 lib/hant.twinPath 按当前路径推导 */}
+                  <HantLangSwitch />
+                </div>
               </nav>
             </div>
           </header>

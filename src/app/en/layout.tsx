@@ -51,20 +51,25 @@ export default function EnRootLayout({ children }: { children: React.ReactNode }
               <Link href="/en" className="shrink-0 font-bold text-lg text-ink">
                 MingCharts
               </Link>
-              <nav className="flex min-w-0 flex-1 flex-nowrap items-center justify-end gap-4 overflow-x-auto whitespace-nowrap text-sm text-ink-light [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                <Link href="/en" className="hover:text-ink">Bazi chart</Link>
-                <Link href="/en/hemun" className="hover:text-ink">Synastry</Link>
-                <Link href="/en/ziwei" className="hover:text-ink">Zi Wei Dou Shu</Link>
-                <Link href="/en/geo" className="hover:text-ink">Geomancy</Link>
-                <Link href="/en/liunian" className="hover:text-ink">Annual report</Link>
-                <Link href="/en/pricing" className="hover:text-ink">Pricing</Link>
-                <Link href="/en/mingshu" className="hover:text-ink">Fate Book</Link>
-                <Link href="/en/reports" className="hover:text-ink">My reports</Link>
-                <Link href="/en/member" className="hover:text-ink">Member</Link>
-                <Link href="/en/account" className="hover:text-ink">Account</Link>
-                <Link href="/en/auth" className="hover:text-ink">Sign in</Link>
-                <Link href="/tw" className="hover:text-ink">繁體</Link>
-                <Link href="/" className="hover:text-ink">简体</Link>
+              <nav className="flex min-w-0 flex-1 items-center justify-end gap-3 text-sm text-ink-light sm:gap-4">
+                <div className="flex min-w-0 flex-1 items-center justify-end gap-4 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <Link href="/en" className="hover:text-ink">Bazi chart</Link>
+                  <Link href="/en/hemun" className="hover:text-ink">Synastry</Link>
+                  <Link href="/en/ziwei" className="hover:text-ink">Zi Wei Dou Shu</Link>
+                  <Link href="/en/geo" className="hover:text-ink">Geomancy</Link>
+                  <Link href="/en/liunian" className="hover:text-ink">Annual report</Link>
+                  <Link href="/en/pricing" className="hover:text-ink">Pricing</Link>
+                  <Link href="/en/mingshu" className="hover:text-ink">Fate Book</Link>
+                  <Link href="/en/reports" className="hover:text-ink">My reports</Link>
+                  <Link href="/en/member" className="hover:text-ink">Member</Link>
+                  <Link href="/en/account" className="hover:text-ink">Account</Link>
+                </div>
+                {/* 登录与语言切换固定在右侧，不随工具行滚动，移动端也始终可见。 */}
+                <div className="flex shrink-0 items-center gap-3">
+                  <Link href="/en/auth" className="hover:text-ink">Sign in</Link>
+                  <Link href="/tw" className="hover:text-ink">繁體</Link>
+                  <Link href="/" className="hover:text-ink">简体</Link>
+                </div>
               </nav>
             </div>
           </header>
