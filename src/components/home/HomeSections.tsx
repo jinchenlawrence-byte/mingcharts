@@ -277,6 +277,7 @@ const MORE: Record<SiteLang, { path: string; t: string; s: string }[]> = {
   'zh-Hant': [
     { path: '/shengxiao', t: '十二生肖運勢', s: '屬相配對 · 流年運勢' },
     { path: '/article', t: '命理知識大全', s: '入門 · 十神 · 格局' },
+    { path: '/jieqi', t: '二十四節氣', s: '月令更替 · 節氣養生' },
     { path: '/daily', t: '每日日籤', s: '每天一張 · 今日運勢' },
     { path: '/mingshu', t: '命書詳批', s: '十卷 · 引經據典' },
   ],
