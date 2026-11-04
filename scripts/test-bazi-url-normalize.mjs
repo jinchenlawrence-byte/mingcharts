@@ -36,9 +36,13 @@ for (const p of ['/bazi/1990/03', '/bazi/1990/03/15']) {
   const res = await fetch(BASE + p, { redirect: 'manual' })
   const html = await res.text()
   const canon = (html.match(/<link rel="canonical" href="([^"]*)"/) || [])[1] || ''
-  const ok = res.status === 200 && canon.endsWith(p)
+  const robots = (html.match(/<meta name="robots" content="([^"]*)"/) || [])[1] || ''
+  // 日页本身 noindex（无 canonical），只断言 200 + noindex；月页断言 canonical 自指。
+  const ok = p === '/bazi/1990/03'
+    ? res.status === 200 && canon.endsWith(p)
+    : res.status === 200 && robots.includes('noindex')
   if (!ok) failed++
-  console.log(`${ok ? 'PASS' : 'FAIL'} ${p} -> ${res.status} canonical=${canon}`)
+  console.log(`${ok ? 'PASS' : 'FAIL'} ${p} -> ${res.status} canonical=${canon} robots=${robots}`)
 }
 
 if (failed) {
