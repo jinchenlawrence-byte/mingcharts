@@ -8,12 +8,16 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { toHant } from '@/lib/hant'
-import HansLangSwitch from '@/components/HansLangSwitch'
+import type { SiteLang } from '@/lib/lang'
+import LangSwitcher from '@/components/LangSwitcher'
 
-export default function SiteFooter() {
+export default function SiteFooter({ locale }: { locale?: SiteLang }) {
   const pathname = usePathname() ?? ''
-  const en = pathname.startsWith('/en')
-  const hant = pathname.startsWith('/tw')
+  // 优先用三棵 root layout 传下来的 locale；没有时按路径兜底（旧调用点不受影响）
+  const lang: SiteLang =
+    locale ?? (pathname.startsWith('/tw') ? 'zh-Hant' : pathname.startsWith('/en') ? 'en' : 'zh-Hans')
+  const en = lang === 'en'
+  const hant = lang === 'zh-Hant'
   const L = (s: string) => (hant ? toHant(s) : s)
 
   if (en) {
@@ -61,7 +65,7 @@ export default function SiteFooter() {
         <Link href={hant ? '/tw/partners' : '/partners'} className="underline hover:text-ink/60">{L('命理师合作')}</Link>
         <span aria-hidden="true">·</span>
         {/* 页脚也给一个语言入口：报告页/分享页没有 Nav */}
-        {hant ? null : <HansLangSwitch className="underline hover:text-ink/60" />}
+        <LangSwitcher locale={lang} className="underline hover:text-ink/60" />
         <span aria-hidden="true">·</span>
         <span>
           {L('城市数据')} ©{' '}

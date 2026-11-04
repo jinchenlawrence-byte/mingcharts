@@ -203,19 +203,24 @@ if (/命理师合作</.test(footer) && !footer.includes("L('命理师合作')"))
   treeFail++; fail('SiteFooter 的「命理师合作」未过 L()（繁体页会露简体）')
 }
 // ★ 第 36 轮：简体页必须有通往繁體版的入口（此前是单向的：只有 /tw 里有「简体」）
-const hansSwitch = readFileSync(near('components/HansLangSwitch.tsx'), 'utf8')
-if (!/twinPath\(pathname, 'zh-Hant'\)/.test(hansSwitch)) {
-  treeFail++; fail('HansLangSwitch 未用 twinPath 推导繁體路径（会写死链接）')
+// 2026-11-04 统一第一批：两份切换器合并为 LangSwitcher（三棵树共用）。
+const langSwitch = readFileSync(near('components/LangSwitcher.tsx'), 'utf8')
+const langSwitchLib = readFileSync(near('lib/lang-switch.ts'), 'utf8')
+if (!/twinPath\(pathname, 'zh-Hant'\)/.test(langSwitchLib)) {
+  treeFail++; fail('lang-switch 未用 twinPath 推导繁體路径（会写死链接）')
 }
-const navSrc = readFileSync(near('components/Nav.tsx'), 'utf8')
+if (!langSwitch.includes('langSwitchHref')) {
+  treeFail++; fail('LangSwitcher 未复用 lang-switch 纯函数（会出现 /tw/en 这类坏链接）')
+}
+const siteHeader = readFileSync(near('components/SiteHeader.tsx'), 'utf8')
 // ★ 必须匹配 JSX 用法：只查名字会被 import 那一行满足（牙口实测过）
-if (!/<HansLangSwitch/.test(navSrc)) { treeFail++; fail('简中导航没有「繁體」切换入口（只有 import 不算）') }
+if (!/<LangSwitcher locale={locale}/.test(siteHeader)) { treeFail++; fail('三语导航没有语言切换入口（只有 import 不算）') }
 const footerSrc2 = readFileSync(near('components/SiteFooter.tsx'), 'utf8')
-if (!/<HansLangSwitch/.test(footerSrc2)) { treeFail++; fail('页脚没有「繁體」切换入口（只有 import 不算）') }
+if (!/<LangSwitcher locale={lang}/.test(footerSrc2)) { treeFail++; fail('页脚没有语言切换入口（只有 import 不算）') }
 
 const rootLayout2 = readFileSync(near('app/(zh)/layout.tsx'), 'utf8')
 if (!rootLayout2.includes('<SiteChrome')) { treeFail++; fail('简体 root layout 未使用 SiteChrome') }
-if (!chrome.includes('<SiteFooter />')) { treeFail++; fail('SiteChrome 未使用 SiteFooter') }
+if (!chrome.includes('<SiteFooter')) { treeFail++; fail('SiteChrome 未使用 SiteFooter') }
 if (rootLayout2.includes('命理师合作') || chrome.includes('命理师合作')) { treeFail++; fail('root layout/SiteChrome 仍有硬编码简体页脚文案（繁体页会露简体）') }
 
 console.log(treeFail === 0 ? '✓ 结构：lang=zh-Hant、cookie 同步就位、WebPage JSON-LD 声明 zh-Hant、根 WebSite 不再写死 zh-CN、落地页链 12 属相、详情页板块齐全、未混用简体导航' : `✗ 结构失败 ${treeFail} 处`)

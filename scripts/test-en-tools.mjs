@@ -73,25 +73,23 @@ for (const [file, marker] of [
 // ---------- ⑤ 第三步链路：导航 / 会员中心 / 支付成功 ----------
 console.log('—— ⑤ 账户、会员、报告列表与支付回跳 ——')
 {
-  const layout = read('src/app/en/layout.tsx')
-  for (const href of ['/en/hemun', '/en/ziwei', '/en/geo', '/en/liunian', '/en/reports', '/en/member', '/en/account']) {
-    assert(layout.includes(`href="${href}"`), `英文导航含 ${href}`)
+  // 2026-11-04 统一第一批：三棵树导航收口到 lib/site-nav.ts（locale 参数化）。
+  // 旧断言在 layout 源码里找 href 字面量，现已不成立；改为按语言解析真实 URL 后断言。
+  const { navHrefs, itemsFor, ACCOUNT_ITEMS } = await import('../src/lib/site-nav.ts')
+  const { pathForLang } = await import('../src/lib/lang.ts')
+  const enAll = [...navHrefs('en'), ...itemsFor('en', ACCOUNT_ITEMS).map((i) => pathForLang(i.path, 'en'))]
+  for (const href of ['/hemun', '/ziwei', '/geo', '/liunian', '/reports', '/member', '/account']) {
+    assert(enAll.includes(pathForLang(href, 'en')), `英文导航含 ${pathForLang(href, 'en')}`)
   }
   // 三套语言树的五个工具入口必须齐全且不隐藏（移动端只允许横向滚动，不得 hidden）。
-  {
-    const tw = read('src/app/tw/layout.tsx')
-    const zh = read('src/components/Nav.tsx')
-    for (const href of ['/tw/hemun', '/tw/ziwei', '/tw/geo', '/tw/liunian']) {
-      assert(tw.includes(`href="${href}"`), `繁体导航含 ${href}`)
-    }
+  for (const lang of ['zh-Hans', 'zh-Hant', 'en']) {
     for (const href of ['/hemun', '/ziwei', '/geo', '/liunian']) {
-      assert(new RegExp(`href[:=]\\s*["']${href}["']`).test(zh), `简体导航含 ${href}`)
-    }
-    for (const tree of [layout, tw]) {
-      const navSection = tree.slice(tree.indexOf('<nav'), tree.indexOf('</nav>'))
-      assert(!/hidden\s+(sm|md|lg):/.test(navSection), '导航工具项未按断点隐藏')
+      assert(navHrefs(lang).includes(pathForLang(href, lang)), `${lang} 导航含 ${pathForLang(href, lang)}`)
     }
   }
+  const header = read('src/components/SiteHeader.tsx')
+  const navSection = header.slice(header.indexOf('<nav'), header.indexOf('</nav>'))
+  assert(!/hidden\s+(sm|md|lg):/.test(navSection), '导航工具项未按断点隐藏')
   {
     const mb = read('src/components/MembershipButton.tsx')
     assert(mb.includes("'/en/member'") && mb.includes("'/tw/member'"), '会员按钮按语言落 /en/member 或 /tw/member，不落中文 /member')

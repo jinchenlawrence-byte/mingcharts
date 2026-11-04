@@ -60,8 +60,8 @@ export default function SiteChrome({ lang = 'zh-Hans' }: { lang?: SiteLang }) {
       <TrackPageView />
       {/* PWA：注册 Service Worker（仅 https/localhost 生效，静默失败） */}
       <PwaRegister />
-      {/* 页脚：按路径决定简繁英 */}
-      <SiteFooter />
+      {/* 页脚：按 root layout 传入的 locale 出简 / 繁 / 英 */}
+      <SiteFooter locale={lang} />
     </>
   )
 }

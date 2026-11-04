@@ -120,17 +120,19 @@ console.log('—— ⑤ 收录与通知 ——')
 // ---------- ⑥ 语言切换器按路径推导 ----------
 console.log('—— ⑥ 语言切换器 ——')
 {
+  // 2026-11-04 统一第一批：繁体 layout 不再手写语言链接，改由共享 SiteHeader + LangSwitcher。
   const layout = read('src/app/tw/layout.tsx')
   if (layout.includes('href="/shengxiao"') && /简体/.test(layout)) {
-    fail('layout 里仍有写死的「简体」链接（应改用 HantLangSwitch + twinPath）')
-  } else if (!layout.includes('HantLangSwitch')) {
-    fail('layout 未使用 HantLangSwitch')
-  } else ok('layout 使用 HantLangSwitch（按 twinPath 推导目标）')
+    fail('layout 里仍有写死的「简体」链接（应改用共享 LangSwitcher + twinPath）')
+  } else if (!layout.includes('<SiteHeader locale="zh-Hant"')) {
+    fail('layout 未使用共享 SiteHeader（locale=zh-Hant）')
+  } else ok('layout 使用共享 SiteHeader（locale=zh-Hant）')
 
-  const sw = read('src/components/HantLangSwitch.tsx')
-  if (!sw.includes('twinPath') || !sw.includes('usePathname')) {
-    fail('HantLangSwitch 未同时使用 usePathname 与 twinPath')
-  } else ok('HantLangSwitch 使用 usePathname + twinPath')
+  const sw = read('src/components/LangSwitcher.tsx')
+  const swLib = read('src/lib/lang-switch.ts')
+  if (!swLib.includes('twinPath') || !sw.includes('usePathname')) {
+    fail('LangSwitcher/lang-switch 未同时使用 usePathname 与 twinPath')
+  } else ok('LangSwitcher 使用 usePathname + twinPath 推导目标')
 }
 
 console.log(allPass ? '\nTW_FUNNEL_PASS' : '\nTW_FUNNEL_FAIL')

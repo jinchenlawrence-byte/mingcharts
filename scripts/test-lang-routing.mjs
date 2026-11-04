@@ -169,8 +169,17 @@ console.log('—— ⑨ 语言提示条与繁体登录入口 ——')
   if (!bar.includes('hasLanguageChoice')) { f++; fail('提示条未在已有语言选择时隐藏') }
   if (!bar.includes('href="/tw"') || !bar.includes('href="/en"')) { f++; fail('提示条缺繁体/英文入口') }
   if (!bar.includes('data-lang-prompt="1"')) { f++; fail('提示条缺稳定标记（HTTP 断言无法识别）') }
-  const twLayout = read('src/app/tw/layout.tsx')
-  if (!twLayout.includes('href="/tw/auth"')) { f++; fail('/tw 导航没有登录入口') }
+  // 2026-11-04 统一第一批：登录入口来自共享 SiteHeader（locale 参数化），
+  // 断言从“layout 里找字面量”改为“三语都解析出登录入口”。
+  for (const lang of ['zh-Hans', 'zh-Hant', 'en']) {
+    const href = pathForLang('/auth', lang)
+    if (!read('src/components/SiteHeader.tsx').includes('pathForLang(\'/auth\', locale)')) {
+      f++; fail('共享 SiteHeader 未按 locale 输出登录入口')
+    }
+    if (href !== (lang === 'zh-Hans' ? '/auth' : lang === 'zh-Hant' ? '/tw/auth' : '/en/auth')) {
+      f++; fail(`${lang} 登录入口解析错误：${href}`)
+    }
+  }
   if (f === 0) ok('根路径提示条三选一、写 mc_lang_asked、已选隐藏；/tw 导航含 /tw/auth')
 }
 
@@ -178,12 +187,13 @@ console.log('—— ⑨ 语言提示条与繁体登录入口 ——')
 console.log('—— ⑦ 语言切换写 cookie ——')
 {
   let f = 0
-  for (const file of ['src/components/HansLangSwitch.tsx', 'src/components/HantLangSwitch.tsx']) {
-    const src = read(file)
-    if (!src.includes('LANG_COOKIE') || !src.includes('document.cookie')) { f++; fail(`${file} 未写 mc_lang cookie`) }
-    if (!src.includes('English')) { f++; fail(`${file} 缺 English 切换入口`) }
+  // 2026-11-04 统一第一批：Hans/Hant 两份切换器合并为 LangSwitcher。
+  const src = read('src/components/LangSwitcher.tsx')
+  if (!src.includes('LANG_COOKIE') || !src.includes('document.cookie')) { f++; fail('LangSwitcher 未写 mc_lang cookie') }
+  for (const label of ['简体', '繁體', 'English']) {
+    if (!src.includes(label)) { f++; fail(`LangSwitcher 缺 ${label} 切换入口`) }
   }
-  if (f === 0) ok('简/繁切换器均含 English 入口，点击写 mc_lang（不依赖 IP）')
+  if (f === 0) ok('语言切换器含简/繁/英入口，点击写 mc_lang（不依赖 IP）')
 }
 
 // ---------- 牙口 ----------

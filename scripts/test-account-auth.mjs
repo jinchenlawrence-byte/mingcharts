@@ -168,17 +168,28 @@ const authCode = stripComments(authSrc)
 }
 
 // ═══════════════════════════════════════════════════════════
-// ③ Nav 账号设置入口（§四-1 ★★★★）
+// ③ 账号入口（§四-1 ★★★★）
+//   2026-11-04 统一第一批：导航收口到 components/SiteHeader.tsx + lib/site-nav.ts。
+//   断言随之改为「三语都解析出 /account」+「入口链接不带 hidden」——比找字面量更强。
 // ═══════════════════════════════════════════════════════════
-console.log('—— ③ Nav 账号设置入口 ——')
+console.log('—— ③ 账号入口 ——')
 
 {
-  const navCode = stripComments(read('../src/components/Nav.tsx'))
-  const n = navCode.split('href="/account"').length - 1
-  assert(n >= 1, `Nav.tsx 含指向 /account 的链接（href="/account" 命中 ${n}，要求 ≥1）`)
-  // 移动端可点：/account 链接不得带 hidden 类（已登录区其余链接均平铺可见，同款样式）
-  const linkLine = navCode.split('\n').find((l) => l.includes('href="/account"')) ?? ''
-  assert(!/hidden/.test(linkLine), 'Nav 的 /account 链接不带 hidden 类（移动端可点）')
+  const navTable = stripComments(read('../src/lib/site-nav.ts'))
+  const header = stripComments(read('../src/components/SiteHeader.tsx'))
+  const accountEntry = /path:\s*'\/account'/.test(navTable)
+  assert(accountEntry, 'site-nav.ts 含账号入口 path: \'/account\'')
+  assert(header.includes('itemsFor(locale, ACCOUNT_ITEMS)') && header.includes('hrefFor(item, locale)'),
+    'SiteHeader 按 locale 渲染账号入口（三棵树都有账号设置）')
+  // 三语解析结果（路径前缀不同，目标结构必须一致）
+  const { pathForLang } = await import('../src/lib/lang.ts')
+  for (const [lang, want] of [['zh-Hans', '/account'], ['zh-Hant', '/tw/account'], ['en', '/en/account']]) {
+    assert(pathForLang('/account', lang) === want, `${lang} 的账号入口解析为 ${want}`)
+  }
+  // 移动端可点：账号菜单项不按断点隐藏
+  const accountLinkLine = header.split('\n').find((l) => l.includes('accountItems.map')) ?? ''
+  assert(!/hidden\s+(sm|md|lg):/.test(header), '账号入口不按断点隐藏（移动端可点）')
+  assert(accountLinkLine.length > 0, '账号入口确由 accountItems.map 渲染')
 }
 
 // ═══════════════════════════════════════════════════════════
