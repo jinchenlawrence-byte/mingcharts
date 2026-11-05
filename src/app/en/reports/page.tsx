@@ -30,6 +30,7 @@ export default function EnReportsPage() {
   const [chartPayloads, setChartPayloads] = useState<Record<string, unknown>>({})
   const [loading, setLoading] = useState(true)
   const [notLogged, setNotLogged] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
     ;(async () => {
@@ -90,6 +91,23 @@ export default function EnReportsPage() {
   }, [])
 
   // /en/chart replays the chart from localStorage, so a Fate Book row must seed it first.
+  /**
+   * 删除报告（2026-11-05 补：英文「我的报告」此前没有删除入口，
+   * 简体与繁体都有 —— 三树该一致）。
+   * ★ 只做前端删除 + RLS 保护：reports 的删除权限由 Supabase 行级策略按 user_id 限制，
+   *   页面不传 user_id，也不该传。
+   */
+  const handleDelete = async (id: string) => {
+    if (!confirm('Delete this report? This cannot be undone.')) return
+    const { error: delError } = await getSupabase().from('reports').delete().eq('id', id)
+    if (delError) {
+      setError('Delete failed: ' + delError.message)
+      return
+    }
+    setRows((prev) => prev.filter((r) => r.id !== id))
+    setError('')
+  }
+
   const regenerateFatebook = (reportId: string) => {
     const payload = chartPayloads[reportId]
     if (payload) localStorage.setItem('currentChart', JSON.stringify(payload))
@@ -115,6 +133,7 @@ export default function EnReportsPage() {
         </div>
       ) : (
         <div className="space-y-3">
+          {error && <p className="hw-c-err">{error}</p>}
           {rows.map((r) => {
             const legacy = legacyMap[r.id] === true
             return (
@@ -146,6 +165,13 @@ export default function EnReportsPage() {
                     )
                   )}
                   <Link href={`/en/reports/${r.id}`} className="hw-c-link">Open report →</Link>
+                    <button
+                      type="button"
+                      className="hw-c-link text-ink/45 hover:text-red-600"
+                      onClick={() => handleDelete(r.id)}
+                    >
+                      Delete
+                    </button>
                 </div>
               </div>
             )
