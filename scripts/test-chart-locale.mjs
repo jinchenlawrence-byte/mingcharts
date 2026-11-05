@@ -41,6 +41,19 @@ for (const [f, loc] of PAGES) {
     `${f}：请求体依赖语言 cookie —— 会被其它语言页的访问带偏`)
 }
 
+console.log('—— ③ 追问也必须带 locale ——')
+// 同一根因的第三处：AskPanel 的 POST 之前不带 locale，
+// 服务端退回 mc_locale cookie → 中文用户访问过 /en 后，追问回答变英文（线上实测）。
+{
+  const ask = readFileSync('src/components/AskPanel.tsx', 'utf8')
+  assert(/question:\s*q,\s*locale/.test(ask),
+    'AskPanel 请求体带 locale（追问与所问报告同语言）',
+    'AskPanel 请求体不带 locale —— 会退回 cookie，追问可能变成别的语言')
+  assert(/locale\s*=\s*'zh-Hans'/.test(ask),
+    'AskPanel 的 locale 有默认值（简体树不传也对）',
+    'AskPanel 的 locale 无默认值')
+}
+
 console.log('')
 if (allPass) console.log('CHART_LOCALE_PASS')
 else {

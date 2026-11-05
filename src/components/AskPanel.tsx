@@ -105,7 +105,10 @@ export default function AskPanel({
       const res = await fetch('/api/ask', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: session.access_token, chartId: chartId ?? undefined, chart, question: q }),
+        // ★ 2026-11-05：显式带 locale。此前不带 → 服务端退回 mc_locale cookie，
+      //   用户访问过 /en 后，中文用户的追问回答会变成英文（线上实测）。
+      //   追问必须与「所问那份报告」同语言，由面板所在树决定，不由 cookie 决定。
+      body: JSON.stringify({ token: session.access_token, chartId: chartId ?? undefined, chart, question: q, locale }),
       })
       const data = await res.json().catch(() => null)
       if (!res.ok) {
