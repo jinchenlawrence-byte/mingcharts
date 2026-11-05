@@ -158,7 +158,7 @@ export default function MyCharts() {
             <p className="text-xs text-ink-light/60 -mt-3 mb-4">
               已保存 {rows.length}/{limit} 个命盘
               {rows.length >= limit && (
-                <> —— 已达上限，<Link href="/pricing" className="text-[#3a66ff] hover:underline">开通会员</Link>可保存更多</>
+                <> —— 已达上限，<Link href="/pricing" className="text-hw-water hover:underline">开通会员</Link>可保存更多</>
               )}
             </p>
           )}

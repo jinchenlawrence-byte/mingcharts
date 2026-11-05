@@ -156,7 +156,7 @@ export default function PartnerLanding({ locale }: { locale: OutputLocale }) {
         <PartnerApplyForm hant={hant} />
       </section>
 
-      <p className="text-center text-xs text-ink-light/40">
+      <p className="hw-alert hw-alert--note text-center">
         {L('报告内容为传统命理民俗文化分析，仅供参考娱乐。')}
         {' '}
         <Link href={hant ? '/tw' : '/'} className="hw-c-link">{L('返回首页')}</Link>

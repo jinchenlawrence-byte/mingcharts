@@ -156,16 +156,16 @@ export default function HantHome() {
           </div>
           <BirthPlacePicker value={birth} onChange={setBirth} locale="zh-Hant" />
           <button type="submit" disabled={loading}
-            className="mt-4 w-full rounded-full bg-[#3a66ff] py-4 text-[17px] font-bold text-white transition hover:brightness-110 disabled:opacity-60">
+            className="mt-4 w-full rounded-full bg-hw-water py-4 text-[17px] font-bold text-white transition hover:brightness-110 disabled:opacity-60">
             {loading ? H('排盤中...') : H('開始排盤')}
           </button>
-          {error && <p className="mt-2 text-center text-sm text-[#ff6b5b]">{error}</p>}
+          {error && <p className="mt-2 text-center text-sm text-hw-fire">{error}</p>}
           <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
-            <Link href="/tw/daily" className="text-[#3a66ff] underline underline-offset-2 hover:opacity-80">
+            <Link href="/tw/daily" className="text-hw-water underline underline-offset-2 hover:opacity-80">
               {H('今日日運（免費看）')}
             </Link>
             <span className="text-ink-light/30" aria-hidden="true">·</span>
-            <Link href="/tw/shensha/check" className="text-[#3a66ff] underline underline-offset-2 hover:opacity-80">
+            <Link href="/tw/shensha/check" className="text-hw-water underline underline-offset-2 hover:opacity-80">
               {H('免費查你的神煞')}
             </Link>
           </div>

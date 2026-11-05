@@ -60,16 +60,16 @@ export default async function DailyPage({
             </div>
             <div className="text-xs text-ink-light/40 mt-1">六十甲子第 {view.jiaziIndex} 位</div>
 
-            <div className="my-8 mx-auto w-16 h-px bg-[#dedcf0]" />
+            <div className="my-8 mx-auto w-16 h-px bg-hw-line" />
 
             <p className="text-2xl leading-relaxed text-stone-800 font-serif tracking-wide">
               「{view.sign}」
             </p>
 
-            <div className="my-8 mx-auto w-16 h-px bg-[#dedcf0]" />
+            <div className="my-8 mx-auto w-16 h-px bg-hw-line" />
 
             <p className="text-xs text-ink/70/80 mb-1.5">★ {DAILY_SIGN_DAY_BOUNDARY}</p>
-            <p className="text-xs text-ink-light/40">{view.disclaimer}</p>
+            <p className="hw-alert hw-alert--note">{view.disclaimer}</p>
           </div>
 
           <DailyShareCard

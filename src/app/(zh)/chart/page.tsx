@@ -35,7 +35,7 @@ const ZHI_WX: Record<string, string> = {
   '申': 'metal', '酉': 'metal', '亥': 'water', '子': 'water',
 }
 const WX_CN: Record<string, string> = { wood: '木', fire: '火', earth: '土', metal: '金', water: '水' }
-const WX_BG: Record<string, string> = { wood: '#3CC796', fire: '#FF6B5B', earth: '#F6C24F', metal: '#D6DBE6', water: '#3A66FF' }
+const WX_BG: Record<string, string> = { wood: 'var(--hw-wood)', fire: 'var(--hw-fire)', earth: 'var(--hw-earth)', metal: 'var(--hw-metal)', water: 'var(--hw-water)' }
 const WX_ORDER = ['wood', 'fire', 'earth', 'metal', 'water'] as const
 const WX_DESC: Record<string, string> = {
   wood: '如树，向上生长，重成长与仁心。',
@@ -172,7 +172,7 @@ function LuckCyclesView({ luck }: { luck: LuckCycles }) {
                 ))}
               </div>
             )}
-            <p className="mt-2 text-[11px] text-ink-light/40">岁运为倾向性参考，非确定性预言；重大决策（投资、迁居、婚嫁）请勿仅凭此断定。</p>
+            <p className="hw-alert hw-alert--note mt-2">岁运为倾向性参考，非确定性预言；重大决策（投资、迁居、婚嫁）请勿仅凭此断定。</p>
           </div>
         )}
       </div>

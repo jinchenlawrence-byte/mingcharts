@@ -218,7 +218,7 @@ export default function GeoPage() {
             </p>
             {error && <p className="hw-c-err text-center">{error}</p>}
           </div>
-          <p className="hw-note text-center">结果仅供参考，福地福人居，个人努力为本</p>
+          <p className="hw-alert hw-alert--note text-center">结果仅供参考，福地福人居，个人努力为本</p>
         </form>
 
         {/* 结果 */}

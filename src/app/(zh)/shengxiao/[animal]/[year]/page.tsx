@@ -214,7 +214,7 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
           </p>
         </div>
 
-        <p className="text-center text-xs text-ink-light/40 mt-6">
+        <p className="hw-alert hw-alert--note text-center mt-6">
           本文为传统命理民俗内容，仅供参考娱乐，不构成任何决策建议。
         </p>
         </div>

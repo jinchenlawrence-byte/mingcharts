@@ -182,25 +182,25 @@ export default function AskPanel({
               <div
                 className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap ${
                   m.role === 'user'
-                    ? 'bg-[#3a66ff] text-white'
+                    ? 'bg-hw-water text-white'
                     : m.refused
-                      ? 'bg-gold/5 border border-gold/20 text-ink/80'
-                      : 'bg-white border border-[#dedcf0] text-ink/80'
+                      ? 'bg-hw-warn-bg border-2 border-hw-warn-line text-ink/80'
+                      : 'bg-white border border-hw-line text-ink/80'
                 }`}
               >
                 {m.refused && (
-                  <div className="text-xs font-semibold text-amber-600 mb-1">{L('此类问题不以命理作判决')}</div>
+                  <div className="text-sm font-extrabold text-hw-earth-ink mb-1">{L('此类问题不以命理作判决')}</div>
                 )}
                 {L(m.text)}
                 {m.disclaimer && (
-                  <div className="text-[11px] text-ink-light/50 mt-2 pt-2 border-t border-black/5">{L(m.disclaimer)}</div>
+                  <div className="hw-alert hw-alert--note mt-2 pt-2 text-[13px]">{L(m.disclaimer)}</div>
                 )}
               </div>
             </div>
           ))}
           {sending && (
             <div className="flex justify-start">
-              <div className="rounded-2xl px-3 py-2 text-sm bg-white border border-[#dedcf0] text-ink-light/60">
+              <div className="rounded-2xl px-3 py-2 text-sm bg-white border border-hw-line text-ink-light/60">
                 {L('命理师正在作答…')}
               </div>
             </div>
@@ -208,11 +208,11 @@ export default function AskPanel({
         </div>
       )}
 
-      {error && <p className="text-xs text-red-600 mb-2">{error}</p>}
+      {error && <p className="hw-alert hw-alert--danger">{error}</p>}
 
       {/* 额度耗尽：购买入口（未登记 productId 时 CheckoutButton 显示「即将推出」） */}
       {quotaOut && (
-        <div className="mb-3 rounded-2xl bg-gold/5 border border-gold/20 p-3">
+        <div className="hw-alert hw-alert--warn">
           <p className="text-sm text-ink/80 mb-2">
             {L('追问次数已用完。可购买追问包（')}{L(SKUS.ask_pack.desc)} · {askPrice}{L('）继续提问。')}
           </p>
@@ -237,7 +237,7 @@ export default function AskPanel({
           placeholder={quotaOut ? L('追问次数已用完，购买追问包后可继续') : L('输入你的问题…')}
           maxLength={300}
           disabled={quotaOut}
-          className="flex-1 rounded-full border border-[#dedcf0] px-4 py-2 text-sm outline-none focus:border-[#3a66ff] disabled:bg-paper-dark/30 disabled:cursor-not-allowed"
+          className="flex-1 rounded-full border border-hw-line px-4 py-2 text-sm outline-none focus:border-hw-water disabled:bg-paper-dark/30 disabled:cursor-not-allowed"
         />
         <button
           type="button"

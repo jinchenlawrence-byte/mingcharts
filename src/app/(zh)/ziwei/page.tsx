@@ -137,7 +137,7 @@ export default function ZiweiPage() {
             </p>
             {error && <p className="hw-c-err text-center">{error}</p>}
           </div>
-          <p className="hw-note text-center">紫微斗数排盘以农历出生时辰为准，结果仅供参考</p>
+          <p className="hw-alert hw-alert--note text-center">紫微斗数排盘以农历出生时辰为准，结果仅供参考</p>
           <p className="hw-note text-center">若选项内无法找到出生城市，可选「其它」手动指定时区。</p>
         </form>
 

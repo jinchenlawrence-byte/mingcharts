@@ -4,6 +4,7 @@
 import { useState } from 'react'
 import { localize } from '@/lib/hant'
 import type { SiteLang } from '@/lib/lang'
+import { SHARE_PALETTE as P } from '@/lib/visual-tokens'
 
 interface Props {
   dateLabel: string      // 如 2026年10月8日
@@ -50,11 +51,11 @@ export default function DailyShareCard(props: Props) {
 
       // 背景：米白渐变 ＋ 边框
       const bg = ctx.createLinearGradient(0, 0, 0, H)
-      bg.addColorStop(0, '#fffaf0')
-      bg.addColorStop(1, '#fdf3e3')
+      bg.addColorStop(0, P.bgTop)
+      bg.addColorStop(1, P.bgBottom)
       ctx.fillStyle = bg
       ctx.fillRect(0, 0, W, H)
-      ctx.strokeStyle = '#d6a35c'
+      ctx.strokeStyle = P.frame
       ctx.lineWidth = 3
       ctx.strokeRect(24, 24, W - 48, H - 48)
 
@@ -62,23 +63,23 @@ export default function DailyShareCard(props: Props) {
 
       // 顶部产品标识
       ctx.textAlign = 'center'
-      ctx.fillStyle = '#92400e'
+      ctx.fillStyle = P.brand
       ctx.font = '600 34px "Songti SC", "SimSun", serif'
       ctx.fillText('明理', center, 92)
-      ctx.fillStyle = '#a16207'
+      ctx.fillStyle = P.subBrand
       ctx.font = '22px "PingFang SC", "Microsoft YaHei", sans-serif'
       ctx.fillText(L('八字命理 · 每日日签'), center, 132)
 
       // 日期 ＋ 干支
-      ctx.fillStyle = '#78350f'
+      ctx.fillStyle = P.date
       ctx.font = '600 34px "Songti SC", "SimSun", serif'
       ctx.fillText(`${props.dateLabel} · ${props.liuRi}${L('日')}`, center, 232)
-      ctx.fillStyle = '#a16207'
+      ctx.fillStyle = P.subBrand
       ctx.font = '24px "PingFang SC", "Microsoft YaHei", sans-serif'
       ctx.fillText(L(`六十甲子第 ${props.jiaziIndex} 位`), center, 278)
 
       // 分隔细线
-      ctx.strokeStyle = '#e7c48d'
+      ctx.strokeStyle = P.rule
       ctx.lineWidth = 1
       ctx.beginPath()
       ctx.moveTo(center - 120, 316)
@@ -86,7 +87,7 @@ export default function DailyShareCard(props: Props) {
       ctx.stroke()
 
       // 日签正文（逐字折行）
-      ctx.fillStyle = '#3f2d1a'
+      ctx.fillStyle = P.body
       ctx.font = '38px "Songti SC", "SimSun", serif'
       const lines = wrapText(ctx, props.sign, W - 180)
       const lineHeight = 62
@@ -94,16 +95,16 @@ export default function DailyShareCard(props: Props) {
       lines.forEach((ln, i) => ctx.fillText(ln, center, startY + i * lineHeight))
 
       // 晚子时约定 ＋ 免责
-      ctx.fillStyle = '#8a6d4b'
+      ctx.fillStyle = P.boundary
       ctx.font = '22px "PingFang SC", "Microsoft YaHei", sans-serif'
       ctx.fillText(`★ ${L(props.boundary)}`, center, H - 196)
-      ctx.fillStyle = '#a98c66'
+      ctx.fillStyle = P.disclaimer
       ctx.font = '20px "PingFang SC", "Microsoft YaHei", sans-serif'
       const discLines = wrapText(ctx, L(props.disclaimer), W - 200)
       discLines.forEach((ln, i) => ctx.fillText(ln, center, H - 148 + i * 30))
 
       // 底部标识
-      ctx.fillStyle = '#92400e'
+      ctx.fillStyle = P.brand
       ctx.font = '600 24px "Songti SC", "SimSun", serif'
       ctx.fillText(L('明理 mingcharts.com · 免费排盘'), center, H - 64)
 

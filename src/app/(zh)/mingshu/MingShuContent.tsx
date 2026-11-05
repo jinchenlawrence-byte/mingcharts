@@ -201,7 +201,7 @@ export default function MingShuContent() {
 
       {/* 底部 */}
       <footer className="hw-wrap pb-10 text-center">
-        <p className="text-xs text-ink-light/40">
+        <p className="hw-alert hw-alert--note">
           本站内容基于传统命理文化整理，仅供学习参考与娱乐，不构成任何人生、医疗、法律、财务决策建议。
         </p>
         <p className="text-xs text-ink-light/40 mt-2">

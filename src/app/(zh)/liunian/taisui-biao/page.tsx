@@ -62,7 +62,7 @@ export default function TaisuiTablePage() {
           </p>
         </section>
 
-        <p className="text-center text-xs text-ink-light/40">
+        <p className="hw-alert hw-alert--note text-center">
           本表为传统命理民俗内容，仅供参考娱乐，不构成任何决策建议。
         </p>
       </div>

@@ -62,7 +62,7 @@ export default function HantTaisuiTablePage() {
         </p>
       </section>
 
-      <p className="text-center text-xs text-ink-light/40">
+      <p className="hw-alert hw-alert--note text-center">
         本表為傳統命理民俗內容，僅供參考娛樂，不構成任何決策建議。
       </p>
     </div>

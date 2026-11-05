@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { SHENGXIAO, getLiunian, LIUNIAN_YEARS } from '@/lib/shengxiaoData'
 import { toHant } from '@/lib/hant'
+import { TAISUI_COLORS } from '@/lib/visual-tokens'
 
 // 十二生肖 × 流年 太岁关系对照表（2026-10-23 第 33 轮）
 //
@@ -14,12 +15,12 @@ import { toHant } from '@/lib/hant'
 type Relation = '值' | '冲' | '害' | '刑' | '合' | '平'
 
 const RELATION_STYLE: Record<Relation, { bg: string; fg: string }> = {
-  '值': { bg: 'rgba(185,65,52,0.14)', fg: '#B94134' },
-  '冲': { bg: 'rgba(196,110,40,0.14)', fg: '#9C5520' },
-  '害': { bg: 'rgba(168,140,40,0.16)', fg: '#8A6D12' },
-  '刑': { bg: 'rgba(112,86,150,0.14)', fg: '#6B4C97' },
-  '合': { bg: 'rgba(58,124,86,0.14)', fg: '#2F6B49' },
-  '平': { bg: 'rgba(120,114,104,0.10)', fg: '#7A7268' },
+  '值': TAISUI_COLORS.zhi,
+  '冲': TAISUI_COLORS.chong,
+  '害': TAISUI_COLORS.hai,
+  '刑': TAISUI_COLORS.xing,
+  '合': TAISUI_COLORS.he,
+  '平': TAISUI_COLORS.ping,
 }
 
 const RELATION_LABEL_HANS: Record<Relation, string> = {
@@ -60,7 +61,7 @@ export default function TaisuiTable({ hant = false, focusYear }: { hant?: boolea
                 className="py-2 px-2 text-center whitespace-nowrap"
                 style={
                   y === focus
-                    ? { backgroundColor: 'rgba(185,65,52,0.08)', color: '#B94134', fontWeight: 600 }
+                    ? { backgroundColor: TAISUI_COLORS.focusBg, color: TAISUI_COLORS.zhi.fg, fontWeight: 600 }
                     : undefined
                 }
               >

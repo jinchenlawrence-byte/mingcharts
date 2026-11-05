@@ -203,22 +203,22 @@ export default function Home() {
               </div>
               <BirthPlacePicker value={birth} onChange={setBirth} />
               <button type="submit" disabled={loading}
-                className="mt-4 w-full rounded-full bg-[#3a66ff] py-4 text-[17px] font-bold text-white transition hover:brightness-110 disabled:opacity-60">
+                className="mt-4 w-full rounded-full bg-hw-water py-4 text-[17px] font-bold text-white transition hover:brightness-110 disabled:opacity-60">
                 {loading ? '排盘中...' : '开始排盘'}
               </button>
-              {error && <p className="mt-2 text-center text-sm text-[#ff6b5b]">{error}</p>}
+              {error && <p className="mt-2 text-center text-sm text-hw-fire">{error}</p>}
               {/* ★ 第 36 轮：日运与免费查神煞入口 —— 给「还没排盘、只想先看一眼」的人一个落点。
                   日运不需要命盘，新用户注册后 3 天内有每日推送提醒。 */}
               <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
-                <a href="/daily" className="text-[#3a66ff] underline underline-offset-2 hover:opacity-80">
+                <a href="/daily" className="text-hw-water underline underline-offset-2 hover:opacity-80">
                   今日日运（免费看）
                 </a>
                 <span className="text-ink-light/30" aria-hidden="true">·</span>
-                <a href="/shensha/check" className="text-[#3a66ff] underline underline-offset-2 hover:opacity-80">
+                <a href="/shensha/check" className="text-hw-water underline underline-offset-2 hover:opacity-80">
                   免费查你的神煞
                 </a>
               </div>
-              <p className="hw-note">
+              <p className="hw-alert hw-alert--note">
                 排盘结果仅供参考娱乐。找不到出生城市？可在上方选择「其它」手动指定时区。
               </p>
             </form>

@@ -10,6 +10,7 @@
 // · 土仅 24°：因土在传统中为「中央」而非方位，故只保留四维过渡带
 // · 相对模型的原始池五行占比随观察点变化（如乌鲁木齐望全国城市天然偏东南），属地理事实，不作退化判据
 import citiesData from '../data/geo-cities.json'
+import { GEO_CATEGORY_COLORS } from './visual-tokens'
 
 // ---------- 五行基础 ----------
 export type WX = '木' | '火' | '土' | '金' | '水'
@@ -614,14 +615,14 @@ export function analyzeGeo(input: GeoInput): GeoAnalysis {
   // 事业之城取印星扶身（化杀生身，根基稳后堪当大任）；身旺则直取财官
   const metas: CategoryMeta[] = [
     strong
-      ? { key: 'wealth', label: '财富之城', icon: '💰', targetWx: WO_KE[dayWx], targetGod: '财星', color: '#d97706' }
-      : { key: 'wealth', label: '财富之城', icon: '💰', targetWx: dayWx, targetGod: '比劫（帮身任财）', color: '#d97706' },
+      ? { key: 'wealth', label: '财富之城', icon: '💰', targetWx: WO_KE[dayWx], targetGod: '财星', color: GEO_CATEGORY_COLORS.wealth }
+      : { key: 'wealth', label: '财富之城', icon: '💰', targetWx: dayWx, targetGod: '比劫（帮身任财）', color: GEO_CATEGORY_COLORS.wealth },
     strong
-      ? { key: 'career', label: '事业之城', icon: '🏛️', targetWx: KE_WO[dayWx], targetGod: '官杀', color: '#7c3aed' }
-      : { key: 'career', label: '事业之城', icon: '🏛️', targetWx: SHENG_WO[dayWx], targetGod: '印星（扶身立业）', color: '#7c3aed' },
-    { key: 'patron', label: '贵人之城', icon: '🌟', targetWx: SHENG_WO[dayWx], targetGod: '印星', color: '#0891b2' },
-    { key: 'home', label: '安居之城', icon: '🏡', targetWx: dayWx, targetGod: '比劫', color: '#059669' },
-    { key: 'talent', label: '才华之城', icon: '🎨', targetWx: WO_SHENG[dayWx], targetGod: '食伤', color: '#db2777' }
+      ? { key: 'career', label: '事业之城', icon: '🏛️', targetWx: KE_WO[dayWx], targetGod: '官杀', color: GEO_CATEGORY_COLORS.career }
+      : { key: 'career', label: '事业之城', icon: '🏛️', targetWx: SHENG_WO[dayWx], targetGod: '印星（扶身立业）', color: GEO_CATEGORY_COLORS.career },
+    { key: 'patron', label: '贵人之城', icon: '🌟', targetWx: SHENG_WO[dayWx], targetGod: '印星', color: GEO_CATEGORY_COLORS.patron },
+    { key: 'home', label: '安居之城', icon: '🏡', targetWx: dayWx, targetGod: '比劫', color: GEO_CATEGORY_COLORS.home },
+    { key: 'talent', label: '才华之城', icon: '🎨', targetWx: WO_SHENG[dayWx], targetGod: '食伤', color: GEO_CATEGORY_COLORS.talent }
   ]
 
   const birth = input.birthplace || null

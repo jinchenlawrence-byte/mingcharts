@@ -49,7 +49,7 @@ function PersonFields({
 }) {
   const set = (patch: Partial<BirthFormState>) => onChange({ ...value, ...patch })
   const inputCls = 'hw-c-input'
-  const titleCls = accent === 'blue' ? 'text-[#3a66ff]' : 'text-[#e04a3a]'
+  const titleCls = accent === 'blue' ? 'text-hw-water' : 'text-hw-fire-ink'
   return (
     <div className="hw-c-box">
       <h3 className={`font-semibold mb-3 ${titleCls}`}>{title}</h3>
@@ -176,7 +176,7 @@ export default function HehunPage() {
             </button>
           </p>
           {error && <p className="hw-c-err text-center">{error}</p>}
-          <p className="hw-note text-center">结果仅供参考娱乐，感情经营在人不在命</p>
+          <p className="hw-alert hw-alert--note text-center">结果仅供参考娱乐，感情经营在人不在命</p>
         </form>
 
         {/* ── 结果区 ── */}

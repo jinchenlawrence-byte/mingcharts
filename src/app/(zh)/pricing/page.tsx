@@ -219,11 +219,11 @@ export default function PricingPage() {
         </header>
 
         {/* 价格卡片 */}
-        <div className="grid md:grid-cols-3 gap-6 mb-14">
+        <div className="grid md:grid-cols-3 gap-6">
           {CARDS.map((card) => (
             <div key={card.name} className={`hw-c-plan${card.highlight ? ' hw-c-planHot' : ''}`}>
               {card.highlight && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#3a66ff] text-white text-xs font-semibold px-3 py-1 rounded-full">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-hw-water text-white text-xs font-semibold px-3 py-1 rounded-full">
                   最受欢迎
                 </span>
               )}
@@ -238,7 +238,7 @@ export default function PricingPage() {
               <ul className="space-y-2 text-sm text-ink/70 flex-1 my-2">
                 {card.features.map((f) => (
                   <li key={f} className="flex gap-2">
-                    <span className="text-[#3a66ff] shrink-0">✓</span>
+                    <span className="text-hw-water shrink-0">✓</span>
                     <span>{f}</span>
                   </li>
                 ))}
@@ -286,7 +286,7 @@ export default function PricingPage() {
         </div>
 
         {/* ★ 单项报告价目：5 个非命书的单项 SKU（命书已有卡片，此处排除）*/}
-        <section className="mb-14">
+        <section className="hw-sec">
           <h2 className="hw-c-h2 hw-c-h2C">单项报告</h2>
           <p className="text-sm text-ink-light text-center mb-6">
             除命书外的深度报告，均可单独购买；也可选三合一套餐更划算。
@@ -327,7 +327,7 @@ export default function PricingPage() {
         </section>
 
         {/* ★ 追问包（ask_pack）：买过任一报告或开通会员后就命盘追问 AI 命理师；价格/描述取自 SKUS 单一事实源 */}
-        <section className="mb-14">
+        <section className="hw-sec">
           <h2 className="hw-c-h2 hw-c-h2C">追问包</h2>
           <p className="text-sm text-ink-light text-center mb-6">
             购买任一报告或开通会员后，即可在命盘页就你的命盘向 AI 命理师追问；
@@ -360,12 +360,12 @@ export default function PricingPage() {
         </section>
 
         {/* 命书报告包含的十大板块 */}
-        <section className="mb-14">
+        <section className="hw-sec">
           <h2 className="hw-c-h2 hw-c-h2C">命书报告包含什么</h2>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {SECTIONS.map((s, i) => (
-              <div key={s} className="rounded-2xl border border-[#dedcf0] bg-white p-4 text-center">
-                <div className="text-[#3a66ff] font-bold text-sm mb-1">{String(i + 1).padStart(2, '0')}</div>
+              <div key={s} className="hw-c-tile text-center">
+                <div className="text-hw-water font-bold text-sm mb-1">{String(i + 1).padStart(2, '0')}</div>
                 <div className="font-semibold text-ink text-sm">{s}</div>
               </div>
             ))}
@@ -373,7 +373,7 @@ export default function PricingPage() {
         </section>
 
         {/* 对比表 */}
-        <section className="mb-14">
+        <section className="hw-sec">
           <h2 className="hw-c-h2 hw-c-h2C">权益对比</h2>
           <div className="hw-c-box hw-c-boxFlush hw-c-tableWrap">
             <table className="hw-c-table">
@@ -399,7 +399,7 @@ export default function PricingPage() {
                       {cells.map((on, i) => (
                         <td key={i}>
                           {on ? (
-                            <span className="text-[#3a66ff]">✓</span>
+                            <span className="text-hw-water">✓</span>
                           ) : (
                             <span className="text-ink-light/30">—</span>
                           )}
@@ -417,14 +417,14 @@ export default function PricingPage() {
         </section>
 
         {/* FAQ */}
-        <section className="mb-14 max-w-3xl mx-auto">
+        <section className="hw-sec max-w-3xl mx-auto">
           <h2 className="hw-c-h2 hw-c-h2C">常见问题</h2>
           <div className="space-y-3">
             {FAQS.map((f) => (
               <details key={f.q} className="hw-c-box group">
                 <summary className="font-semibold text-ink cursor-pointer list-none flex justify-between items-center">
                   {f.q}
-                  <span className="text-[#3a66ff] group-open:rotate-45 transition-transform">＋</span>
+                  <span className="text-hw-water group-open:rotate-45 transition-transform">＋</span>
                 </summary>
                 <p className="mt-3 text-sm text-ink-light leading-relaxed">{f.a}</p>
               </details>
@@ -434,8 +434,8 @@ export default function PricingPage() {
 
         {/* 底部 CTA */}
         <div className="hw-c-cta">
-          <h2 className="hw-c-h2" style={{ marginTop: 0 }}>先免费排盘，看看你的命盘</h2>
-          <p className="hw-note" style={{ marginBottom: 24 }}>输入出生信息，30 秒内生成你的专属命书报告</p>
+          <h2 className="hw-c-h2 mt-0">先免费排盘，看看你的命盘</h2>
+          <p className="hw-note mb-6">输入出生信息，30 秒内生成你的专属命书报告</p>
           <Link
             href="/"
             className="hw-c-btnBig"
@@ -445,7 +445,7 @@ export default function PricingPage() {
         </div>
 
         {/* 免责声明 */}
-        <p className="hw-note text-center pb-8">
+        <p className="hw-alert hw-alert--note">
           本站内容基于传统命理文化整理，仅供学习参考与娱乐，不构成任何人生、医疗、法律、财务决策建议。
         </p>
       </div>

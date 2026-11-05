@@ -13,6 +13,7 @@ import { PREVIEW_FREE } from '@/lib/reportPreview'
 import { LockedCard, UnlockCta } from '@/components/reports/PreviewLock'
 import { localize } from '@/lib/hant'
 import type { SiteLang } from '@/lib/lang'
+import { GEO_PALETTE } from '@/lib/visual-tokens'
 
 export interface GeoResultData {
   geo: GeoAnalysis
@@ -138,20 +139,20 @@ function GeoMap({ geo, locale }: { geo: GeoAnalysis; locale: SiteLang }) {
   }
 
   return (
-    <div ref={wrapRef} className="relative w-full rounded-[22px] overflow-hidden bg-[#eef4fa] border border-gold/15">
+    <div ref={wrapRef} className="relative w-full rounded-[var(--r-lg)] overflow-hidden bg-[var(--geo-sea)] border border-hw-line">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto block">
-        <path d={paths.sphere} fill="#eef4fa" />
-        <path d={paths.graticule} fill="none" stroke="#d7e3ef" strokeWidth={0.6} />
+        <path d={paths.sphere} fill={GEO_PALETTE.sea} />
+        <path d={paths.graticule} fill="none" stroke={GEO_PALETTE.graticule} strokeWidth={0.6} />
         {paths.countryPaths.map((p, i) => (
           <path key={i} d={p.d}
-            fill={p.china ? '#fcd9a8' : '#dcd8cf'}
-            stroke="#ffffff" strokeWidth={0.5} />
+            fill={p.china ? GEO_PALETTE.china : GEO_PALETTE.land}
+            stroke={GEO_PALETTE.white} strokeWidth={0.5} />
         ))}
         {paths.projected.map((m, i) => (
           <g key={i} className="cursor-pointer" onClick={(e) => onMarkerClick(e, m)}>
             <circle cx={m.x} cy={m.y} r={9} fill={m.cat.color}
-              stroke="#fff" strokeWidth={1.5} opacity={0.95} />
-            <text x={m.x} y={m.y + 3.5} textAnchor="middle" fontSize={9} fill="#fff">
+              stroke={GEO_PALETTE.white} strokeWidth={1.5} opacity={0.95} />
+            <text x={m.x} y={m.y + 3.5} textAnchor="middle" fontSize={9} fill={GEO_PALETTE.white}>
               {m.label}
             </text>
           </g>
@@ -160,9 +161,9 @@ function GeoMap({ geo, locale }: { geo: GeoAnalysis; locale: SiteLang }) {
           <g>
             <title>{localize('出生地参照', locale)} · {localize(paths.birth.name, locale)}</title>
             <circle cx={paths.birth.x} cy={paths.birth.y} r={6.5}
-              fill="#374151" stroke="#fff" strokeWidth={1.5} />
+              fill={GEO_PALETTE.birth} stroke={GEO_PALETTE.white} strokeWidth={1.5} />
             <text x={paths.birth.x} y={paths.birth.y + 3.2}
-              textAnchor="middle" fontSize={8.5} fill="#fff">★</text>
+              textAnchor="middle" fontSize={8.5} fill={GEO_PALETTE.white}>★</text>
           </g>
         )}
       </svg>
@@ -273,7 +274,7 @@ export default function GeoResultView({ data, onRegen, regenBusy, locale = 'zh-H
 
       {/* 现居城市影响 */}
       {geo.currentCity && (
-        <div className="hw-c-box hw-c-boxLg border-l-4" style={{ borderColor: geo.currentCity.level === '吉' ? '#059669' : geo.currentCity.level === '忌' ? '#dc2626' : '#d97706' }}>
+        <div className="hw-c-box hw-c-boxLg border-l-4" style={{ borderColor: geo.currentCity.level === '吉' ? GEO_PALETTE.good : geo.currentCity.level === '忌' ? GEO_PALETTE.bad : GEO_PALETTE.caution }}>
           <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
             <h2 className="hw-c-h3">{L('现居城市 ·')} {L(geo.currentCity.name)}</h2>
             <div className="flex items-center gap-1.5">

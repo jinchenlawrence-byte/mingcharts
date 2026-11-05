@@ -237,7 +237,7 @@ export default async function DayPage({ params }: { params: Promise<{ year: stri
           </Link>
         </div>
 
-        <div className="mt-8 hw-c-fine text-center">
+        <div className="hw-alert hw-alert--note text-center mt-8">
           <p>以上分析仅供参考娱乐，不构成人生决策依据。命运掌握在自己手中。</p>
         </div>
       </div>

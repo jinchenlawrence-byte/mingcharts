@@ -171,7 +171,7 @@ export default function EnChartClient() {
               </tbody>
             </table>
           </div>
-          <p className="hw-c-fine">
+          <p className="hw-alert hw-alert--note">
             Auspices follow the common conventions of <b>Yuan Hai Zi Ping</b> (渊海子平) and <b>San Ming Tong Hui</b> (三命通会).
             Benefactors such as Tian Yi Gui Ren, Wen Chang, Lu Shen, Yang Ren and Tai Ji Gui Ren are taken from the Day Stem;
             Peach Blossom, Travelling Horse, Canopy, General Star and the main malefic stars are taken from the Year or Day Branch
@@ -179,7 +179,7 @@ export default function EnChartClient() {
             Ten Days of Great Defeat are read from the Day Pillar itself. Void (Kong Wang) is the pair of branches missing from
             each pillar's ten-day cycle.
           </p>
-          <p className="hw-c-fine">
+          <p className="hw-alert hw-alert--note">
             Schools differ in the finer rules, and some labels (such as the Children star) come from folk tradition rather than
             the classics. Treat every auspice as a reference point, not a verdict: the reading itself rests on the balance of the
             Five Elements and the structure of the chart.

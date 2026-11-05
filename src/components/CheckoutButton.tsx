@@ -137,7 +137,7 @@ export default function CheckoutButton({
         disabled={loading}
         className={`w-full block text-center py-2.5 rounded-full font-semibold transition disabled:opacity-60 ${
           highlight
-            ? 'bg-[#3a66ff] text-white hover:brightness-110'
+            ? 'bg-hw-water text-white hover:brightness-110'
             : 'bg-ink text-white hover:brightness-110'
         }`}
       >
@@ -146,7 +146,7 @@ export default function CheckoutButton({
       {error && <p className="text-xs text-red-600 mt-2 text-center">{error}</p>}
       {noChart && (
         // ★ 无命盘：不弹 alert，页内给出可点的下一步（HANDOFF-命书一份一付 §2.3）
-        <div className="mt-2 text-xs text-ink/70 bg-gold/5 border border-gold/20 rounded-md p-3 text-center">
+        <div className="hw-alert hw-alert--info mt-2 text-center">
           <p className="mb-2">
             {en
               ? 'The Fate Book is written around a saved chart — cast a free chart first, then return.'

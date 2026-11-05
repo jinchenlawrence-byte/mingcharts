@@ -165,7 +165,7 @@ export default function EnPricingPage() {
           </p>
         </header>
 
-        <div className="grid md:grid-cols-3 gap-6 mb-14">
+        <div className="grid md:grid-cols-3 gap-6">
           <div className="hw-c-plan">
             <h2 className="text-lg font-bold">Free chart</h2>
             <div className="flex items-baseline gap-1">
@@ -177,7 +177,7 @@ export default function EnPricingPage() {
               {['Four Pillars chart (stems, Ten Gods, Hidden Stems)', 'Conception · Life Palace · Body Palace',
                 'Strength assessment · structure typing', 'Nine Luck Pillars with start timing',
                 'All zodiac, solar-term and knowledge articles'].map((f) => (
-                <li key={f} className="flex gap-2"><span className="text-[#3a66ff] shrink-0">✓</span><span>{f}</span></li>
+                <li key={f} className="flex gap-2"><span className="text-hw-water shrink-0">✓</span><span>{f}</span></li>
               ))}
             </ul>
             <Link href="/en" className="block text-center py-2.5 rounded-full font-semibold bg-ink text-white hover:brightness-110">
@@ -187,7 +187,7 @@ export default function EnPricingPage() {
           </div>
 
           <div className="hw-c-plan hw-c-planHot">
-            <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#3a66ff] text-white text-xs font-semibold px-3 py-1 rounded-full">
+            <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-hw-water text-white text-xs font-semibold px-3 py-1 rounded-full">
               Most popular
             </span>
             <h2 className="text-lg font-bold">{SKU_EN.fatebook.name}</h2>
@@ -203,7 +203,7 @@ export default function EnPricingPage() {
                 'Concrete trends for the next three Annual Pillars',
                 'Career & wealth / marriage / children & kin / health',
                 'Stored under "My Charts" for repeat viewing'].map((f) => (
-                <li key={f} className="flex gap-2"><span className="text-[#3a66ff] shrink-0">✓</span><span>{f}</span></li>
+                <li key={f} className="flex gap-2"><span className="text-hw-water shrink-0">✓</span><span>{f}</span></li>
               ))}
             </ul>
             <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} highlight authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
@@ -223,11 +223,11 @@ export default function EnPricingPage() {
             <p className="text-sm text-ink-light">{SKU_EN.member_monthly.desc}</p>
             <ul className="space-y-2 text-sm text-ink/70 flex-1 my-2">
               {SUBSCRIPTION_GRANTS.map((g) => (
-                <li key={g} className="flex gap-2"><span className="text-[#3a66ff] shrink-0">✓</span><span>{GRANT_EN[g]}</span></li>
+                <li key={g} className="flex gap-2"><span className="text-hw-water shrink-0">✓</span><span>{GRANT_EN[g]}</span></li>
               ))}
-              <li className="flex gap-2"><span className="text-[#3a66ff] shrink-0">✓</span><span>{MEMBER_ASK_PER_MONTH} AI questions per month</span></li>
-              <li className="flex gap-2"><span className="text-[#3a66ff] shrink-0">✓</span><span>Annual membership {formatPriceUSD(SKUS.member_yearly.priceUSD)}/year (best value)</span></li>
-              <li className="flex gap-2"><span className="text-[#3a66ff] shrink-0">✓</span><span>Fate Book and annual reports are bought per use</span></li>
+              <li className="flex gap-2"><span className="text-hw-water shrink-0">✓</span><span>{MEMBER_ASK_PER_MONTH} AI questions per month</span></li>
+              <li className="flex gap-2"><span className="text-hw-water shrink-0">✓</span><span>Annual membership {formatPriceUSD(SKUS.member_yearly.priceUSD)}/year (best value)</span></li>
+              <li className="flex gap-2"><span className="text-hw-water shrink-0">✓</span><span>Fate Book and annual reports are bought per use</span></li>
             </ul>
             <div className="space-y-3">
               {MEMBER_SKUS.map((s) => (
@@ -238,7 +238,7 @@ export default function EnPricingPage() {
           </div>
         </div>
 
-        <section className="mb-14">
+        <section className="hw-sec">
           <h2 className="hw-c-h2 hw-c-h2C">Single reports</h2>
           <p className="text-sm text-ink-light text-center mb-6">
             All deep reports except the Fate Book can be bought individually.
@@ -269,7 +269,7 @@ export default function EnPricingPage() {
           </div>
         </section>
 
-        <section className="mb-14">
+        <section className="hw-sec">
           <h2 className="hw-c-h2 hw-c-h2C">Question pack</h2>
           <p className="text-sm text-ink-light text-center mb-6">
             After buying any report or subscribing, you can ask the AI astrologer about your chart.
@@ -297,19 +297,19 @@ export default function EnPricingPage() {
           </div>
         </section>
 
-        <section className="mb-14">
+        <section className="hw-sec">
           <h2 className="hw-c-h2 hw-c-h2C">What the Fate Book contains</h2>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {SECTIONS.map((s, i) => (
-              <div key={s} className="rounded-2xl border border-[#dedcf0] bg-white p-4 text-center">
-                <div className="text-[#3a66ff] font-bold text-sm mb-1">{String(i + 1).padStart(2, '0')}</div>
+              <div key={s} className="hw-c-tile text-center">
+                <div className="text-hw-water font-bold text-sm mb-1">{String(i + 1).padStart(2, '0')}</div>
                 <div className="font-semibold text-ink text-sm">{s}</div>
               </div>
             ))}
           </div>
         </section>
 
-        <section className="mb-14">
+        <section className="hw-sec">
           <h2 className="hw-c-h2 hw-c-h2C">Benefits comparison</h2>
           <div className="hw-c-box hw-c-boxFlush hw-c-tableWrap">
             <table className="hw-c-table">
@@ -328,7 +328,7 @@ export default function EnPricingPage() {
                     <tr key={row.label}>
                       <td>{row.label}{row.note && <span className="ml-2 text-xs text-ink-light/40 whitespace-normal">{row.note}</span>}</td>
                       {cells.map((on, i) => (
-                        <td key={i}>{on ? <span className="text-[#3a66ff]">✓</span> : <span className="text-ink-light/30">—</span>}</td>
+                        <td key={i}>{on ? <span className="text-hw-water">✓</span> : <span className="text-ink-light/30">—</span>}</td>
                       ))}
                     </tr>
                   )
@@ -338,14 +338,14 @@ export default function EnPricingPage() {
           </div>
         </section>
 
-        <section className="mb-14 max-w-3xl mx-auto">
+        <section className="hw-sec max-w-3xl mx-auto">
           <h2 className="hw-c-h2 hw-c-h2C">FAQ</h2>
           <div className="space-y-3">
             {FAQS.map((f) => (
               <details key={f.q} className="hw-c-box group">
                 <summary className="font-semibold text-ink cursor-pointer list-none flex justify-between items-center">
                   {f.q}
-                  <span className="text-[#3a66ff] group-open:rotate-45 transition-transform">＋</span>
+                  <span className="text-hw-water group-open:rotate-45 transition-transform">＋</span>
                 </summary>
                 <p className="mt-3 text-sm text-ink-light leading-relaxed">{f.a}</p>
               </details>
@@ -353,7 +353,7 @@ export default function EnPricingPage() {
           </div>
         </section>
 
-        <p className="hw-note text-center pb-8">
+        <p className="hw-alert hw-alert--note">
           All content is compiled from traditional Chinese metaphysics, for study and entertainment
           only; it is not life, medical, legal or financial advice.
         </p>

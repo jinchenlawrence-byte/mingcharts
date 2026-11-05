@@ -171,7 +171,7 @@ export default function Liunian2028Page() {
           </p>
         </section>
 
-        <p className="text-center text-xs text-ink-light/40">
+        <p className="hw-alert hw-alert--note text-center">
           以上为传统命理民俗内容，仅供参考娱乐，不构成任何决策建议。生肖与太岁关系由规则引擎确定性计算，不含 AI 推断。
         </p>
         <p className="text-center text-xs text-ink-light/50 mt-2">

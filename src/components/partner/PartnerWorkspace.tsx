@@ -66,7 +66,7 @@ function PersonFields({
   L: (s: string) => string
 }) {
   const set = (patch: Partial<BirthForm>) => onChange({ ...value, ...patch })
-  const titleCls = accent === 'blue' ? 'text-[#3a66ff]' : 'text-[#e04a3a]'
+  const titleCls = accent === 'blue' ? 'text-hw-water' : 'text-hw-fire-ink'
   return (
     <div className="hw-c-box">
       <h3 className={`font-semibold mb-3 ${titleCls}`}>{title}</h3>

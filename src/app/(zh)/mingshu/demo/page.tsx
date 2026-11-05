@@ -160,7 +160,7 @@ export default function DemoFatebookPage() {
             生成我的命书
           </Link>
         </div>
-        <p className="text-center text-xs text-ink-light/40 mt-6 leading-relaxed">
+        <p className="hw-alert hw-alert--note text-center mt-6">
           示例使用虚构出生资料，仅用于展示报告结构与文风。<br />
           本站内容基于传统命理文化整理，仅供学习参考与娱乐，不构成任何人生、医疗、法律、财务决策建议。
         </p>

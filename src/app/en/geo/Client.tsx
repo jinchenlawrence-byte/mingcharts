@@ -204,7 +204,7 @@ export default function EnGeoClient() {
             </p>
             {error && <p className="hw-c-err text-center">{error}</p>}
           </div>
-          <p className="hw-note text-center">For reference only; personal effort matters most.</p>
+          <p className="hw-alert hw-alert--note text-center">For reference only; personal effort matters most.</p>
         </form>
 
         {data && (

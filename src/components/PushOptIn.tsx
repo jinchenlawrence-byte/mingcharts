@@ -133,7 +133,7 @@ export default function PushOptIn({ locale = 'zh-Hans' }: { locale?: SiteLang })
           <button
             onClick={disable}
             disabled={busy}
-            className="mt-3 rounded-full border border-[#dedcf0] px-4 py-2 text-sm font-semibold text-ink transition hover:bg-paper-dark/40 disabled:opacity-60"
+            className="mt-3 rounded-full border border-hw-line px-4 py-2 text-sm font-semibold text-ink transition hover:bg-paper-dark/40 disabled:opacity-60"
           >
             {busy ? H('处理中…') : H('关闭提醒')}
           </button>

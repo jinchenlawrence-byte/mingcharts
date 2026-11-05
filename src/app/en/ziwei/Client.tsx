@@ -149,7 +149,7 @@ export default function EnZiweiClient() {
             </p>
             {error && <p className="hw-c-err text-center">{error}</p>}
           </div>
-          <p className="hw-note text-center">Zi Wei Dou Shu uses the lunar birth hour; results are for reference.</p>
+          <p className="hw-alert hw-alert--note text-center">Zi Wei Dou Shu uses the lunar birth hour; results are for reference.</p>
           <p className="hw-note text-center">If your birth city is not listed, choose the manual time-zone option.</p>
         </form>
 

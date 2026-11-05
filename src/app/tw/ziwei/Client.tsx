@@ -133,7 +133,7 @@ export default function HantZiweiClient() {
             </p>
             {error && <p className="hw-c-err text-center">{error}</p>}
           </div>
-          <p className="hw-note text-center">{H('紫微斗數排盤以農曆出生時辰為準，結果僅供參考')}</p>
+          <p className="hw-alert hw-alert--note text-center">{H('紫微斗數排盤以農曆出生時辰為準，結果僅供參考')}</p>
           <p className="hw-note text-center">{H('若選項內無法找到出生城市，可選「其它」手動指定時區。')}</p>
         </form>
 

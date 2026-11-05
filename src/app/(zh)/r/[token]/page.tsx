@@ -183,7 +183,7 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
         {row!.kind === 'annual' && <LiunianResultView data={row!.result as unknown as LiunianResultData} />}
 
         <footer className="mt-10 pt-4 border-t border-gold/15">
-          <p className="text-xs text-ink-light/60">{DISCLAIMER}</p>
+          <p className="hw-alert hw-alert--note">{DISCLAIMER}</p>
           <p className="text-xs text-ink-light/40 mt-2">
             由 明理 mingcharts.com 引擎生成 ·{' '}
             <Link href="/" className="hw-c-link">mingcharts.com</Link>

@@ -119,7 +119,7 @@ export default function DemoMingshuPage() {
           </p>
         </section>
 
-        <p className="text-center text-xs text-ink-light/40">
+        <p className="hw-alert hw-alert--note text-center">
           本样本为虚构命盘，命理内容为传统民俗文化分析，仅供参考娱乐，不构成任何决策建议。
         </p>
       </div>

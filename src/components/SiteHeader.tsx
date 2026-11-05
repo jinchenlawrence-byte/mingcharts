@@ -14,14 +14,15 @@ import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
+import { BRAND_DOTS } from '@/lib/visual-tokens'
 import type { SiteLang } from '@/lib/lang'
 import { pathForLang } from '@/lib/lang'
 import { itemsFor, hrefFor, ACCOUNT_ITEMS, BRAND, NAV_ARIA, AUTH_LABEL, ACCOUNT_BUTTON, SIGN_OUT_LABEL } from '@/lib/site-nav'
 import SiteNav from '@/components/SiteNav'
 import LangSwitcher from '@/components/LangSwitcher'
 
-// 五行点 · 品牌标识（木火土金水）
-const DOTS = ['#3CC796', '#FF6B5B', '#F6C24F', '#D6DBE6', '#3A66FF']
+// 五行点 · 品牌标识（木火土金水）：色值与 --hw-* 令牌同源
+const DOTS = BRAND_DOTS
 
 export default function SiteHeader({ locale = 'zh-Hans' }: { locale?: SiteLang }) {
   const router = useRouter()
@@ -70,7 +71,7 @@ export default function SiteHeader({ locale = 'zh-Hans' }: { locale?: SiteLang }
   return (
     <nav
       aria-label={NAV_ARIA[locale]}
-      className="sticky top-3 z-50 mx-auto mt-4 flex w-[calc(100%-2rem)] max-w-[1080px] items-center justify-between gap-2 rounded-full border border-ink/10 bg-white/90 py-2 pl-5 pr-2 shadow-[0_8px_28px_-18px_rgba(27,24,56,0.35)] backdrop-blur-md sm:gap-3"
+      className="sticky top-3 z-50 mx-auto mt-4 flex w-[calc(100%-2rem)] max-w-[1080px] items-center justify-between gap-2 rounded-full border border-ink/10 bg-white/90 py-2 pl-5 pr-2 shadow-[var(--sh-2)] backdrop-blur-md sm:gap-3"
     >
       <Link
         href={pathForLang('/', locale)}
@@ -109,7 +110,7 @@ export default function SiteHeader({ locale = 'zh-Hans' }: { locale?: SiteLang }
               role="menu"
               className={
                 open
-                  ? 'absolute right-0 top-full z-50 mt-2 w-[212px] rounded-2xl border border-ink/10 bg-white py-1.5 shadow-[0_18px_44px_-20px_rgba(27,24,56,0.45)]'
+                  ? 'absolute right-0 top-full z-50 mt-2 w-[212px] rounded-2xl border border-ink/10 bg-white py-1.5 shadow-[var(--sh-3)]'
                   : 'hidden'
               }
             >

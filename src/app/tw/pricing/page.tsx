@@ -201,11 +201,11 @@ export default function HantPricingPage() {
         </header>
 
         {/* 价格卡片 */}
-        <div className="grid md:grid-cols-3 gap-6 mb-14">
+        <div className="grid md:grid-cols-3 gap-6">
           {CARDS.map((card) => (
             <div key={card.name} className={`hw-c-plan${card.highlight ? ' hw-c-planHot' : ''}`}>
               {card.highlight && (
-                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#3a66ff] text-white text-xs font-semibold px-3 py-1 rounded-full">
+                <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-hw-water text-white text-xs font-semibold px-3 py-1 rounded-full">
                   {H('最受歡迎')}
                 </span>
               )}
@@ -220,7 +220,7 @@ export default function HantPricingPage() {
               <ul className="space-y-2 text-sm text-ink/70 flex-1 my-2">
                 {card.features.map((f) => (
                   <li key={f} className="flex gap-2">
-                    <span className="text-[#3a66ff] shrink-0">✓</span>
+                    <span className="text-hw-water shrink-0">✓</span>
                     <span>{f}</span>
                   </li>
                 ))}
@@ -269,7 +269,7 @@ export default function HantPricingPage() {
         </div>
 
         {/* 单项报告价目 */}
-        <section className="mb-14">
+        <section className="hw-sec">
           <h2 className="hw-c-h2 hw-c-h2C">{H('單項報告')}</h2>
           <p className="text-sm text-ink-light text-center mb-6">
             {H('除命書外的深度報告，均可單獨購買；也可選三合一套餐更划算。')}
@@ -314,7 +314,7 @@ export default function HantPricingPage() {
         </section>
 
         {/* 追问包 */}
-        <section className="mb-14">
+        <section className="hw-sec">
           <h2 className="hw-c-h2 hw-c-h2C">{H('追問包')}</h2>
           <p className="text-sm text-ink-light text-center mb-6">
             {H('購買任一報告或開通會員後，即可在命盤頁就你的命盤向 AI 命理師追問；每份報告贈')} {ASK_PER_REPORT} {H('次（終身有效）、每邀請 1 位好友註冊贈')} {ASK_PER_INVITE} {H('次、會員每月')} {MEMBER_ASK_PER_MONTH} {H('次，用完後可購買追問包續用。')}
@@ -347,12 +347,12 @@ export default function HantPricingPage() {
         </section>
 
         {/* 命书十大板块 */}
-        <section className="mb-14">
+        <section className="hw-sec">
           <h2 className="hw-c-h2 hw-c-h2C">{H('命書報告包含什麼')}</h2>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
             {SECTIONS.map((s, i) => (
-              <div key={s} className="rounded-2xl border border-[#dedcf0] bg-white p-4 text-center">
-                <div className="text-[#3a66ff] font-bold text-sm mb-1">{String(i + 1).padStart(2, '0')}</div>
+              <div key={s} className="hw-c-tile text-center">
+                <div className="text-hw-water font-bold text-sm mb-1">{String(i + 1).padStart(2, '0')}</div>
                 <div className="font-semibold text-ink text-sm">{s}</div>
               </div>
             ))}
@@ -360,7 +360,7 @@ export default function HantPricingPage() {
         </section>
 
         {/* 对比表 */}
-        <section className="mb-14">
+        <section className="hw-sec">
           <h2 className="hw-c-h2 hw-c-h2C">{H('權益對比')}</h2>
           <div className="hw-c-box hw-c-boxFlush hw-c-tableWrap">
             <table className="hw-c-table">
@@ -386,7 +386,7 @@ export default function HantPricingPage() {
                       {cells.map((on, i) => (
                         <td key={i}>
                           {on ? (
-                            <span className="text-[#3a66ff]">✓</span>
+                            <span className="text-hw-water">✓</span>
                           ) : (
                             <span className="text-ink-light/30">—</span>
                           )}
@@ -404,14 +404,14 @@ export default function HantPricingPage() {
         </section>
 
         {/* FAQ */}
-        <section className="mb-14 max-w-3xl mx-auto">
+        <section className="hw-sec max-w-3xl mx-auto">
           <h2 className="hw-c-h2 hw-c-h2C">{H('常見問題')}</h2>
           <div className="space-y-3">
             {FAQS.map((f) => (
               <details key={f.q} className="hw-c-box group">
                 <summary className="font-semibold text-ink cursor-pointer list-none flex justify-between items-center">
                   {f.q}
-                  <span className="text-[#3a66ff] group-open:rotate-45 transition-transform">＋</span>
+                  <span className="text-hw-water group-open:rotate-45 transition-transform">＋</span>
                 </summary>
                 <p className="mt-3 text-sm text-ink-light leading-relaxed">{f.a}</p>
               </details>
@@ -421,14 +421,14 @@ export default function HantPricingPage() {
 
         {/* 底部 CTA */}
         <div className="hw-c-cta">
-          <h2 className="hw-c-h2" style={{ marginTop: 0 }}>{H('先免費排盤，看看你的命盤')}</h2>
-          <p className="hw-note" style={{ marginBottom: 24 }}>{H('輸入出生資訊，30 秒內生成你的專屬命書報告')}</p>
+          <h2 className="hw-c-h2 mt-0">{H('先免費排盤，看看你的命盤')}</h2>
+          <p className="hw-note mb-6">{H('輸入出生資訊，30 秒內生成你的專屬命書報告')}</p>
           <Link href="/tw" className="hw-c-btnBig">
             {H('免費排盤 →')}
           </Link>
         </div>
 
-        <p className="hw-note text-center pb-8">
+        <p className="hw-alert hw-alert--note">
           {H('本站內容基於傳統命理文化整理，僅供學習參考與娛樂，不構成任何人生、醫療、法律、財務決策建議。')}
         </p>
       </div>

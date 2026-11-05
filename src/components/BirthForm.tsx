@@ -172,7 +172,7 @@ export default function BirthForm({ ctaText = '开始排盘', className = '', lo
         <p className="text-sm text-red-600 text-center">{error}</p>
       )}
 
-      <p className="text-xs text-ink-light/60 text-center">
+      <p className="hw-alert hw-alert--note text-center">
         {L('排盘结果仅供参考娱乐')}
       </p>
     </form>

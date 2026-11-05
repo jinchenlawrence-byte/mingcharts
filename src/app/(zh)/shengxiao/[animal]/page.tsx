@@ -191,7 +191,7 @@ export default async function ShengXiaoPage({ params }: { params: Promise<{ anim
           </Link>
         </div>
 
-        <p className="text-center text-xs text-ink-light/40 mt-6">
+        <p className="hw-alert hw-alert--note text-center mt-6">
           以上内容为传统命理民俗文化，仅供参考娱乐，不构成决策依据。
         </p>
       </div>

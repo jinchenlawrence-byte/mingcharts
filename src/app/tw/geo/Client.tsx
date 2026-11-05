@@ -209,7 +209,7 @@ export default function HantGeoClient() {
             </p>
             {error && <p className="hw-c-err text-center">{error}</p>}
           </div>
-          <p className="hw-note text-center">{H('結果僅供參考，福地福人居，個人努力為本')}</p>
+          <p className="hw-alert hw-alert--note text-center">{H('結果僅供參考，福地福人居，個人努力為本')}</p>
         </form>
 
         {data && (

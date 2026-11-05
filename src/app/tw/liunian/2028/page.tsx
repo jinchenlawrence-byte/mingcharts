@@ -167,7 +167,7 @@ export default function HantLiunian2028Page() {
         </p>
       </section>
 
-      <p className="text-center text-xs text-ink-light/40">
+      <p className="hw-alert hw-alert--note text-center">
         以上為傳統命理民俗內容，僅供參考娛樂，不構成任何決策建議。生肖與太歲關係由規則引擎確定性計算，不含 AI 推斷。
       </p>
       <p className="text-center text-xs text-ink-light/50 mt-2">

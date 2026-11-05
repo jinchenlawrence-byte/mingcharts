@@ -67,10 +67,10 @@ export default function EnHomeForm() {
       <div className="mt-3">
         <BirthPlacePicker value={birth} onChange={setBirth} locale="en" />
       </div>
-      <button type="submit" disabled={loading} className="mt-4 w-full rounded-full bg-[#3a66ff] py-3 text-[16px] font-bold text-white transition hover:brightness-110 disabled:opacity-60">
+      <button type="submit" disabled={loading} className="mt-4 w-full rounded-full bg-hw-water py-3 text-[16px] font-bold text-white transition hover:brightness-110 disabled:opacity-60">
         {loading ? 'Casting…' : 'Cast my Bazi chart'}
       </button>
-      {error && <p className="mt-2 text-center text-sm text-[#ff6b5b]">{error}</p>}
+      {error && <p className="mt-2 text-center text-sm text-hw-fire">{error}</p>}
       <p className="hw-note mt-2">True Solar Time correction applied when a birth place is given.</p>
     </form>
   )

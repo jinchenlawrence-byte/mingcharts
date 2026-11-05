@@ -298,7 +298,7 @@ function MemberStatusCard({ sub, mode, daysLeft, unlockedCount, ask, H, L, dateL
       <p className="hw-m-dateLabel">{dateLabel}</p>
       <p className="hw-m-date">{day(displayDate)}</p>
       <p className="hw-m-days">{H('剩余 ')}<b>{daysLeft}</b>{H(' 天')}</p>
-      <p className="hw-c-meta">
+      <p className={mode === 'canceling' ? 'hw-alert hw-alert--warn' : 'hw-c-meta'}>
         {mode === 'canceling'
           ? H('已取消自动续费，到期自动失效且不再扣费；可在下方一键恢复。')
           : H('自动续费已开启，可在下方随时取消。')}

@@ -235,7 +235,7 @@ export default function LiunianResultView({ data, onRegen, regenBusy, locale = '
       {data.locked && <UnlockCta skus={data.locked.skus} preview={data.locked.preview ? L(data.locked.preview) : undefined} locale={locale} returnTo={locale === 'zh-Hant' ? '/tw/reports' : '/reports'} />}
 
       {/* 免责声明 */}
-      <p className="text-xs text-ink-light/60 text-center leading-relaxed">
+      <p className="hw-alert hw-alert--note text-center">
         {L('本报告由规则引擎排盘定喜忌、AI 据事实撰写解读，为倾向性参考，非确定性结论，不构成任何重大决策依据；重大事项请结合实际理性判断。')}
       </p>
     </div>

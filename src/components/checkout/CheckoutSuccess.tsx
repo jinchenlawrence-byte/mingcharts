@@ -152,7 +152,7 @@ function SuccessInner({ locale }: { locale: SiteLang }) {
             <>
               <div className="animate-pulse text-4xl mb-4">⏳</div>
               <h1 className="text-xl font-bold text-ink mb-2">{H('正在确认你的支付状态')}</h1>
-              <p className="text-sm text-ink-light">
+              <p className="hw-alert hw-alert--info">
                 {phase === 'verifying'
                   ? H('支付渠道同步中，正在做最后核对，请稍候…')
                   : H('银行与支付渠道的通知可能需要几秒钟，请勿关闭此页面。')}

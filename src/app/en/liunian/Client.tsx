@@ -169,7 +169,7 @@ export default function EnLiunianClient() {
             </p>
             {error && <p className="hw-c-err text-center">{error}</p>}
           </div>
-          <p className="hw-note text-center">For reference and entertainment only. Not a basis for any major decision.</p>
+          <p className="hw-alert hw-alert--note text-center">For reference and entertainment only. Not a basis for any major decision.</p>
         </form>
 
         {data && (

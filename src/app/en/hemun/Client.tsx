@@ -49,7 +49,7 @@ function PersonFields({ title, value, onChange, accent }: {
   accent: 'blue' | 'rose'
 }) {
   const set = (patch: Partial<BirthFormState>) => onChange({ ...value, ...patch })
-  const titleCls = accent === 'blue' ? 'text-[#3a66ff]' : 'text-[#e04a3a]'
+  const titleCls = accent === 'blue' ? 'text-hw-water' : 'text-hw-fire-ink'
   return (
     <div className="hw-c-box">
       <h3 className={`font-semibold mb-3 ${titleCls}`}>{title}</h3>
@@ -175,7 +175,7 @@ export default function EnHemunClient() {
             </button>
           </p>
           {error && <p className="hw-c-err text-center">{error}</p>}
-          <p className="hw-note text-center">For reference and entertainment only; relationships are shaped by the people involved.</p>
+          <p className="hw-alert hw-alert--note text-center">For reference and entertainment only; relationships are shaped by the people involved.</p>
         </form>
 
         {data && (

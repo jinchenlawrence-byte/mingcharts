@@ -200,7 +200,7 @@ export default function HantMingShuContent() {
 
       {/* 底部 */}
       <footer className="hw-wrap pb-10 text-center">
-        <p className="text-xs text-ink-light/40">
+        <p className="hw-alert hw-alert--note">
           {H('本站內容基於傳統命理文化整理，僅供學習參考與娛樂，不構成任何人生、醫療、法律、財務決策建議。')}
         </p>
         <p className="text-xs text-ink-light/40 mt-2">
