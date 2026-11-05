@@ -161,5 +161,22 @@ console.log('—— ⑦ 语言切换目标 ——')
   assert(!bad.includes('/tw/en'), `英文页切繁体不产出 /tw/en（实际 ${bad}）`)
 }
 
+  // ★ 2026-10-30：导航溢出必须有「还有更多」的视觉暗示
+  //   起因：12 项在 1100px 下把「定价」挤出可视区，而滚动条被隐藏 →
+  //   线上 HTML 里链接还在，但用户体感等于被删掉。
+  {
+    const nav = readFileSync('src/components/SiteNav.tsx', 'utf8')
+    assert(/mask-image:linear-gradient\(to_right/.test(nav),
+      'SiteNav 有右端渐隐遮罩（横滑内容溢出时有暗示）',
+      'SiteNav 缺右端渐隐：滚动条被隐藏 + 内容溢出 → 用户看不出右边还有条目')
+    assert(/^-webkit-mask-image:linear-gradient/m.test(nav) || /\[-webkit-mask-image:linear-gradient/.test(nav),
+      '渐隐同时给了 -webkit- 前缀（Safari 生效）',
+      '渐隐缺 -webkit- 前缀（Safari 不生效）')
+    const siteNav = readFileSync('src/lib/site-nav.ts', 'utf8')
+    assert(/path: '\/pricing'/.test(siteNav),
+      '定价仍在导航表里（没被删，只是曾被挤出可视区）',
+      '定价从导航表里消失了')
+  }
+
 console.log('\n' + (allPass ? 'NAV_PARITY_PASS' : 'NAV_PARITY_FAIL'))
 if (!allPass) process.exit(1)
