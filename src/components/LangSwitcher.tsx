@@ -20,7 +20,7 @@ const SWITCH_LABELS: Record<SiteLang, { lang: Target; label: string; short: stri
     { lang: 'en', label: 'English', short: 'EN' },
   ],
   'zh-Hant': [
-    { lang: 'zh-Hans', label: '简体', short: '简' },
+    { lang: 'zh-Hans', label: '简体', short: '簡' },
     { lang: 'en', label: 'English', short: 'EN' },
   ],
   en: [
