@@ -536,6 +536,12 @@ const BRIGHT_EN: Record<string, string> = {
 
 const MUTAGEN_EN: Record<string, string> = { 禄: 'Lu (Wealth)', 权: 'Quan (Power)', 科: 'Ke (Fame)', 忌: 'Ji (Obstruction)' }
 
+// Twelve growth stages shown in the palace detail. Same twelve entries as the Chinese tree.
+const CHANGSHENG_EN: Record<string, string> = {
+  长生: 'Birth', 沐浴: 'Bath', 冠带: 'Capping', 临官: 'Office', 帝旺: 'Peak', 衰: 'Decline',
+  病: 'Illness', 死: 'Death', 墓: 'Tomb', 绝: 'Extinction', 胎: 'Conception', 养: 'Nurture',
+}
+
 const PATTERN_EN: Record<string, { name: string; note: string }> = {
   紫府同宫格: { name: 'Purple Star and Treasury in the Life Palace', note: 'Purple Star with Heavenly Treasury: nobility with stability, career and family both secure.' },
   紫微七杀格: { name: 'Purple Star with Seven Killing', note: 'Power is harnessed into authority: firm yet flexible, a commanding talent with strong ambition.' },
@@ -758,6 +764,18 @@ export interface ZiweiRuleEn {
     basisLevel: string
   }>
   transforms: Array<{ star: string; type: string; palace: string; note: string }>
+  /** Palace grid for the shared 4×4 chart (same order as chart.palaces). */
+  grid: Array<{
+    name: string
+    ganZhi: string
+    empty: boolean
+    majorStars: Array<{ name: string; brightness: string; mutagen: string }>
+    minorStars: string[]
+    adjectiveStars: string[]
+    isBodyPalace: boolean
+    changsheng12: string
+    decadalRange: [number, number]
+  }>
   palaces: ZiweiStarReadEn[]
   decadal: ZiweiPeriodEn
   yearly: ZiweiPeriodEn
@@ -864,6 +882,21 @@ export function ziweiEn(chart: ZwChart, analysis: ZiweiAnalysis, now: Date = new
       type: MUTAGEN_EN[t.type] ?? '',
       palace: palaceEn(t.palace),
       note: TRANSFORM_NOTE_EN[t.palace]?.[['禄', '权', '科', '忌'].indexOf(t.type)] ?? '',
+    })),
+    grid: chart.palaces.map((p) => ({
+      name: palaceEn(p.name),
+      ganZhi: ganZhiEn(p.ganZhi),
+      empty: p.majorStars.length === 0,
+      majorStars: p.majorStars.map((s) => ({
+        name: starEn(s.name),
+        brightness: BRIGHT_EN[s.brightness] ?? '',
+        mutagen: MUTAGEN_EN[s.mutagen] ?? '',
+      })),
+      minorStars: p.minorStars.map((s) => starEn(s.name)),
+      adjectiveStars: p.adjectiveStars.map(starEn),
+      isBodyPalace: p.isBodyPalace,
+      changsheng12: CHANGSHENG_EN[p.changsheng12] ?? '',
+      decadalRange: p.decadalRange,
     })),
     palaces: Object.values(analysis.palaces).map(palaceReadEn),
     decadal: periodEn(analysis.decadal, now, 'decadal'),

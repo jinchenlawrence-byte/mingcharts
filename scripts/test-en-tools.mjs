@@ -45,17 +45,32 @@ for (const file of clients.slice(0, 3)) {
 console.log('—— ② 结果区只渲染英文 AI / 英文 preview ——')
 for (const file of clients.slice(0, 3)) {
   const src = read(file)
-  for (const forbidden of ['data.result', '<HemunResultView', '<ZiweiResultView', '<GeoResultView']) {
+  for (const forbidden of ['data.result', '<HemunResultView', '<GeoResultView']) {
     assert(!src.includes(forbidden), `${file} 不引用中文结果数据/组件（${forbidden}）`)
   }
-  // 结构化字段只允许作为英文规则表组件的入参，不得直接渲染中文结果
-  for (const token of ['data.chart', 'data.analysis', 'data.geo']) {
-    const leaked = src.split('\n').filter((l) => l.includes(token) && !l.includes('Rules'))
-    assert(leaked.length === 0, `${file} 结构化字段仅作为英文规则表入参（${token}）`)
+  if (file.includes('/ziwei/')) {
+    // 2026-11-05：紫微并入共享骨架 —— 简/繁/英同一区块顺序与卡片规格，英文只走 enRule 文案层
+    assert(!src.includes('EnZiweiRules'), `${file} 不再引用独立英文紫微表`)
+    assert(src.includes('ziweiEn('), `${file} 用 enRule 英文重写层`)
+    assert(src.includes('<ZiweiResultView'), `${file} 渲染共享结果骨架`)
+    assert(src.includes('locale="en"'), `${file} 共享骨架传 locale=en`)
+  } else {
+    assert(!src.includes('<ZiweiResultView'), `${file} 不引用中文结果组件（<ZiweiResultView）`)
   }
-  assert(src.includes('data.ai'), `${file} 渲染 AI 英文段落`)
-  assert(src.includes('data.locked?.preview'), `${file} 渲染英文 locked preview`)
+  // 结构化字段只允许作为英文规则表/重写层的入参，不得直接渲染中文结果
+  for (const token of ['data.chart', 'data.analysis', 'data.geo']) {
+    const leaked = src.split('\n').filter((l) => l.includes(token) && !l.includes('Rules') && !l.includes('ziweiEn'))
+    assert(leaked.length === 0, `${file} 结构化字段仅作为英文重写入参（${token}）`)
+  }
+  if (file.includes('/ziwei/')) {
+    assert(src.includes('<ZiweiResultView'), `${file} 结果区由共享骨架渲染（含 AI 英文段落与 locked preview）`)
+  } else {
+    assert(src.includes('data.ai'), `${file} 渲染 AI 英文段落`)
+    assert(src.includes('data.locked?.preview'), `${file} 渲染英文 locked preview`)
+  }
 }
+// 英文 UI 文案表本身也必须零 CJK
+assert(findCJK(read('src/lib/ziweiUiEn.ts')).length === 0, 'src/lib/ziweiUiEn.ts 零 CJK')
 
 // ---------- ③ API 英文 locked preview ----------
 console.log('—— ③ API locale=en 的 locked preview ——')

@@ -5,10 +5,9 @@
 
 import { useMemo } from 'react'
 import type { PaipanResult } from '@/lib/paipan'
-import type { ZwChart, ZiweiAnalysis } from '@/lib/ziwei'
 import type { GeoAnalysis } from '@/lib/geo'
 import type { LuckDaYunItem, LuckLiuNianItem, LuckLiuYueItem } from '@/lib/analysis'
-import { hehunEn, ziweiEn, geoEn, liunianEn } from '@/lib/enRule'
+import { hehunEn, geoEn, liunianEn } from '@/lib/enRule'
 
 const LEVEL_STYLE: Record<string, string> = {
   Favorable: 'bg-emerald-50 text-emerald-700 border-emerald-300',
@@ -72,103 +71,6 @@ export function EnHemunRules({ male, female }: { male?: PaipanResult; female?: P
             {d.citations.map((c, i) => <p key={i} className="hw-note mt-2">{c}</p>)}
           </article>
         ))}
-      </div>
-    </section>
-  )
-}
-
-// ───────── 紫微 ─────────
-
-export function EnZiweiRules({ chart, analysis }: { chart: ZwChart; analysis: ZiweiAnalysis }) {
-  const view = useMemo(() => ziweiEn(chart, analysis), [chart, analysis])
-  return (
-    <section className="space-y-4">
-      <div className="hw-c-box">
-        <h3 className="hw-c-secTitle">Rule-engine chart</h3>
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <p>Solar date: {view.header.solarDate}</p>
-          <p>{view.header.lunarDate}</p>
-          <p>Zodiac: {view.header.zodiac} · Sign: {view.header.sign}</p>
-          <p>{view.header.fiveElementsClass}</p>
-          <p>Soul: {view.header.soul} · Body: {view.header.body}</p>
-          <p>Birth hour: {view.header.birthHour} · {view.header.gender}</p>
-        </div>
-        <p className="mt-3 font-semibold">Structure score {view.score} — {view.scoreLabel}</p>
-      </div>
-
-      <div className="hw-c-box">
-        <h3 className="hw-c-secTitle">Patterns ({view.patterns.length})</h3>
-        <div className="space-y-4">
-          {view.patterns.map((p, i) => (
-            <article key={i} className="rounded border border-gold/15 p-3">
-              <div className="flex items-center justify-between mb-1">
-                <h4 className="font-semibold">{p.name}</h4>
-                <LevelBadge level={p.level} />
-              </div>
-              <p className="hw-c-body">{p.note}</p>
-              {p.required.length > 0 && <div className="mt-2"><p className="text-xs font-semibold">Conditions</p><Bullets items={p.required} /></div>}
-              {p.bonus.length > 0 && <div className="mt-2"><p className="text-xs font-semibold">Strengthened by</p><Bullets items={p.bonus} /></div>}
-              {p.breaking.length > 0 && <div className="mt-2"><p className="text-xs font-semibold">Broken by</p><Bullets items={p.breaking} /></div>}
-              {(p.source || p.basisLevel) && <p className="hw-note mt-2">{[p.source, p.basisLevel].filter(Boolean).join(' · ')}</p>}
-            </article>
-          ))}
-        </div>
-      </div>
-
-      <div className="hw-c-box">
-        <h3 className="hw-c-secTitle">Four Transformations ({view.transforms.length})</h3>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left border-b border-gold/15">
-                <th className="py-1 pr-3">Star</th><th className="py-1 pr-3">Transform</th><th className="py-1 pr-3">Palace</th><th className="py-1">Reading</th>
-              </tr>
-            </thead>
-            <tbody>
-              {view.transforms.map((t, i) => (
-                <tr key={i} className="border-b border-gold/10">
-                  <td className="py-1 pr-3">{t.star}</td><td className="py-1 pr-3">{t.type}</td><td className="py-1 pr-3">{t.palace}</td><td className="py-1">{t.note}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      <div className="hw-c-box">
-        <h3 className="hw-c-secTitle">Twelve palaces ({view.palaces.length})</h3>
-        <div className="grid gap-3 md:grid-cols-2">
-          {view.palaces.map((p) => (
-            <article key={p.name} className="rounded border border-gold/15 p-3">
-              <h4 className="font-semibold mb-1">{p.name}{p.empty ? ' (empty)' : ''}</h4>
-              <p className="text-sm">Major: {p.stars.length ? p.stars.join(', ') : '—'}</p>
-              <p className="text-sm">Auspicious: {p.auspicious.length ? p.auspicious.join(', ') : '—'}</p>
-              <p className="text-sm">Inauspicious: {p.ominous.length ? p.ominous.join(', ') : '—'}</p>
-              {p.tags.length > 0 && <p className="text-sm mt-1">Tags: {p.tags.join(', ')}</p>}
-            </article>
-          ))}
-        </div>
-      </div>
-
-      <div className="hw-c-box">
-        <h3 className="hw-c-secTitle">Current cycles</h3>
-        {[view.decadal, view.yearly, view.monthly].filter(Boolean).map((p) => (
-          <article key={p!.title} className="rounded border border-gold/15 p-3 mb-3">
-            <h4 className="font-semibold">{p!.title}</h4>
-            <p className="text-sm">{p!.ganZhi} · base palace {p!.basePalace} {p!.range ? `· ${p!.range}` : ''}</p>
-            <p className="text-sm">Stars: {p!.stars.length ? p!.stars.join(', ') : '—'}</p>
-            <Bullets items={p!.transforms} empty="No transformations in this cycle." />
-            {p!.tags.length > 0 && <p className="text-sm mt-1">Tags: {p!.tags.join(', ')}</p>}
-          </article>
-        ))}
-        <p className="text-sm">Small limit: age {view.xiaoxian.nominalAge}, {view.xiaoxian.basePalace}, {view.xiaoxian.ganZhi}</p>
-        {view.laiYinPalace && <p className="text-sm">Origin palace: {view.laiYinPalace}</p>}
-        {view.selfMutations.length > 0 && (
-          <div className="mt-2">
-            <p className="text-sm font-semibold">Self-transformations</p>
-            <Bullets items={view.selfMutations.map((s) => `${s.palace} (${s.ganZhi}): ${s.mutagens.join(', ')}`)} />
-          </div>
-        )}
       </div>
     </section>
   )

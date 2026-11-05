@@ -10,14 +10,14 @@ import { localize } from '@/lib/hant'
 import type { SiteLang } from '@/lib/lang'
 
 /** 单个锁定板块：标题可见 + 3 根模糊灰条 + 琥珀标签 */
-export function LockedCard({ title, locale = 'zh-Hans' }: { title: string; locale?: SiteLang }) {
+export function LockedCard({ title, locale = 'zh-Hans', chip }: { title: string; locale?: SiteLang; chip?: string }) {
   return (
     <div className="hw-lk-card">
       <h3 className="hw-c-h3">{title}</h3>
       <div className="hw-lk-bars" aria-hidden="true">
         <span /><span /><span />
       </div>
-      <span className="hw-lk-chip">{localize('会员/购买后查看全文', locale)}</span>
+      <span className="hw-lk-chip">{chip ?? localize('会员/购买后查看全文', locale)}</span>
     </div>
   )
 }

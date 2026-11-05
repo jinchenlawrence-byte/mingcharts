@@ -1,62 +1,14 @@
 'use client'
 
 import { GENUINE_AI_SOURCE } from '@/lib/reportGate'
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
+import ZiweiResultView from '@/components/reports/ZiweiResultView'
 import type { ZiweiResultData } from '@/components/reports/ZiweiResultView'
-import { EnZiweiRules } from '@/components/en/EnRuleTables'
+import { ziweiEn } from '@/lib/enRule'
 import { getAuthToken } from '@/lib/authToken'
-
-const TITLES: Record<string, string> = {
-  overview: 'Chart overview',
-  personality: 'Temperament',
-  palaces: 'Twelve palaces',
-  career: 'Career structure',
-  wealth: 'Wealth',
-  marriage: 'Relationships',
-  health: 'Health tendencies',
-  transforms: 'Four Transformations',
-  patterns: 'Patterns',
-  decadal: 'Decade',
-  yearly: 'Annual and monthly',
-  advice: 'Practical advice',
-}
-
-function AiSections({ data }: { data: ZiweiResultData }) {
-  if (data.ai) {
-    const entries = Object.entries(data.ai).filter(([, v]) => typeof v === 'string')
-    return (
-      <div className="space-y-4">
-        {entries.map(([key, text]) => (
-          <article key={key} className="hw-c-box">
-            <h3 className="hw-c-secTitle">{TITLES[key] ?? key}</h3>
-            <p className="hw-c-body whitespace-pre-line">{text}</p>
-          </article>
-        ))}
-      </div>
-    )
-  }
-  if (data.locked?.preview) {
-    return (
-      <div className="hw-c-box text-center">
-        <p className="hw-c-body">{data.locked.preview}</p>
-        <Link href="/en/pricing" className="hw-c-btnBig inline-block mt-4">
-          Unlock the full English Zi Wei report
-        </Link>
-      </div>
-    )
-  }
-  return (
-    <div className="hw-c-box">
-      <p className="hw-c-body">
-        The English report is not available for this run. The rule-engine palace tables above are
-        still in English; please try again later to load the in-depth AI reading.
-      </p>
-    </div>
-  )
-}
 
 export default function EnZiweiClient() {
   const [formData, setFormData] = useState({
@@ -67,6 +19,13 @@ export default function EnZiweiClient() {
   const [error, setError] = useState('')
   const [data, setData] = useState<ZiweiResultData | null>(null)
   const [saved, setSaved] = useState<boolean | null>(null)
+
+  // English rewrite layer: shares ZiweiResultView with the two Chinese trees;
+  // only the copy comes from enRule.
+  const enView = useMemo(
+    () => (data ? ziweiEn(data.chart, data.analysis) : undefined),
+    [data]
+  )
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -177,10 +136,13 @@ export default function EnZiweiClient() {
               </button>
             </div>
             )}
-            <EnZiweiRules chart={data.chart} analysis={data.analysis} />
-            <div className="mt-6">
-              <AiSections data={data} />
-            </div>
+            <ZiweiResultView
+              data={data}
+              locale="en"
+              enView={enView}
+              onRegen={() => runGenerate()}
+              regenBusy={loading}
+            />
           </div>
         )}
       </main>
