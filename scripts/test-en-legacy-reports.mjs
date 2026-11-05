@@ -51,11 +51,14 @@ for (const src of [list, detail]) {
   assert(src.includes('LEGACY_BADGE_EN'), '英文报告页使用统一徽标文案')
   assert(src.includes('kindLabelEn'), '英文报告页使用统一类型名映射')
 }
-assert(list.includes('REGENERATE_EN'), '列表提供 Regenerate in English 入口')
-assert(detail.includes('REGENERATE_EN'), '详情提供 Regenerate in English 入口')
+// 2026-11-05 决策翻转（用户拍板）：撤掉「Regenerate in English」——
+// 命书是一次性付费商品，翻译式重生成 = 付一次无限刷 AI。
+assert(!list.includes('REGENERATE_EN'), '列表不提供 Regenerate in English 入口（防刷量）')
+assert(list.includes('has not been translated'), '列表明确标注旧报告未翻译')
+assert(!detail.includes('REGENERATE_EN'), '详情不提供 Regenerate in English 入口（防刷量）')
 assert(list.includes('chart_data?.analysis?.paid'), '列表补查命书正文（charts.chart_data.analysis.paid）')
 assert(detail.includes('isLegacyChineseReport({ ai: text })'), '详情与列表共用同一 CJK 比例判定')
-assert(list.includes('currentChart') && detail.includes('currentChart'), '命书重新生成前注入 currentChart，避免 /en/chart 死链')
+assert(!/regenerateFatebook/.test(list + detail), '命书「重新生成」入口已撤（无死链风险）')
 assert(!readFileSync('src/app/(zh)/reports/page.tsx', 'utf8').includes('LEGACY_BADGE_EN'), '简体列表不加英文旧报告徽标')
 assert(!readFileSync('src/app/tw/reports/page.tsx', 'utf8').includes('LEGACY_BADGE_EN'), '繁体列表不加英文旧报告徽标')
 
