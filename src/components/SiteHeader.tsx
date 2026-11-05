@@ -71,14 +71,14 @@ export default function SiteHeader({ locale = 'zh-Hans' }: { locale?: SiteLang }
   return (
     <nav
       aria-label={NAV_ARIA[locale]}
-      className="sticky top-3 z-50 mx-auto mt-4 flex w-[calc(100%-2rem)] max-w-[1240px] items-center justify-between gap-2 rounded-full border border-ink/10 bg-white/90 py-2 pl-5 pr-2 shadow-[var(--sh-2)] backdrop-blur-md sm:gap-3"
+      className="sticky top-3 z-50 mx-auto mt-4 flex w-[calc(100%-2rem)] max-w-[1240px] items-center justify-between gap-2 rounded-full border border-ink/10 bg-white/90 py-2 pl-3 pr-2 shadow-[var(--sh-2)] backdrop-blur-md sm:gap-3 sm:pl-5"
     >
       <Link
         href={pathForLang('/', locale)}
-        className="flex shrink-0 items-center gap-2.5 font-serif-sc text-xl font-black leading-none text-ink sm:mr-4"
+        className="flex shrink-0 items-center gap-2.5 font-serif-sc text-lg font-black leading-none text-ink sm:mr-4 sm:text-xl"
       >
         <span>{BRAND[locale]}</span>
-        <span className="flex gap-[3px]" aria-hidden="true">
+        <span className="hidden gap-[3px] sm:flex" aria-hidden="true">
           {DOTS.map((c) => (
             <i key={c} className="h-[7px] w-[7px] rounded-full" style={{ background: c }} />
           ))}

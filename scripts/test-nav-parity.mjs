@@ -65,6 +65,12 @@ console.log('—— ① 导航单一事实源 ——')
   assert(header.includes('<SiteNav locale={locale}'), 'SiteHeader 渲染共享 SiteNav（未另写第二份链接清单）')
   assert(header.includes('<LangSwitcher locale={locale}'), 'SiteHeader 使用共享 LangSwitcher')
   assert(header.includes('getSupabase().auth.signOut()'), 'SiteHeader 保留 Supabase 登录态（退出登录真接线）')
+
+  // 2026-11-05：英文树 375px 导航溢出 —— 窄屏语言切换用短标签 + 隐藏品牌圆点
+  const langSwitch = read('src/components/LangSwitcher.tsx')
+  assert(langSwitch.includes('sm:hidden') && langSwitch.includes('hidden sm:inline'),
+    'LangSwitcher 窄屏短标签、≥sm 保留全称')
+  assert(header.includes('hidden gap-[3px] sm:flex'), 'SiteHeader 品牌圆点在窄屏隐藏')
 }
 
 // ---------- ② 核心入口三语齐全 ----------

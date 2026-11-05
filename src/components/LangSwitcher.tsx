@@ -14,18 +14,18 @@ import { langSwitchHref } from '@/lib/lang-switch'
 
 type Target = Exclude<SiteLang, 'en'> | 'en'
 
-const SWITCH_LABELS: Record<SiteLang, { lang: Target; label: string }[]> = {
+const SWITCH_LABELS: Record<SiteLang, { lang: Target; label: string; short: string }[]> = {
   'zh-Hans': [
-    { lang: 'zh-Hant', label: '繁體' },
-    { lang: 'en', label: 'English' },
+    { lang: 'zh-Hant', label: '繁體', short: '繁' },
+    { lang: 'en', label: 'English', short: 'EN' },
   ],
   'zh-Hant': [
-    { lang: 'zh-Hans', label: '简体' },
-    { lang: 'en', label: 'English' },
+    { lang: 'zh-Hans', label: '简体', short: '简' },
+    { lang: 'en', label: 'English', short: 'EN' },
   ],
   en: [
-    { lang: 'zh-Hans', label: '简体中文' },
-    { lang: 'zh-Hant', label: '繁體中文' },
+    { lang: 'zh-Hans', label: '简体中文', short: '简' },
+    { lang: 'zh-Hant', label: '繁體中文', short: '繁' },
   ],
 }
 
@@ -52,7 +52,9 @@ export default function LangSwitcher({
         <span key={t.lang}>
           {i > 0 && <span className="mx-1 opacity-40">/</span>}
           <Link href={hrefFor(pathname, t.lang)} onClick={() => remember(t.lang)} className="hover:text-ink">
-            {t.label}
+            {/* 375px 下英文树两枚全称标签会把导航顶出视口（2026-11-05）：窄屏用单字，≥sm 保留全称 */}
+            <span className="sm:hidden">{t.short}</span>
+            <span className="hidden sm:inline">{t.label}</span>
           </Link>
         </span>
       ))}
