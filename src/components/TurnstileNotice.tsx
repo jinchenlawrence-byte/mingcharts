@@ -5,7 +5,14 @@
 // 域名/sitekey 不匹配、Cloudflare 临时错误等。这里按失败类型给出不同指引，并把 Cloudflare
 // 错误码原样带出（便于用户反馈、便于排查），重试入口保持不变。
 import type { SiteLang } from '@/lib/lang'
-import type { TurnstileFailure } from '@/components/Turnstile'
+// ★ 2026-10-30 修：此前从这里 import TurnstileFailure，
+//   但已提交的 Turnstile.tsx 并没有导出该类型（只有默认组件），
+//   于是整站构建在类型检查阶段失败。改为本文件自带结构类型 ——
+//   组件只关心 { kind, code? }，不关心它由谁产生（结构化类型即可兼容）。
+export type NoticeFailure = {
+  kind: 'load' | 'challenge' | 'timeout'
+  code?: string
+}
 
 const COPY: Record<SiteLang, {
   load: string
@@ -38,7 +45,7 @@ export default function TurnstileNotice({
   onRetry,
   locale = 'zh-Hans',
 }: {
-  error: TurnstileFailure | null
+  error: NoticeFailure | null
   onRetry: () => void
   locale?: SiteLang
 }) {
