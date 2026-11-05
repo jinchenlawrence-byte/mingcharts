@@ -203,7 +203,7 @@ export default function Home() {
               </div>
               <BirthPlacePicker value={birth} onChange={setBirth} />
               <button type="submit" disabled={loading}
-                className="mt-4 w-full rounded-full bg-hw-water py-4 text-[17px] font-bold text-white transition hover:brightness-110 disabled:opacity-60">
+                className="mt-4 w-full rounded-full bg-hw-water py-4 text-lg font-bold text-white transition hover:brightness-110 disabled:opacity-60">
                 {loading ? '排盘中...' : '开始排盘'}
               </button>
               {error && <p className="mt-2 text-center text-sm text-hw-fire">{error}</p>}

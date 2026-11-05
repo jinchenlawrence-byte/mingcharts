@@ -7,6 +7,8 @@
 //      非 CSS 场景（canvas、SVG 属性）统一收口到 src/lib/visual-tokens.ts
 //   ③ 三棵树同类页面的区块节奏与卡片规格来自同一套类（.hw-sec / .hw-c-tile / .hw-c-plan），
 //      简体、繁体、英文定价页取值必须相等
+//   ③b 三棵树首页标题层收口到 .hw-h1 / .hw-h2，区块留白收口到 .hw-section，
+//      任一树改用紧凑页标题类（hw-c-h1 / hw-c-secTitle）即 fail
 //   ④ 重要提示（警示 / 免责 / 限流）走共享的 .hw-alert / .hw-alert--note，不许各页自写；
 //      旧的 .hw-c-fine 已升格为「加大加粗 + 琥珀色条」
 //   ⑤ 牙口自检：--self-test 会注入一个带 #ff0000 的探针文件 + 把定价页的一个 hw-sec 改回 mb-14，
@@ -164,6 +166,55 @@ assert(new Set(secCounts).size === 1, `三棵树定价页 hw-sec 计数一致（
 const inlineStyleInPricing = Object.entries(PRICING).filter(([, f]) => /style=\{\{/.test(read(f))).map(([k]) => k)
 assert(inlineStyleInPricing.length === 0, `定价页无内联样式覆盖令牌${inlineStyleInPricing.length ? '；有：' + inlineStyleInPricing.join(', ') : ''}`)
 
+// ── ③b 三棵树首页标题层与区块节奏 ───────────────────────────
+console.log('\n[3b] 三棵树首页标题层与区块节奏')
+const HOME = {
+  'zh-Hans': 'src/app/(zh)/HomeClient.tsx',
+  'zh-Hant': 'src/app/tw/page.tsx',
+  en: 'src/app/en/page.tsx',
+}
+
+/** 纯函数：返回首页结构问题（牙口自检直接喂变异文本） */
+export function homeIssues(text) {
+  const issues = []
+  const h1 = text.match(/<h1\s+className="[^"]*"/g) || []
+  if (h1.length !== 1) issues.push(`h1 应恰好 1 处（实际 ${h1.length}）`)
+  if (!/<h1\s+className="hw-h1"/.test(text)) issues.push('h1 未走共享 .hw-h1（与简体基准档位不一致）')
+  const h2 = text.match(/<h2\s+className="[^"]*"/g) || []
+  if (h2.length === 0) issues.push('首页缺少 h2 区块标题')
+  if (h2.some((m) => !m.includes('hw-h2'))) issues.push('存在未走 .hw-h2 的 h2（区块标题档位不一致）')
+  if (/hw-c-h1|hw-c-secTitle/.test(text)) issues.push('仍在使用紧凑页标题类 hw-c-h1 / hw-c-secTitle')
+  if (/mb-14/.test(text)) issues.push('仍存在一次性间距 mb-14')
+  return issues
+}
+
+for (const [locale, file] of Object.entries(HOME)) {
+  const text = read(file)
+  const issues = homeIssues(text)
+  assert(issues.length === 0, `${locale} 首页：${issues.length ? issues.join('；') : 'h1/h2 与区块节奏合规'}`)
+  assert(/from '@\/components\/home\/HomeSections'/.test(text), `${locale} 首页复用 HomeSections（.hw-section 节奏同源）`)
+}
+
+// 首页主 CTA 规格：胶囊 + 18px + py-4（三树同一条类串，英文表单在 EnHomeForm）
+const HOME_CTA = {
+  'zh-Hans': HOME['zh-Hans'],
+  'zh-Hant': HOME['zh-Hant'],
+  en: 'src/app/en/EnHomeForm.tsx',
+}
+for (const [locale, file] of Object.entries(HOME_CTA)) {
+  const text = read(file)
+  assert(/rounded-full bg-hw-water py-4 text-lg font-bold/.test(text), `${locale} 首页主 CTA 规格统一（胶囊 + 18px + py-4）`)
+}
+
+// 档位由 CSS 令牌决定：三树共用同一个 .hw-h1 / .hw-h2 / .hw-section 定义，
+// 同一视口下计算值必然相等（2026-11-05 实测 960px 宽：h1 64px / h2 40px / 区块 24-48px）
+const h1Rule = css.match(/\n\.hw-h1\s*\{[^}]+\}/) || ['']
+const h2Rule = css.match(/\n\.hw-h2\s*\{[^}]+\}/) || ['']
+const sectionRule = css.match(/\n\.hw-section\s*\{[^}]+\}/) || ['']
+assert(/clamp\(38px, 7vw, 64px\)/.test(h1Rule[0]), '首页 h1 档位唯一：.hw-h1 clamp(38px, 7vw, 64px)')
+assert(/clamp\(28px, 4\.5vw, 40px\)/.test(h2Rule[0]), '首页 h2 档位唯一：.hw-h2 clamp(28px, 4.5vw, 40px)')
+assert(/padding:\s*24px 0 48px/.test(sectionRule[0]), '首页区块留白唯一：.hw-section padding 24px 0 48px')
+
 // ── ④ 重要提示统一 ──────────────────────────────────────────
 console.log('\n[4] 重要提示（警示 / 免责 / 限流）走共享样式')
 const ALERT_SURFACES = {
@@ -195,6 +246,12 @@ if (process.argv.includes('--self-test')) {
   const issues = pricingIssues(mutated)
   assert(issues.length > 0, '把一页 hw-sec 改回 mb-14 → 结构断言翻红')
   if (issues.length) console.log(`      命中：${issues.join('；')}`)
+
+  // 首页牙口：把英文首页 h1 改回紧凑页标题类，档位断言必须翻红
+  const homeMutated = read(HOME.en).replace('<h1 className="hw-h1"', '<h1 className="hw-c-h1"')
+  const homeProbe = homeIssues(homeMutated)
+  assert(homeProbe.length > 0, '把英文首页 h1 改回 hw-c-h1 → 首页档位断言翻红')
+  if (homeProbe.length) console.log(`      命中：${homeProbe.join('；')}`)
   assert(!existsSync(probe), '探针文件已清理')
 }
 

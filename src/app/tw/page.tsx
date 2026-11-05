@@ -99,7 +99,7 @@ export default function HantHome() {
   return (
     <div className="hw-wrap hw-c-pg">
       <section className="hw-c-box mb-6">
-        <h1 className="hw-c-h1">{H('你的八字，一眼就看懂')}</h1>
+        <h1 className="hw-h1">{H('你的八字，一眼就看懂')}</h1>
         <p className="hw-c-lede">
           {H('免費生成四柱命盤，十神、藏干、起運一次看全。想再深一步，萬字命書引經據典，也說人話。')}
         </p>
@@ -156,7 +156,7 @@ export default function HantHome() {
           </div>
           <BirthPlacePicker value={birth} onChange={setBirth} locale="zh-Hant" />
           <button type="submit" disabled={loading}
-            className="mt-4 w-full rounded-full bg-hw-water py-4 text-[17px] font-bold text-white transition hover:brightness-110 disabled:opacity-60">
+            className="mt-4 w-full rounded-full bg-hw-water py-4 text-lg font-bold text-white transition hover:brightness-110 disabled:opacity-60">
             {loading ? H('排盤中...') : H('開始排盤')}
           </button>
           {error && <p className="mt-2 text-center text-sm text-hw-fire">{error}</p>}
@@ -188,7 +188,7 @@ export default function HantHome() {
       <TrustBar locale="zh-Hant" />
 
       <section className="hw-c-box mb-6">
-        <h2 className="hw-c-secTitle">{H('排完盤，接著玩')}</h2>
+        <h2 className="hw-h2">{H('排完盤，接著玩')}</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
           <Link href="/tw/pricing" className="border border-gold/20 rounded-lg p-3 hover:bg-gold/5 transition">
             <div className="font-bold text-ink">{H('命書詳批')}</div>
@@ -218,7 +218,7 @@ export default function HantHome() {
       </section>
 
       <section className="hw-c-box mb-6">
-        <h2 className="hw-c-secTitle">{H('十二生肖 · 性格與配對')}</h2>
+        <h2 className="hw-h2">{H('十二生肖 · 性格與配對')}</h2>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
           {SHENGXIAO.map((sx) => (
             <Link
@@ -236,7 +236,7 @@ export default function HantHome() {
       </section>
 
       <section className="hw-c-box mb-6">
-        <h2 className="hw-c-secTitle">{H('命理知識')}（{categories.length} {H('個分類')}）</h2>
+        <h2 className="hw-h2">{H('命理知識')}（{categories.length} {H('個分類')}）</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-4">
           {categories.map((c) => (
             <Link
@@ -270,14 +270,14 @@ export default function HantHome() {
       <MoreQueries locale="zh-Hant" />
 
       <section className="hw-c-box mb-6">
-        <h2 className="hw-c-secTitle">{H('為什麼生肖只是「年支」')}</h2>
+        <h2 className="hw-h2">{H('為什麼生肖只是「年支」')}</h2>
         <p className="hw-c-body">
           {H('相同生肖的人命運千差萬別，因為完整八字包含年、月、日、時四柱：年柱看祖上與少年，月柱看父母與事業環境，日柱看自身與配偶，時柱看子女與晚年。生肖只取年支一個地支，占八個字裡的一個字。')}
         </p>
       </section>
 
       <section className="hw-c-box mb-6">
-        <h2 className="hw-c-secTitle">{H('常見疑問')}</h2>
+        <h2 className="hw-h2">{H('常見疑問')}</h2>
         <div className="space-y-3">
           {FAQS.map((f) => (
             <details key={f.q} className="border-b border-gold/10 pb-2">

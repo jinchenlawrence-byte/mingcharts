@@ -43,7 +43,7 @@ export default function EnHome() {
   return (
     <div className="hw-wrap hw-c-pg">
       <section className="hw-c-box mb-6">
-        <h1 className="hw-c-h1">Bazi, the Four Pillars of Destiny — read clearly</h1>
+        <h1 className="hw-h1">Bazi, the Four Pillars of Destiny — read clearly</h1>
         <p className="hw-c-lede">
           Bazi reads a birth moment as four pillars: year, month, day and hour. Each pillar has one
           Heavenly Stem and one Earthly Branch. The Day Stem is your Day Master. From these eight
@@ -70,7 +70,7 @@ export default function EnHome() {
       <TrustBar locale="en" />
 
       <section className="hw-c-box mb-6">
-        <h2 className="hw-c-secTitle">What a Bazi chart contains</h2>
+        <h2 className="hw-h2">What a Bazi chart contains</h2>
         <ul className="text-sm text-ink-light space-y-2">
           <li>• <strong className="text-ink">Four Pillars</strong> — year, month, day and hour, each a Heavenly Stem over an Earthly Branch.</li>
           <li>• <strong className="text-ink">Day Master</strong> — the Day Stem, the reference point for the whole chart.</li>
@@ -84,7 +84,7 @@ export default function EnHome() {
       </section>
 
       <section className="hw-c-box mb-6">
-        <h2 className="hw-c-secTitle">Other readings</h2>
+        <h2 className="hw-h2">Other readings</h2>
         <div className="grid sm:grid-cols-2 gap-3 text-sm">
           <div className="border border-gold/20 rounded-lg p-3">
             <div className="font-bold text-ink">Zi Wei Dou Shu / Purple Star Astrology</div>
@@ -122,7 +122,7 @@ export default function EnHome() {
       </section>
 
       <section className="hw-c-box mb-6">
-        <h2 className="hw-c-secTitle">Twelve zodiac signs</h2>
+        <h2 className="hw-h2">Twelve zodiac signs</h2>
         <p className="text-sm text-ink-light mb-3">
           The zodiac animal is the Earthly Branch of the year pillar — one branch out of eight
           characters. Two people with the same sign can have very different charts.
@@ -146,7 +146,7 @@ export default function EnHome() {
       <MoreQueries locale="en" />
 
       <section className="hw-c-box mb-6">
-        <h2 className="hw-c-secTitle">FAQ</h2>
+        <h2 className="hw-h2">FAQ</h2>
         <div className="space-y-3">
           {FAQS.map((f) => (
             <details key={f.q} className="border-b border-gold/10 pb-2">
@@ -158,7 +158,7 @@ export default function EnHome() {
       </section>
 
       <section className="hw-c-box">
-        <h2 className="hw-c-secTitle">Languages</h2>
+        <h2 className="hw-h2">Languages</h2>
         <p className="text-sm text-ink-light">
           This site also publishes a Simplified Chinese edition and a Traditional Chinese edition
           (Taiwan / Hong Kong wording). Every edition declares canonical URLs and reciprocal
