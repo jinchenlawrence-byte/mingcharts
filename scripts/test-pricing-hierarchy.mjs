@@ -70,6 +70,21 @@ for (const [loc, f] of PAGES) {
     `${loc}：免费档条目 ${n} 条，应 ≤3（信息量未分层）`)
 }
 
+console.log('—— ②D 卡片比例（不要空白、不要被拉齐）——')
+// 起因（2026-10-30）：条目的 <ul> 带 flex-1，会把剩余高度全吃掉 ——
+// 免费档只有 3 条，仍被拉到与会员卡等高，出现大块空白；
+// 三栏 grid 又缺 items-start，全部被拉到最高那张。
+// 判据：条目列表不得带 flex-1；三栏 grid 必须 items-start。
+for (const [loc, f] of PAGES) {
+  const src = readFileSync(f, 'utf8')
+  assert(!/text-sm text-ink\/70 flex-1/.test(src),
+    `${loc}：条目列表不再吸收剩余高度（无空白块）`,
+    `${loc}：条目列表仍带 flex-1 —— 会把卡片撑长并留下大块空白`)
+  assert(/grid md:grid-cols-3 gap-6 items-start/.test(src),
+    `${loc}：三栏卡片按各自内容高度（items-start）`,
+    `${loc}：三栏被拉齐到最高那张（缺 items-start）`)
+}
+
 console.log('—— ③ 组件默认样式未被改动 ——')
 {
   const btn = readFileSync('src/components/MembershipButton.tsx', 'utf8')

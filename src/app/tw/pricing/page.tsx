@@ -201,7 +201,7 @@ export default function HantPricingPage() {
         </header>
 
         {/* 价格卡片 */}
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-6 items-start">
           {CARDS.map((card) => (
             <div key={card.name} className={`hw-c-plan${card.highlight ? ' hw-c-planHot' : ''}`}>
               {card.highlight && (
@@ -217,7 +217,7 @@ export default function HantPricingPage() {
               </div>
               <p className="text-sm text-ink-light">{card.desc}</p>
 
-              <ul className="space-y-2 text-sm text-ink/70 flex-1 my-2">
+              <ul className="space-y-2 text-sm text-ink/70 my-2">
                 {card.features.map((f) => (
                   <li key={f} className="flex gap-2">
                     <span className="text-hw-water shrink-0">✓</span>

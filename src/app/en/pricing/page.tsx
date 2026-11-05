@@ -165,7 +165,7 @@ export default function EnPricingPage() {
           </p>
         </header>
 
-        <div className="grid md:grid-cols-3 gap-6">
+        <div className="grid md:grid-cols-3 gap-6 items-start">
           <div className="hw-c-plan">
             <h2 className="text-lg font-bold">Free chart</h2>
             <div className="flex items-baseline gap-1">
@@ -173,7 +173,7 @@ export default function EnPricingPage() {
               <span className="text-ink-light/60 text-sm">free forever</span>
             </div>
             <p className="text-sm text-ink-light">See the chart before deciding on a reading.</p>
-            <ul className="space-y-2 text-sm text-ink/70 flex-1 my-2">
+            <ul className="space-y-2 text-sm text-ink/70 my-2">
               {['Four Pillars chart (stems, Ten Gods, Hidden Stems)', 'Conception · Life Palace · Body Palace',
                 'Strength assessment · structure typing', 'Nine Luck Pillars with start timing',
                 'All zodiac, solar-term and knowledge articles'].map((f) => (
@@ -196,7 +196,7 @@ export default function EnPricingPage() {
               <span className="text-ink-light/60 text-sm">/ use</span>
             </div>
             <p className="text-sm text-ink-light">{SKU_EN.fatebook.desc}</p>
-            <ul className="space-y-2 text-sm text-ink/70 flex-1 my-2">
+            <ul className="space-y-2 text-sm text-ink/70 my-2">
               {['Everything in the free chart', 'In-depth AI astrologer reading (DeepSeek)',
                 'Ten sections, full length, quoting the six classics',
                 'Structure outcomes and seasonal adjustment, item by item',
@@ -221,7 +221,7 @@ export default function EnPricingPage() {
               <span className="text-ink-light/60 text-sm">/ month up</span>
             </div>
             <p className="text-sm text-ink-light">{SKU_EN.member_monthly.desc}</p>
-            <ul className="space-y-2 text-sm text-ink/70 flex-1 my-2">
+            <ul className="space-y-2 text-sm text-ink/70 my-2">
               {SUBSCRIPTION_GRANTS.map((g) => (
                 <li key={g} className="flex gap-2"><span className="text-hw-water shrink-0">✓</span><span>{GRANT_EN[g]}</span></li>
               ))}
