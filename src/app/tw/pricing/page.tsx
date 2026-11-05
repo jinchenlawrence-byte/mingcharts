@@ -232,6 +232,7 @@ export default function HantPricingPage() {
                 <div className="space-y-3">
                   {MEMBER_SKUS.map((s) => (
                     <MembershipButton
+              className="w-full border border-ink/25 bg-white text-ink py-2.5 rounded-full font-semibold hover:bg-ink/5 transition disabled:opacity-60 disabled:cursor-not-allowed"
                       key={s.id}
                       plan={s.id === 'member_monthly' ? 'monthly' : 'yearly'}
                       locale="zh-Hant"
