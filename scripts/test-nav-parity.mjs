@@ -178,5 +178,29 @@ console.log('—— ⑦ 语言切换目标 ——')
       '定价从导航表里消失了')
   }
 
+  // ★ 2026-10-30：冷门项收进「更多」——主栏不该再依赖横滑
+  {
+    const { primaryNav, moreNav } = await import('../src/lib/site-nav.ts')
+    for (const loc of ['zh-Hans', 'zh-Hant', 'en']) {
+      const primary = primaryNav(loc).map((i) => i.path)
+      const more = moreNav(loc).map((i) => i.path)
+      assert(!primary.includes('/daily') && !primary.includes('/bazi'),
+        `${loc}：日签/出生日期不在主栏（已收进更多）`,
+        `${loc}：冷门项仍在主栏`)
+      // ★ 核心：任何入口都不允许从导航里消失，只是换位置
+      const all = [...primary, ...more].sort().join(',')
+      const expect = ['/', '/hemun', '/ziwei', '/geo', '/liunian', '/mingshu', '/pricing']
+        .filter((pth) => !pth.startsWith('/en'))
+      for (const must of expect) {
+        assert(all.includes(must), `${loc}：${must} 仍在导航里（主栏或更多）`, `${loc}：${must} 从导航里消失了`)
+      }
+    }
+    // 牙口：把 more 标记去掉，主栏会重新变长 → 上面第一条断言必须红
+    const nav = readFileSync('src/lib/site-nav.ts', 'utf8')
+    assert((nav.match(/more: true/g) ?? []).length === 2,
+      '两个冷门项都带 more 标记',
+      `more 标记数应 2，实际 ${(nav.match(/more: true/g) ?? []).length}`)
+  }
+
 console.log('\n' + (allPass ? 'NAV_PARITY_PASS' : 'NAV_PARITY_FAIL'))
 if (!allPass) process.exit(1)

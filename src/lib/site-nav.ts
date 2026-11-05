@@ -20,6 +20,12 @@ export interface NavEntry {
   label: Record<SiteLang, string>
   /** 该语言确实没有这个页面时显式声明；默认三语都有 */
   available?: SiteLang[]
+  /**
+   * 冷门入口：收进「更多」下拉，不占横滑条带。
+   * 2026-10-30：导航 12 项在 1100px 下放不开（「定价」曾被挤出可视区），
+   * 收掉两个冷门项回到 10 项，主栏不再依赖横滑。
+   */
+  more?: boolean
 }
 
 /** 工具 + 内容入口：顺序即桌面端从左到右的顺序 */
@@ -31,12 +37,14 @@ export const NAV_ITEMS: NavEntry[] = [
   { path: '/liunian', label: { 'zh-Hans': '年运报告', 'zh-Hant': '年運報告', en: 'Annual report' } },
   {
     path: '/daily',
+    more: true,
     label: { 'zh-Hans': '每日日签', 'zh-Hant': '每日日籤', en: 'Daily reading' },
     // 英文树暂无 /en/daily 页面；不放假链接，由断言显式列出“声明缺失”。
     available: ['zh-Hans', 'zh-Hant'],
   },
   {
     path: '/bazi',
+    more: true,
     label: { 'zh-Hans': '出生日期', 'zh-Hant': '出生日期', en: 'Birth date' },
     // 繁体树刻意不设 /tw/bazi（test-tw-funnel ①：繁体 CTA 不得进无表单的 /bazi）。
     available: ['zh-Hans'],
@@ -109,7 +117,23 @@ export function itemsFor(locale: SiteLang, items: NavEntry[] = NAV_ITEMS): NavEn
   return items.filter((item) => !item.available || item.available.includes(locale))
 }
 
-/** 入口 → 该语言的实际 URL */
+  /** 主栏条目（不含 more） */
+  export function primaryNav(locale: SiteLang, items: NavEntry[] = NAV_ITEMS): NavEntry[] {
+    return itemsFor(locale, items).filter((i) => !i.more)
+  }
+
+  /** 「更多」下拉里的条目 */
+  export function moreNav(locale: SiteLang, items: NavEntry[] = NAV_ITEMS): NavEntry[] {
+    return itemsFor(locale, items).filter((i) => i.more)
+  }
+
+  export const MORE_LABEL: Record<SiteLang, string> = {
+    'zh-Hans': '更多',
+    'zh-Hant': '更多',
+    en: 'More',
+  }
+
+  /** 入口 → 该语言的实际 URL */
 export function hrefFor(item: NavEntry, locale: SiteLang): string {
   return pathForLang(item.path, locale)
 }
