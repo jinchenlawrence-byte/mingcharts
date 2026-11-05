@@ -165,7 +165,7 @@ export default function EnPricingPage() {
           </p>
         </header>
 
-        <div className="grid md:grid-cols-3 gap-4 mb-14">
+        <div className="grid md:grid-cols-3 gap-6 mb-14">
           <div className="hw-c-plan">
             <h2 className="text-lg font-bold">Free chart</h2>
             <div className="flex items-baseline gap-1">
@@ -209,7 +209,7 @@ export default function EnPricingPage() {
             <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} highlight authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
               Buy the Fate Book
             </CheckoutButton>
-            <Link href="/en/mingshu" className="hw-c-blue block text-center text-sm hover:brightness-110 mt-2">
+            <Link href="/en/mingshu" className="block text-center text-sm text-ink/70 hover:text-ink mt-2">
               Learn more
             </Link>
           </div>

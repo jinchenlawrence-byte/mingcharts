@@ -221,7 +221,7 @@ export default function PricingPage() {
         </header>
 
         {/* 价格卡片 */}
-        <div className="grid md:grid-cols-3 gap-4 mb-14">
+        <div className="grid md:grid-cols-3 gap-6 mb-14">
           {CARDS.map((card) => (
             <div key={card.name} className={`hw-c-plan${card.highlight ? ' hw-c-planHot' : ''}`}>
               {card.highlight && (
@@ -270,7 +270,7 @@ export default function PricingPage() {
                   </CheckoutButton>
                   <Link
                     href={card.cta.href}
-                    className="hw-c-blue block text-center text-sm hover:brightness-110 mt-2"
+                    className="block text-center text-sm text-ink/70 hover:text-ink mt-2"
                   >
                     查看命书详情
                   </Link>

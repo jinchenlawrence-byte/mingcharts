@@ -43,6 +43,19 @@ for (const [loc, f] of PAGES) {
     `${loc}：会员按钮缺少描边 className（仍是橙色实心＝两个主行动）`)
 }
 
+console.log('—— ②B 间距与次级色 ——')
+for (const [loc, f] of PAGES) {
+  const src = readFileSync(f, 'utf8')
+  // 卡片间距用系统档 gap-6（24px）；gap-4（16px）在三栏价格页偏紧
+  assert(/grid md:grid-cols-3 gap-6/.test(src),
+    `${loc}：三栏卡片间距 24px（系统档 gap-6）`,
+    `${loc}：卡片间距不是 gap-6（三栏价格页 16px 偏紧）`)
+  // 免费档是次级动作：不得用主色蓝（否则一页出现第二个强调色）
+  assert(!/hw-c-blue block text-center text-sm/.test(src),
+    `${loc}：免费档链接不用主色蓝（不抢唯一主行动）`,
+    `${loc}：免费档链接仍是主色蓝（一页出现两个强调色）`)
+}
+
 console.log('—— ③ 组件默认样式未被改动 ——')
 {
   const btn = readFileSync('src/components/MembershipButton.tsx', 'utf8')
