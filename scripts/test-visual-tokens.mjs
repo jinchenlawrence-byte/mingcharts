@@ -7,8 +7,8 @@
 //      非 CSS 场景（canvas、SVG 属性）统一收口到 src/lib/visual-tokens.ts
 //   ③ 三棵树同类页面的区块节奏与卡片规格来自同一套类（.hw-sec / .hw-c-tile / .hw-c-plan），
 //      简体、繁体、英文定价页取值必须相等
-//   ③b 三棵树首页标题层收口到 .hw-h1 / .hw-h2，区块留白收口到 .hw-section，
-//      任一树改用紧凑页标题类（hw-c-h1 / hw-c-secTitle）即 fail
+//   ③b 三棵树首页标题层收口到 .hw-h1 / .hw-h2，Hero 走开放式 .hw-hero，
+//      主区块统一由 .hw-section 承载；任一树退回卡片盒/紧凑标题类即 fail
 //   ④ 重要提示（警示 / 免责 / 限流）走共享的 .hw-alert / .hw-alert--note，不许各页自写；
 //      旧的 .hw-c-fine 已升格为「加大加粗 + 琥珀色条」
 //   ⑤ 牙口自检：--self-test 会注入一个带 #ff0000 的探针文件 + 把定价页的一个 hw-sec 改回 mb-14，
@@ -175,7 +175,7 @@ const HOME = {
 }
 
 /** 纯函数：返回首页结构问题（牙口自检直接喂变异文本） */
-export function homeIssues(text) {
+export function homeIssues(text, minOwnSections = 2) {
   const issues = []
   const h1 = text.match(/<h1\s+className="[^"]*"/g) || []
   if (h1.length !== 1) issues.push(`h1 应恰好 1 处（实际 ${h1.length}）`)
@@ -185,14 +185,28 @@ export function homeIssues(text) {
   if (h2.some((m) => !m.includes('hw-h2'))) issues.push('存在未走 .hw-h2 的 h2（区块标题档位不一致）')
   if (/hw-c-h1|hw-c-secTitle/.test(text)) issues.push('仍在使用紧凑页标题类 hw-c-h1 / hw-c-secTitle')
   if (/mb-14/.test(text)) issues.push('仍存在一次性间距 mb-14')
+  // 开放式版式：Hero 必须敞开（表单一进首屏就是真入口），主区块必须由 .hw-section 承载
+  if (!/<div\s+className="hw-hero"/.test(text)) issues.push('缺少开放式 Hero 容器 .hw-hero')
+  if (/<section\s+className="hw-c-box/.test(text)) issues.push('首页主区块仍由整块 hw-c-box 承载（应改 .hw-section）')
+  const ownSections = (text.match(/<section\s+className="hw-section"/g) || []).length
+  if (ownSections < minOwnSections) issues.push(`hw-section 承载的主区块少于 ${minOwnSections} 处（实际 ${ownSections}）`)
   return issues
 }
 
+// 共享首页组件自带的 .hw-section（命书样例 + 更多查询），运行时计入三树首页
+const SHARED_HOME_SECTIONS = (read('src/components/home/HomeSections.tsx').match(/<section\s+className="hw-section"/g) || []).length
+assert(SHARED_HOME_SECTIONS === 2, `HomeSections 提供 2 个共享 .hw-section（实际 ${SHARED_HOME_SECTIONS}）`)
+
+// 各树自有主区块下限：简体 2（其余由共享组件 + 单区块承载），繁/英 5（各自独有内容的区块）
+const HOME_SECTION_MIN = { 'zh-Hans': 2, 'zh-Hant': 5, en: 5 }
+
 for (const [locale, file] of Object.entries(HOME)) {
   const text = read(file)
-  const issues = homeIssues(text)
-  assert(issues.length === 0, `${locale} 首页：${issues.length ? issues.join('；') : 'h1/h2 与区块节奏合规'}`)
+  const issues = homeIssues(text, HOME_SECTION_MIN[locale])
+  assert(issues.length === 0, `${locale} 首页：${issues.length ? issues.join('；') : '开放式 Hero + .hw-section 主区块合规'}`)
   assert(/from '@\/components\/home\/HomeSections'/.test(text), `${locale} 首页复用 HomeSections（.hw-section 节奏同源）`)
+  const own = (text.match(/<section\s+className="hw-section"/g) || []).length
+  console.log(`      ${locale} 首页 .hw-section：自有 ${own} + 共享 ${SHARED_HOME_SECTIONS} = 运行时 ${own + SHARED_HOME_SECTIONS}`)
 }
 
 // 首页主 CTA 规格：胶囊 + 18px + py-4（三树同一条类串，英文表单在 EnHomeForm）
@@ -252,6 +266,15 @@ if (process.argv.includes('--self-test')) {
   const homeProbe = homeIssues(homeMutated)
   assert(homeProbe.length > 0, '把英文首页 h1 改回 hw-c-h1 → 首页档位断言翻红')
   if (homeProbe.length) console.log(`      命中：${homeProbe.join('；')}`)
+
+  // 首页牙口：把繁体一个主区块改回卡片盒，开放式版式断言必须翻红
+  const cardMutated = read(HOME['zh-Hant']).replace(
+    '<section className="hw-section"',
+    '<section className="hw-c-box mb-6"'
+  )
+  const cardProbe = homeIssues(cardMutated, HOME_SECTION_MIN['zh-Hant'])
+  assert(cardProbe.length > 0, '把繁体一个 hw-section 改回卡片盒 → 开放式版式断言翻红')
+  if (cardProbe.length) console.log(`      命中：${cardProbe.join('；')}`)
   assert(!existsSync(probe), '探针文件已清理')
 }
 

@@ -49,7 +49,7 @@ export default function EnHomeForm() {
   }
 
   return (
-    <form onSubmit={submit} className="mt-5" autoComplete="off">
+    <form onSubmit={submit} className="hw-form" autoComplete="off">
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
         {([['year', 'Year', YEARS], ['month', 'Month', OPTS(1, 12)], ['day', 'Day', OPTS(1, 31)], ['hour', 'Hour', OPTS(0, 23)], ['minute', 'Minute', OPTS(0, 59)]] as const).map(([k, label, opts]) => (
           <div key={k}>
@@ -71,7 +71,7 @@ export default function EnHomeForm() {
         {loading ? 'Casting…' : 'Cast my Bazi chart'}
       </button>
       {error && <p className="mt-2 text-center text-sm text-hw-fire">{error}</p>}
-      <p className="hw-note mt-2">True Solar Time correction applied when a birth place is given.</p>
+      <p className="hw-alert hw-alert--note">True Solar Time correction applied when a birth place is given.</p>
     </form>
   )
 }

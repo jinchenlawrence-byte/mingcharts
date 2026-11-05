@@ -73,7 +73,7 @@ export default function SiteNav({ locale }: { locale: SiteLang }) {
           {open && (
             <div
               role="menu"
-              className="absolute right-0 top-full z-50 mt-2 min-w-[150px] rounded-xl border border-ink/10 bg-white py-1 shadow-[0_12px_32px_-16px_rgba(27,24,56,0.35)]"
+              className="absolute right-0 top-full z-50 mt-2 min-w-[150px] rounded-xl border border-ink/10 bg-white py-1 shadow-[var(--sh-2)]"
             >
               {more.map((item) => (
                 <Link

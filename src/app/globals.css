@@ -938,6 +938,11 @@ h1, h2, h3, .font-serif-sc {
 .hw-c-pg {
   padding: 20px 0 72px;
 }
+/* 首页：.hw-c-pg 的 padding 简写会清掉 .hw-wrap 的水平留白，这里按简体 `/` 补回 20px */
+.hw-home-pg {
+  padding-left: 20px;
+  padding-right: 20px;
+}
 .hw-c-back {
   display: inline-block;
   color: var(--hw-mute);

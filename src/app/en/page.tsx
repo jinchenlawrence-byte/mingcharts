@@ -41,35 +41,39 @@ const FAQS = [
 
 export default function EnHome() {
   return (
-    <div className="hw-wrap hw-c-pg">
-      <section className="hw-c-box mb-6">
-        <h1 className="hw-h1">Bazi, the Four Pillars of Destiny — read clearly</h1>
-        <p className="hw-c-lede">
-          Bazi reads a birth moment as four pillars: year, month, day and hour. Each pillar has one
-          Heavenly Stem and one Earthly Branch. The Day Stem is your Day Master. From these eight
-          characters a reading derives the Ten Gods, Hidden Stems, Five Elements balance, Luck
-          Pillars (ten-year cycles) and Annual Pillars.
-        </p>
-        <p className="hw-c-body mt-3">
-          Enter your birth details below. The engine computes the Four Pillars deterministically;
-          True Solar Time correction is applied when a birth place is given.
-        </p>
+    <div className="hw-wrap hw-c-pg hw-home-pg">
+      {/* Open Hero: form on the left, interactive sample chart on the right (same rhythm as `/`). */}
+      <div className="hw-hero" id="chart">
+        <div>
+          <h1 className="hw-h1">Bazi, the Four Pillars of Destiny — read clearly</h1>
+          <p className="hw-lede">
+            Enter your birth details below. The engine computes the Four Pillars deterministically;
+            True Solar Time correction is applied when a birth place is given.
+          </p>
 
-        <EnHomeForm />
+          <EnHomeForm />
 
-        <div className="flex flex-wrap gap-3 mt-5">
-          <Link href="/en/pricing" className="hw-c-btnBig">See pricing →</Link>
-          <Link href="/en/mingshu" className="hw-c-btnBig">About the Fate Book →</Link>
+          <p className="hw-lede">
+            Bazi reads a birth moment as four pillars: year, month, day and hour. Each pillar has one
+            Heavenly Stem and one Earthly Branch. The Day Stem is your Day Master. From these eight
+            characters a reading derives the Ten Gods, Hidden Stems, Five Elements balance, Luck
+            Pillars (ten-year cycles) and Annual Pillars.
+          </p>
+
+          <div className="flex flex-wrap gap-3 mt-5">
+            <Link href="/en/pricing" className="hw-c-btnBig">See pricing →</Link>
+            <Link href="/en/mingshu" className="hw-c-btnBig">About the Fate Book →</Link>
+          </div>
         </div>
 
         {/* Batch 2 parity: the interactive sample chart was only on the Chinese home page. */}
         <ExampleChart locale="en" />
-      </section>
+      </div>
 
       {/* Batch 2 parity: trust bar (free charting / True Solar Time / encrypted / reference only) */}
       <TrustBar locale="en" />
 
-      <section className="hw-c-box mb-6">
+      <section className="hw-section">
         <h2 className="hw-h2">What a Bazi chart contains</h2>
         <ul className="text-sm text-ink-light space-y-2">
           <li>• <strong className="text-ink">Four Pillars</strong> — year, month, day and hour, each a Heavenly Stem over an Earthly Branch.</li>
@@ -83,7 +87,7 @@ export default function EnHome() {
         </ul>
       </section>
 
-      <section className="hw-c-box mb-6">
+      <section className="hw-section">
         <h2 className="hw-h2">Other readings</h2>
         <div className="grid sm:grid-cols-2 gap-3 text-sm">
           <div className="border border-gold/20 rounded-lg p-3">
@@ -121,7 +125,7 @@ export default function EnHome() {
         </div>
       </section>
 
-      <section className="hw-c-box mb-6">
+      <section className="hw-section">
         <h2 className="hw-h2">Twelve zodiac signs</h2>
         <p className="text-sm text-ink-light mb-3">
           The zodiac animal is the Earthly Branch of the year pillar — one branch out of eight
@@ -145,7 +149,7 @@ export default function EnHome() {
       {/* Batch 2 parity: more readings — only links whose English pages exist. */}
       <MoreQueries locale="en" />
 
-      <section className="hw-c-box mb-6">
+      <section className="hw-section">
         <h2 className="hw-h2">FAQ</h2>
         <div className="space-y-3">
           {FAQS.map((f) => (
@@ -157,7 +161,7 @@ export default function EnHome() {
         </div>
       </section>
 
-      <section className="hw-c-box">
+      <section className="hw-section">
         <h2 className="hw-h2">Languages</h2>
         <p className="text-sm text-ink-light">
           This site also publishes a Simplified Chinese edition and a Traditional Chinese edition
