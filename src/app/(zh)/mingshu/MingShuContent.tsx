@@ -90,7 +90,7 @@ export default function MingShuContent() {
               先看公开示例命书（虚构资料 · 展示前约 30%）→
             </Link>
           </div>
-          <p className="text-xs text-ink-light/40 mt-3">
+          <p className="text-xs text-ink-light mt-3">
             已生成命盘永久保存 · 30 秒左右出结果 · 可反复查看
           </p>
         </div>
@@ -148,7 +148,7 @@ export default function MingShuContent() {
             <h2 className="hw-c-secTitle hw-c-h2C">
               输入出生信息，生成你的命书
             </h2>
-            <p className="text-sm text-ink-light/60 text-center mb-6">
+            <p className="text-sm text-ink-light text-center mb-6">
               免费排盘 → 查看命盘骨架 → 解锁万字命书详批
             </p>
             <BirthForm ctaText="开始排盘（免费）" />
@@ -175,7 +175,7 @@ export default function MingShuContent() {
               </button>
             </div>
           </div>
-          <p className="text-center text-sm text-ink-light/60 mt-4">
+          <p className="text-center text-sm text-ink-light mt-4">
             高频用户可选 <Link href="/pricing" className="hw-c-link">会员订阅 {MEMBER_MONTHLY_PRICE}/月</Link>（订阅权益见价目页）
           </p>
         </div>
@@ -204,7 +204,7 @@ export default function MingShuContent() {
         <p className="hw-alert hw-alert--note">
           本站内容基于传统命理文化整理，仅供学习参考与娱乐，不构成任何人生、医疗、法律、财务决策建议。
         </p>
-        <p className="text-xs text-ink-light/40 mt-2">
+        <p className="text-xs text-ink-light mt-2">
           <Link href="/pricing" className="hover:text-ink/70">价格方案</Link>
           <span className="mx-2">·</span>
           <Link href="/article" className="hover:text-ink/70">命理知识</Link>

@@ -97,7 +97,7 @@ export default function LiunianResultView({ data, onRegen, regenBusy, locale = '
               {L(target.tag)}
             </span>
           )}
-          <span className="text-xs text-ink-light/60 ml-auto">{L(data.aiSource)}</span>
+          <span className="text-xs text-ink-light ml-auto">{L(data.aiSource)}</span>
         </div>
         {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
         {ruleVersion && onRegen && (
@@ -110,7 +110,7 @@ export default function LiunianResultView({ data, onRegen, regenBusy, locale = '
             >
               {regenBusy ? L('重新生成中...') : L('免费重新生成')}
             </button>
-            <span className="text-xs text-ink-light/50">{L('不额外收费 · AI 将重写全文并覆盖本报告')}</span>
+            <span className="text-xs text-ink-light">{L('不额外收费 · AI 将重写全文并覆盖本报告')}</span>
           </div>
         )}
 
@@ -119,7 +119,7 @@ export default function LiunianResultView({ data, onRegen, regenBusy, locale = '
           <p className="mb-2 text-ink-light">
             {gender}{L('命 · 公历')} {data.input.year}-{data.input.month}-{data.input.day} {data.input.hour}{L('时')}
             {data.input.minute > 0 ? `${data.input.minute}${L('分')}` : ''}
-            <span className="text-ink-light/60 ml-2">{L('农历')} {L(data.lunarDate)}</span>
+            <span className="text-ink-light ml-2">{L('农历')} {L(data.lunarDate)}</span>
           </p>
           <p className="tracking-widest text-lg font-semibold text-ink mb-2">
             {pillarLine(data.pillars.year)}　{pillarLine(data.pillars.month)}　
@@ -173,11 +173,11 @@ export default function LiunianResultView({ data, onRegen, regenBusy, locale = '
                   <span className={`px-2 py-0.5 rounded border text-xs ${TAG_STYLE[y.tag] || TAG_STYLE['一般']}`}>
                     {L(y.tag)}
                   </span>
-                  {isPast && <span className="text-xs text-ink-light/60 ml-auto">{L('已过·应期')}</span>}
+                  {isPast && <span className="text-xs text-ink-light ml-auto">{L('已过·应期')}</span>}
                   {isTarget && <span className="text-xs text-ink-light ml-auto">{L('本次详批')}</span>}
                 </div>
                 <p className="text-ink-light">{L(y.shiShenGan)}{L('主事 ·')} {L(y.shiShenZhi)}</p>
-                {y.note && <p className="text-ink-light/60 mt-1 text-xs leading-relaxed">{L(y.note)}</p>}
+                {y.note && <p className="text-ink-light mt-1 text-xs leading-relaxed">{L(y.note)}</p>}
               </div>
             )
           })}

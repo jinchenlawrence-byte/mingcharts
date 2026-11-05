@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export default function EnTermsPage() {
   const html = renderLegal('terms.md')
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
+    <div className="mx-auto max-w-[45ch] px-4 py-12">
       <div className="legal-content" dangerouslySetInnerHTML={{ __html: html }} />
     </div>
   )

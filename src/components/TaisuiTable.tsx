@@ -53,7 +53,7 @@ export default function TaisuiTable({ hant = false, focusYear }: { hant?: boolea
           {hant ? '十二生肖 2024–2031 流年太歲關係對照表' : '十二生肖 2024–2031 流年太岁关系对照表'}
         </caption>
         <thead>
-          <tr className="text-left text-ink-light/70 border-b border-gold/20">
+          <tr className="text-left text-ink-light border-b border-gold/20">
             <th className="py-2 pr-3 sticky left-0 bg-white/0">{hant ? '生肖' : '生肖'}</th>
             {years.map((y) => (
               <th

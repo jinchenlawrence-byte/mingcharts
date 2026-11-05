@@ -163,8 +163,8 @@ function SuccessInner() {
                 ? 'The payment provider is syncing. We are doing a final check — please wait…'
                 : 'The bank and payment provider may take a few seconds to notify us. Please keep this page open.'}
             </p>
-            <p className="text-xs text-ink-light/40 mt-3">Waited about {seconds} seconds</p>
-            {ref && <p className="text-xs text-ink-light/40 mt-1">Reference: {ref}</p>}
+            <p className="text-xs text-ink-light mt-3">Waited about {seconds} seconds</p>
+            {ref && <p className="text-xs text-ink-light mt-1">Reference: {ref}</p>}
           </>
         )}
 
@@ -234,7 +234,7 @@ function SuccessInner() {
             <h1 className="hw-c-h1">Please sign in</h1>
             <p className="hw-c-body">
               Sign in with the account you paid with, and access will be confirmed automatically.
-              {ref && <span className="block text-xs text-ink-light/40 mt-2 break-all">Reference: {ref}</span>}
+              {ref && <span className="block text-xs text-ink-light mt-2 break-all">Reference: {ref}</span>}
             </p>
             <Link href="/en/auth" className="hw-c-btnBig inline-block mt-4">Sign in</Link>
           </>

@@ -39,7 +39,7 @@ function CurrentCitySelect({ value, onChange }: {
     return (
       <div className="flex items-center gap-2 px-3 py-2 rounded-[14px] bg-gold/5 border border-gold/15 text-sm">
         <span className="flex-1 truncate text-ink">{selectedLabel || value}</span>
-        <button type="button" className="text-ink-light/40 hover:text-red-500"
+        <button type="button" className="text-ink-light hover:text-red-500"
           onClick={() => { onChange(''); setQuery(''); setSelectedLabel('') }}>
           ✕
         </button>
@@ -231,7 +231,7 @@ export default function GeoPage() {
                 ✓ 报告已保存到你的账户，可在「我的报告」中随时回看
               </p>
             ) : saved === false ? (
-              <p className="text-xs text-ink-light/60 bg-paper-dark/30 border border-gold/15 rounded px-3 py-2 mb-4">
+              <p className="text-xs text-ink-light bg-paper-dark/30 border border-gold/15 rounded px-3 py-2 mb-4">
                 登录后生成结果可保存到「我的报告」，随时回看
               </p>
             ) : null}
@@ -245,7 +245,7 @@ export default function GeoPage() {
               >
                 重新生成本报告
               </button>
-              <span className="text-xs text-ink-light/50">对解读不满意？AI 将重写全文并覆盖原报告</span>
+              <span className="text-xs text-ink-light">对解读不满意？AI 将重写全文并覆盖原报告</span>
             </div>
             <GeoResultView data={data} onRegen={() => runGenerate()} regenBusy={loading} />
           </div>

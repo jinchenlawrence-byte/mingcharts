@@ -81,7 +81,7 @@ export default function SharePrintBar({ brandName, kindLabel, shareUrl }: Props)
         {copied ? '已复制 ✓' : '复制链接'}
       </button>
 
-      <span className="text-xs text-ink-light/60">
+      <span className="text-xs text-ink-light">
         提示：打印对话框里选「另存为 PDF」即可得到文件版。
       </span>
     </div>

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function EnPrivacyPage() {
   const html = renderLegal('privacy.md')
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12">
+    <div className="mx-auto max-w-[45ch] px-4 py-12">
       <div className="legal-content" dangerouslySetInnerHTML={{ __html: html }} />
     </div>
   )

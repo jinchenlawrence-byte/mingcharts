@@ -47,7 +47,7 @@ export default function LangSwitcher({
   const pathname = usePathname() || '/'
   const targets = SWITCH_LABELS[locale]
   return (
-    <span className={className ?? 'shrink-0 whitespace-nowrap text-ink-light/40'}>
+    <span className={className ?? 'shrink-0 whitespace-nowrap text-ink-light'}>
       {targets.map((t, i) => (
         <span key={t.lang}>
           {i > 0 && <span className="mx-1 opacity-40">/</span>}

@@ -70,7 +70,7 @@ export default async function HantJieRiPage({ params }: { params: Promise<{ slug
         <div className="hw-c-box mb-6">
           <h2 className="hw-c-secTitle">🧧 {H(jr.name)}{H('開運建議')}</h2>
           <p className="hw-c-body">{H(jr.lucky)}</p>
-          <p className="text-xs text-ink-light/40 mt-4">
+          <p className="text-xs text-ink-light mt-4">
             {H('民俗講究重在傳承文化、寄託美好願望，心存善念、行善積德才是最好的開運之道。')}
           </p>
         </div>

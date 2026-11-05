@@ -35,7 +35,7 @@ export default function HantTaisuiTablePage() {
         </p>
         <TaisuiTable hant />
         <TaisuiLegend hant />
-        <p className="text-xs text-ink-light/60 mt-3">
+        <p className="text-xs text-ink-light mt-3">
           今年那一列會高亮。查往年的對不上也可以點進去看 ——
           有人拿它驗證「應期」，這也是一種用法。
         </p>

@@ -193,12 +193,12 @@ export default async function HantShengXiaoLiunian({ params }: { params: Promise
             生肖運勢是十二分之一的共性參考；結合完整八字（四柱、大運、流年）分析的個人運勢才精準。
           </p>
           <Link href="/tw" className="hw-c-btnBig">輸入時辰，排我的八字 →</Link>
-          <p className="mt-4 text-sm text-ink-light/70">
+          <p className="mt-4 text-sm text-ink-light">
             或<Link href="/tw/liunian" className="hw-c-link">直接生成 {year} 年年運報告（{formatPriceUSD(SKUS.annual_report.priceUSD)}，一次覆蓋今年／明年／後年三年，各含流月節奏）→</Link>
           </p>
         </div>
 
-        <p className="text-center text-xs text-ink-light/40 mt-6">
+        <p className="text-center text-xs text-ink-light mt-6">
           本文為傳統命理民俗內容，僅供參考娛樂，不構成任何決策建議。
         </p>
       </div>
@@ -218,7 +218,7 @@ function Section({ title, body }: { title: string; body: string }) {
 function Lucky({ label, value }: { label: string; value: string }) {
   return (
     <div className="bg-gold/5 rounded p-3 text-center">
-      <div className="text-xs text-ink-light/60">{label}</div>
+      <div className="text-xs text-ink-light">{label}</div>
       <div className="font-semibold text-ink mt-1">{value}</div>
     </div>
   )

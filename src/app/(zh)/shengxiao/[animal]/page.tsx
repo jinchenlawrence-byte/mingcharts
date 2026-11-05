@@ -76,7 +76,7 @@ export default async function ShengXiaoPage({ params }: { params: Promise<{ anim
               <p className="hw-c-meta">
                 地支{sx.zhi} · 五行属{sx.wuxing} · 本命佛{sx.benmingfo}
               </p>
-              <p className="text-ink-light/40 text-xs mt-1">
+              <p className="text-ink-light text-xs mt-1">
                 出生年份（以立春为界）：{sx.years.join('、')}年
               </p>
             </div>
@@ -85,23 +85,23 @@ export default async function ShengXiaoPage({ params }: { params: Promise<{ anim
           {/* 生肖关系 */}
           <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
             <div className="bg-green-50 border border-green-200 rounded p-2 text-center">
-              <div className="text-xs text-ink-light/60">六合贵人</div>
+              <div className="text-xs text-ink-light">六合贵人</div>
               <div className="font-bold text-green-700">属{sx.liuHe}</div>
             </div>
             <div className="bg-green-50 border border-green-200 rounded p-2 text-center">
-              <div className="text-xs text-ink-light/60">三合</div>
+              <div className="text-xs text-ink-light">三合</div>
               <div className="font-bold text-green-700">属{sx.sanHe[0]}、{sx.sanHe[1]}</div>
             </div>
             <div className="bg-red-50 border border-red-200 rounded p-2 text-center">
-              <div className="text-xs text-ink-light/60">六冲</div>
+              <div className="text-xs text-ink-light">六冲</div>
               <div className="font-bold text-red-700">属{sx.liuChong}</div>
             </div>
             <div className="bg-red-50 border border-red-200 rounded p-2 text-center">
-              <div className="text-xs text-ink-light/60">六害</div>
+              <div className="text-xs text-ink-light">六害</div>
               <div className="font-bold text-red-700">属{sx.liuHai}</div>
             </div>
             <div className="bg-orange-50 border border-orange-200 rounded p-2 text-center col-span-2 md:col-span-1">
-              <div className="text-xs text-ink-light/60">相刑</div>
+              <div className="text-xs text-ink-light">相刑</div>
               <div className="font-bold text-orange-700">{sx.sanXing.map(x => '属' + x).join('、')}</div>
             </div>
           </div>
@@ -125,7 +125,7 @@ export default async function ShengXiaoPage({ params }: { params: Promise<{ anim
             <LuckyItem label="吉祥花卉" value={sx.luckyFlower} />
             <LuckyItem label="幸运宝石" value={sx.luckyStone} />
           </div>
-          <p className="text-xs text-ink-light/40 mt-4">
+          <p className="text-xs text-ink-light mt-4">
             提示：幸运物为传统民俗参考，最上等的改运之道是修心积德、勤奋努力。
           </p>
         </div>
@@ -175,7 +175,7 @@ export default async function ShengXiaoPage({ params }: { params: Promise<{ anim
               )
             })}
           </div>
-          <p className="text-xs text-ink-light/40 mt-3">
+          <p className="text-xs text-ink-light mt-3">
             绿色为合太岁吉年，红色为害/刑太岁需谨慎，橙色为冲太岁主动荡，灰色为平稳之年。
           </p>
         </div>
@@ -211,7 +211,7 @@ function Section({ title, body }: { title: string; body: string }) {
 function LuckyItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-3 bg-gold/5 rounded p-3">
-      <span className="text-ink-light/60 shrink-0">{label}</span>
+      <span className="text-ink-light shrink-0">{label}</span>
       <span className="font-semibold text-ink">{value}</span>
     </div>
   )

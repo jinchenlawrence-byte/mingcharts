@@ -240,7 +240,7 @@ export default function ReportDetailPage() {
                 <span className={`text-xs px-2 py-0.5 rounded ${KIND_STYLE[row.kind] ?? 'bg-paper-dark/40 text-ink-light'}`}>
                   {REPORT_KIND_LABELS[row.kind] ?? row.kind}
                 </span>
-                <span className="text-xs text-ink-light/40">
+                <span className="text-xs text-ink-light">
                   {new Date(row.created_at).toLocaleString('zh-CN')}
                 </span>
               </div>

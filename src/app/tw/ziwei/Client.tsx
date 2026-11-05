@@ -144,7 +144,7 @@ export default function HantZiweiClient() {
                 {H('✓ 報告已保存到你的帳戶，可在「我的報告」中隨時回看')}
               </p>
             ) : saved === false ? (
-              <p className="text-xs text-ink-light/60 bg-paper-dark/30 border border-gold/15 rounded px-3 py-2 mb-4">
+              <p className="text-xs text-ink-light bg-paper-dark/30 border border-gold/15 rounded px-3 py-2 mb-4">
                 {H('登入後生成結果可保存到「我的報告」，隨時回看')}
               </p>
             ) : null}
@@ -157,7 +157,7 @@ export default function HantZiweiClient() {
               >
                 {H('重新生成本報告')}
               </button>
-              <span className="text-xs text-ink-light/50">{H('對解讀不滿意？AI 將重寫全文並覆蓋原報告')}</span>
+              <span className="text-xs text-ink-light">{H('對解讀不滿意？AI 將重寫全文並覆蓋原報告')}</span>
             </div>
             <ZiweiResultView data={data} onRegen={() => runGenerate()} regenBusy={loading} locale="zh-Hant" />
           </div>

@@ -85,7 +85,7 @@ export default async function EnShengXiaoAnimal({
             <p className="hw-c-meta">
               Branch {branchEn(sx.zhi)} · Element {elementClassWord(sx.zhi)} · Guardian buddha {copy.buddha}
             </p>
-            <p className="text-ink-light/40 text-xs mt-1">
+            <p className="text-ink-light text-xs mt-1">
               Birth years (the year changes at Li Chun): {sx.years.join(', ')}
             </p>
           </div>
@@ -94,23 +94,23 @@ export default async function EnShengXiaoAnimal({
         {/* Branch relations */}
         <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
           <div className="bg-green-50 border border-green-200 rounded p-2 text-center">
-            <div className="text-xs text-ink-light/60">Six Harmony (Liu He)</div>
+            <div className="text-xs text-ink-light">Six Harmony (Liu He)</div>
             <div className="font-bold text-green-700">{zodiacEn(sx.liuHe)}</div>
           </div>
           <div className="bg-green-50 border border-green-200 rounded p-2 text-center">
-            <div className="text-xs text-ink-light/60">Three Harmony (San He)</div>
+            <div className="text-xs text-ink-light">Three Harmony (San He)</div>
             <div className="font-bold text-green-700">{sx.sanHe.map(zodiacEn).join(', ')}</div>
           </div>
           <div className="bg-red-50 border border-red-200 rounded p-2 text-center">
-            <div className="text-xs text-ink-light/60">Six Clash (Liu Chong)</div>
+            <div className="text-xs text-ink-light">Six Clash (Liu Chong)</div>
             <div className="font-bold text-red-700">{zodiacEn(sx.liuChong)}</div>
           </div>
           <div className="bg-red-50 border border-red-200 rounded p-2 text-center">
-            <div className="text-xs text-ink-light/60">Six Harm (Liu Hai)</div>
+            <div className="text-xs text-ink-light">Six Harm (Liu Hai)</div>
             <div className="font-bold text-red-700">{zodiacEn(sx.liuHai)}</div>
           </div>
           <div className="bg-orange-50 border border-orange-200 rounded p-2 text-center col-span-2 md:col-span-1">
-            <div className="text-xs text-ink-light/60">Punishment (Xing)</div>
+            <div className="text-xs text-ink-light">Punishment (Xing)</div>
             <div className="font-bold text-orange-700">{sx.sanXing.map(zodiacEn).join(', ')}</div>
           </div>
         </div>
@@ -134,7 +134,7 @@ export default async function EnShengXiaoAnimal({
           <LuckyItem label="Auspicious flowers" value={copy.luckyFlower} />
           <LuckyItem label="Lucky gemstones" value={copy.luckyStone} />
         </div>
-        <p className="text-xs text-ink-light/40 mt-4">
+        <p className="text-xs text-ink-light mt-4">
           Note: lucky items are a traditional folk reference. The most reliable way to change your luck
           is to keep your conduct clean, learn steadily and work honestly.
         </p>
@@ -185,7 +185,7 @@ export default async function EnShengXiaoAnimal({
             </div>
           ))}
         </div>
-        <p className="text-xs text-ink-light/40 mt-3">
+        <p className="text-xs text-ink-light mt-3">
           Green marks a harmonious year, red a harm or punishment year, orange a clash year and grey a
           steady year. Year-by-year English pages are not published yet; this table is the summary for
           each year.
@@ -225,7 +225,7 @@ function Section({ title, body }: { title: string; body: string }) {
 function LuckyItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-3 bg-gold/5 rounded p-3">
-      <span className="text-ink-light/60 shrink-0">{label}</span>
+      <span className="text-ink-light shrink-0">{label}</span>
       <span className="font-semibold text-ink">{value}</span>
     </div>
   )

@@ -214,7 +214,7 @@ export default function HantPricingPage() {
               <h2 className="text-lg font-bold">{card.name}</h2>
               <div className="flex items-baseline gap-1">
                 <span className="hw-c-pr">{card.price}</span>
-                <span className="text-ink-light/60 text-sm">{card.unit}</span>
+                <span className="text-ink-light text-sm">{card.unit}</span>
               </div>
               <p className="text-sm text-ink-light">{card.desc}</p>
 
@@ -293,7 +293,7 @@ export default function HantPricingPage() {
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-2xl font-bold text-ink">{formatPriceUSD(s.priceUSD)}</div>
-                    <div className="text-xs text-ink-light/60 mt-1">/ 次</div>
+                    <div className="text-xs text-ink-light mt-1">/ 次</div>
                   </div>
                 </div>
                 <CheckoutButton
@@ -309,7 +309,7 @@ export default function HantPricingPage() {
               </div>
             ))}
           </div>
-          <p className="text-xs text-ink-light/60 text-center mt-4">
+          <p className="text-xs text-ink-light text-center mt-4">
             {H('購買後報告永久保存，可隨時反覆查看（會員訂閱不含單項報告）。')}
           </p>
         </section>
@@ -325,13 +325,13 @@ export default function HantPricingPage() {
               <div>
                 <h3 className="font-bold text-ink">{H(SKUS.ask_pack.name)}</h3>
                 <p className="text-sm text-ink-light mt-1">{H(SKUS.ask_pack.desc)}</p>
-                <p className="text-xs text-ink-light/60 mt-2">
+                <p className="text-xs text-ink-light mt-2">
                   {H('涉醫療、法律、投資、生死與重大取捨的「該不該」類問題不作判決，只講命局傾向；每條回答均附免責說明。')}
                 </p>
               </div>
               <div className="text-right shrink-0">
                 <div className="text-2xl font-bold text-ink">{formatPriceUSD(SKUS.ask_pack.priceUSD)}</div>
-                <div className="text-xs text-ink-light/60 mt-1">/ {ASK_PACK_SIZE} 次</div>
+                <div className="text-xs text-ink-light mt-1">/ {ASK_PACK_SIZE} 次</div>
               </div>
             </div>
             <CheckoutButton
@@ -381,7 +381,7 @@ export default function HantPricingPage() {
                       <td>
                         {row.label}
                         {row.note && (
-                          <span className="ml-2 text-xs text-ink-light/40 whitespace-normal">{row.note}</span>
+                          <span className="ml-2 text-xs text-ink-light whitespace-normal">{row.note}</span>
                         )}
                       </td>
                       {cells.map((on, i) => (
@@ -389,7 +389,7 @@ export default function HantPricingPage() {
                           {on ? (
                             <span className="text-hw-water">✓</span>
                           ) : (
-                            <span className="text-ink-light/30">—</span>
+                            <span className="text-ink-light">—</span>
                           )}
                         </td>
                       ))}

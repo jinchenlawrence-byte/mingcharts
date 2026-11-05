@@ -45,7 +45,7 @@ export default function JieRiIndex() {
             >
               <div className="flex items-center justify-between flex-wrap gap-2">
                 <h2 className="text-lg font-bold text-ink">{j.name}</h2>
-                <span className="text-xs text-ink-light/60">{j.lunarDate} · {j.alias}</span>
+                <span className="text-xs text-ink-light">{j.lunarDate} · {j.alias}</span>
               </div>
               <p className="text-sm text-ink-light mt-2 leading-relaxed">{j.intro}</p>
             </Link>

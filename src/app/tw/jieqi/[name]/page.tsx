@@ -83,7 +83,7 @@ export default async function HantJieQiPage({ params }: { params: Promise<{ name
               </div>
             ))}
           </div>
-          <p className="text-xs text-ink-light/40 mt-3">
+          <p className="text-xs text-ink-light mt-3">
             {H('「候」是古人以五日為一候觀察到的物候現象，三候共十五日，構成一個節氣。')}
           </p>
         </div>

@@ -81,7 +81,7 @@ export default async function MonthPage({ params }: { params: Promise<{ year: st
                 className="bg-gold/5 hover:bg-gold/10 border border-gold/20 rounded p-2 text-center transition-colors"
               >
                 <div className="font-bold text-ink">{d}</div>
-                <div className="text-xs text-ink-light/40">日</div>
+                <div className="text-xs text-ink-light">日</div>
               </Link>
             ))}
           </div>

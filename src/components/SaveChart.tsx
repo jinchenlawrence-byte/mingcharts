@@ -73,7 +73,7 @@ export default function SaveChart({ locale = 'zh-Hans' }: { locale?: SiteLang })
         </p>
       )}
       {logged === false && (
-        <p className="text-xs text-ink-light/40 mt-1">{L('登录后可保存命盘并随时查看')}</p>
+        <p className="text-xs text-ink-light mt-1">{L('登录后可保存命盘并随时查看')}</p>
       )}
     </div>
   )

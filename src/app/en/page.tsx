@@ -135,7 +135,7 @@ export default function EnHome() {
           {SHENGXIAO.map((sx) => (
             <div key={sx.slug} className="border border-gold/20 rounded p-2 text-center text-sm">
               <div className="font-semibold text-ink">{ZODIAC_EN[sx.slug] ?? sx.slug}</div>
-              <div className="text-xs text-ink-light/60">
+              <div className="text-xs text-ink-light">
                 {branchEn(sx.zhi) || sx.zhi} · {elementEn(sx.wuxing) || sx.wuxing}
               </div>
             </div>
@@ -175,7 +175,7 @@ export default function EnHome() {
           <span className="mx-2">·</span>
           <Link href="/en" className="hw-c-link">English</Link>
         </p>
-        <p className="text-xs text-ink-light/40 mt-3">
+        <p className="text-xs text-ink-light mt-3">
           All content is traditional Chinese metaphysics, for reference and entertainment only.
         </p>
       </section>

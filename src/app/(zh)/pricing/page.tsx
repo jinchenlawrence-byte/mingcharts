@@ -232,7 +232,7 @@ export default function PricingPage() {
               <h2 className="text-lg font-bold">{card.name}</h2>
               <div className="flex items-baseline gap-1">
                 <span className="hw-c-pr">{card.price}</span>
-                <span className="text-ink-light/60 text-sm">{card.unit}</span>
+                <span className="text-ink-light text-sm">{card.unit}</span>
               </div>
               <p className="text-sm text-ink-light">{card.desc}</p>
 
@@ -310,7 +310,7 @@ export default function PricingPage() {
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-2xl font-bold text-ink">{formatPriceUSD(s.priceUSD)}</div>
-                    <div className="text-xs text-ink-light/60 mt-1">/ 次</div>
+                    <div className="text-xs text-ink-light mt-1">/ 次</div>
                   </div>
                 </div>
                 {/* ★ 2026-10-15：五个单次商品 productId 已登记（waffo-products.ts），
@@ -322,7 +322,7 @@ export default function PricingPage() {
               </div>
             ))}
           </div>
-          <p className="text-xs text-ink-light/60 text-center mt-4">
+          <p className="text-xs text-ink-light text-center mt-4">
             购买后报告永久保存，可随时反复查看（会员订阅不含单项报告）。
           </p>
         </section>
@@ -340,13 +340,13 @@ export default function PricingPage() {
               <div>
                 <h3 className="font-bold text-ink">{SKUS.ask_pack.name}</h3>
                 <p className="text-sm text-ink-light mt-1">{SKUS.ask_pack.desc}</p>
-                <p className="text-xs text-ink-light/60 mt-2">
+                <p className="text-xs text-ink-light mt-2">
                   涉医疗、法律、投资、生死与重大取舍的「该不该」类问题不作判决，只讲命局倾向；每条回答均附免责说明。
                 </p>
               </div>
               <div className="text-right shrink-0">
                 <div className="text-2xl font-bold text-ink">{formatPriceUSD(SKUS.ask_pack.priceUSD)}</div>
-                <div className="text-xs text-ink-light/60 mt-1">/ {ASK_PACK_SIZE} 次</div>
+                <div className="text-xs text-ink-light mt-1">/ {ASK_PACK_SIZE} 次</div>
               </div>
             </div>
             {/* 未登记 productId 时 CheckoutButton 自动显示「即将推出」（见 waffo-products.ts） */}
@@ -394,7 +394,7 @@ export default function PricingPage() {
                       <td>
                         {row.label}
                         {row.note && (
-                          <span className="ml-2 text-xs text-ink-light/40 whitespace-normal">{row.note}</span>
+                          <span className="ml-2 text-xs text-ink-light whitespace-normal">{row.note}</span>
                         )}
                       </td>
                       {cells.map((on, i) => (
@@ -402,7 +402,7 @@ export default function PricingPage() {
                           {on ? (
                             <span className="text-hw-water">✓</span>
                           ) : (
-                            <span className="text-ink-light/30">—</span>
+                            <span className="text-ink-light">—</span>
                           )}
                         </td>
                       ))}

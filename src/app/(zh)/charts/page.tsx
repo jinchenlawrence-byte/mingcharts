@@ -155,7 +155,7 @@ export default function MyCharts() {
           </div>
 
           {limit !== null && (
-            <p className="text-xs text-ink-light/60 -mt-3 mb-4">
+            <p className="text-xs text-ink-light -mt-3 mb-4">
               已保存 {rows.length}/{limit} 个命盘
               {rows.length >= limit && (
                 <> —— 已达上限，<Link href="/pricing" className="text-hw-water hover:underline">开通会员</Link>可保存更多</>
@@ -164,7 +164,7 @@ export default function MyCharts() {
           )}
 
           {rows.length === 0 ? (
-            <div className="hw-c-box text-center text-ink-light/60">
+            <div className="hw-c-box text-center text-ink-light">
               还没有保存的命盘，去排一个吧
             </div>
           ) : (
@@ -177,14 +177,14 @@ export default function MyCharts() {
                       {row.birth_minute > 0 ? `${row.birth_minute}分` : ''}
                       {row.gender === 1 ? ' 男' : ' 女'}
                       {row.birth_place && (
-                        <span className="text-sm text-ink-light/40 ml-2">{row.birth_place}</span>
+                        <span className="text-sm text-ink-light ml-2">{row.birth_place}</span>
                       )}
                     </p>
                     <p className="text-sm text-ink-light mt-1 tracking-wider">
                       {row.chart_data?.pillars
                         ? `${row.chart_data.pillars.year.ganZhi} ${row.chart_data.pillars.month.ganZhi} ${row.chart_data.pillars.day.ganZhi} ${row.chart_data.pillars.hour.ganZhi}`
                         : ''}
-                      <span className="text-ink-light/40 ml-2">日主 {row.chart_data?.dayMaster}</span>
+                      <span className="text-ink-light ml-2">日主 {row.chart_data?.dayMaster}</span>
                     </p>
                   </div>
                   <div className="flex gap-3 shrink-0 text-sm">

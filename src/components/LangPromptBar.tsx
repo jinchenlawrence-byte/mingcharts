@@ -80,7 +80,7 @@ export default function LangPromptBar() {
               remember('zh-Hans')
               setHidden(true)
             }}
-            className="ml-1 px-1 text-ink-light/60 hover:text-ink"
+            className="ml-1 px-1 text-ink-light hover:text-ink"
           >
             ×
           </button>

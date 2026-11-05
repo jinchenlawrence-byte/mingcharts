@@ -42,7 +42,7 @@ function CurrentCitySelect({ value, onChange }: { value: string; onChange: (id: 
     return (
       <div className="flex items-center gap-2 px-3 py-2 rounded-[14px] bg-gold/5 border border-gold/15 text-sm">
         <span className="flex-1 truncate text-ink">{selectedLabel || value}</span>
-        <button type="button" className="text-ink-light/40 hover:text-red-500" onClick={() => { onChange(''); setQuery(''); setSelectedLabel('') }}>✕</button>
+        <button type="button" className="text-ink-light hover:text-red-500" onClick={() => { onChange(''); setQuery(''); setSelectedLabel('') }}>✕</button>
       </div>
     )
   }
@@ -215,7 +215,7 @@ export default function EnGeoClient() {
                 ✓ Saved to your account. You can reopen it under My Reports.
               </p>
             ) : saved === false ? (
-              <p className="text-xs text-ink-light/60 bg-paper-dark/30 border border-gold/15 rounded px-3 py-2 mb-4">
+              <p className="text-xs text-ink-light bg-paper-dark/30 border border-gold/15 rounded px-3 py-2 mb-4">
                 Sign in to save this report and reopen it under My Reports.
               </p>
             ) : null}

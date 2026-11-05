@@ -35,7 +35,7 @@ export default function DemoMingshuPage() {
         <Link href="/" className="hw-c-back">‹ 首页</Link>
 
         <header className="mt-2 mb-6">
-          <p className="text-xs text-ink-light/60 mb-1">
+          <p className="text-xs text-ink-light mb-1">
             演示样本 · 虚构命盘 · 不用于任何真实客户
           </p>
           <h1 className="hw-c-h1">
@@ -53,7 +53,7 @@ export default function DemoMingshuPage() {
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
             {demo.pillars.map((p) => (
               <div key={p.label} className="border border-gold/20 rounded-lg p-3">
-                <div className="text-xs text-ink-light/60">{p.label}</div>
+                <div className="text-xs text-ink-light">{p.label}</div>
                 <div className="text-2xl font-bold text-ink mt-1">{p.ganZhi}</div>
                 <div className="text-xs text-ink-light mt-1">天干十神：{p.tenGodGan}</div>
                 <div className="text-xs text-ink-light">藏干：{p.cangGanText}</div>
@@ -69,7 +69,7 @@ export default function DemoMingshuPage() {
         {/* 十卷 */}
         <section className="hw-c-box mb-6">
           <h2 className="hw-c-secTitle">十卷正文</h2>
-          <p className="text-xs text-ink-light/60 mb-4">
+          <p className="text-xs text-ink-light mb-4">
             前 3 卷完整展示；后 7 卷为摘要（完整报告每卷约 1000 字）。
           </p>
           <div className="space-y-6">
@@ -80,7 +80,7 @@ export default function DemoMingshuPage() {
                 <article key={s.key}>
                   <h3 className="font-semibold text-ink mb-2">
                     卷{['一', '二', '三', '四', '五', '六', '七', '八', '九', '十'][i]} · {s.name}
-                    {!isFull && <span className="text-xs font-normal text-ink-light/50 ml-2">（摘要）</span>}
+                    {!isFull && <span className="text-xs font-normal text-ink-light ml-2">（摘要）</span>}
                   </h3>
                   <p className="text-sm text-ink-light leading-relaxed whitespace-pre-wrap">{body}</p>
                 </article>
@@ -101,9 +101,9 @@ export default function DemoMingshuPage() {
           </div>
           {demo.similarCases.length > 0 && (
             <div className="mt-4 text-sm text-ink-light">
-              <div className="text-xs text-ink-light/60 mb-1">古籍命例</div>
+              <div className="text-xs text-ink-light mb-1">古籍命例</div>
               <p className="leading-relaxed whitespace-pre-wrap">{demo.similarCases[0].text}</p>
-              <p className="text-xs text-ink-light/60 mt-1">
+              <p className="text-xs text-ink-light mt-1">
                 {demo.similarCases[0].person ? demo.similarCases[0].person + ' · ' : ''}
                 出自《{demo.similarCases[0].source}》
               </p>
@@ -115,7 +115,7 @@ export default function DemoMingshuPage() {
           <p className="text-sm text-ink-light">
             想看自己的：
             <Link href="/" className="hw-c-link">免费排盘 →</Link>
-            <span className="text-xs text-ink-light/60 ml-2">排盘免费，命书按份付费</span>
+            <span className="text-xs text-ink-light ml-2">排盘免费，命书按份付费</span>
           </p>
         </section>
 

@@ -143,9 +143,9 @@ export default function EnReportsPage() {
                       </span>
                     )}
                   </p>
-                  <p className="text-xs text-ink-light/60">{new Date(r.created_at).toLocaleDateString('en-US')}</p>
+                  <p className="text-xs text-ink-light">{new Date(r.created_at).toLocaleDateString('en-US')}</p>
                   {legacy && (
-                    <p className="mt-1 text-xs text-ink-light/70">
+                    <p className="mt-1 text-xs text-ink-light">
                       Its body is the original Chinese report and has not been translated. It stays readable in your account; readings generated from now on will be in English.
                     </p>
                   )}

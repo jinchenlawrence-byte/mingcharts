@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 }
 
 const TAG_BADGE: Record<string, string> = {
-  '较宜': 'bg-emerald-50 text-emerald-600', '平顺': 'bg-paper-dark/40 text-ink-light/60',
+  '较宜': 'bg-emerald-50 text-emerald-600', '平顺': 'bg-paper-dark/40 text-ink-light',
   '一般': 'bg-gold/10 text-ink/70', '宜慎': 'bg-orange-100 text-orange-700'
 }
 
@@ -49,10 +49,10 @@ export default function HantDemoFatebookPage() {
           <div className="grid grid-cols-4 gap-2 text-center mb-4">
             {demo.pillars.map((pl) => (
               <div key={pl.label} className="rounded bg-gold/5 px-2 py-3">
-                <div className="text-xs text-ink-light/60">{H(pl.label)}</div>
+                <div className="text-xs text-ink-light">{H(pl.label)}</div>
                 <div className="text-xl font-bold text-ink">{pl.ganZhi}</div>
                 <div className="text-[11px] text-amber-600">{H(pl.tenGodGan)}</div>
-                <div className="text-[10px] text-ink-light/40 mt-1">{H(pl.cangGanText)}</div>
+                <div className="text-[10px] text-ink-light mt-1">{H(pl.cangGanText)}</div>
               </div>
             ))}
           </div>
@@ -60,15 +60,15 @@ export default function HantDemoFatebookPage() {
             <span>{H('日主：')}<b className="text-ink">{demo.dayMaster}</b></span>
             <span>{H('旺衰：')}<b className="text-ink">{H(demo.wangShuai)}</b></span>
             <span>{H('格局：')}<b className="text-ink">{H(demo.geJu)}</b></span>
-            <span className="text-xs text-ink-light/40">{H('胎元')} {demo.taiYuan} · {H('命宮')} {demo.mingGong}</span>
+            <span className="text-xs text-ink-light">{H('胎元')} {demo.taiYuan} · {H('命宮')} {demo.mingGong}</span>
           </div>
           <div className="mt-4 border-t pt-3">
-            <div className="text-xs text-ink-light/60 mb-2">{H('大運（排盤資訊，完整命書含逐步點評）')}</div>
+            <div className="text-xs text-ink-light mb-2">{H('大運（排盤資訊，完整命書含逐步點評）')}</div>
             <div className="flex flex-wrap gap-2">
               {demo.daYun.map((d, i) => (
                 <div key={i} className="rounded bg-gold/5 px-3 py-1.5 text-center">
                   <span className="font-bold text-ink text-sm">{d.ganZhi}</span>
-                  <span className="text-[11px] text-ink-light/60 ml-1">{d.startAge}-{d.startAge + 9}{H('歲')}</span>
+                  <span className="text-[11px] text-ink-light ml-1">{d.startAge}-{d.startAge + 9}{H('歲')}</span>
                 </div>
               ))}
             </div>
@@ -80,14 +80,14 @@ export default function HantDemoFatebookPage() {
       <section className="py-4">
         <div className="hw-c-box">
           <h2 className="hw-c-secTitle">{H('歲運時間軸（節選）')}</h2>
-          <p className="text-xs text-ink-light/60 mb-3">
+          <p className="text-xs text-ink-light mb-3">
             {H(`示例只展示前 ${demo.luckCycles.daYun.length} 步大運與當年流年；完整命書含九步大運、三年流年與當年十二個節令月。`)}
           </p>
           <div className="flex flex-wrap gap-2 mb-3">
             {demo.luckCycles.daYun.map((d, i) => (
               <div key={i} className={`rounded px-3 py-2 text-center border min-w-[78px] ${d.current ? 'bg-gold/5 border-amber-500' : 'bg-paper-dark/30 border-gold/15'}`}>
                 <div className="font-bold text-ink">{d.ganZhi}</div>
-                <div className="text-xs text-ink-light/60">{d.startAge}-{d.startAge + 9}{H('歲')}</div>
+                <div className="text-xs text-ink-light">{d.startAge}-{d.startAge + 9}{H('歲')}</div>
                 <span className={`inline-block text-[11px] px-1.5 rounded mt-1 ${TAG_BADGE[d.tag] ?? ''}`}>{H(d.tag)}</span>
               </div>
             ))}
@@ -98,7 +98,7 @@ export default function HantDemoFatebookPage() {
                 <span className="font-bold text-ink">{y.year}{H('年')} {y.ganZhi}</span>
                 <span className={`text-[11px] px-1.5 py-0.5 rounded ${TAG_BADGE[y.tag] ?? ''}`}>{H(y.tag)}</span>
               </div>
-              <div className="text-xs text-ink-light/60 mt-1">{H(y.shiShenGan)}{H('主事')}{y.daYunGanZhi ? ` · ${H('行')}${y.daYunGanZhi}${H('運')}` : ''}</div>
+              <div className="text-xs text-ink-light mt-1">{H(y.shiShenGan)}{H('主事')}{y.daYunGanZhi ? ` · ${H('行')}${y.daYunGanZhi}${H('運')}` : ''}</div>
               <p className="text-xs text-ink/70 mt-2 leading-relaxed">{H(y.note)}</p>
             </div>
           ))}
@@ -114,7 +114,7 @@ export default function HantDemoFatebookPage() {
             <div key={spec.key} className="hw-c-box">
               <div className="flex items-center gap-2 mb-2">
                 <h2 className="font-semibold text-ink">{H(spec.name)}</h2>
-                <span className={`text-[11px] px-2 py-0.5 rounded ${isFull ? 'bg-amber-600 text-white' : 'bg-paper-dark/40 text-ink-light/60'}`}>
+                <span className={`text-[11px] px-2 py-0.5 rounded ${isFull ? 'bg-amber-600 text-white' : 'bg-paper-dark/40 text-ink-light'}`}>
                   {isFull ? H('完整展示') : H('摘要 · 完整版約數倍篇幅')}
                 </span>
               </div>
@@ -129,13 +129,13 @@ export default function HantDemoFatebookPage() {
         <section className="py-4">
           <div className="hw-c-box">
             <h2 className="hw-c-secTitle">{H('古籍相似命例（節選 1 條）')}</h2>
-            <p className="text-xs text-ink-light/60 mb-3">{H('完整命書按四柱結構相似度檢索多條典籍命例，供參照印證（僅供學習參考）')}</p>
+            <p className="text-xs text-ink-light mb-3">{H('完整命書按四柱結構相似度檢索多條典籍命例，供參照印證（僅供學習參考）')}</p>
             {demo.similarCases.map((c, i) => (
               <div key={i} className={`rounded-lg border p-3 ${c.exact ? 'border-amber-400 bg-gold/5' : 'border-gold/15'}`}>
                 <div className="flex flex-wrap items-baseline gap-2 mb-1">
                   <span className="font-bold text-ink">{c.person ? H(c.person) : H('未具名命造')}</span>
                   <span className="text-sm text-ink/70">{c.pillars.year} {c.pillars.month} {c.pillars.day} {c.pillars.hour}</span>
-                  <span className="text-xs text-ink-light/40 ml-auto">{H(c.source)}</span>
+                  <span className="text-xs text-ink-light ml-auto">{H(c.source)}</span>
                 </div>
                 <div className="flex flex-wrap gap-1 mb-1">
                   {c.matches.map((m, j) => (
@@ -158,7 +158,7 @@ export default function HantDemoFatebookPage() {
             {H('生成我的命書')}
           </Link>
         </div>
-        <p className="text-center text-xs text-ink-light/40 mt-6 leading-relaxed">
+        <p className="text-center text-xs text-ink-light mt-6 leading-relaxed">
           {H('示例使用虛構出生資料，僅用於展示報告結構與文風。')}<br />
           {H('本站內容基於傳統命理文化整理，僅供學習參考與娛樂，不構成任何人生、醫療、法律、財務決策建議。')}
         </p>

@@ -75,7 +75,7 @@ export default async function JieRiPage({ params }: { params: Promise<{ slug: st
         <div className="hw-c-box mb-6">
           <h2 className="hw-c-secTitle">🧧 {jr.name}开运建议</h2>
           <p className="hw-c-body">{jr.lucky}</p>
-          <p className="text-xs text-ink-light/40 mt-4">
+          <p className="text-xs text-ink-light mt-4">
             民俗讲究重在传承文化、寄托美好愿望，心存善念、行善积德才是最好的开运之道。
           </p>
         </div>

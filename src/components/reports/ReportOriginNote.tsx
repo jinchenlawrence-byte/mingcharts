@@ -27,8 +27,8 @@ export default function ReportOriginNote({
   className?: string
 }) {
   return (
-    <p className={`text-xs text-ink-light/60 leading-relaxed ${className}`}>
-      <span className="inline-block align-middle mr-1.5 text-ink-light/40" aria-hidden="true">※</span>
+    <p className={`text-xs text-ink-light leading-relaxed ${className}`}>
+      <span className="inline-block align-middle mr-1.5 text-ink-light" aria-hidden="true">※</span>
       {hant ? HANT : HANS}
     </p>
   )

@@ -212,7 +212,7 @@ export default function EnChartClient() {
           {WX_ORDER.map((k) => (
             <div key={k} className="rounded border border-gold/15 p-2">
               <div className="font-bold text-ink">{k}</div>
-              <div className="text-ink-light/60">{counts[k]}</div>
+              <div className="text-ink-light">{counts[k]}</div>
             </div>
           ))}
         </div>
@@ -322,7 +322,7 @@ export default function EnChartClient() {
             {paid.similarCases && paid.similarCases.length > 0 && (
               <div className="hw-c-box">
                 <h3 className="hw-c-secTitle">Similar cases in the classics</h3>
-                <p className="text-xs text-ink-light/60 mb-3">
+                <p className="text-xs text-ink-light mb-3">
                   Retrieved from the case libraries of Zi Ping Zhen Quan, Di Tian Sui and San Ming Tong Hui by structural
                   similarity of the four pillars — for study and cross-reference only.
                 </p>
@@ -337,7 +337,7 @@ export default function EnChartClient() {
                         {c.exact && (
                           <span className="text-xs bg-amber-600 text-white px-2 py-0.5 rounded">Same four pillars</span>
                         )}
-                        <span className="text-xs text-ink-light/40 ml-auto">{c.source}</span>
+                        <span className="text-xs text-ink-light ml-auto">{c.source}</span>
                       </div>
                       <div className="flex flex-wrap gap-1 mb-1">
                         {c.matches.map((m, j) => (
@@ -383,7 +383,7 @@ function LuckCyclesEn({ luck }: { luck: LuckCycles }) {
           {luck.daYun.map((d, i) => (
             <div key={i} className={`rounded px-3 py-2 text-center border ${d.current ? 'bg-gold/5 border-amber-500' : 'bg-paper-dark/30 border-gold/15'}`}>
               <div className="font-bold text-ink">{ganZhiEn(d.ganZhi)}</div>
-              <div className="text-xs text-ink-light/60">{d.startAge}-{d.startAge + 9} yrs</div>
+              <div className="text-xs text-ink-light">{d.startAge}-{d.startAge + 9} yrs</div>
               <span className={`inline-block text-[11px] px-1.5 rounded mt-1 ${FORTUNE_BADGE[d.tag]}`}>{tierEn(d.tag)}</span>
             </div>
           ))}
@@ -398,7 +398,7 @@ function LuckCyclesEn({ luck }: { luck: LuckCycles }) {
                 <span className="font-bold text-ink">{y.year} {ganZhiEn(y.ganZhi)}</span>
                 <span className={`text-[11px] px-1.5 py-0.5 rounded ${FORTUNE_BADGE[y.tag]}`}>{tierEn(y.tag)}</span>
               </div>
-              <div className="text-xs text-ink-light/60 mt-1">{tenGod(y.shiShenGan)} governing</div>
+              <div className="text-xs text-ink-light mt-1">{tenGod(y.shiShenGan)} governing</div>
               <p className="text-xs text-ink/70 mt-2 leading-relaxed">
                 This year's tone is {tierEn(y.tag) || 'neutral'}. Read it together with the current Luck Pillar and the full English report.
               </p>
@@ -412,12 +412,12 @@ function LuckCyclesEn({ luck }: { luck: LuckCycles }) {
         return (
           <div className="hw-c-box">
             <h3 className="hw-c-secTitle">Monthly rhythm · {luck.currentYear}</h3>
-            <p className="text-xs text-ink-light/60 mb-2">Monthly rhythm follows solar terms, not lunar month starts.</p>
+            <p className="text-xs text-ink-light mb-2">Monthly rhythm follows solar terms, not lunar month starts.</p>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
               {current.map((m, i) => (
                 <div key={i} className="rounded border border-gold/15 px-2 py-1.5">
                   <div className="font-bold text-ink">{m.month} · {ganZhiEn(m.ganZhi)}</div>
-                  <div className="text-ink-light/70">{luckTagEn(m.tag) || 'Neutral'}</div>
+                  <div className="text-ink-light">{luckTagEn(m.tag) || 'Neutral'}</div>
                 </div>
               ))}
             </div>

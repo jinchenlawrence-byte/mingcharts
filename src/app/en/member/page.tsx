@@ -125,7 +125,7 @@ export default function EnMemberPage() {
 
   if (loading) {
     return (
-      <div className="hw-wrap hw-c-pg"><p className="text-center text-ink-light/60">Loading…</p></div>
+      <div className="hw-wrap hw-c-pg"><p className="text-center text-ink-light">Loading…</p></div>
     )
   }
 

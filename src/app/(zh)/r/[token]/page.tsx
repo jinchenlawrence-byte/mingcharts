@@ -165,7 +165,7 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
         />
 
         <header className="mb-6">
-          <p className="text-xs text-ink-light/60">
+          <p className="text-xs text-ink-light">
             {kindLabel} · 生成于 {created.getFullYear()}年{created.getMonth() + 1}月{created.getDate()}日
           </p>
           {brandLine && (
@@ -184,7 +184,7 @@ export default async function SharedReportPage({ params }: { params: Promise<{ t
 
         <footer className="mt-10 pt-4 border-t border-gold/15">
           <p className="hw-alert hw-alert--note">{DISCLAIMER}</p>
-          <p className="text-xs text-ink-light/40 mt-2">
+          <p className="text-xs text-ink-light mt-2">
             由 明理 mingcharts.com 引擎生成 ·{' '}
             <Link href="/" className="hw-c-link">mingcharts.com</Link>
           </p>
@@ -201,7 +201,7 @@ function InactiveCard({ message }: { message: string }) {
         <div className="hw-c-box text-center">
           <h1 className="hw-c-h1">链接不可用</h1>
           <p className="hw-c-dx mt-3">{message}</p>
-          <p className="text-xs text-ink-light/50 mt-4">
+          <p className="text-xs text-ink-light mt-4">
             如果你是从命理师那里收到的链接，请直接联系对方重新发送。
           </p>
           <Link href="/" className="hw-c-back inline-block mt-6">← 返回明理首页</Link>

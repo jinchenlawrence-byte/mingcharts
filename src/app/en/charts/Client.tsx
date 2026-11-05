@@ -152,7 +152,7 @@ export default function EnChartsClient() {
         </div>
 
         {limit !== null && (
-          <p className="text-xs text-ink-light/60 -mt-3 mb-4">
+          <p className="text-xs text-ink-light -mt-3 mb-4">
             Saved {rows.length}/{limit} charts
             {rows.length >= limit && (
               <>
@@ -167,7 +167,7 @@ export default function EnChartsClient() {
         )}
 
         {rows.length === 0 ? (
-          <div className="hw-c-box text-center text-ink-light/60">
+          <div className="hw-c-box text-center text-ink-light">
             No saved charts yet. Cast one and it will appear here.
           </div>
         ) : (
@@ -184,7 +184,7 @@ export default function EnChartsClient() {
                       {String(row.birth_minute).padStart(2, '0')}
                       {row.gender === 1 ? ' Male' : ' Female'}
                       {latinPlace(row.birth_place) && (
-                        <span className="text-sm text-ink-light/40 ml-2">{latinPlace(row.birth_place)}</span>
+                        <span className="text-sm text-ink-light ml-2">{latinPlace(row.birth_place)}</span>
                       )}
                     </p>
                     <p className="text-sm text-ink-light mt-1 tracking-wider">
@@ -194,7 +194,7 @@ export default function EnChartsClient() {
                             .join('  ')
                         : ''}
                       {stem && (
-                        <span className="text-ink-light/40 ml-2">
+                        <span className="text-ink-light ml-2">
                           Day Master {stem}
                           {STEM_ELEMENT[dayMaster.slice(0, 1)] ? ` ${STEM_ELEMENT[dayMaster.slice(0, 1)]}` : ''}
                         </span>

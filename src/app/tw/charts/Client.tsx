@@ -146,22 +146,22 @@ export default function MyCharts() {
             <button onClick={() => router.push('/tw')} className="bg-ink text-white px-4 py-2 rounded-full text-sm font-semibold hover:opacity-85 transition">{H("+ 新排盤")} </button>
           </div>
 
-          {limit !== null && (<p className="text-xs text-ink-light/60 -mt-3 mb-4">{H("已保存")} {rows.length}/{limit} {H("個命盤")} {rows.length >= limit && (<> {H("—— 已達上限，")}<Link href="/tw/pricing" className="text-hw-water hover:underline">{H("開通會員")}</Link>{H("可保存更多")}</>)}
+          {limit !== null && (<p className="text-xs text-ink-light -mt-3 mb-4">{H("已保存")} {rows.length}/{limit} {H("個命盤")} {rows.length >= limit && (<> {H("—— 已達上限，")}<Link href="/tw/pricing" className="text-hw-water hover:underline">{H("開通會員")}</Link>{H("可保存更多")}</>)}
             </p>)}
 
-          {rows.length === 0 ? (<div className="hw-c-box text-center text-ink-light/60">{H("還沒有保存的命盤，去排一個吧")} </div>) : (<div className="space-y-3">
+          {rows.length === 0 ? (<div className="hw-c-box text-center text-ink-light">{H("還沒有保存的命盤，去排一個吧")} </div>) : (<div className="space-y-3">
               {rows.map((row) => (<div key={row.id} className="hw-c-box p-4! flex items-center justify-between gap-4">
                   <div className="min-w-0">
                     <p className="font-semibold text-ink">
                       {row.birth_year}{H("年")}{row.birth_month}{H("月")}{row.birth_day}{H("日")} {row.birth_hour}{H("時")} {row.birth_minute > 0 ? `${row.birth_minute}${H('分')}` : ''}
                       {row.gender === 1 ? H(' 男') : H(' 女')}
-                      {row.birth_place && (<span className="text-sm text-ink-light/40 ml-2">{H(row.birth_place)}</span>)}
+                      {row.birth_place && (<span className="text-sm text-ink-light ml-2">{H(row.birth_place)}</span>)}
                     </p>
                     <p className="text-sm text-ink-light mt-1 tracking-wider">
                       {row.chart_data?.pillars
                     ? `${row.chart_data.pillars.year.ganZhi} ${row.chart_data.pillars.month.ganZhi} ${row.chart_data.pillars.day.ganZhi} ${row.chart_data.pillars.hour.ganZhi}`
                     : ''}
-                      <span className="text-ink-light/40 ml-2">{H("日主")} {row.chart_data?.dayMaster}</span>
+                      <span className="text-ink-light ml-2">{H("日主")} {row.chart_data?.dayMaster}</span>
                     </p>
                   </div>
                   <div className="flex gap-3 shrink-0 text-sm">

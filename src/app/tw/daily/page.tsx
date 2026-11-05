@@ -61,7 +61,7 @@ export default async function HantDailyPage({
             <div className="text-ink font-semibold text-lg">
               {chineseDate(view.date)} · {view.liuRi}{L('日')}
             </div>
-            <div className="text-xs text-ink-light/40 mt-1">{L(`六十甲子第 ${view.jiaziIndex} 位`)}</div>
+            <div className="text-xs text-ink-light mt-1">{L(`六十甲子第 ${view.jiaziIndex} 位`)}</div>
 
             <div className="my-8 mx-auto w-16 h-px bg-hw-line" />
 
@@ -123,7 +123,7 @@ export default async function HantDailyPage({
           <datalist id="zone-suggestions">
             {ZONE_SUGGESTIONS.map((z) => <option key={z} value={z} />)}
           </datalist>
-          <p className="text-xs text-ink-light/40 mt-2">
+          <p className="text-xs text-ink-light mt-2">
             {L(`當前按 ${view.zone} 歸日；`)}{L(DAILY_SIGN_DAY_BOUNDARY)}{L('（與排盤的晚子時約定一致）。')}
           </p>
           {fellBack && (

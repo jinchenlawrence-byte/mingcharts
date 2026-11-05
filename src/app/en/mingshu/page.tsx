@@ -41,7 +41,7 @@ export default function EnMingShuPage() {
       <div className="hw-wrap hw-c-pg">
         <Link href="/en" className="hw-c-back">‹ Home</Link>
 
-        <header className="max-w-3xl mx-auto text-center py-8">
+        <header className="max-w-[45ch] mx-auto text-center py-8">
           <span className="inline-block bg-gold/10 text-ink text-xs font-semibold px-3 py-1 rounded-full mb-4">
             Six classics · AI in-depth reading
           </span>
@@ -62,7 +62,7 @@ export default function EnMingShuPage() {
               Cast a free chart first
             </Link>
           </div>
-          <p className="text-xs text-ink-light/50 mt-3">
+          <p className="text-xs text-ink-light mt-3">
             The chart page and AI-written reports are in English. If the AI service is unavailable,
             the ten sections are produced by the English rule-engine fallback.
           </p>
@@ -81,7 +81,7 @@ export default function EnMingShuPage() {
           </div>
         </section>
 
-        <section className="max-w-3xl mx-auto py-8">
+        <section className="max-w-[45ch] mx-auto py-8">
           <h2 className="hw-c-secTitle hw-c-h2C mb-6">FAQ</h2>
           <div className="space-y-3">
             {FAQS.map((f) => (
@@ -96,7 +96,7 @@ export default function EnMingShuPage() {
           </div>
         </section>
 
-        <p className="text-center text-xs text-ink-light/40 pb-10">
+        <p className="text-center text-xs text-ink-light pb-10">
           All content is traditional Chinese metaphysics, for reference and entertainment only; it is
           not life, medical, legal or financial advice.
         </p>

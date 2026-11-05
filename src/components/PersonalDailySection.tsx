@@ -52,7 +52,7 @@ export default function PersonalDailySection({ zone, locale = 'zh-Hans' }: { zon
 
   if (loading) {
     return (
-      <div className="mt-6 text-center text-sm text-ink-light/40">{L('读取个性化日运…')}</div>
+      <div className="mt-6 text-center text-sm text-ink-light">{L('读取个性化日运…')}</div>
     )
   }
   if (!data) return null
@@ -112,7 +112,7 @@ export default function PersonalDailySection({ zone, locale = 'zh-Hans' }: { zon
           <p>{L('你的日主')} <span className="text-ink font-semibold">{p.dayMaster}</span> · {L('今日')} <span className="text-ink font-semibold">{p.todayGan}{p.todayZhi}</span></p>
           <p>{L('今日')}{p.todayGan}{L('对你是【')}{L(p.shiShen)}{L('】（')}{L(p.shiShenBasis)}{L('）')}</p>
           <p>{L(p.relationBasis)}</p>
-          <p className="text-xs text-ink-light/40 mt-1">{L('依据层级：')}{L(p.basisLevel)}</p>
+          <p className="text-xs text-ink-light mt-1">{L('依据层级：')}{L(p.basisLevel)}</p>
         </div>
 
         <p className="mt-4 text-xs text-ink/70/80">{L('会员权益')}</p>

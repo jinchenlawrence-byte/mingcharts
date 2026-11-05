@@ -57,7 +57,7 @@ export default function JieQiIndex() {
               <section key={s.key}>
                 <div className="flex items-baseline gap-3 mb-4">
                   <h2 className={`text-2xl font-bold ${SEASON_NAME_STYLE[s.key]}`}>{s.label}</h2>
-                  <span className="text-sm text-ink-light/60">{s.desc}</span>
+                  <span className="text-sm text-ink-light">{s.desc}</span>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
                   {list.map(j => (
@@ -67,11 +67,11 @@ export default function JieQiIndex() {
                       className={`border rounded-lg p-3 text-center hover:shadow-md transition-shadow ${SEASON_STYLE[s.key]}`}
                     >
                       <div className="font-bold text-ink">{j.name}</div>
-                      <div className="text-xs text-ink-light/60 mt-1">{j.dateRange.replace('公历', '')}</div>
+                      <div className="text-xs text-ink-light mt-1">{j.dateRange.replace('公历', '')}</div>
                       {j.type === '节' ? (
                         <div className="text-xs text-amber-600 mt-1 font-medium">换月 · {j.monthZhi}月</div>
                       ) : (
-                        <div className="text-xs text-ink-light/40 mt-1">中气</div>
+                        <div className="text-xs text-ink-light mt-1">中气</div>
                       )}
                     </Link>
                   ))}

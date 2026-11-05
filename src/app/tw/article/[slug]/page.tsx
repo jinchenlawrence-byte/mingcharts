@@ -138,7 +138,7 @@ export default async function HantArticlePage({ params }: { params: Promise<{ sl
             <span className="inline-block bg-gold/10 text-ink/70 text-xs px-2 py-1 rounded">{catName}</span>
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-ink mb-4 leading-tight">{toHant(article.title)}</h1>
-          <p className="text-ink-light/60 text-sm border-b border-amber-100 pb-4 mb-6">{toHant(article.description)}</p>
+          <p className="text-ink-light text-sm border-b border-amber-100 pb-4 mb-6">{toHant(article.description)}</p>
 
           <div className="prose prose-amber max-w-none">
             {article.sections.map((section, i) => (
@@ -151,7 +151,7 @@ export default async function HantArticlePage({ params }: { params: Promise<{ sl
             ))}
           </div>
 
-          <div className="mt-8 pt-6 border-t border-amber-100 text-sm text-ink-light/60">
+          <div className="mt-8 pt-6 border-t border-amber-100 text-sm text-ink-light">
             <p>聲明：本文為命理知識科普，內容基於傳統命理經典整理，僅供學習參考，不構成人生決策建議。</p>
           </div>
         </article>
@@ -163,7 +163,7 @@ export default async function HantArticlePage({ params }: { params: Promise<{ sl
           </p>
           <Link href={cta ? (cta.hantHref ?? cta.href) : '/bazi'} className="hw-c-btnBig">{cta ? toHant(cta.text) : '免費排盤'} →</Link>
           {cta?.priceSku && (
-            <p className="mt-3 text-xs text-ink-light/60">
+            <p className="mt-3 text-xs text-ink-light">
               {formatPriceUSD(SKUS[cta.priceSku].priceUSD)} · 一次性購買，解鎖後永久回看
             </p>
           )}

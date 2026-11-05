@@ -61,11 +61,11 @@ function PopupCard({ p, onClose, locale }: { p: PopupState; onClose: () => void;
       }}
     >
       <button onClick={onClose}
-        className="absolute top-1 right-2 text-ink-light/60 hover:text-ink-light">×</button>
+        className="absolute top-1 right-2 text-ink-light hover:text-ink-light">×</button>
       <div className="font-bold pr-4" style={{ color: cat.color }}>
         {cat.icon} {L(cat.label)} · {L(c.name)}
       </div>
-      <div className="text-ink-light/60 mt-1">
+      <div className="text-ink-light mt-1">
         {L(c.region)}　{L('方位')}{L(c.fangLabel)}（{L('五行')}{L(c.menWx)}{c.menWx !== c.fangWx ? `，${L('卦位')}${L(c.fangWx)}` : ''}）
         {c.diqi ? <>　{L('地气')}{L(c.diqi)}（{L('产品设定')}）</> : ''}
       </div>
@@ -179,7 +179,7 @@ function CategorySection({ cat, locale }: { cat: CategoryResult; locale: SiteLan
     <div className="hw-c-box hw-c-boxLg">
       <h3 className="font-semibold mb-3" style={{ color: cat.color }}>
         {cat.icon} {L(cat.label)}
-        <span className="text-xs text-ink-light/60 font-normal ml-2">
+        <span className="text-xs text-ink-light font-normal ml-2">
           {L('目标')}{L(cat.targetGod)} · {L(cat.targetWx)}
         </span>
       </h3>
@@ -193,13 +193,13 @@ function CategorySection({ cat, locale }: { cat: CategoryResult; locale: SiteLan
           <div key={c.name} className="rounded-md border border-gold/15 p-3">
             <div className="flex flex-wrap items-baseline gap-2">
               <span className="font-bold text-ink">{L(c.name)}</span>
-              <span className="text-xs text-ink-light/60">{L(c.region)}</span>
+              <span className="text-xs text-ink-light">{L(c.region)}</span>
               <span className="text-xs px-2 py-0.5 rounded-full text-white ml-auto"
                 style={{ background: cat.color }}>
                 {c.score.toFixed(1)}{L('分')} · {L(c.impact)}
               </span>
             </div>
-            <div className="text-xs text-ink-light/60 mt-1">
+            <div className="text-xs text-ink-light mt-1">
               {L('方位')}{L(c.fangLabel)}（{L('五行')}{L(c.menWx)}{c.menWx !== c.fangWx ? `，${L('卦位')}${L(c.fangWx)}` : ''}）{c.diqi ? ` · ${L('地气')}${L(c.diqi)}（${L('产品设定')}）` : ''}
             </div>
             <ul className="mt-2 space-y-1">
@@ -244,19 +244,19 @@ export default function GeoResultView({ data, onRegen, regenBusy, locale = 'zh-H
       <div className="hw-c-box hw-c-boxLg">
         <div className="grid md:grid-cols-2 gap-3 text-sm">
           <div>
-            <span className="text-ink-light/60">{L('日主：')}</span>
+            <span className="text-ink-light">{L('日主：')}</span>
             <span className="font-medium">{geo.dayMaster}（{L(geo.dayWx)}）· {L(geo.wangShuai)}</span>
           </div>
           <div>
-            <span className="text-ink-light/60">{L('喜用五行：')}</span>
+            <span className="text-ink-light">{L('喜用五行：')}</span>
             <span className="text-green-700 font-medium">{geo.favorableWx.map(L).join('、')}</span>
           </div>
           <div>
-            <span className="text-ink-light/60">{L('宜行方位：')}</span>
+            <span className="text-ink-light">{L('宜行方位：')}</span>
             <span className="text-green-700">{geo.favorableDirections.map(L).join('、')}</span>
           </div>
           <div>
-            <span className="text-ink-light/60">{L('忌行方位：')}</span>
+            <span className="text-ink-light">{L('忌行方位：')}</span>
             <span className="text-red-600">{geo.unfavorableDirections.map(L).join('、')}</span>
           </div>
         </div>
@@ -292,18 +292,18 @@ export default function GeoResultView({ data, onRegen, regenBusy, locale = 'zh-H
           </div>
           <div className="grid md:grid-cols-2 gap-2 text-sm mb-3">
             <div>
-              <span className="text-ink-light/60">{L('主判五行：')}</span>
+              <span className="text-ink-light">{L('主判五行：')}</span>
               {geo.currentCity.primaryWx ? (
                 <>
                   <span className="font-medium">{L(geo.currentCity.primaryWx)}</span>
-                  <span className="text-[11px] text-ink-light/60">（{L('来源：')}{L(geo.currentCity.primarySource ?? '')}）</span>
-                  <span className="text-ink-light/60 ml-2">{L('与日主关系：')}</span>
+                  <span className="text-[11px] text-ink-light">（{L('来源：')}{L(geo.currentCity.primarySource ?? '')}）</span>
+                  <span className="text-ink-light ml-2">{L('与日主关系：')}</span>
                   <span className="font-medium">{L(geo.currentCity.godRelation ?? '')}</span>
                   <span className={`ml-1 ${geo.currentCity.favorable ? 'text-green-700' : 'text-red-600'}`}>
                     （{geo.currentCity.favorable ? L('喜用') : L('忌神')}）
                   </span>
                 </>
-              ) : <span className="text-ink-light/60">{L('资料不足，无法判定')}</span>}
+              ) : <span className="text-ink-light">{L('资料不足，无法判定')}</span>}
             </div>
             <div className="text-ink-light">
               {geo.currentCity.fangWx
@@ -324,7 +324,7 @@ export default function GeoResultView({ data, onRegen, regenBusy, locale = 'zh-H
               <div key={i} className="text-ink/80">· {L(a)}</div>
             ))}
           </div>
-          <p className="text-[11px] text-ink-light/60 mt-2">
+          <p className="text-[11px] text-ink-light mt-2">
             {L('地气影响是长期渐染的过程，以上为趋势参考；福地福人居，心态与努力为本')}
           </p>
         </div>
@@ -334,7 +334,7 @@ export default function GeoResultView({ data, onRegen, regenBusy, locale = 'zh-H
       <div className="hw-c-box hw-c-boxLg p-3 md:p-4">
         <h2 className="hw-c-h3">{L('命主方位地图')}</h2>
         <GeoMap geo={mapGeo} locale={locale} />
-        <div className="flex flex-wrap gap-3 mt-3 text-xs text-ink-light/60">
+        <div className="flex flex-wrap gap-3 mt-3 text-xs text-ink-light">
           {freeCats.map((c) => (
             <span key={c.key} className="flex items-center gap-1">
               <span className="w-3 h-3 rounded-full inline-block" style={{ background: c.color }} />
@@ -367,7 +367,7 @@ export default function GeoResultView({ data, onRegen, regenBusy, locale = 'zh-H
               >
                 {regenBusy ? L('重新生成中...') : L('免费重新生成')}
               </button>
-              <span className="text-xs text-ink-light/50">{L('不额外收费 · AI 将重写全文并覆盖本报告')}</span>
+              <span className="text-xs text-ink-light">{L('不额外收费 · AI 将重写全文并覆盖本报告')}</span>
             </div>
           )}
           {([

@@ -267,14 +267,14 @@ export default function BirthPlacePicker({
         {focusHit && q.trim() && (
           <div className="absolute z-30 mt-1 w-full max-h-64 overflow-auto rounded-md border border-gold/15 bg-white shadow-lg">
             {hits.length === 0
-              ? <div className="px-3 py-2 text-xs text-ink-light/40">{L('无匹配城市（外国城市请输入英文名）')}</div>
+              ? <div className="px-3 py-2 text-xs text-ink-light">{L('无匹配城市（外国城市请输入英文名）')}</div>
               : hits.map(h => (
                   <button key={h.city.id} type="button"
                     className="block w-full px-3 py-2 text-left text-sm hover:bg-paper-dark/30"
                     onMouseDown={e => { e.preventDefault(); commitCity(h.city.id) }}
                   >
                     <span className="font-medium text-gray-800">{h.city.name}</span>
-                    <span className="ml-2 text-xs text-ink-light/40">
+                    <span className="ml-2 text-xs text-ink-light">
                       {h.city.countryName} · {h.city.admin1Name}
                     </span>
                   </button>
@@ -284,7 +284,7 @@ export default function BirthPlacePicker({
       </div>
 
       {/* 其它：仅时区 */}
-      <div className="mt-3 flex items-center gap-2 text-[11px] text-ink-light/40">
+      <div className="mt-3 flex items-center gap-2 text-[11px] text-ink-light">
         <span className="h-px flex-1 bg-paper-dark/50" />
         {L('找不到出生城市？')}
         <span className="h-px flex-1 bg-paper-dark/50" />
@@ -307,15 +307,15 @@ export default function BirthPlacePicker({
 
         {/* 进阶经度（折叠，可选） */}
         <details className="mt-1.5 text-xs text-ink-light">
-          <summary className="cursor-pointer select-none text-ink-light/60">{L('进阶：填写经度（可选）')}</summary>
+          <summary className="cursor-pointer select-none text-ink-light">{L('进阶：填写经度（可选）')}</summary>
           <input type="number" step="0.01" placeholder={L('经度，如 -74.0')}
             className="mt-1 w-full px-3 py-2 border border-gold/20 rounded-md text-sm focus:outline-none focus:ring-2"
             value={value.mode === 'zone' && value.lng !== undefined ? value.lng : ''}
             onChange={e => onLngChange(e.target.value)}
           />
-          <p className="mt-1 text-[11px] text-ink-light/40">{L('知道出生地确切经度时填写可提高精度；留空按中央经线估算。')}</p>
+          <p className="mt-1 text-[11px] text-ink-light">{L('知道出生地确切经度时填写可提高精度；留空按中央经线估算。')}</p>
         </details>
-        <p className="mt-1 text-[11px] text-ink-light/40">
+        <p className="mt-1 text-[11px] text-ink-light">
           {L('未填经度时按所选时区的中央经线估算，误差约 ±30 分钟；夏令时按出生日期自动判定。')}
         </p>
       </div>

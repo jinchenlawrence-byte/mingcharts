@@ -108,7 +108,7 @@ export default function PushOptIn({ locale = 'zh-Hans' }: { locale?: SiteLang })
           <p className="text-sm text-ink/70 mt-1">
             {H('在 iPhone / iPad 上，需先把这个站点「添加到主屏幕」，再从主屏幕打开后才能收到通知（iOS 16.4 以上）。')}
           </p>
-          <p className="text-xs text-ink-light/70 mt-2">
+          <p className="text-xs text-ink-light mt-2">
             {H('操作：用 Safari 打开本页 → 点底部「分享」→「添加到主屏幕」→ 从主屏幕图标打开本页 → 回到这里开启提醒。')}
           </p>
         </>

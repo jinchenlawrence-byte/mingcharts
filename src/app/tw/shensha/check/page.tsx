@@ -21,7 +21,7 @@ export default function HantShenshaCheckPage() {
     <main className="hw-page">
       <div className="hw-wrap hw-c-pg">
         <header className="mb-6">
-          <p className="text-xs text-ink-light/60 mb-1">
+          <p className="text-xs text-ink-light mb-1">
             <Link href="/tw/shensha" className="hover:underline">{L('神煞查法')}</Link>
             {' / '}
             {L('免费查询')}
@@ -30,7 +30,7 @@ export default function HantShenshaCheckPage() {
           <p className="hw-c-lede">
             {L('输入出生年月日时与出生地，按真太阳时校正排盘，列出你命中带的神煞。每一个都链到口诀与典籍出处，你可以自己核对。')}
           </p>
-          <p className="text-xs text-ink-light/60 mt-2">
+          <p className="text-xs text-ink-light mt-2">
             {L('※ 只给标签，不作吉凶判断 —— 神煞是辅助，命理分析以五行旺衰与格局为主。')}
           </p>
         </header>

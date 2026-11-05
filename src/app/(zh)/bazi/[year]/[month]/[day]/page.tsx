@@ -106,19 +106,19 @@ export default async function DayPage({ params }: { params: Promise<{ year: stri
         {/* 基本信息卡片 */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
           <div className="hw-c-box p-4! text-center">
-            <div className="text-xs text-ink-light/60 mb-1">生肖</div>
+            <div className="text-xs text-ink-light mb-1">生肖</div>
             <div className="text-xl font-bold text-ink">属{zodiac.name}</div>
           </div>
           <div className="hw-c-box p-4! text-center">
-            <div className="text-xs text-ink-light/60 mb-1">星座</div>
+            <div className="text-xs text-ink-light mb-1">星座</div>
             <div className="text-xl font-bold text-ink">{constellation}</div>
           </div>
           <div className="hw-c-box p-4! text-center">
-            <div className="text-xs text-ink-light/60 mb-1">纳音</div>
+            <div className="text-xs text-ink-light mb-1">纳音</div>
             <div className="text-xl font-bold text-ink">{naYin}</div>
           </div>
           <div className="hw-c-box p-4! text-center">
-            <div className="text-xs text-ink-light/60 mb-1">本命佛</div>
+            <div className="text-xs text-ink-light mb-1">本命佛</div>
             <div className="text-sm font-bold text-ink">{zodiac.benmingfo}</div>
           </div>
         </div>
@@ -129,10 +129,10 @@ export default async function DayPage({ params }: { params: Promise<{ year: stri
           <div className="grid grid-cols-4 gap-2 mb-4">
             {pillars.map(p => (
               <div key={p.label} className="text-center">
-                <div className="text-xs text-ink-light/60 mb-1">{p.label}</div>
+                <div className="text-xs text-ink-light mb-1">{p.label}</div>
                 <div className="text-2xl font-bold text-ink">{p.ganZhi}</div>
                 <div className="text-xs text-amber-600">{p.tenGodGan}</div>
-                <div className="text-xs text-ink-light/60 mt-1">
+                <div className="text-xs text-ink-light mt-1">
                   {p.cangGan.map((g, i) => (
                     <span key={i}>{g}({p.tenGodCangGan[i]}) </span>
                   ))}
@@ -141,10 +141,10 @@ export default async function DayPage({ params }: { params: Promise<{ year: stri
             ))}
           </div>
           <div className="grid grid-cols-2 gap-4 text-sm">
-            <div><span className="text-ink-light/60">日主：</span><span className="font-semibold">{chart.dayMaster}</span></div>
-            <div><span className="text-ink-light/60">旺衰：</span><span className="font-semibold">{wangShuai}</span></div>
-            <div><span className="text-ink-light/60">格局：</span><span className="font-semibold">{geJu}</span></div>
-            <div><span className="text-ink-light/60">胎元：</span><span className="font-semibold">{chart.taiYuan}</span></div>
+            <div><span className="text-ink-light">日主：</span><span className="font-semibold">{chart.dayMaster}</span></div>
+            <div><span className="text-ink-light">旺衰：</span><span className="font-semibold">{wangShuai}</span></div>
+            <div><span className="text-ink-light">格局：</span><span className="font-semibold">{geJu}</span></div>
+            <div><span className="text-ink-light">胎元：</span><span className="font-semibold">{chart.taiYuan}</span></div>
           </div>
         </div>
 

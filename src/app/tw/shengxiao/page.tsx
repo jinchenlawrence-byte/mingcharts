@@ -39,11 +39,11 @@ export default function HantShengXiaoIndex() {
                 <Link href={`/tw/shengxiao/${sx.slug}`} className="font-bold text-lg text-ink hover:underline">
                   屬{toHant(sx.name)}
                 </Link>
-                <span className="text-xs text-ink-light/60">
+                <span className="text-xs text-ink-light">
                   地支{sx.zhi} · 五行屬{sx.wuxing}
                 </span>
               </div>
-              <p className="text-xs text-ink-light/60 mb-2">
+              <p className="text-xs text-ink-light mb-2">
                 出生年份（以立春為界）：{sx.years.join('、')}
               </p>
               <div className="flex flex-wrap gap-1.5">
@@ -70,7 +70,7 @@ export default function HantShengXiaoIndex() {
         <Link href="/tw" className="hw-c-btnBig">免費排盤 →</Link>
       </div>
 
-      <p className="text-center text-xs text-ink-light/40 mt-6">
+      <p className="text-center text-xs text-ink-light mt-6">
         內容為傳統命理民俗文化，僅供參考娛樂，不構成任何決策依據。
       </p>
     </div>

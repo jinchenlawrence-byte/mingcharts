@@ -120,7 +120,7 @@ export default function EnZiweiClient() {
                 ✓ Saved to your account. You can reopen it under My Reports.
               </p>
             ) : saved === false ? (
-              <p className="text-xs text-ink-light/60 bg-paper-dark/30 border border-gold/15 rounded px-3 py-2 mb-4">
+              <p className="text-xs text-ink-light bg-paper-dark/30 border border-gold/15 rounded px-3 py-2 mb-4">
                 Sign in to save this report and reopen it under My Reports.
               </p>
             ) : null}

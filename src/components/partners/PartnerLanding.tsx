@@ -33,7 +33,7 @@ export default function PartnerLanding({ locale }: { locale: OutputLocale }) {
         </p>
         <div className="flex flex-wrap gap-3 mt-4">
           <a href="#apply" className="hw-c-btnBig">{L('申请合作 →')}</a>
-          <span className="self-center text-xs text-ink-light/60">
+          <span className="self-center text-xs text-ink-light">
             {L('通过审核送 2 份免费额度，先看报告再决定')}
           </span>
         </div>
@@ -72,7 +72,7 @@ export default function PartnerLanding({ locale }: { locale: OutputLocale }) {
         <div className="overflow-x-auto">
           <table className="w-full text-sm border-collapse">
             <thead>
-              <tr className="text-left text-ink-light/70 border-b border-gold/20">
+              <tr className="text-left text-ink-light border-b border-gold/20">
                 <th className="py-2 pr-3">{L('品类')}</th>
                 <th className="py-2 pr-3">{L('你直售价参考')}</th>
                 <th className="py-2 pr-3">{L('10 份档')}</th>
@@ -84,7 +84,7 @@ export default function PartnerLanding({ locale }: { locale: OutputLocale }) {
               {PRICE_ROWS.map((r) => (
                 <tr key={r.name} className="border-b border-gold/10">
                   <td className="py-2 pr-3 text-ink">{L(r.name)}</td>
-                  <td className="py-2 pr-3 text-ink-light/70">{usd(r.retail)}</td>
+                  <td className="py-2 pr-3 text-ink-light">{usd(r.retail)}</td>
                   <td className="py-2 pr-3">{usd(r.t10)}</td>
                   <td className="py-2 pr-3">{usd(r.t50)}</td>
                   <td className="py-2 font-semibold text-ink">{usd(r.t200)}</td>
@@ -93,10 +93,10 @@ export default function PartnerLanding({ locale }: { locale: OutputLocale }) {
             </tbody>
           </table>
         </div>
-        <p className="text-xs text-ink-light/60 mt-3">
+        <p className="text-xs text-ink-light mt-3">
           {L('按 200 份档算：命书 $9 进货，你卖 $25 毛利 64%，卖到 $45 毛利 80%。额度 24 个月有效，用不完不浪费。')}
         </p>
-        <p className="text-xs text-ink-light/60 mt-2">
+        <p className="text-xs text-ink-light mt-2">
           {L('这个价差不是「倒卖文本」赚的 —— 你卖的是判断和解读，文本我们出。所以报告开头会写明「由明理引擎生成」，你照实跟客户说，反而更显专业。')}
         </p>
       </section>
@@ -122,7 +122,7 @@ export default function PartnerLanding({ locale }: { locale: OutputLocale }) {
             {L('购买 200 份档 · $1800')}
           </CheckoutButton>
         </div>
-        <p className="text-xs text-ink-light/60 mt-2">
+        <p className="text-xs text-ink-light mt-2">
           {L('购买后额度直接进你的账号，去「伙伴工作台」就能自己出报告，不用等我们。付款需国际信用卡。')}
         </p>
       </section>

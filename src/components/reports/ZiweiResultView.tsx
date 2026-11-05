@@ -199,22 +199,22 @@ export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh
                   <span className={`text-xs md:text-sm font-bold ${isMing ? 'text-ink' : 'text-ink/70'}`}>
                     {p.name}
                   </span>
-                  <span className="text-[10px] text-ink-light/60">{p.ganZhi}</span>
+                  <span className="text-[10px] text-ink-light">{p.ganZhi}</span>
                 </div>
                 <div className="mt-0.5 space-y-px">
                   {p.majorStars.length === 0 && (
-                    <div className="text-[10px] md:text-xs text-ink-light/60">{isEn ? EN.emptyPalace : L('空宫')}</div>
+                    <div className="text-[10px] md:text-xs text-ink-light">{isEn ? EN.emptyPalace : L('空宫')}</div>
                   )}
                   {p.majorStars.map((s) => (
                     <div key={s.name} className="flex items-baseline gap-0.5">
                       <span className={`text-[11px] md:text-xs font-medium ${s.mutagen ? mutagenColor(s.mutagen) : 'text-ink'}`}>
                         {s.name}{s.mutagen ? (isEn ? ` · ${s.mutagen}` : '·' + L(s.mutagen)) : ''}
                       </span>
-                      {s.brightness && <span className="text-[9px] text-ink-light/60">{s.brightness}</span>}
+                      {s.brightness && <span className="text-[9px] text-ink-light">{s.brightness}</span>}
                     </div>
                   ))}
                 </div>
-                <div className="mt-0.5 text-[9px] md:text-[10px] text-ink-light/60 truncate">
+                <div className="mt-0.5 text-[9px] md:text-[10px] text-ink-light truncate">
                   {p.minorStars.slice(0, 4).join(' ')}
                   {p.minorStars.length > 4 ? '…' : ''}
                 </div>
@@ -264,7 +264,7 @@ export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh
             </div>
           </div>
         </div>
-        <p className="text-xs text-ink-light/60 text-center mt-3">{isEn ? EN.clickPalace : L('点击宫位查看详细星曜')}</p>
+        <p className="text-xs text-ink-light text-center mt-3">{isEn ? EN.clickPalace : L('点击宫位查看详细星曜')}</p>
       </div>
 
       {/* 选中宫位详情 */}
@@ -281,9 +281,9 @@ export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh
                 </h3>
                 <div className="grid md:grid-cols-2 gap-3 text-sm">
                   <div>
-                    <div className="text-xs text-ink-light/60 mb-1">{isEn ? EN.majorStars : L('主星')}</div>
+                    <div className="text-xs text-ink-light mb-1">{isEn ? EN.majorStars : L('主星')}</div>
                     {p.majorStars.length === 0 ? (
-                      <div className="text-ink-light/60">
+                      <div className="text-ink-light">
                         {isEn ? EN.emptyBorrow : L('空宫，借对宫主星为用：')}
                         {opposite.majorStars.map((s) => s.name).join(sep) || (isEn ? EN.oppositeEmpty : L('对宫亦空'))}
                       </div>
@@ -296,13 +296,13 @@ export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh
                     )}
                   </div>
                   <div>
-                    <div className="text-xs text-ink-light/60 mb-1">{isEn ? EN.minorMixed : L('辅星杂曜')}</div>
+                    <div className="text-xs text-ink-light mb-1">{isEn ? EN.minorMixed : L('辅星杂曜')}</div>
                     <div className="text-ink/70">
                       {[...p.minorStars, ...p.adjectiveStars].join(sep) || (isEn ? EN.none : L('无'))}
                     </div>
                   </div>
                 </div>
-                <div className="text-xs text-ink-light/60 mt-2">
+                <div className="text-xs text-ink-light mt-2">
                   {isEn
                     ? <>{EN.changsheng}{p.changsheng12}　|　{EN.decadalAge}{p.decadalRange[0]}-{p.decadalRange[1]}</>
                     : <>{L('长生十二神：')}{p.changsheng12}　|　{L('大限年龄：')}{p.decadalRange[0]}-{p.decadalRange[1]}{L('岁')}</>}
@@ -324,15 +324,15 @@ export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh
                 <span className="font-medium text-ink">{p.name}</span>
                 <span className="text-sm text-ink-light ml-2">{p.note}</span>
                 {p.required.length > 0 && (
-                  <p className="text-xs text-ink-light/60 mt-0.5">{EN.conditions}{p.required.join('; ')}</p>
+                  <p className="text-xs text-ink-light mt-0.5">{EN.conditions}{p.required.join('; ')}</p>
                 )}
                 {p.bonus.length > 0 && (
-                  <p className="text-xs text-ink-light/60">{EN.strengthenedBy}{p.bonus.join('; ')}</p>
+                  <p className="text-xs text-ink-light">{EN.strengthenedBy}{p.bonus.join('; ')}</p>
                 )}
                 {p.breaking.length > 0 && (
-                  <p className="text-xs text-ink-light/60">{EN.brokenBy}{p.breaking.join('; ')}</p>
+                  <p className="text-xs text-ink-light">{EN.brokenBy}{p.breaking.join('; ')}</p>
                 )}
-                {p.basis && <p className="text-xs text-ink-light/50">{EN.basis}{p.basis}</p>}
+                {p.basis && <p className="text-xs text-ink-light">{EN.basis}{p.basis}</p>}
               </div>
             </div>
           ))}
@@ -364,9 +364,9 @@ export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh
             <h3 className="hw-c-h3">{v.title}</h3>
             <div className="text-sm text-ink/70 mb-2">
               {isEn ? (
-                <>{v.ganZhi}{EN.basePalaceMid}<span className="font-medium">{v.basePalace}</span>{v.range && <span className="text-ink-light/60"> ({v.range})</span>}</>
+                <>{v.ganZhi}{EN.basePalaceMid}<span className="font-medium">{v.basePalace}</span>{v.range && <span className="text-ink-light"> ({v.range})</span>}</>
               ) : (
-                <>{v.ganZhi}{L('，命宫坐原局')}<span className="font-medium">{v.basePalace}</span>{L('宫')}{v.range && <span className="text-ink-light/60">（{v.range}）</span>}</>
+                <>{v.ganZhi}{L('，命宫坐原局')}<span className="font-medium">{v.basePalace}</span>{L('宫')}{v.range && <span className="text-ink-light">（{v.range}）</span>}</>
               )}
             </div>
             <div className="text-sm text-ink/70 mb-2">{isEn ? EN.starsLabel : L('星曜：')}{v.stars.join(sep)}</div>
@@ -384,8 +384,8 @@ export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh
                   <div className="text-sm text-ink/70">
                     <span className="font-medium">{enView.monthly.title}</span>
                     {' · '}{enView.monthly.ganZhi}
-                    {enView.monthly.range && <span className="text-ink-light/60"> ({enView.monthly.range})</span>}
-                    {enView.monthly.transforms.length > 0 && <span className="text-ink-light/60"> · {enView.monthly.transforms.join('; ')}</span>}
+                    {enView.monthly.range && <span className="text-ink-light"> ({enView.monthly.range})</span>}
+                    {enView.monthly.transforms.length > 0 && <span className="text-ink-light"> · {enView.monthly.transforms.join('; ')}</span>}
                   </div>
                 )}
                 <div className="text-sm text-ink/70">
@@ -425,7 +425,7 @@ export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh
               >
                 {isEn ? (regenBusy ? EN.regenBusy : EN.regen) : (regenBusy ? L('重新生成中...') : L('免费重新生成'))}
               </button>
-              <span className="text-xs text-ink-light/50">{isEn ? EN.regenNote : L('不额外收费 · AI 将重写全文并覆盖本报告')}</span>
+              <span className="text-xs text-ink-light">{isEn ? EN.regenNote : L('不额外收费 · AI 将重写全文并覆盖本报告')}</span>
             </div>
           )}
           {/* ★ 按【存在键】渲染（2026-10-18）：老报告（库里 6 键）照旧显示原有板块，

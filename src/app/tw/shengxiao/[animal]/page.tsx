@@ -61,7 +61,7 @@ export default async function HantShengXiaoDetail({ params }: { params: Promise<
             <p className="hw-c-meta">
               地支{sx.zhi} · 五行屬{toHant(sx.wuxing)} · 本命佛{toHant(sx.benmingfo)}
             </p>
-            <p className="text-ink-light/40 text-xs mt-1">
+            <p className="text-ink-light text-xs mt-1">
               出生年份（以立春為界）：{sx.years.join('、')}年
             </p>
           </div>
@@ -92,7 +92,7 @@ export default async function HantShengXiaoDetail({ params }: { params: Promise<
           <LuckyItem label="吉祥花卉" value={toHant(sx.luckyFlower)} />
           <LuckyItem label="幸運寶石" value={toHant(sx.luckyStone)} />
         </div>
-        <p className="text-xs text-ink-light/40 mt-4">
+        <p className="text-xs text-ink-light mt-4">
           提示：幸運物為傳統民俗參考，最上等的改運之道是修心積德、勤奮努力。
         </p>
       </div>
@@ -146,7 +146,7 @@ export default async function HantShengXiaoDetail({ params }: { params: Promise<
         <Link href="/tw" className="hw-c-btnBig">免費排盤 →</Link>
       </div>
 
-      <p className="text-center text-xs text-ink-light/40 mt-6">
+      <p className="text-center text-xs text-ink-light mt-6">
         以上內容為傳統命理民俗文化，僅供參考娛樂，不構成任何決策依據。
       </p>
     </div>
@@ -165,7 +165,7 @@ function Section({ title, body }: { title: string; body: string }) {
 function LuckyItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center gap-3 bg-gold/5 rounded p-3">
-      <span className="text-ink-light/60 shrink-0">{label}</span>
+      <span className="text-ink-light shrink-0">{label}</span>
       <span className="font-semibold text-ink">{value}</span>
     </div>
   )
@@ -178,7 +178,7 @@ function Relation({ label, value, tone }: { label: string; value: string; tone: 
   const text = tone === 'good' ? 'text-green-700' : tone === 'bad' ? 'text-red-700' : 'text-orange-700'
   return (
     <div className={`${box} border rounded p-2 text-center`}>
-      <div className="text-xs text-ink-light/60">{label}</div>
+      <div className="text-xs text-ink-light">{label}</div>
       <div className={`font-bold ${text}`}>{value}</div>
     </div>
   )

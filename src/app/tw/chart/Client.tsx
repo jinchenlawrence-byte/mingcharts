@@ -153,7 +153,7 @@ const FORTUNE_BORDER: Record<FortuneTier, string> = {
 // ★ '大防' 死键已清（任务20步骤④）：产出者为零（7 档判词不含、流月内联三档不含、日运 DAILY_TAGS 排除），故类型放开为 Partial
 const TAG_BADGE: Partial<Record<LuckTag, string>> = {
     '较宜': 'bg-emerald-50 text-emerald-600',
-    '平顺': 'bg-paper-dark/40 text-ink-light/60',
+    '平顺': 'bg-paper-dark/40 text-ink-light',
     '一般': 'bg-gold/5 text-amber-600',
     '宜慎': 'bg-orange-100 text-orange-700'
 };
@@ -164,7 +164,7 @@ const TAG_BORDER: Partial<Record<LuckTag, string>> = {
 // 分维度倾向徽章（大运四维度）
 const DOMAIN_BADGE: Record<'吉' | '平' | '滞', string> = {
     '吉': 'bg-emerald-50 text-emerald-600',
-    '平': 'bg-paper-dark/40 text-ink-light/60',
+    '平': 'bg-paper-dark/40 text-ink-light',
     '滞': 'bg-orange-100 text-orange-700'
 };
 // 付费内容：大运 → 流年 → 流月 三层岁运时间轴
@@ -177,11 +177,11 @@ function LuckCyclesView({ luck }: {
       {/* 大运 */}
       <div className="hw-c-box">
         <h3 className="hw-c-secTitle">{H("岁运时间轴 · 大运")}</h3>
-        <p className="text-xs text-ink-light/60 mb-3">{H("大运十年一步，以节气换运；干支十神与吉凶由规则引擎推算")}</p>
+        <p className="text-xs text-ink-light mb-3">{H("大运十年一步，以节气换运；干支十神与吉凶由规则引擎推算")}</p>
         <div className="flex flex-wrap gap-2">
           {luck.daYun.map((d, i) => (<div key={i} className={`rounded px-3 py-2 text-center border min-w-[78px] ${d.current ? 'bg-gold/5 border-amber-500 ring-1 ring-amber-400' : 'bg-paper-dark/30 border-gold/15'}`}>
               <div className="font-bold text-ink">{d.ganZhi}</div>
-              <div className="text-xs text-ink-light/60">{d.startAge}-{d.startAge + 9}{H("岁")}</div>
+              <div className="text-xs text-ink-light">{d.startAge}-{d.startAge + 9}{H("岁")}</div>
               <span className={`inline-block text-[11px] px-1.5 rounded mt-1 ${FORTUNE_BADGE[d.tag]}`}>{d.tag}</span>
             </div>))}
         </div>
@@ -217,7 +217,7 @@ function LuckCyclesView({ luck }: {
                 <span className="font-bold text-ink">{y.year}{H("年")} {y.ganZhi}</span>
                 <span className={`text-[11px] px-1.5 py-0.5 rounded whitespace-nowrap ${FORTUNE_BADGE[y.tag]}`}>{H(y.tag)}</span>
               </div>
-              <div className="text-xs text-ink-light/60 mt-1">
+              <div className="text-xs text-ink-light mt-1">
                 {H(y.shiShenGan)}{H("主事")}{y.daYunGanZhi ? ` · ${H('行')}${y.daYunGanZhi}${H('運')}` : ''}
               </div>
               <p className="text-xs text-ink/70 mt-2 leading-relaxed">{H(y.note)}</p>
@@ -231,7 +231,7 @@ function LuckCyclesView({ luck }: {
       {/* 流月 */}
       <div className="hw-c-box">
         <h3 className="hw-c-secTitle">{H("流月 · 当年十二个节令月")}</h3>
-        <p className="text-xs text-ink-light/60 mb-3">{H("命理以节气换月（非农历初一）：如寅月自立春起，丑月至次年小寒前")}</p>
+        <p className="text-xs text-ink-light mb-3">{H("命理以节气换月（非农历初一）：如寅月自立春起，丑月至次年小寒前")}</p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
           {luck.liuYue.map((m, i) => (<div key={i} className={`rounded border-l-2 bg-paper-dark/30 p-2 ${TAG_BORDER[m.tag]} ${m.month === nowMonth ? 'ring-1 ring-amber-400' : ''}`}>
               <div className="flex justify-between items-center gap-1">
@@ -239,10 +239,10 @@ function LuckCyclesView({ luck }: {
                 <span className={`text-[10px] px-1 rounded ${TAG_BADGE[m.tag]}`}>{H(m.tag)}</span>
               </div>
               <div className="text-sm font-bold text-ink mt-0.5">
-                {m.ganZhi} <span className="text-[10px] font-normal text-ink-light/60">{H(m.shiShenGan)}</span>
+                {m.ganZhi} <span className="text-[10px] font-normal text-ink-light">{H(m.shiShenGan)}</span>
               </div>
-              <div className="text-[10px] text-ink-light/40">{H(m.rangeLabel)}</div>
-              {m.relations.length > 0 && (<div className="text-[10px] text-ink-light/60 mt-0.5">{m.relations.map(H).join('；')}</div>)}
+              <div className="text-[10px] text-ink-light">{H(m.rangeLabel)}</div>
+              {m.relations.length > 0 && (<div className="text-[10px] text-ink-light mt-0.5">{m.relations.map(H).join('；')}</div>)}
             </div>))}
         </div>
       </div>
@@ -581,7 +581,7 @@ export default function ChartPage() {
             {/* 古籍相似命例（规则引擎检索，旧命盘无此数据时不显示） */}
             {paid.similarCases && paid.similarCases.length > 0 && (<div className="hw-c-box">
                 <h3 className="hw-c-secTitle">{H("古籍相似命例")}</h3>
-                <p className="text-xs text-ink-light/60 mb-3">{H("从《子平真诠》《滴天髓》《三命通会》等典籍命例库中按四柱结构相似度检索，供参照印证（仅供学习参考）")} </p>
+                <p className="text-xs text-ink-light mb-3">{H("从《子平真诠》《滴天髓》《三命通会》等典籍命例库中按四柱结构相似度检索，供参照印证（仅供学习参考）")} </p>
                 <div className="space-y-3">
                   {paid.similarCases.map((c, i) => (<div key={i} className={`rounded-lg border p-3 ${c.exact ? 'border-amber-400 bg-gold/5' : 'border-gold/15'}`}>
                       <div className="flex flex-wrap items-baseline gap-2 mb-1">
@@ -592,7 +592,7 @@ export default function ChartPage() {
                           {c.pillars.year} {c.pillars.month} {c.pillars.day} {c.pillars.hour}
                         </span>
                         {c.exact && (<span className="text-xs bg-amber-600 text-white px-2 py-0.5 rounded">{H("四柱全同")}</span>)}
-                        <span className="text-xs text-ink-light/40 ml-auto">{H(c.source)}</span>
+                        <span className="text-xs text-ink-light ml-auto">{H(c.source)}</span>
                       </div>
                       <div className="flex flex-wrap gap-1 mb-1">
                         {c.matches.map((m, j) => (<span key={j} className="text-xs bg-gold/10 text-ink/70 px-1.5 py-0.5 rounded">{H(m)}</span>))}

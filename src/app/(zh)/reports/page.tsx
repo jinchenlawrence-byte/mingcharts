@@ -147,7 +147,7 @@ export default function MyReports() {
           <div className="hw-c-box p-4! mb-6 flex items-center justify-between gap-4">
             <div className="text-sm">
               <span className="font-semibold text-ink">管理订阅</span>
-              <span className="text-ink-light/40 ml-2">（查看账单、更换卡片、取消续费）</span>
+              <span className="text-ink-light ml-2">（查看账单、更换卡片、取消续费）</span>
             </div>
             <a
               href={WAFFO_PORTAL_URL}
@@ -160,7 +160,7 @@ export default function MyReports() {
           </div>
 
           {rows.length === 0 ? (
-            <div className="hw-c-box text-center text-ink-light/60">
+            <div className="hw-c-box text-center text-ink-light">
               还没有报告。完成一次合婚配对、紫微斗数、方位城市或年运分析后会自动保存到这里
             </div>
           ) : (
@@ -172,7 +172,7 @@ export default function MyReports() {
                       <span className={`text-xs px-2 py-0.5 rounded ${KIND_STYLE[row.kind] ?? 'bg-paper-dark/40 text-ink-light'}`}>
                         {REPORT_KIND_LABELS[row.kind] ?? row.kind}
                       </span>
-                      <span className="text-xs text-ink-light/40">
+                      <span className="text-xs text-ink-light">
                         {new Date(row.created_at).toLocaleString('zh-CN')}
                       </span>
                     </div>

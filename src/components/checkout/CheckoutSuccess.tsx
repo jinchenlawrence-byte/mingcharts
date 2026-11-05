@@ -157,8 +157,8 @@ function SuccessInner({ locale }: { locale: SiteLang }) {
                   ? H('支付渠道同步中，正在做最后核对，请稍候…')
                   : H('银行与支付渠道的通知可能需要几秒钟，请勿关闭此页面。')}
               </p>
-              <p className="text-xs text-ink-light/40 mt-3">{H('已等待约 ')}{seconds}{H(' 秒')}</p>
-              {ref && <p className="text-xs text-ink-light/40 mt-1">{H('业务单号：')}{ref}</p>}
+              <p className="text-xs text-ink-light mt-3">{H('已等待约 ')}{seconds}{H(' 秒')}</p>
+              {ref && <p className="text-xs text-ink-light mt-1">{H('业务单号：')}{ref}</p>}
             </>
           )}
 
@@ -214,7 +214,7 @@ function SuccessInner({ locale }: { locale: SiteLang }) {
                   {H('，并附上以下业务单号，我们会人工核对补单。')}
                 </p>
               )}
-              <p className="text-xs text-ink-light/60 bg-gold/5 rounded p-2 mb-6 break-all">
+              <p className="text-xs text-ink-light bg-gold/5 rounded p-2 mb-6 break-all">
                 {H('业务单号：')}{ref}
               </p>
               <div className="flex justify-center gap-6 text-sm">
@@ -247,7 +247,7 @@ function SuccessInner({ locale }: { locale: SiteLang }) {
               <p className="text-sm text-ink-light mb-6">
                 {H('请用付款时使用的账号登录，系统会自动确认解锁状态。')}
                 {ref && (
-                  <span className="block text-xs text-ink-light/40 mt-2 break-all">
+                  <span className="block text-xs text-ink-light mt-2 break-all">
                     {H('业务单号：')}{ref}
                   </span>
                 )}

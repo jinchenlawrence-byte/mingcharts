@@ -161,12 +161,12 @@ export default function HantHome() {
               className="mt-4 w-full rounded-full bg-hw-water py-4 text-lg font-bold text-white transition hover:brightness-110 disabled:opacity-60">
               {loading ? H('排盤中...') : H('開始排盤')}
             </button>
-            {error && <p className="mt-2 text-center text-sm text-hw-fire">{error}</p>}
+            {error && <p className="mt-2 text-center text-sm text-danger-ink">{error}</p>}
             <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-2 text-sm">
               <Link href="/tw/daily" className="text-hw-water underline underline-offset-2 hover:opacity-80">
                 {H('今日日運（免費看）')}
               </Link>
-              <span className="text-ink-light/30" aria-hidden="true">·</span>
+              <span className="text-ink-light" aria-hidden="true">·</span>
               <Link href="/tw/shensha/check" className="text-hw-water underline underline-offset-2 hover:opacity-80">
                 {H('免費查你的神煞')}
               </Link>
@@ -248,7 +248,7 @@ export default function HantHome() {
               className="border border-gold/20 rounded p-2 text-center text-sm hover:bg-gold/5 transition"
             >
               <div className="font-semibold text-ink">{H(c.name)}</div>
-              <div className="text-xs text-ink-light/60">{c.count} {H('篇')}</div>
+              <div className="text-xs text-ink-light">{c.count} {H('篇')}</div>
             </Link>
           ))}
         </div>
@@ -261,7 +261,7 @@ export default function HantHome() {
             </li>
           ))}
         </ul>
-        <p className="text-xs text-ink-light/50 mt-3">
+        <p className="text-xs text-ink-light mt-3">
           <Link href="/tw/article" className="hw-c-link">{H('查看全部命理知識 →')}</Link>
         </p>
       </section>
@@ -289,7 +289,7 @@ export default function HantHome() {
             </details>
           ))}
         </div>
-        <p className="text-xs text-ink-light/50 mt-3">
+        <p className="text-xs text-ink-light mt-3">
           <Link href="/tw/terms" className="hw-c-link">{H('服務條款')}</Link>
           <span className="mx-2">·</span>
           <Link href="/tw/privacy" className="hw-c-link">{H('隱私政策')}</Link>

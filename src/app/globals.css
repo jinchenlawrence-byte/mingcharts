@@ -121,6 +121,8 @@
   --info-ink: #24479c;
   --info-bg: #eff4ff;
   --info-line: #cddcff;
+  /* 「完成/正常」语义深色文字：复用既有 jade 系木德墨色，不新增色值 */
+  --ok-ink: var(--hw-woodInk);
 
   /* ── 8. hw-* 颜色令牌（原挂 .hw-page，提到 :root 便于 Tailwind 映射）── */
   --hw-ink: #1b1838;
@@ -192,6 +194,11 @@ html[lang="zh-CN"] {
   --color-hw-fire-ink: var(--hw-fireInk);
   --color-hw-warn-bg: var(--warn-bg);
   --color-hw-warn-line: var(--warn-line);
+  /* 语义深色文字（2026-11-05 对比度批次）：此前漏映射，页面只能用 text-hw-fire 顶替 */
+  --color-danger-ink: var(--danger-ink);
+  --color-warn-ink: var(--warn-ink);
+  --color-info-ink: var(--info-ink);
+  --color-ok-ink: var(--ok-ink);
 }
 
 @media (prefers-color-scheme: dark) {

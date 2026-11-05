@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 
 // 旧 5 档键集合（供示例快照的大运/流年/流月标签配色；'大防' 死键已清——任务20步骤④，产出者为零）
 const TAG_BADGE: Record<string, string> = {
-  '较宜': 'bg-emerald-50 text-emerald-600', '平顺': 'bg-paper-dark/40 text-ink-light/60',
+  '较宜': 'bg-emerald-50 text-emerald-600', '平顺': 'bg-paper-dark/40 text-ink-light',
   '一般': 'bg-gold/10 text-ink/70', '宜慎': 'bg-orange-100 text-orange-700'
 }
 
@@ -51,10 +51,10 @@ export default function DemoFatebookPage() {
           <div className="grid grid-cols-4 gap-2 text-center mb-4">
             {demo.pillars.map((pl) => (
               <div key={pl.label} className="rounded bg-gold/5 px-2 py-3">
-                <div className="text-xs text-ink-light/60">{pl.label}</div>
+                <div className="text-xs text-ink-light">{pl.label}</div>
                 <div className="text-xl font-bold text-ink">{pl.ganZhi}</div>
                 <div className="text-[11px] text-amber-600">{pl.tenGodGan}</div>
-                <div className="text-[10px] text-ink-light/40 mt-1">{pl.cangGanText}</div>
+                <div className="text-[10px] text-ink-light mt-1">{pl.cangGanText}</div>
               </div>
             ))}
           </div>
@@ -62,15 +62,15 @@ export default function DemoFatebookPage() {
             <span>日主：<b className="text-ink">{demo.dayMaster}</b></span>
             <span>旺衰：<b className="text-ink">{demo.wangShuai}</b></span>
             <span>格局：<b className="text-ink">{demo.geJu}</b></span>
-            <span className="text-xs text-ink-light/40">胎元 {demo.taiYuan} · 命宫 {demo.mingGong}</span>
+            <span className="text-xs text-ink-light">胎元 {demo.taiYuan} · 命宫 {demo.mingGong}</span>
           </div>
           <div className="mt-4 border-t pt-3">
-            <div className="text-xs text-ink-light/60 mb-2">大运（排盘信息，完整命书含逐步点评）</div>
+            <div className="text-xs text-ink-light mb-2">大运（排盘信息，完整命书含逐步点评）</div>
             <div className="flex flex-wrap gap-2">
               {demo.daYun.map((d, i) => (
                 <div key={i} className="rounded bg-gold/5 px-3 py-1.5 text-center">
                   <span className="font-bold text-ink text-sm">{d.ganZhi}</span>
-                  <span className="text-[11px] text-ink-light/60 ml-1">{d.startAge}-{d.startAge + 9}岁</span>
+                  <span className="text-[11px] text-ink-light ml-1">{d.startAge}-{d.startAge + 9}岁</span>
                 </div>
               ))}
             </div>
@@ -82,14 +82,14 @@ export default function DemoFatebookPage() {
       <section className="py-4">
         <div className="hw-c-box">
           <h2 className="hw-c-secTitle">岁运时间轴（节选）</h2>
-          <p className="text-xs text-ink-light/60 mb-3">
+          <p className="text-xs text-ink-light mb-3">
             示例只展示前 {demo.luckCycles.daYun.length} 步大运与当年流年；完整命书含九步大运、三年流年与当年十二个节令月。
           </p>
           <div className="flex flex-wrap gap-2 mb-3">
             {demo.luckCycles.daYun.map((d, i) => (
               <div key={i} className={`rounded px-3 py-2 text-center border min-w-[78px] ${d.current ? 'bg-gold/5 border-amber-500' : 'bg-paper-dark/30 border-gold/15'}`}>
                 <div className="font-bold text-ink">{d.ganZhi}</div>
-                <div className="text-xs text-ink-light/60">{d.startAge}-{d.startAge + 9}岁</div>
+                <div className="text-xs text-ink-light">{d.startAge}-{d.startAge + 9}岁</div>
                 <span className={`inline-block text-[11px] px-1.5 rounded mt-1 ${TAG_BADGE[d.tag] ?? ''}`}>{d.tag}</span>
               </div>
             ))}
@@ -100,7 +100,7 @@ export default function DemoFatebookPage() {
                 <span className="font-bold text-ink">{y.year}年 {y.ganZhi}</span>
                 <span className={`text-[11px] px-1.5 py-0.5 rounded ${TAG_BADGE[y.tag] ?? ''}`}>{y.tag}</span>
               </div>
-              <div className="text-xs text-ink-light/60 mt-1">{y.shiShenGan}主事{y.daYunGanZhi ? ` · 行${y.daYunGanZhi}运` : ''}</div>
+              <div className="text-xs text-ink-light mt-1">{y.shiShenGan}主事{y.daYunGanZhi ? ` · 行${y.daYunGanZhi}运` : ''}</div>
               <p className="text-xs text-ink/70 mt-2 leading-relaxed">{y.note}</p>
             </div>
           ))}
@@ -116,7 +116,7 @@ export default function DemoFatebookPage() {
             <div key={spec.key} className="hw-c-box">
               <div className="flex items-center gap-2 mb-2">
                 <h2 className="font-semibold text-ink">{spec.name}</h2>
-                <span className={`text-[11px] px-2 py-0.5 rounded ${isFull ? 'bg-amber-600 text-white' : 'bg-paper-dark/40 text-ink-light/60'}`}>
+                <span className={`text-[11px] px-2 py-0.5 rounded ${isFull ? 'bg-amber-600 text-white' : 'bg-paper-dark/40 text-ink-light'}`}>
                   {isFull ? '完整展示' : '摘要 · 完整版约数倍篇幅'}
                 </span>
               </div>
@@ -131,13 +131,13 @@ export default function DemoFatebookPage() {
         <section className="py-4">
           <div className="hw-c-box">
             <h2 className="hw-c-secTitle">古籍相似命例（节选 1 条）</h2>
-            <p className="text-xs text-ink-light/60 mb-3">完整命书按四柱结构相似度检索多条典籍命例，供参照印证（仅供学习参考）</p>
+            <p className="text-xs text-ink-light mb-3">完整命书按四柱结构相似度检索多条典籍命例，供参照印证（仅供学习参考）</p>
             {demo.similarCases.map((c, i) => (
               <div key={i} className={`rounded-lg border p-3 ${c.exact ? 'border-amber-400 bg-gold/5' : 'border-gold/15'}`}>
                 <div className="flex flex-wrap items-baseline gap-2 mb-1">
                   <span className="font-bold text-ink">{c.person || '未具名命造'}</span>
                   <span className="text-sm text-ink/70">{c.pillars.year} {c.pillars.month} {c.pillars.day} {c.pillars.hour}</span>
-                  <span className="text-xs text-ink-light/40 ml-auto">{c.source}</span>
+                  <span className="text-xs text-ink-light ml-auto">{c.source}</span>
                 </div>
                 <div className="flex flex-wrap gap-1 mb-1">
                   {c.matches.map((m, j) => (

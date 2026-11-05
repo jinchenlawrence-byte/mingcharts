@@ -334,7 +334,7 @@ export default function PartnerWorkspace({ locale }: { locale: OutputLocale }) {
         {/* 额度 */}
         <div className="hw-c-box mb-4 flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs text-ink-light/60">{L('剩余额度')}</p>
+            <p className="text-xs text-ink-light">{L('剩余额度')}</p>
             <p className="text-2xl font-semibold text-ink">
               {balance ?? '—'} <span className="text-sm font-normal">{L('份')}</span>
             </p>
@@ -353,7 +353,7 @@ export default function PartnerWorkspace({ locale }: { locale: OutputLocale }) {
         {done && (
           <div className="hw-c-box mb-4 border-green-300 bg-green-50">
             <p className="font-semibold text-green-800">{L('✓ 报告已生成：')}{done.title}</p>
-            <p className="text-xs text-ink-light/70 mt-2">{L('分享链接（90 天有效，客户无需注册即可阅读）：')}</p>
+            <p className="text-xs text-ink-light mt-2">{L('分享链接（90 天有效，客户无需注册即可阅读）：')}</p>
             <div className="flex flex-wrap items-center gap-2 mt-1">
               <input readOnly value={done.shareUrl} className="hw-c-input flex-1 min-w-[260px]" />
               <button type="button" onClick={() => copyText(done.shareUrl)}
@@ -361,7 +361,7 @@ export default function PartnerWorkspace({ locale }: { locale: OutputLocale }) {
                 {copied === done.shareUrl ? L('已复制') : L('复制链接')}
               </button>
             </div>
-            <p className="text-xs text-ink-light/60 mt-2">
+            <p className="text-xs text-ink-light mt-2">
               {L('我也要打印：打开链接后点页面顶部的「打印 / 存为 PDF」，即可留一份纸质版。')}
             </p>
           </div>
@@ -376,7 +376,7 @@ export default function PartnerWorkspace({ locale }: { locale: OutputLocale }) {
               <option value="fatebook">{L('命书（单人 · 万字详批）')}</option>
               <option value="hemun">{L('合婚（双人 · 九维详批）')}</option>
             </select>
-            <p className="text-[11px] text-ink-light/50 mt-1">
+            <p className="text-[11px] text-ink-light mt-1">
               {L('紫微、年运、方位城市暂未对伙伴开放。')}
             </p>
           </div>
@@ -411,7 +411,7 @@ export default function PartnerWorkspace({ locale }: { locale: OutputLocale }) {
                   onChange={e => setBrandContact(e.target.value)} />
               </div>
             </div>
-            <p className="text-[11px] text-ink-light/50 mt-2">
+            <p className="text-[11px] text-ink-light mt-2">
               {L('品牌位会显示在客户报告标题上方；报告开头的「由明理引擎生成」披露不可移除。')}
             </p>
           </div>
@@ -429,14 +429,14 @@ export default function PartnerWorkspace({ locale }: { locale: OutputLocale }) {
         <div className="hw-c-box mt-8">
           <h2 className="hw-c-secTitle">{L('最近报告')}</h2>
           {rows.length === 0 ? (
-            <p className="text-sm text-ink-light/60">{L('还没有生成记录。')}</p>
+            <p className="text-sm text-ink-light">{L('还没有生成记录。')}</p>
           ) : (
             <ul className="divide-y divide-gold/10">
               {rows.map((row) => (
                 <li key={row.id} className="py-3 flex flex-wrap items-center gap-2">
                   <div className="flex-1 min-w-[220px]">
                     <p className="text-sm font-medium text-ink">{row.title}</p>
-                    <p className="text-xs text-ink-light/60">
+                    <p className="text-xs text-ink-light">
                       {L(KIND_LABEL[row.kind] ?? row.kind)} ·{' '}
                       {new Date(row.created_at).toLocaleString(locale === 'zh-Hant' ? 'zh-TW' : 'zh-CN')} ·{' '}
                       <span className={

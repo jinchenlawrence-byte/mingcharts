@@ -218,7 +218,7 @@ export default function LiunianPage() {
                 ✓ 报告已保存到你的账户，可在「我的报告」中随时回看
               </p>
             ) : saved === false ? (
-              <p className="text-xs text-ink-light/60 bg-paper-dark/30 border border-gold/15 rounded px-3 py-2 mb-4">
+              <p className="text-xs text-ink-light bg-paper-dark/30 border border-gold/15 rounded px-3 py-2 mb-4">
                 登录后生成结果可保存到「我的报告」，随时回看
               </p>
             ) : null}
@@ -232,7 +232,7 @@ export default function LiunianPage() {
               >
                 重新生成本报告
               </button>
-              <span className="text-xs text-ink-light/50">对解读不满意？AI 将重写全文并覆盖原报告</span>
+              <span className="text-xs text-ink-light">对解读不满意？AI 将重写全文并覆盖原报告</span>
             </div>
             <LiunianResultView data={data} onRegen={() => runGenerate(true)} regenBusy={loading} />
           </div>

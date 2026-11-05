@@ -151,7 +151,7 @@ export default async function ArticleOrCategoryPage({ params }: { params: Promis
             <h1 className="text-2xl md:text-3xl font-bold text-ink mb-4 leading-tight">
               {article.title}
             </h1>
-            <p className="text-ink-light/60 text-sm border-b border-amber-100 pb-4 mb-6">
+            <p className="text-ink-light text-sm border-b border-amber-100 pb-4 mb-6">
               {article.description}
             </p>
 
@@ -166,7 +166,7 @@ export default async function ArticleOrCategoryPage({ params }: { params: Promis
               ))}
             </div>
 
-            <div className="mt-8 pt-6 border-t border-amber-100 text-sm text-ink-light/60">
+            <div className="mt-8 pt-6 border-t border-amber-100 text-sm text-ink-light">
               <p>声明：本文为命理知识科普，内容基于传统命理经典整理，仅供学习参考，不构成人生决策建议。</p>
             </div>
           </article>
@@ -181,7 +181,7 @@ export default async function ArticleOrCategoryPage({ params }: { params: Promis
               {cta?.text ?? '免费排盘'} →
             </Link>
             {cta?.priceSku && (
-              <p className="mt-3 text-xs text-ink-light/60">
+              <p className="mt-3 text-xs text-ink-light">
                 {formatPriceUSD(SKUS[cta.priceSku].priceUSD)} · 一次性购买，解锁后永久回看
               </p>
             )}

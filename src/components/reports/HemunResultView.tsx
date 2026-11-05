@@ -26,7 +26,7 @@ const BASIS_STYLE: Record<string, string> = {
   '典籍': 'bg-amber-700 text-white border border-amber-700',
   '古法': 'bg-gold/10 text-ink border border-amber-300',
   '民俗': 'bg-white text-ink-light border border-gold/20',
-  '产品设定': 'bg-white text-ink-light/60 border border-dashed border-gold/20',
+  '产品设定': 'bg-white text-ink-light border border-dashed border-gold/20',
 }
 
 // ───────── 命盘摘要 ─────────
@@ -44,7 +44,7 @@ function ChartBriefCard({ title, b, color, dstNotice, locale }: {
       <div className="grid grid-cols-4 gap-1 text-center text-sm mb-2">
         {(['year', 'month', 'day', 'hour'] as const).map((k, i) => (
           <div key={k} className="bg-gold/5 rounded py-1.5">
-            <div className="text-[10px] text-ink-light/60">{L(['年柱','月柱','日柱','时柱'][i])}</div>
+            <div className="text-[10px] text-ink-light">{L(['年柱','月柱','日柱','时柱'][i])}</div>
             <div className="font-bold text-ink">{b.ganZhi[k]}</div>
           </div>
         ))}
@@ -95,7 +95,7 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
     <div className="space-y-6">
       {/* 总观感（主展示，非分数） */}
       <div className="bg-white rounded-[26px] shadow-sm border border-gold/15 p-6 text-center">
-        <div className="text-xs text-ink-light/60 mb-1">{L('合婚总观感')}</div>
+        <div className="text-xs text-ink-light mb-1">{L('合婚总观感')}</div>
         <div className="hw-c-h1">{L(r.overall)}</div>
         {r.keyTags.length > 0 && (
           <div className="flex flex-wrap gap-1.5 mt-3 justify-center">
@@ -106,10 +106,10 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
             ))}
           </div>
         )}
-        <div className="text-xs text-ink-light/60 mt-3">
+        <div className="text-xs text-ink-light mt-3">
           {L('内部算法参考分')} {r.totalScore}{L('（非命理定论，仅供排序调试）')}
         </div>
-        <div className="text-xs text-ink-light/60 mt-1">
+        <div className="text-xs text-ink-light mt-1">
           {L('当前大运：男')} {L(r.currentLuck.male)} ／ {L('女')} {L(r.currentLuck.female)}
         </div>
       </div>
@@ -134,13 +134,13 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
             ? 'bg-green-50 border-green-200 text-green-700'
             : d.level === '忌'
               ? 'bg-red-50 border-red-200 text-red-700'
-              : 'bg-paper-dark/30 border-gold/15 text-ink-light/60'
+              : 'bg-paper-dark/30 border-gold/15 text-ink-light'
           return (
             <div key={d.key} className="hw-c-box hw-c-boxLg">
               <div className="flex items-center justify-between mb-1.5 flex-wrap gap-2">
                 <span className="font-semibold text-ink">{L(d.name)}</span>
                 {d.key === 'dayun' && (
-                  <span className="text-[11px] text-ink-light/60 font-normal">{L('· 仅示当前节奏，不参与总评')}</span>
+                  <span className="text-[11px] text-ink-light font-normal">{L('· 仅示当前节奏，不参与总评')}</span>
                 )}
                 <div className="flex items-center gap-1.5">
                   <span className={`text-[11px] rounded px-2 py-0.5 ${BASIS_STYLE[d.basis] || ''}`}>
@@ -165,7 +165,7 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
                 {d.facts.map((f, i) => <li key={i}>{L(f)}</li>)}
               </ul>
               {d.citations && d.citations.length > 0 && (
-                <p className="text-[11px] text-ink-light/60 mt-2">{L('依据：')}{d.citations.map(L).join('；')}</p>
+                <p className="text-[11px] text-ink-light mt-2">{L('依据：')}{d.citations.map(L).join('；')}</p>
               )}
             </div>
           )
@@ -178,7 +178,7 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
       <div className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="hw-c-h3">{L('合婚深度解读')}</h2>
-          <span className="text-xs text-ink-light/60">{L('文字来源：')}{L(data.aiSource)}</span>
+          <span className="text-xs text-ink-light">{L('文字来源：')}{L(data.aiSource)}</span>
         </div>
         {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
         {ruleVersion && onRegen && (
@@ -191,7 +191,7 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
             >
           {regenBusy ? L('重新生成中...') : L('免费重新生成')}
             </button>
-            <span className="text-xs text-ink-light/50">{L('不额外收费 · AI 将重写全文并覆盖本报告')}</span>
+            <span className="text-xs text-ink-light">{L('不额外收费 · AI 将重写全文并覆盖本报告')}</span>
           </div>
         )}
         {AI_SECTIONS.map(s => (
@@ -210,7 +210,7 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h2 className="hw-c-h3">{L('合婚深度解读')}</h2>
-            <span className="text-xs text-ink-light/60">{L('解锁后可见')}</span>
+            <span className="text-xs text-ink-light">{L('解锁后可见')}</span>
           </div>
           {AI_SECTIONS.map(s => <LockedCard key={s.key} title={L(s.name)} locale={locale} />)}
         </div>
@@ -220,7 +220,7 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
       {data.locked && <UnlockCta skus={data.locked.skus} preview={data.locked.preview ? L(data.locked.preview) : undefined} locale={locale} returnTo={locale === 'zh-Hant' ? '/tw/reports' : '/reports'} />}
 
       {/* 免责声明 */}
-      <p className="text-xs text-ink-light/60 text-center leading-relaxed border-t border-gold/15 pt-4">
+      <p className="text-xs text-ink-light text-center leading-relaxed border-t border-gold/15 pt-4">
         {L('合婚分析为传统命理参考，仅供了解双方性格与相处模式之用。')}<br />
         {L('婚姻成败在于双方经营，与任何单一命理指标无关。')}
       </p>

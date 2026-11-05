@@ -89,7 +89,7 @@ export default function HantMingShuContent() {
               {H('先看公開示例命書（虛構資料 · 展示前約 30%）→')}
             </Link>
           </div>
-          <p className="text-xs text-ink-light/40 mt-3">
+          <p className="text-xs text-ink-light mt-3">
             {H('已生成命盤永久保存 · 30 秒左右出結果 · 可反覆查看')}
           </p>
         </div>
@@ -147,7 +147,7 @@ export default function HantMingShuContent() {
             <h2 className="hw-c-secTitle hw-c-h2C">
               {H('輸入出生資訊，生成你的命書')}
             </h2>
-            <p className="text-sm text-ink-light/60 text-center mb-6">
+            <p className="text-sm text-ink-light text-center mb-6">
               {H('免費排盤 → 查看命盤骨架 → 解鎖萬字命書詳批')}
             </p>
             <BirthForm ctaText={H('開始排盤（免費）')} locale="zh-Hant" chartPath="/tw/chart" />
@@ -174,7 +174,7 @@ export default function HantMingShuContent() {
               </button>
             </div>
           </div>
-          <p className="text-center text-sm text-ink-light/60 mt-4">
+          <p className="text-center text-sm text-ink-light mt-4">
             {H('高頻用戶可選')} <Link href="/tw/pricing" className="hw-c-link">{H('會員訂閱')} {MEMBER_MONTHLY_PRICE}/{H('月')}</Link>{H('（訂閱權益見價目頁）')}
           </p>
         </div>
@@ -203,7 +203,7 @@ export default function HantMingShuContent() {
         <p className="hw-alert hw-alert--note">
           {H('本站內容基於傳統命理文化整理，僅供學習參考與娛樂，不構成任何人生、醫療、法律、財務決策建議。')}
         </p>
-        <p className="text-xs text-ink-light/40 mt-2">
+        <p className="text-xs text-ink-light mt-2">
           <Link href="/tw/pricing" className="hover:text-ink/70">{H('價格方案')}</Link>
           <span className="mx-2">·</span>
           <Link href="/tw/article" className="hover:text-ink/70">{H('命理知識')}</Link>

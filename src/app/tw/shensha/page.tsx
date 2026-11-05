@@ -24,12 +24,12 @@ export default function HantShenshaIndexPage() {
     <main className="hw-page hw-print">
       <div className="hw-wrap hw-c-pg">
         <header className="mb-6">
-          <p className="text-xs text-ink-light/60 mb-1">{L('神煞查法 · 总目录')}</p>
+          <p className="text-xs text-ink-light mb-1">{L('神煞查法 · 总目录')}</p>
           <h1 className="hw-c-h1">{L(`八字神煞查法：${total} 个神煞一页看完`)}</h1>
           <p className="hw-c-lede">
             {L('按用途分成七类。每条都链到口诀、查法与典籍出处。这一页是给排盘时随手查用的，可以打印下来。')}
           </p>
-          <p className="text-xs text-ink-light/60 mt-2">
+          <p className="text-xs text-ink-light mt-2">
             {L('※ 神煞是辅助，命理分析以五行生克与格局旺衰为主体，不可见煞即言凶、见贵即言吉。')}
           </p>
           {/* ★ 免費鉤子（第 36 輪）：從「查資料」到「查自己」的一步 */}
@@ -55,7 +55,7 @@ export default function HantShenshaIndexPage() {
           <section key={g.id} id={g.id} className="hw-c-box mb-6 hw-print-block">
             <h2 className="hw-c-secTitle">
               {L(g.label)}
-              <span className="ml-2 text-xs font-normal text-ink-light/60">{L(g.hint)}</span>
+              <span className="ml-2 text-xs font-normal text-ink-light">{L(g.hint)}</span>
             </h2>
             <ul className="divide-y divide-gold/10">
               {g.entries.map((e) => (
@@ -63,7 +63,7 @@ export default function HantShenshaIndexPage() {
                   <Link href={e.href} className="hw-c-link font-medium shrink-0 sm:w-28">
                     {L(e.name)}
                   </Link>
-                  <span className="text-sm text-ink-light/80">{L(e.brief)}</span>
+                  <span className="text-sm text-ink-light">{L(e.brief)}</span>
                 </li>
               ))}
             </ul>

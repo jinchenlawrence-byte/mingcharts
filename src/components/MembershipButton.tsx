@@ -94,10 +94,10 @@ export default function MembershipButton({
   if (!available) {
     return (
       <div>
-        <div className="block text-center py-2.5 rounded-full font-semibold bg-paper-dark/40 text-ink-light/40 cursor-not-allowed">
+        <div className="block text-center py-2.5 rounded-full font-semibold bg-paper-dark/40 text-ink-light cursor-not-allowed">
           {en ? 'Coming soon' : L('即将推出')}
         </div>
-        <p className="text-xs mt-2 text-center text-ink-light/60">
+        <p className="text-xs mt-2 text-center text-ink-light">
           {en ? 'Membership benefits are not open for purchase yet.' : L('会员权益即将上线，暂未开放购买')}
         </p>
       </div>

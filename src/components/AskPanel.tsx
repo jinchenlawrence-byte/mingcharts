@@ -159,7 +159,7 @@ export default function AskPanel({
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <h3 className="hw-c-secTitle" style={{ margin: 0 }}>{L('追问命理师')}</h3>
         {remaining !== null && (
-          <span className="text-xs text-ink-light/70">
+          <span className="text-xs text-ink-light">
             {L('剩余追问次数：')}<b className="text-ink">{remaining}</b>
             {memberRemaining !== null && memberRemaining > 0 && (
               <>（{L('含会员本月')} <b className="text-ink">{memberRemaining}</b> {L('次')}）</>
@@ -173,7 +173,7 @@ export default function AskPanel({
           </span>
         )}
       </div>
-      <p className="text-xs text-ink-light/60 mt-2 mb-3">
+      <p className="text-xs text-ink-light mt-2 mb-3">
         {L('就你的命盘追问具体问题（如「今年事业上有哪些需要留意的地方」）。购买任一报告、开通会员或邀请好友注册后即可使用；每份报告赠')} {ASK_PER_REPORT} {L('次、每邀请 1 人赠')} {ASK_PER_INVITE} {L('次、会员每月')} {MEMBER_ASK_PER_MONTH} {L('次。涉医疗、法律、投资、生死与重大取舍的「该不该」类问题，命理不作判决——只讲倾向，供你自行权衡。')}
       </p>
 
@@ -203,7 +203,7 @@ export default function AskPanel({
           ))}
           {sending && (
             <div className="flex justify-start">
-              <div className="rounded-2xl px-3 py-2 text-sm bg-white border border-hw-line text-ink-light/60">
+              <div className="rounded-2xl px-3 py-2 text-sm bg-white border border-hw-line text-ink-light">
                 {L('命理师正在作答…')}
               </div>
             </div>

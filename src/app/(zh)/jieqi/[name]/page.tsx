@@ -86,7 +86,7 @@ export default async function JieQiPage({ params }: { params: Promise<{ name: st
               </div>
             ))}
           </div>
-          <p className="text-xs text-ink-light/40 mt-3">
+          <p className="text-xs text-ink-light mt-3">
             "候"是古人以五日为一候观察到的物候现象，三候共十五日，构成一个节气。
           </p>
         </div>

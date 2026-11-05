@@ -131,7 +131,7 @@ export default function MemberCenter({ locale = 'zh-Hans' }: { locale?: SiteLang
     return (
       <main className="hw-page">
         <SiteHeader locale={locale} />
-        <div className="hw-wrap hw-c-pg"><p className="text-center text-ink-light/60">{H('加载中…')}</p></div>
+        <div className="hw-wrap hw-c-pg"><p className="text-center text-ink-light">{H('加载中…')}</p></div>
       </main>
     )
   }

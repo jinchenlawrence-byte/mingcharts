@@ -66,39 +66,39 @@ export default async function YearPage({ params }: { params: Promise<{ year: str
           <h2 className="hw-c-secTitle">{year}年年柱与五行</h2>
           <dl className="grid grid-cols-2 sm:grid-cols-3 gap-x-4 gap-y-3 text-sm">
             <div>
-              <dt className="text-ink-light/60">年柱干支</dt>
+              <dt className="text-ink-light">年柱干支</dt>
               <dd className="font-semibold text-ink">{d.ganZhi}</dd>
             </div>
             <div>
-              <dt className="text-ink-light/60">天干</dt>
+              <dt className="text-ink-light">天干</dt>
               <dd className="font-semibold text-ink">{d.gan}（{d.ganElement}）</dd>
             </div>
             <div>
-              <dt className="text-ink-light/60">地支</dt>
+              <dt className="text-ink-light">地支</dt>
               <dd className="font-semibold text-ink">{d.zhi}（{d.zhiElement}）</dd>
             </div>
             <div>
-              <dt className="text-ink-light/60">生肖</dt>
+              <dt className="text-ink-light">生肖</dt>
               <dd className="font-semibold text-ink">{d.zodiacName}</dd>
             </div>
             <div>
-              <dt className="text-ink-light/60">纳音</dt>
+              <dt className="text-ink-light">纳音</dt>
               <dd className="font-semibold text-ink">{d.naYin}（{d.naYinElement}）</dd>
             </div>
             <div>
-              <dt className="text-ink-light/60">公历年度</dt>
+              <dt className="text-ink-light">公历年度</dt>
               <dd className="font-semibold text-ink">{year}年全年 {d.daysInYear} 天</dd>
             </div>
             <div>
-              <dt className="text-ink-light/60">元旦</dt>
+              <dt className="text-ink-light">元旦</dt>
               <dd className="font-semibold text-ink">星期{d.jan1Weekday}</dd>
             </div>
             <div>
-              <dt className="text-ink-light/60">闰年</dt>
+              <dt className="text-ink-light">闰年</dt>
               <dd className="font-semibold text-ink">{d.isLeapYear ? '是（2 月 29 天）' : '否（2 月 28 天）'}</dd>
             </div>
             <div>
-              <dt className="text-ink-light/60">立春</dt>
+              <dt className="text-ink-light">立春</dt>
               <dd className="font-semibold text-ink">{d.lichun.dateLabel}</dd>
             </div>
           </dl>
@@ -123,7 +123,7 @@ export default async function YearPage({ params }: { params: Promise<{ year: str
           <div className="overflow-x-auto">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="border-b border-gold/20 text-ink-light/60">
+                <tr className="border-b border-gold/20 text-ink-light">
                   <th className="text-left py-2 pr-3 font-medium">节气</th>
                   <th className="text-left py-2 pr-3 font-medium">公历日期</th>
                   <th className="text-left py-2 pr-3 font-medium">类型</th>

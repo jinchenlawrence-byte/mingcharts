@@ -43,16 +43,16 @@ export default function HantLiunianEntry() {
 
         <div className="flex flex-wrap items-center gap-3 mt-5">
           <Link href="/tw" className="hw-c-btnBig">前往排盤 →</Link>
-          <span className="text-sm text-ink-light/70">{price}/次 · 解鎖後永久回看</span>
+          <span className="text-sm text-ink-light">{price}/次 · 解鎖後永久回看</span>
         </div>
 
         {/* ★ 2027 窗口期入口（第 35 轮）：年度总览页 + 太岁对照表，构成"看今年"的两条主路径
             第 36 轮补 2028：GSC 实测 2028 生肖页已在拿点击，缺 hub 收口 */}
         <p className="text-sm mt-4">
           <Link href="/tw/liunian/2027" className="hw-c-link">2027 丁未年運勢總覽 →</Link>
-          <span className="text-ink-light/40 mx-2">·</span>
+          <span className="text-ink-light mx-2">·</span>
           <Link href="/tw/liunian/2028" className="hw-c-link">2028 戊申年運勢總覽 →</Link>
-          <span className="text-ink-light/40 mx-2">·</span>
+          <span className="text-ink-light mx-2">·</span>
           <Link href="/tw/liunian/taisui-biao" className="hw-c-link">十二生肖太歲對照表 →</Link>
         </p>
       </section>
@@ -66,7 +66,7 @@ export default function HantLiunianEntry() {
         </p>
       </section>
 
-      <p className="text-center text-xs text-ink-light/40 mt-6">
+      <p className="text-center text-xs text-ink-light mt-6">
         本文為傳統命理民俗內容，僅供參考娛樂，不構成任何決策建議。
       </p>
     </div>

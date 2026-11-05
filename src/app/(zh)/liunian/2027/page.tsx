@@ -68,7 +68,7 @@ export default function Liunian2027Page() {
             这一年落在你身上是什么，看两件事：生肖与太岁的关系，决定「是否犯太岁」；
             完整八字里日主与流年干支的关系，决定「具体怎么应」。前者一页就能看完，后者需要排盘。
           </p>
-          <p className="text-sm text-ink-light/70 bg-paper-dark/30 border border-gold/15 rounded px-3 py-2 mt-3">
+          <p className="text-sm text-ink-light bg-paper-dark/30 border border-gold/15 rounded px-3 py-2 mt-3">
             ★ 时间边界有两个，别混用：民俗的过年是<b>春节 2 月 6 日</b>（安太岁、生肖轮替按此）；
             命理的年柱切换是<b>立春 2 月 4 日</b>（排八字按此）。两者相差两天，
             生日落在 2 月初的人尤其要先确认用哪个口径。
@@ -77,7 +77,7 @@ export default function Liunian2027Page() {
             <TaisuiTable focusYear={YEAR} />
             <TaisuiLegend />
           </div>
-          <p className="text-xs text-ink-light/60 mt-3">
+          <p className="text-xs text-ink-light mt-3">
             下表所列为 {YEAR} 年那一列，每一格都能点进该生肖当年的详细运势。
             <Link href="/liunian/taisui-biao" className="hw-c-link ml-1">看多年对照表 →</Link>
           </p>
@@ -158,9 +158,9 @@ export default function Liunian2027Page() {
         <p className="hw-alert hw-alert--note text-center">
           以上为传统命理民俗内容，仅供参考娱乐，不构成任何决策建议。生肖与太岁关系由规则引擎确定性计算，不含 AI 推断。
         </p>
-        <p className="text-center text-xs text-ink-light/50 mt-2">
+        <p className="text-center text-xs text-ink-light mt-2">
           <Link href={`/tw/liunian/${YEAR}`} className="hw-c-link">繁體版：2027 丁未年運勢總覽 →</Link>
-          <span className="text-ink-light/40 mx-2">·</span>
+          <span className="text-ink-light mx-2">·</span>
           <Link href="/liunian/2028" className="hw-c-link">看 2028 戊申年运势总览 →</Link>
         </p>
       </main>

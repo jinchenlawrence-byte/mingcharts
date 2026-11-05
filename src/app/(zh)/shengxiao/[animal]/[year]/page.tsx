@@ -109,15 +109,15 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
           <p className="hw-c-body">{ln.advice}</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4 text-sm">
             <div className="bg-gold/5 rounded p-3 text-center">
-              <div className="text-xs text-ink-light/60">幸运颜色</div>
+              <div className="text-xs text-ink-light">幸运颜色</div>
               <div className="font-semibold text-ink mt-1">{sx.luckyColor.split('、')[0]}</div>
             </div>
             <div className="bg-gold/5 rounded p-3 text-center">
-              <div className="text-xs text-ink-light/60">幸运数字</div>
+              <div className="text-xs text-ink-light">幸运数字</div>
               <div className="font-semibold text-ink mt-1">{sx.luckyNumber}</div>
             </div>
             <div className="bg-gold/5 rounded p-3 text-center col-span-2 sm:col-span-1">
-              <div className="text-xs text-ink-light/60">本命佛</div>
+              <div className="text-xs text-ink-light">本命佛</div>
               <div className="font-semibold text-ink mt-1 text-xs">{sx.benmingfo}</div>
             </div>
           </div>
@@ -207,7 +207,7 @@ export default async function LiunianPage({ params }: { params: Promise<{ animal
             输入时辰，排我的八字 →
           </Link>
           {/* 年底「来年运势」窗口：生肖页直接给出个人年运报告入口（价格派生自 pricing.ts） */}
-          <p className="mt-4 text-sm text-ink-light/70">
+          <p className="mt-4 text-sm text-ink-light">
             <Link href="/liunian" className="hw-c-link">
               或直接生成 {year} 年年运报告（{formatPriceUSD(SKUS.annual_report.priceUSD)}，一次覆盖今年/明年/后年三年，各含流月节奏）→
             </Link>

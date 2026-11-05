@@ -60,13 +60,13 @@ export default function PartnerApplyForm({ hant = false }: { hant?: boolean }) {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
         <label className="block">
-          <span className="text-ink-light/70">{t('称呼', '稱呼')} *</span>
+          <span className="text-ink-light">{t('称呼', '稱呼')} *</span>
           <input value={form.name} onChange={set('name')} maxLength={40} required
             className="mt-1 w-full border border-gold/20 rounded px-3 py-2 bg-white" />
         </label>
 
         <label className="block">
-          <span className="text-ink-light/70">{t('联系方式类型', '聯絡方式類型')} *</span>
+          <span className="text-ink-light">{t('联系方式类型', '聯絡方式類型')} *</span>
           <select value={form.contactKind} onChange={set('contactKind')}
             className="mt-1 w-full border border-gold/20 rounded px-3 py-2 bg-white">
             {CONTACT_KINDS.map((k) => (
@@ -76,21 +76,21 @@ export default function PartnerApplyForm({ hant = false }: { hant?: boolean }) {
         </label>
 
         <label className="block">
-          <span className="text-ink-light/70">{t('联系方式', '聯絡方式')} *</span>
+          <span className="text-ink-light">{t('联系方式', '聯絡方式')} *</span>
           <input value={form.contact} onChange={set('contact')} maxLength={120} required
             placeholder={form.contactKind === 'email' ? 'you@example.com' : t('ID 或号码', 'ID 或號碼')}
             className="mt-1 w-full border border-gold/20 rounded px-3 py-2 bg-white" />
         </label>
 
         <label className="block">
-          <span className="text-ink-light/70">{t('平台 / 账号（选填）', '平台／帳號（選填）')}</span>
+          <span className="text-ink-light">{t('平台 / 账号（选填）', '平台／帳號（選填）')}</span>
           <input value={form.channel} onChange={set('channel')} maxLength={120}
             placeholder="IG @xxx / 小紅書 / YouTube"
             className="mt-1 w-full border border-gold/20 rounded px-3 py-2 bg-white" />
         </label>
 
         <label className="block">
-          <span className="text-ink-light/70">{t('每月接单量', '每月接單量')} *</span>
+          <span className="text-ink-light">{t('每月接单量', '每月接單量')} *</span>
           <select value={form.volume} onChange={set('volume')}
             className="mt-1 w-full border border-gold/20 rounded px-3 py-2 bg-white">
             {VOLUMES.map((v) => (
@@ -100,7 +100,7 @@ export default function PartnerApplyForm({ hant = false }: { hant?: boolean }) {
         </label>
 
         <label className="block">
-          <span className="text-ink-light/70">{t('客群地区（选填）', '客群地區（選填）')}</span>
+          <span className="text-ink-light">{t('客群地区（选填）', '客群地區（選填）')}</span>
           <input value={form.region} onChange={set('region')} maxLength={40}
             placeholder={t('台湾 / 香港 / 马来西亚 / 北美…', '台灣／香港／馬來西亞／北美…')}
             className="mt-1 w-full border border-gold/20 rounded px-3 py-2 bg-white" />
@@ -116,7 +116,7 @@ export default function PartnerApplyForm({ hant = false }: { hant?: boolean }) {
       </div>
 
       <label className="block mt-3 text-sm">
-        <span className="text-ink-light/70">{t('想说的话（选填）', '想說的話（選填）')}</span>
+        <span className="text-ink-light">{t('想说的话（选填）', '想說的話（選填）')}</span>
         <textarea value={form.note} onChange={set('note')} maxLength={1000} rows={3}
           className="mt-1 w-full border border-gold/20 rounded px-3 py-2 bg-white"
           placeholder={t('你的客群、主要看哪些品类、现在怎么交付…', '你的客群、主要看哪些品類、現在怎麼交付…')} />
@@ -126,7 +126,7 @@ export default function PartnerApplyForm({ hant = false }: { hant?: boolean }) {
         <button type="submit" disabled={busy} className="hw-c-btnBig cursor-pointer disabled:opacity-60">
           {busy ? t('提交中…', '提交中…') : t('提交申请', '提交申請')}
         </button>
-        <span className="text-xs text-ink-light/50">
+        <span className="text-xs text-ink-light">
           {t('或邮件 hello@mingcharts.com', '或郵件 hello@mingcharts.com')}
         </span>
       </div>

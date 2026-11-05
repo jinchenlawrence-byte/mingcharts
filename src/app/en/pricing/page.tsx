@@ -170,7 +170,7 @@ export default function EnPricingPage() {
             <h2 className="text-lg font-bold">Free chart</h2>
             <div className="flex items-baseline gap-1">
               <span className="hw-c-pr">$0</span>
-              <span className="text-ink-light/60 text-sm">free forever</span>
+              <span className="text-ink-light text-sm">free forever</span>
             </div>
             <p className="text-sm text-ink-light">See the chart before deciding on a reading.</p>
             <ul className="space-y-2 text-sm text-ink/70 my-2">
@@ -183,7 +183,7 @@ export default function EnPricingPage() {
             <Link href="/en" className="block text-center py-2.5 rounded-full font-semibold bg-ink text-white hover:brightness-110">
               Cast a free chart →
             </Link>
-            <p className="text-xs text-ink-light/50 mt-2">English chart and English AI-written reports.</p>
+            <p className="text-xs text-ink-light mt-2">English chart and English AI-written reports.</p>
           </div>
 
           <div className="hw-c-plan hw-c-planHot">
@@ -193,7 +193,7 @@ export default function EnPricingPage() {
             <h2 className="text-lg font-bold">{SKU_EN.fatebook.name}</h2>
             <div className="flex items-baseline gap-1">
               <span className="hw-c-pr">{formatPriceUSD(SKUS.fatebook.priceUSD)}</span>
-              <span className="text-ink-light/60 text-sm">/ use</span>
+              <span className="text-ink-light text-sm">/ use</span>
             </div>
             <p className="text-sm text-ink-light">{SKU_EN.fatebook.desc}</p>
             <ul className="space-y-2 text-sm text-ink/70 my-2">
@@ -219,7 +219,7 @@ export default function EnPricingPage() {
             <h2 className="text-lg font-bold">Membership</h2>
             <div className="flex items-baseline gap-1">
               <span className="hw-c-pr">{formatPriceUSD(SKUS.member_monthly.priceUSD)}</span>
-              <span className="text-ink-light/60 text-sm">/ month up</span>
+              <span className="text-ink-light text-sm">/ month up</span>
             </div>
             <p className="text-sm text-ink-light">{SKU_EN.member_monthly.desc}</p>
             <ul className="space-y-2 text-sm text-ink/70 my-2">
@@ -259,7 +259,7 @@ export default function EnPricingPage() {
                   </div>
                   <div className="text-right shrink-0">
                     <div className="text-2xl font-bold text-ink">{formatPriceUSD(s.priceUSD)}</div>
-                    <div className="text-xs text-ink-light/60 mt-1">/ use</div>
+                    <div className="text-xs text-ink-light mt-1">/ use</div>
                   </div>
                 </div>
                 <CheckoutButton sku={s.id} available={waffoProductId(s.id) !== null} requireChart={false} authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
@@ -277,19 +277,19 @@ export default function EnPricingPage() {
             Each report includes {ASK_PER_REPORT} questions, each referral grants {ASK_PER_INVITE},
             and membership includes {MEMBER_ASK_PER_MONTH} per month.
           </p>
-          <div className="hw-c-box flex flex-col gap-4 max-w-3xl mx-auto">
+          <div className="hw-c-box flex flex-col gap-4 max-w-[45ch] mx-auto">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="font-bold text-ink">{SKU_EN.ask_pack.name}</h3>
                 <p className="text-sm text-ink-light mt-1">{SKU_EN.ask_pack.desc}</p>
-                <p className="text-xs text-ink-light/60 mt-2">
+                <p className="text-xs text-ink-light mt-2">
                   Questions on medical, legal, investment, life-and-death or major trade-offs are not
                   judged — only tendencies are described, and every answer carries a disclaimer.
                 </p>
               </div>
               <div className="text-right shrink-0">
                 <div className="text-2xl font-bold text-ink">{formatPriceUSD(SKUS.ask_pack.priceUSD)}</div>
-                <div className="text-xs text-ink-light/60 mt-1">/ {ASK_PACK_SIZE}</div>
+                <div className="text-xs text-ink-light mt-1">/ {ASK_PACK_SIZE}</div>
               </div>
             </div>
             <CheckoutButton sku="ask_pack" available={waffoProductId('ask_pack') !== null} requireChart={false} authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
@@ -327,9 +327,9 @@ export default function EnPricingPage() {
                   const cells = compareCells(row)
                   return (
                     <tr key={row.label}>
-                      <td>{row.label}{row.note && <span className="ml-2 text-xs text-ink-light/40 whitespace-normal">{row.note}</span>}</td>
+                      <td>{row.label}{row.note && <span className="ml-2 text-xs text-ink-light whitespace-normal">{row.note}</span>}</td>
                       {cells.map((on, i) => (
-                        <td key={i}>{on ? <span className="text-hw-water">✓</span> : <span className="text-ink-light/30">—</span>}</td>
+                        <td key={i}>{on ? <span className="text-hw-water">✓</span> : <span className="text-ink-light">—</span>}</td>
                       ))}
                     </tr>
                   )
@@ -339,7 +339,7 @@ export default function EnPricingPage() {
           </div>
         </section>
 
-        <section className="hw-sec max-w-3xl mx-auto">
+        <section className="hw-sec max-w-[45ch] mx-auto">
           <h2 className="hw-c-h2 hw-c-h2C">FAQ</h2>
           <div className="space-y-3">
             {FAQS.map((f) => (

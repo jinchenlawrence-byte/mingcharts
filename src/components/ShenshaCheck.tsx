@@ -168,7 +168,7 @@ export default function ShenshaCheck({ locale }: { locale: SiteLang }) {
           <button type="submit" disabled={loading} className="hw-c-btnBig cursor-pointer disabled:opacity-60">
             {loading ? L('推算中…') : L('免费查神煞')}
           </button>
-          <span className="text-xs text-ink-light/60">
+          <span className="text-xs text-ink-light">
             {L('出生地用于真太阳时校正；不填则按北京时间。')}
           </span>
         </div>
@@ -181,7 +181,7 @@ export default function ShenshaCheck({ locale }: { locale: SiteLang }) {
           <h2 className="hw-c-secTitle">
             {L(`命中 ${hits.length} 个神煞`)}
             {ganZhi.length === 4 && (
-              <span className="ml-2 text-xs font-normal text-ink-light/60">
+              <span className="ml-2 text-xs font-normal text-ink-light">
                 {ganZhi.join(' · ')}
               </span>
             )}
@@ -200,7 +200,7 @@ export default function ShenshaCheck({ locale }: { locale: SiteLang }) {
                       return (
                         <li key={h.name} className="py-2 flex flex-col sm:flex-row sm:items-baseline gap-x-3">
                           <span className="font-medium shrink-0 sm:w-28">{L(h.name)}</span>
-                          <span className="text-xs text-ink-light/50 shrink-0 sm:w-24">
+                          <span className="text-xs text-ink-light shrink-0 sm:w-24">
                             {h.pillars.map((p) => L(PILLAR_LABEL[p])).join('、')}
                           </span>
                           {slug ? (
@@ -208,7 +208,7 @@ export default function ShenshaCheck({ locale }: { locale: SiteLang }) {
                               {L('查法与出典 →')}
                             </Link>
                           ) : (
-                            <span className="text-sm text-ink-light/60">{L('总目录可查')}</span>
+                            <span className="text-sm text-ink-light">{L('总目录可查')}</span>
                           )}
                         </li>
                       )
@@ -220,12 +220,12 @@ export default function ShenshaCheck({ locale }: { locale: SiteLang }) {
           )}
 
           {kongWang.length > 0 && (
-            <p className="text-xs text-ink-light/60 mt-4">
+            <p className="text-xs text-ink-light mt-4">
               {L('旬空（空亡）')}：{kongWang.join('；')}
             </p>
           )}
 
-          <p className="text-xs text-ink-light/60 mt-4">
+          <p className="text-xs text-ink-light mt-4">
             {L('※ 神煞只是辅助标签，不作吉凶判断。命理分析以五行生克、格局旺衰与运程为主。')}
           </p>
 
@@ -245,7 +245,7 @@ export default function ShenshaCheck({ locale }: { locale: SiteLang }) {
                 {L('日运会员 · 每月 $9.9')}
               </Link>
             </div>
-            <p className="text-[11px] text-ink-light/50 mt-2">
+            <p className="text-[11px] text-ink-light mt-2">
               {L('（这两个页面目前为简体版；命书内容与本体逐条引证一致。）')}
             </p>
           </div>
