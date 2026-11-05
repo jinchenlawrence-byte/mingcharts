@@ -101,6 +101,7 @@ const CARDS: PriceCard[] = [
       '近三年流年具体趋势',
       '事业财运 / 婚姻感情 / 子女六亲 / 健康提示',
       '永久保存到「我的命盘」，可反复查看',
+    `购买后赠送 ${ASK_PER_REPORT} 次 AI 追问（终身有效，不重置）`,
     ],
     // 命书购买走 Waffo 卡支付；productId 未登记时按钮显示「即将推出」（见 waffo-products.ts）
     buySku: 'fatebook',

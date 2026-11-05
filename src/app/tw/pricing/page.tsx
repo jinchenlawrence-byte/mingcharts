@@ -101,6 +101,7 @@ const CARDS: PriceCard[] = [
       '近三年流年具體趨勢',
       '事業財運 / 婚姻感情 / 子女六親 / 健康提示',
       '永久保存到「我的命盤」，可反覆查看',
+    `購買後贈送 ${ASK_PER_REPORT} 次 AI 追問（終身有效，不重置）`,
     ],
     buySku: 'fatebook',
     cta: { text: '購買命書詳批', href: '/tw/mingshu' },

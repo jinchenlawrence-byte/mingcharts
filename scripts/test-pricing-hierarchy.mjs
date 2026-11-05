@@ -85,6 +85,28 @@ for (const [loc, f] of PAGES) {
     `${loc}：三栏被拉齐到最高那张（缺 items-start）`)
 }
 
+console.log('—— ②E 命书自带追问的价值必须写出来 ——')
+// 事实：ASK_PER_REPORT = 5，买任一单次报告即赠 5 次追问、终身不重置。
+// 定价页命书卡此前【没写】这条 —— 给了权益却不告诉用户。
+// ★ 判据限在【命书卡条目区】内：页面别处（SEO title / FAQ / 比较表）也含
+//   SKUS.fatebook.priceUSD 与 ${ASK_PER_REPORT}，全局搜索会误判（牙口踩过两次）。
+const FATEBOOK_ANCHOR = {
+  'zh': '包含免费排盘全部内容',
+  'tw': '包含免費排盤全部內容',
+  'en': 'Everything in the free chart',
+}
+for (const [loc, f] of PAGES) {
+  const src = readFileSync(f, 'utf8')
+  const anchorText = FATEBOOK_ANCHOR[loc]
+  const anchor = src.indexOf(anchorText)
+  assert(anchor > 0, `${loc}：能找到命书卡条目区起点`)
+  const region = src.slice(anchor, anchor + 900)
+  const gift = /\$\{ASK_PER_REPORT\}[^`]{0,40}(追问|追問|follow-up)/i.test(region)
+  assert(gift,
+    `${loc}：命书卡条目区写明赠送 ${'${ASK_PER_REPORT}'} 次追问（用常量，不硬编码）`,
+    `${loc}：命书卡条目区没有「含追问」的说明 —— 权益被埋没`)
+}
+
 console.log('—— ③ 组件默认样式未被改动 ——')
 {
   const btn = readFileSync('src/components/MembershipButton.tsx', 'utf8')

@@ -202,6 +202,7 @@ export default function EnPricingPage() {
                 'Structure outcomes and seasonal adjustment, item by item',
                 'Concrete trends for the next three Annual Pillars',
                 'Career & wealth / marriage / children & kin / health',
+    `Includes ${ASK_PER_REPORT} AI follow-up questions (lifetime, never resets)`,
                 'Stored under "My Charts" for repeat viewing'].map((f) => (
                 <li key={f} className="flex gap-2"><span className="text-hw-water shrink-0">✓</span><span>{f}</span></li>
               ))}
