@@ -2,13 +2,23 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { getYearGanZhi, getZodiac, getConstellation } from '@/lib/baziData'
 
-// ★ 2026-11-05：不再预渲染 732 个月页（1950–2010 × 12）。
-//   原因：Vercel Hobby 的部署存储 10 GB 已超（每次部署约 205 MB，其中 732 个月页
-//   的 HTML+RSC 约占 40 MB），而这批月页全是【过去年份】的薄内容，
-//   此前已按决策从 sitemap 撤出。改为按需生成 + ISR 缓存（revalidate 见下），
-//   SEO 不受影响：页面仍可访问、仍可索引，只是不再在构建期落盘。
+// ★ 2026-11-05（两次修正后的定稿）：月页只预渲染 1990–2010，其余年份按需生成。
+//   起因：Vercel Hobby 部署存储 10 GB 已超，先想全改成 SSR 省钱，但算错了账 ——
+//   Hobby 的 Fluid Active CPU（4h / 滚动 30 天）才是会导致【项目被暂停】的额度，
+//   而静态页由 CDN 直接出，不消耗 CPU。用存储换 CPU 等于拿次要资源换主要风险。
+//   定稿：保留 21 年（1990–2010）× 12 = 252 页静态（约 14 MB），
+//   1950–1989 与 2011 之后按需生成 —— 存储可控、CPU 归零。
+export function generateStaticParams() {
+  const params: { year: string; month: string }[] = []
+  for (let y = 1990; y <= 2010; y++) {
+    for (let m = 1; m <= 12; m++) {
+      params.push({ year: String(y), month: String(m).padStart(2, '0') })
+    }
+  }
+  return params
+}
 
-export const revalidate = 86400
+export const revalidate = 604800 // 7 天（少重算 = 少烧 CPU）
 
 export async function generateMetadata({ params }: { params: Promise<{ year: string; month: string }> }) {
   const { year, month } = await params
