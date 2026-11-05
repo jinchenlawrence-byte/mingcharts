@@ -76,6 +76,23 @@ assert(gaps.length === 0,
   `产出型请求全部显式带 locale（扫描 ${files.length} 个文件）`,
   `这些产出型请求没带 locale：\n      ${gaps.join('\n      ')}`)
 
+console.log('—— ③ 报告缓存键必须含 locale ——')
+// 事故形态（2026-11-05 实测）：同一命盘先出过中文紫微报告，
+// 英文站请求命中同一缓存键 → 英文用户拿到整篇中文。
+// 缓存键不含语言，等于「谁先算谁定语言」。
+{
+  const routes = ['src/app/api/geo/route.ts', 'src/app/api/hemun/route.ts', 'src/app/api/ziwei/route.ts']
+  for (const f of routes) {
+    const src = readFileSync(f, 'utf8')
+    const m = src.match(/reportCacheKey\([^)]*\)/)
+    assert(!!m, `${f}：有缓存键构造`)
+    const hasLocale = /locale/.test(m?.[0] ?? '')
+    assert(hasLocale,
+      `${f}：缓存键含 locale（跨语言不会命中同一份缓存）`,
+      `${f}：缓存键不含 locale —— 中文报告会被英文站命中`)
+  }
+}
+
 console.log('')
 if (allPass) console.log('OUTPUT_LOCALE_PASS')
 else {

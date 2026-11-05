@@ -120,7 +120,9 @@ export async function POST(request: NextRequest) {
       birthCity: city?.name ?? null,
       currentCity: currentCity?.name ?? null
     }
-    const cacheKey = reportCacheKey('geo', GEO_CACHE_VERSION, reportInput)
+    // ★ 2026-11-05：缓存键必须含 locale。此前不含 → 同一命盘先出过中文报告，
+    //   英文站命中同一缓存，直接拿到中文内容（线上实测）。
+    const cacheKey = reportCacheKey('geo', GEO_CACHE_VERSION, { ...reportInput, locale })
     if (userId && admin) {
       const hit = await readReportCache(admin, userId, 'geo', cacheKey)
       const resolved = hit

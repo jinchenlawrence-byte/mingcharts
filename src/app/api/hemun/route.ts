@@ -123,7 +123,8 @@ export async function POST(request: NextRequest) {
       partnerHour: f.data!.hour, partnerMinute: f.data!.minute, partnerGender: f.data!.gender,
       partnerBirthZone: f.data!.birthZone ?? null, partnerBirthLng: f.data!.birthLng ?? null
     }
-    const cacheKey = reportCacheKey('hemun', HEMUN_CACHE_VERSION, reportInput)
+    // ★ 2026-11-05：缓存键必须含 locale（否则跨语言命中同一份缓存）
+    const cacheKey = reportCacheKey('hemun', HEMUN_CACHE_VERSION, { ...reportInput, locale })
     if (userId && admin) {
       const hit = await readReportCache(admin, userId, 'hemun', cacheKey)
       const resolved = hit

@@ -89,7 +89,9 @@ export async function POST(request: NextRequest) {
       birthLng: ref?.lng ?? null,
       birthCity: city?.name ?? null
     }
-    const cacheKey = reportCacheKey('ziwei', ZIWEI_CACHE_VERSION, reportInput)
+    // ★ 2026-11-05：缓存键必须含 locale。此前不含 → 中文紫微报告被英文站命中，
+    //   英文用户看到整篇中文（线上实测，07:12 那份）。
+    const cacheKey = reportCacheKey('ziwei', ZIWEI_CACHE_VERSION, { ...reportInput, locale })
     if (userId && admin) {
       const hit = await readReportCache(admin, userId, 'ziwei', cacheKey)
       const resolved = hit
