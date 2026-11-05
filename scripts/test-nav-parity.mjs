@@ -166,12 +166,11 @@ console.log('—— ⑦ 语言切换目标 ——')
   //   线上 HTML 里链接还在，但用户体感等于被删掉。
   {
     const nav = readFileSync('src/components/SiteNav.tsx', 'utf8')
-    assert(/mask-image:linear-gradient\(to_right/.test(nav),
-      'SiteNav 有右端渐隐遮罩（横滑内容溢出时有暗示）',
-      'SiteNav 缺右端渐隐：滚动条被隐藏 + 内容溢出 → 用户看不出右边还有条目')
-    assert(/^-webkit-mask-image:linear-gradient/m.test(nav) || /\[-webkit-mask-image:linear-gradient/.test(nav),
-      '渐隐同时给了 -webkit- 前缀（Safari 生效）',
-      '渐隐缺 -webkit- 前缀（Safari 不生效）')
+    // ★ 2026-10-30（五）遮罩已移除：入口收进「更多」后不再溢出，
+    //   而常驻遮罩会把最后一个条目（定价）右缘吃掉，看图像是被切断。
+    assert(!/mask-image:linear-gradient\(to_right/.test(nav),
+      'SiteNav 不再用常驻遮罩（它会把最后一个条目吃掉）',
+      'SiteNav 仍有常驻遮罩 —— 会把最后一个条目（定价）右缘裁掉')
     const siteNav = readFileSync('src/lib/site-nav.ts', 'utf8')
     assert(/path: '\/pricing'/.test(siteNav),
       '定价仍在导航表里（没被删，只是曾被挤出可视区）',

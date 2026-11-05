@@ -40,7 +40,7 @@ export default function SiteNav({ locale }: { locale: SiteLang }) {
 
   return (
     <div ref={boxRef} className="relative flex min-w-0 items-center gap-2 sm:gap-3">
-      <div className="flex min-w-0 items-center gap-3 overflow-x-auto text-[13px] [scrollbar-width:none] sm:gap-4 sm:text-[15px] [&::-webkit-scrollbar]:hidden [mask-image:linear-gradient(to_right,#000_0%,#000_calc(100%-28px),transparent_100%)] [-webkit-mask-image:linear-gradient(to_right,#000_0%,#000_calc(100%-28px),transparent_100%)]">
+      <div className="flex min-w-0 items-center gap-3 overflow-x-auto text-[13px] [scrollbar-width:none] sm:gap-4 sm:text-[15px] [&::-webkit-scrollbar]:hidden">
         {primary.map((item) => (
           <Link
             key={item.path}

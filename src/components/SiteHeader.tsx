@@ -75,7 +75,7 @@ export default function SiteHeader({ locale = 'zh-Hans' }: { locale?: SiteLang }
     >
       <Link
         href={pathForLang('/', locale)}
-        className="flex shrink-0 items-center gap-2.5 font-serif-sc text-xl font-black leading-none text-ink"
+        className="flex shrink-0 items-center gap-2.5 font-serif-sc text-xl font-black leading-none text-ink sm:mr-4"
       >
         <span>{BRAND[locale]}</span>
         <span className="flex gap-[3px]" aria-hidden="true">
@@ -84,7 +84,7 @@ export default function SiteHeader({ locale = 'zh-Hans' }: { locale?: SiteLang }
           ))}
         </span>
       </Link>
-      <div className="flex min-w-0 flex-1 items-center justify-end gap-2 sm:gap-3">
+      <div className="flex min-w-0 flex-1 items-center justify-start gap-2 sm:gap-3">
         <SiteNav locale={locale} />
         {/* 语言切换固定在工具行之外，移动端横向滚动时仍始终可见 */}
         <LangSwitcher locale={locale} className="shrink-0 whitespace-nowrap text-ink/40 transition-colors hover:text-ink" />
