@@ -39,8 +39,8 @@ else ok('sitemap 不再包含任何 /bazi/{year}/{MM} 月页')
 if (yearPages.length !== 61) fail(`sitemap 年页数 ${yearPages.length}，期望 61`)
 else ok('sitemap 仍保留 61 个年页')
 if (!paths.includes('/bazi')) fail('sitemap 缺少 /bazi 索引页')
-if (entries.length !== 601) fail(`sitemap 总数 ${entries.length}，期望 601`)
-else ok('sitemap 总数 601（1333 − 732）')
+if (entries.length !== 615) fail(`sitemap 总数 ${entries.length}，期望 615`)
+else ok('sitemap 总数 615（601 + 14 条英文生肖/我的命盘）')
 
 const hant = paths.filter(p => p.startsWith('/tw')).length
 const en = paths.filter(p => p.startsWith('/en')).length

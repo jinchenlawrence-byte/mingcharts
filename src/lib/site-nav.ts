@@ -52,7 +52,6 @@ export const NAV_ITEMS: NavEntry[] = [
   {
     path: '/shengxiao',
     label: { 'zh-Hans': '生肖运势', 'zh-Hant': '生肖運勢', en: 'Chinese zodiac' },
-    available: ['zh-Hans', 'zh-Hant'],
   },
   {
     path: '/article',
@@ -69,8 +68,6 @@ export const ACCOUNT_ITEMS: NavEntry[] = [
   {
     path: '/charts',
     label: { 'zh-Hans': '我的命盘', 'zh-Hant': '我的命盤', en: 'My charts' },
-    // 英文树暂无 /en/charts 列表页。
-    available: ['zh-Hans', 'zh-Hant'],
   },
   { path: '/reports', label: { 'zh-Hans': '我的报告', 'zh-Hant': '我的報告', en: 'My reports' } },
   { path: '/account', label: { 'zh-Hans': '账号设置', 'zh-Hant': '帳號設定', en: 'Account settings' } },

@@ -22,6 +22,7 @@ const PAGES = [
   ['src/app/tw/chart/Client.tsx', 'zh-Hant'],
   ['src/app/tw/charts/Client.tsx', 'zh-Hant'],
   ['src/app/en/chart/Client.tsx', 'en'],
+  ['src/app/en/charts/Client.tsx', 'en'],
 ]
 
 console.log('—— ① 生成请求必须显式带 locale ——')

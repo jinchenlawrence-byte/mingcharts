@@ -117,6 +117,25 @@ console.log('—— ④ 声明缺失清单与实际一致 ——')
   console.log('    已声明缺失：' + (gaps.length ? gaps.join('；') : '无'))
 }
 
+// ---------- ④b 英文生肖 / 我的命盘：入口已补齐，不得再声明缺失 ----------
+console.log('—— ④b 英文生肖与我的命盘入口已打通 ——')
+{
+  for (const [path, items] of [['/shengxiao', NAV_ITEMS], ['/charts', ACCOUNT_ITEMS]]) {
+    for (const l of LOCALES) {
+      assert(itemsFor(l, items).some((i) => i.path === path), `${l} 渲染 ${path}（不再声明缺失）`)
+      assert(existsSync(join(root, pageFile(l, path))), `${l} ${path} 有真实 page.tsx（无死链）`)
+    }
+    const declared = items.find((i) => i.path === path)?.available
+    assert(!declared || declared.length === LOCALES.length, `${path} 不再声明 available 缺口`)
+  }
+  // 牙口：把 /shengxiao 改回“仅简繁可用”，英文入口必须立即消失
+  const broken = NAV_ITEMS.map((i) =>
+    i.path === '/shengxiao' ? { ...i, available: ['zh-Hans', 'zh-Hant'] } : i
+  )
+  assert(!itemsFor('en', broken).some((i) => i.path === '/shengxiao'),
+    '把 /shengxiao 重新声明为两语 → 英文入口消失（牙口）')
+}
+
 // ---------- ⑤ 移动端不隐藏入口 ----------
 console.log('—— ⑤ 移动端入口不隐藏 ——')
 {

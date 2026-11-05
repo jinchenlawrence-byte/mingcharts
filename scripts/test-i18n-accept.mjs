@@ -15,6 +15,7 @@ const near = (file) => new URL(`../src/${file}`, import.meta.url)
 
 const { toHant, localize, twinPath, hantTaiSui } = await import('../src/lib/hant.ts')
 const { HANT_HREFLANG, HANT_LOCALES, hantAlternates } = await import('../src/lib/hant-seo.ts')
+const { triAlternates } = await import('../src/lib/lang.ts')
 const { SHENGXIAO, getPeiDui, getLiunian, LIUNIAN_YEARS, LIUNIAN_2027_DETAIL } = await import('../src/lib/shengxiaoData.ts')
 const { articles, ARTICLE_CATEGORIES } = await import('../src/lib/articles.ts')
 const { default: sitemap } = await import('../src/app/sitemap.ts')
@@ -144,16 +145,22 @@ for (const [k, v] of Object.entries(expectAlt)) {
   if (alt[k] !== v) { seoFail++; fail(`alternates['${k}'] = ${alt[k]}，应为 ${v}`) }
 }
 if (Object.keys(alt).length !== 6) { seoFail++; fail(`alternates 应恰为 6 键，实际 ${Object.keys(alt).length}`) }
+// 英文树补齐后，生肖属相页改为 triAlternates：7 键，且 en 指回 /en/shengxiao/<slug>
+const alt3 = triAlternates('/shengxiao/shu')
+if (alt3.en !== '/en/shengxiao/shu') { seoFail++; fail(`英文 hreflang = ${alt3.en}，应为 /en/shengxiao/shu`) }
+if (Object.keys(alt3).length !== 7) { seoFail++; fail(`三语 alternates 应为 7 键，实际 ${Object.keys(alt3).length}`) }
 // 两边都必须从同一函数生成（防一边手写、一边不写 → hreflang 单向失效）
+const TRI_PAGES = new Set(['app/(zh)/shengxiao/[animal]/page.tsx', 'app/tw/shengxiao/[animal]/page.tsx'])
 for (const f of ['app/(zh)/shengxiao/[animal]/page.tsx', 'app/tw/shengxiao/[animal]/page.tsx',
   'app/(zh)/shengxiao/[animal]/[year]/page.tsx', 'app/tw/shengxiao/[animal]/[year]/page.tsx',
   'app/(zh)/article/page.tsx', 'app/tw/article/page.tsx',
   'app/(zh)/article/[slug]/page.tsx', 'app/tw/article/[slug]/page.tsx']) {
   const src = readFileSync(near(f), 'utf8')
-  if (!src.includes('hantAlternates(')) { seoFail++; fail(`${f} 未使用 hantAlternates（hreflang 必须单一来源）`) }
+  const fn = TRI_PAGES.has(f) ? 'triAlternates(' : 'hantAlternates('
+  if (!src.includes(fn)) { seoFail++; fail(`${f} 未使用 ${fn}（hreflang 必须单一来源）`) }
   if (/hreflang|zh-Hant', '\//.test(src) && src.includes("'zh-TW':")) { seoFail++; fail(`${f} 手写了 alternates 字面量`) }
 }
-console.log(seoFail === 0 ? '✓ hreflang：6 键齐全、繁体四标签同指 /tw、x-default 指简体；两页同源生成' : `✗ hreflang 失败 ${seoFail} 处`)
+console.log(seoFail === 0 ? '✓ hreflang：繁体 6 键齐全 + 生肖属相页 7 键含 en；两页同源生成' : `✗ hreflang 失败 ${seoFail} 处`)
 
 // ---------- ④ 繁体树结构 ----------
 console.log('—— ④ 繁体树结构 ——')

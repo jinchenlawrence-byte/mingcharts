@@ -19,7 +19,7 @@ process.env.AI_API_KEY = process.env.AI_API_KEY || 'test-key-not-real'
 
 const {
   parseLocale, resolveLocale, localeDirective, checkoutLanguage,
-  HANT_OUTPUT_DIRECTIVE, EN_OUTPUT_DIRECTIVE, LOCALE_COOKIE, OUTPUT_LOCALES, localeFromRequest,
+  HANT_OUTPUT_DIRECTIVE, EN_OUTPUT_DIRECTIVE, OUTPUT_LOCALES, localeFromRequest,
 } = await import('../src/lib/locale.ts')
 const { findForbidden, FORBIDDEN_WORDS, FORBIDDEN_WORDS_HANT, FORBIDDEN_WORDS_EN } = await import('../src/lib/ai-check.ts')
 
@@ -36,13 +36,15 @@ ok('en', 'en'); ok('EN-US', 'en'); ok('english', 'en')
 for (const bad of ['', '   ', null, undefined, 123, {}, [], 'zh']) ok(bad, null)
 if (resolveLocale('en', 'zh-Hant') !== 'en') { parseFail++; fail('resolveLocale 未按候选顺序取第一个认得的（en 应胜出）') }
 if (resolveLocale('zzz', null, '{}') !== 'zh-Hans') { parseFail++; fail('resolveLocale 全认不得时应回落 zh-Hans') }
-// localeFromRequest：body 优先于 cookie
-const fakeReq = (cookieVal) => ({ cookies: { get: (n) => (n === LOCALE_COOKIE && cookieVal ? { value: cookieVal } : undefined) } })
-if (localeFromRequest(fakeReq('zh-Hant'), { locale: 'zh-Hans' }) !== 'zh-Hans') { parseFail++; fail('body.locale 应优先于 cookie') }
-if (localeFromRequest(fakeReq('zh-Hant'), {}) !== 'zh-Hant') { parseFail++; fail('body 无 locale 时应读 cookie') }
-if (localeFromRequest(fakeReq(null), {}) !== 'zh-Hans') { parseFail++; fail('既无 body 也无 cookie 时应回落 zh-Hans') }
-if (localeFromRequest(null, null) !== 'zh-Hans') { parseFail++; fail('request 为 null 时不应抛错，应回落 zh-Hans') }
-console.log(parseFail === 0 ? '✓ 解析：简/繁/英别名全中；空/null/数字/对象 一律 null；回落链 body ＞ cookie ＞ 默认' : `✗ 解析失败 ${parseFail} 处`)
+// localeFromRequest：只看 body.locale；cookie 回落在 5dcb63c 起被有意移除
+if (localeFromRequest({ locale: 'zh-Hant' }) !== 'zh-Hant') { parseFail++; fail('body.locale=zh-Hant 应原样返回') }
+if (localeFromRequest({ locale: 'en' }) !== 'en') { parseFail++; fail('body.locale=en 应原样返回') }
+if (localeFromRequest({}) !== 'zh-Hans') { parseFail++; fail('body 无 locale 时应回落 zh-Hans') }
+if (localeFromRequest(null) !== 'zh-Hans') { parseFail++; fail('body 为 null 时不应抛错，应回落 zh-Hans') }
+// 反向守护：只有 cookie 的请求（旧机制）不得改变产出语言
+const cookieOnly = { cookies: { get: () => ({ value: 'zh-Hant' }) }, locale: undefined }
+if (localeFromRequest(cookieOnly) !== 'zh-Hans') { parseFail++; fail('cookie 不应再影响产出语言（回归 5dcb63c）') }
+console.log(parseFail === 0 ? '✓ 解析：简/繁/英别名全中；空/null/数字/对象 一律 null；localeFromRequest 只认 body.locale' : `✗ 解析失败 ${parseFail} 处`)
 
 // ---------- ② 指令内容 ----------
 console.log('—— ② localeDirective 与默认零改动 ——')
@@ -203,8 +205,8 @@ const ROUTES = {
   'ziwei/route.ts': 'generateAIZiwei(chart, analysis, { locale })',
   'geo/route.ts': 'generateAIGeo(analysis, { locale })',
   'hemun/route.ts': 'generateAIHemun(male, female, result, { locale })',
-  'checkout/route.ts': 'localeFromRequest(request, body)',
-  'membership/route.ts': 'localeFromRequest(req, body)',
+  'checkout/route.ts': 'localeFromRequest(body)',
+  'membership/route.ts': 'localeFromRequest(body)',
 }
 for (const [f, needle] of Object.entries(ROUTES)) {
   const src = readFileSync(new URL(`../src/app/api/${f}`, import.meta.url), 'utf8')

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { SHENGXIAO, LIUNIAN_YEARS, getLiunian } from '@/lib/shengxiaoData'
-import { hantAlternates } from '@/lib/hant-seo'
+import { triAlternates } from '@/lib/lang'
 import { toHant, hantTaiSui } from '@/lib/hant'
 
 export const metadata: Metadata = {
@@ -10,7 +10,7 @@ export const metadata: Metadata = {
     '十二生肖完整解讀：性格特點、事業財運、婚姻配對、六合六沖六害相刑，以及 2024–2031 流年太歲關係。繁體中文，台灣／香港用語。',
   alternates: {
     canonical: '/tw/shengxiao',
-    languages: hantAlternates('/shengxiao'),
+    languages: triAlternates('/shengxiao'),
   },
 }
 

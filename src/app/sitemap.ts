@@ -189,6 +189,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
   const enPages: MetadataRoute.Sitemap = [
     { url: `${BASE_URL}/en`, changeFrequency: 'monthly', priority: 0.9 },
     { url: `${BASE_URL}/en/chart`, changeFrequency: 'monthly', priority: 0.7 },
+    // 英文生肖：索引 + 12 属相页（与 /shengxiao、/tw/shengxiao 一一对应，hreflang 三向）
+    { url: `${BASE_URL}/en/shengxiao`, changeFrequency: 'monthly', priority: 0.8 },
+    ...SHENGXIAO.map(s => ({
+      url: `${BASE_URL}/en/shengxiao/${s.slug}`,
+      changeFrequency: 'monthly' as const,
+      priority: 0.8
+    })),
+    // 我的命盘（英文）：需登录，低优先级提交；与 /charts、/tw/charts 互指
+    { url: `${BASE_URL}/en/charts`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE_URL}/en/pricing`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/en/mingshu`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/en/liunian`, changeFrequency: 'monthly', priority: 0.7 },

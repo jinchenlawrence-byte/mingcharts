@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { SHENGXIAO, getShengXiao, getPeiDui } from '@/lib/shengxiaoData'
-import { hantAlternates } from '@/lib/hant-seo'
+import { triAlternates } from '@/lib/lang'
 import { toHant } from '@/lib/hant'
 import { articles } from '@/lib/articles'
 import { pickBySlug, SHENGXIAO_ARTICLE_SLUGS } from '@/lib/relatedArticles'
@@ -21,7 +21,7 @@ export async function generateMetadata({ params }: { params: Promise<{ animal: s
     description: `屬${name}（地支${sx.zhi}、五行屬${toHant(sx.wuxing)}）人命理解析：性格特點、事業財運、婚姻配對、健康養生、本命佛${toHant(sx.benmingfo)}、幸運數字顏色，以及 2024-2031 流年運勢。`,
     alternates: {
       canonical: `/tw/shengxiao/${sx.slug}`,
-      languages: hantAlternates(`/shengxiao/${sx.slug}`),
+      languages: triAlternates(`/shengxiao/${sx.slug}`),
     },
   }
 }
