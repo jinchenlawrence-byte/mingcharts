@@ -93,6 +93,26 @@ console.log('—— ③ 报告缓存键必须含 locale ——')
   }
 }
 
+console.log('—— ④ 英文报告的降级兜底必须是英文 ——')
+// 事故形态（2026-11-05 实测）：英文紫微报告「趋避建议」一卷 AI 连续未过校验，
+// 降级到规则版兜底 —— 而规则版只有中文 → 整份报告出现中英混排。
+{
+  const src = readFileSync('src/lib/aiZiwei.ts', 'utf8')
+  assert(/export function englishFallbackText/.test(src),
+    '存在英文降级兜底 englishFallbackText',
+    '缺英文降级兜底 —— 英文报告降级时会落入中文文案')
+  assert(/isEn\s*\?\s*englishFallbackText/.test(src),
+    '英文报告选英文兜底（isEn ? englishFallbackText : fallbackZiweiText）',
+    '调用处未按语言选择兜底 —— 英文仍会落到中文规则版')
+  // 英文兜底函数体内不得出现中文（否则等于换了个地方混排）
+  const i = src.indexOf('export function englishFallbackText')
+  const body = src.slice(i, src.indexOf('\n}', i))
+  const cjk = body.match(/[\u4e00-\u9fa5]/g) ?? []
+  assert(cjk.length === 0,
+    '英文兜底函数体内无中文字符',
+    `英文兜底函数体内有 ${cjk.length} 个中文字符`)
+}
+
 console.log('')
 if (allPass) console.log('OUTPUT_LOCALE_PASS')
 else {

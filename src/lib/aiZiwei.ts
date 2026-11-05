@@ -150,6 +150,37 @@ ${sections}`
 }
 
 // 规则版兜底文案（12 键全覆盖）：AI 结果未过合规校验时由调用方使用
+/**
+ * 英文报告的【降级兜底】
+ *
+ * ★ 2026-11-05 线上实测：英文紫微报告出现「其余英文、趋避建议一段中文」。
+ *   原因不是翻译漏段，而是该卷 AI 连续三次未过校验 → 降级到 fallbackZiweiText，
+ *   而规则版兜底【只有中文】。降级路径不该让语言崩掉。
+ *
+ * 这里给出英文兜底：明确告知该卷本次未生成、可重新生成，其余卷不受影响。
+ * 不编造命理内容 —— 编出来的英文断语比缺一段更糟。
+ * 后续若要把 12 卷全部做成英文规则版（按盘生成），需单独排期。
+ */
+export function englishFallbackText(_chart: ZwChart, _a: ZiweiAnalysis): ZiweiAIReport {
+  const note = (name: string) =>
+    `The ${name} section could not be generated in this run. The rest of the report is unaffected. ` +
+    `Regenerate the report to try this section again. These are tendency-based reflections, for reference only.`
+  return {
+    overview: note('overview'),
+    personality: note('temperament'),
+    palaces: note('twelve palaces'),
+    career: note('career'),
+    wealth: note('wealth'),
+    marriage: note('marriage'),
+    health: note('health and wellbeing'),
+    transforms: note('birth-year Four Transformations'),
+    patterns: note('structural patterns'),
+    decadal: note('decadal cycle'),
+    yearly: note('annual and monthly'),
+    advice: note('practical advice'),
+  }
+}
+
 export function fallbackZiweiText(chart: ZwChart, a: ZiweiAnalysis): ZiweiAIReport {
   const p = a.palaces
   const palaceOf = (name: keyof typeof p) => chart.palaces.find((x) => x.name === name)!
@@ -267,7 +298,8 @@ export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis, o
 
   const specsAll = SECTION_SPECS
   // ★ 规则版兜底（降级时按卷回退，不整份 null）
-  const ruleReport = fallbackZiweiText(chart, analysis)
+  // ★ 英文报告不得落回中文兜底（线上实测中英混排）
+    const ruleReport = isEn ? englishFallbackText(chart, analysis) : fallbackZiweiText(chart, analysis)
   const stats = newStats('ziwei')
 
   // 逐板块校验：命中项点名板块与具体词，日志可直接定位
