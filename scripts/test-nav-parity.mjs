@@ -202,5 +202,24 @@ console.log('—— ⑦ 语言切换目标 ——')
       `more 标记数应 2，实际 ${(nav.match(/more: true/g) ?? []).length}`)
   }
 
+  // ★ 2026-10-30（三）「更多」下拉不能被横滑容器裁掉
+  //   教训：面板曾放在 overflow-x-auto 里 → 点开其实打开了但看不见，
+  //   用户体感是「点了没反应」。判据：role="menu" 必须出现在横滑容器闭合之后。
+  {
+    const src = readFileSync('src/components/SiteNav.tsx', 'utf8')
+    const stripIdx = src.indexOf('overflow-x-auto')
+    const menuIdx = src.indexOf('role="menu"')
+    assert(stripIdx > 0 && menuIdx > 0, 'SiteNav 含横滑容器与下拉面板')
+    // 横滑容器那段 <div ...> 内部不得出现 role="menu"
+    const stripTagEnd = src.indexOf('>', stripIdx)
+    const menuInsideStrip = menuIdx > stripIdx && menuIdx < stripTagEnd
+    assert(!menuInsideStrip,
+      '「更多」面板不在横滑容器内（不会被 overflow 裁掉）',
+      '「更多」面板在横滑容器内 —— 会被竖直裁剪，表现为点了没反应')
+    assert(/aria-expanded=\{open\}/.test(src),
+      '「更多」是可切换按钮（aria-expanded）',
+      '「更多」缺 aria-expanded（不可访问）')
+  }
+
 console.log('\n' + (allPass ? 'NAV_PARITY_PASS' : 'NAV_PARITY_FAIL'))
 if (!allPass) process.exit(1)
