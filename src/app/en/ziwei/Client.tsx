@@ -164,7 +164,8 @@ export default function EnZiweiClient() {
                 Sign in to save this report and reopen it under My Reports.
               </p>
             ) : null}
-            <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+            {((data as { aiSource?: string } | null)?.aiSource !== 'AI 深度解读') && (
+<div className="flex flex-wrap items-center justify-center gap-3 mb-6">
               <button
                 type="button"
                 onClick={() => runGenerate()}
@@ -174,6 +175,7 @@ export default function EnZiweiClient() {
                 Regenerate this report
               </button>
             </div>
+            )}
             <EnZiweiRules chart={data.chart} analysis={data.analysis} />
             <div className="mt-6">
               <AiSections data={data} />

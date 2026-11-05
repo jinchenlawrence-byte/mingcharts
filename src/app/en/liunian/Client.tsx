@@ -183,7 +183,8 @@ export default function EnLiunianClient() {
                 Sign in to save this report and reopen it under My Reports.
               </p>
             ) : null}
-            <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
+            {((data as { aiSource?: string } | null)?.aiSource !== 'AI 深度解读') && (
+<div className="flex flex-wrap items-center justify-center gap-3 mb-6">
               <button
                 type="button"
                 onClick={() => runGenerate(true)}
@@ -193,6 +194,7 @@ export default function EnLiunianClient() {
                 Regenerate this report
               </button>
             </div>
+            )}
             <EnLiunianRules
               favorable={data.favorable}
               unfavorable={data.unfavorable}
