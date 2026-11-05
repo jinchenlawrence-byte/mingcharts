@@ -71,7 +71,7 @@ export default function SiteHeader({ locale = 'zh-Hans' }: { locale?: SiteLang }
   return (
     <nav
       aria-label={NAV_ARIA[locale]}
-      className="sticky top-3 z-50 mx-auto mt-4 flex w-[calc(100%-2rem)] max-w-[1080px] items-center justify-between gap-2 rounded-full border border-ink/10 bg-white/90 py-2 pl-5 pr-2 shadow-[var(--sh-2)] backdrop-blur-md sm:gap-3"
+      className="sticky top-3 z-50 mx-auto mt-4 flex w-[calc(100%-2rem)] max-w-[1240px] items-center justify-between gap-2 rounded-full border border-ink/10 bg-white/90 py-2 pl-5 pr-2 shadow-[var(--sh-2)] backdrop-blur-md sm:gap-3"
     >
       <Link
         href={pathForLang('/', locale)}

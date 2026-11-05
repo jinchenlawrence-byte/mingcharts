@@ -221,5 +221,23 @@ console.log('—— ⑦ 语言切换目标 ——')
       '「更多」缺 aria-expanded（不可访问）')
   }
 
+  // ★ 2026-10-30（四）导航与内容容器必须同宽
+  //   曾经：内容 1120px、导航 1080px → 标题左缘与导航左缘差 40px，看着不对齐。
+  //   以后改宽度只改一处就会红，逼着两个值一起改。
+  {
+    const css = readFileSync('src/app/globals.css', 'utf8')
+    const nav = readFileSync('src/components/SiteHeader.tsx', 'utf8')
+    const wrapW = css.match(/\.hw-wrap\s*\{[^}]*max-width:\s*(\d+)px/)?.[1]
+    const navW = nav.match(/max-w-\[(\d+)px\]/)?.[1]
+    assert(!!wrapW && !!navW, '能解析出内容容器与导航宽度')
+    assert(wrapW === navW,
+      `导航与内容同宽（${wrapW}px）`,
+      `宽度不一致：内容 ${wrapW}px / 导航 ${navW}px —— 左边缘会对不齐`)
+    // 加宽的边界：太宽会让中文正文行长失控，超过 1320 就要重新审视 measure
+    assert(Number(wrapW) <= 1320,
+      `内容宽度 ${wrapW}px 在安全区间（≤1320）`,
+      `内容宽度 ${wrapW}px 过宽，需重新审视正文行长（measure）`)
+  }
+
 console.log('\n' + (allPass ? 'NAV_PARITY_PASS' : 'NAV_PARITY_FAIL'))
 if (!allPass) process.exit(1)
