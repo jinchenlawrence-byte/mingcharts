@@ -1,5 +1,6 @@
 'use client'
 
+import { GENUINE_AI_SOURCE } from '@/lib/reportGate'
 import { useState } from 'react'
 import Link from 'next/link'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
@@ -164,7 +165,7 @@ export default function EnZiweiClient() {
                 Sign in to save this report and reopen it under My Reports.
               </p>
             ) : null}
-            {((data as { aiSource?: string } | null)?.aiSource !== 'AI 深度解读') && (
+            {((data as { aiSource?: string } | null)?.aiSource !== GENUINE_AI_SOURCE) && (
 <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
               <button
                 type="button"

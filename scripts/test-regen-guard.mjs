@@ -25,8 +25,12 @@ for (const f of EN_PAGES) {
   const src = readFileSync(f, 'utf8')
   const btnAt = src.indexOf('Regenerate this report')
   assert(btnAt > 0, `${f}：有重新生成按钮`)
-  // 按钮之前必须出现 aiSource 判定（即「只有非 AI 结果才显示」）
-  const guardAt = src.lastIndexOf("aiSource !== 'AI 深度解读'", btnAt)
+  // 按钮之前必须出现「非真 AI 结果」的判定。
+  // 判据可以是字面量，也可以是共享常量（GENUINE_AI_SOURCE）——
+  // ★ 英文源文件不得出现中文字面量（en-tools 的零 CJK 断言），所以现在是常量，两种都接受。
+  const literalAt = src.lastIndexOf("aiSource !== 'AI 深度解读'", btnAt)
+  const constAt = src.lastIndexOf('aiSource !== GENUINE_AI_SOURCE', btnAt)
+  const guardAt = Math.max(literalAt, constAt)
   assert(guardAt > 0,
     `${f}：按钮受「非 AI 结果」条件保护（规则版才给）`,
     `${f}：按钮无条件显示 —— AI 报告也能免费重生成（可被无限刷）`)
@@ -47,10 +51,14 @@ for (const f of SHARED) {
 
 console.log('—— ③ 「AI 深度解读」这个判据是全站唯一来源 ——')
 {
-  const cache = readFileSync('src/lib/reportCache.ts', 'utf8')
-  assert(/GENUINE_AI_SOURCE = 'AI 深度解读'/.test(cache),
-    '真 AI 判据集中在 reportCache.GENUINE_AI_SOURCE',
+  const gate = readFileSync('src/lib/reportGate.ts', 'utf8')
+  assert(/export const GENUINE_AI_SOURCE = 'AI 深度解读'/.test(gate),
+    '真 AI 判据集中在 reportGate.GENUINE_AI_SOURCE（客户端安全）',
     '真 AI 判据不再集中定义 —— 各处会各写一份，迟早漂移')
+  const cache = readFileSync('src/lib/reportCache.ts', 'utf8')
+  assert(/from '\.\/reportGate'/.test(cache),
+    'reportCache 引用同一常量（不再重复定义字面量）',
+    'reportCache 仍在本地重复定义判据字面量')
 }
 
 console.log('')

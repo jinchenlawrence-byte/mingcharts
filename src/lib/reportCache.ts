@@ -15,6 +15,7 @@
 // ★ 八字参数不止年月日时——还有 分钟 / 时区 / 经度（真太阳时）：
 //   用户补填出生地后四柱可能变化，键若不变会命中错误缓存，故全量入键；
 //   nowYear 也入键：流年窗口（-8..+2）随年份滚动，跨年后旧缓存自然失效。
+import { GENUINE_AI_SOURCE } from './reportGate'
 import { createHash } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
@@ -158,7 +159,7 @@ export function resolveCachedHit(
  *   若也短路读取，预算熔断当天写下的规则版会被后续请求永久读走，AI 恢复后用户仍拿降级版——
  *   故这类缓存一律视为未命中 → 调用方重新生成并覆盖（与「试吃空内容」同样的自愈路径）。
  */
-export const GENUINE_AI_SOURCE = 'AI 深度解读'
+
 
 /**
  * ★ 通用报告模块（紫微/合婚/地理）的缓存命中处置：与年运 resolveCachedHit 同源，但无需 targetYear。

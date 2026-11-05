@@ -92,10 +92,11 @@ export default function EnReportsPage() {
 
   // /en/chart replays the chart from localStorage, so a Fate Book row must seed it first.
   /**
-   * 删除报告（2026-11-05 补：英文「我的报告」此前没有删除入口，
-   * 简体与繁体都有 —— 三树该一致）。
-   * ★ 只做前端删除 + RLS 保护：reports 的删除权限由 Supabase 行级策略按 user_id 限制，
-   *   页面不传 user_id，也不该传。
+   * Delete a saved report.
+   * Added 2026-11-05: the English "My reports" page had no delete entry while the
+   * Simplified and Traditional pages did - the three trees should match.
+   * Row ownership is enforced by Supabase RLS on reports; this page never sends
+   * user_id and should not start doing so.
    */
   const handleDelete = async (id: string) => {
     if (!confirm('Delete this report? This cannot be undone.')) return

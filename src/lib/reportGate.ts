@@ -105,6 +105,16 @@ export function lockedPreviewOf(kind: ReportKind, content: Record<string, unknow
  * 判据 = aiSource 的稳定子串「规则版」（4 个 route 唯一产出：hemun / ziwei / geo / liunian 的 route.ts）。
  * ★ 牙口锚点：把判据改成恒 false → 规则版标签旁不再出现入口（断言翻红）。
  */
+/**
+ * 真·AI 结果的唯一判据（客户端安全：不依赖 node:crypto）。
+ *
+ * ★ 2026-11-05：此前该常量只定义在 reportCache（服务端，含 node:crypto），
+ *   英文各页为了判断「是否规则版」只好在英文源文件里内联写 'AI 深度解读' ——
+ *   既分散了判据，又把中文写进了英文页面（被 en-tools 的零 CJK 断言抓到）。
+ *   现集中于此，reportCache 反向引用，全站只有一处字面量。
+ */
+export const GENUINE_AI_SOURCE = 'AI 深度解读'
+
 export function isRuleVersion(aiSource: unknown): boolean {
   return typeof aiSource === 'string' && aiSource.includes('规则版')
 }
