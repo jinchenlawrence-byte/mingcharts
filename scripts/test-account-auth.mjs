@@ -248,13 +248,52 @@ console.log('—— ⑤ Turnstile 人机验证接线 ——')
   assert(guardN === 2,
     `启用时提交按钮须过验证才可点（disabled 守卫精确命中 ${guardN}，要求 2——登录与找回两处）`)
 
-  // 加载失败可感知（2026-10-16 手机端静默锁死修复）：脚本被浏览器拦截时给中文指引＋重试，不再无声禁用
+  // 加载失败可感知并【按原因区分】（2026-11-05 线上成功/失败同屏 + 误报广告拦截修复）
   assert(ts.includes('scriptLoading = null') && ts.includes('onError'),
     'Turnstile 脚本加载失败回调 onError 并清除失败缓存（重试可重新加载）')
   assert(ts.includes('[resetKey]'),
     'Turnstile 以 resetKey 重建 widget（重试不只是 reset 旧实例，含脚本重载）')
-  assert(authTouched.includes('人机验证加载失败') && authTouched.includes('重试验证'),
-    'Turnstile 加载失败显示中文指引与重试入口（防静默禁用按钮锁死）')
+  assert(ts.includes("'error-callback': (code") && ts.includes("kind: 'challenge'"),
+    'error-callback 接收 Cloudflare 错误码并上报 challenge 失败（不再一律当脚本被拦）')
+  assert(/const detach = \(\) =>/.test(ts) && ts.includes('replaceChildren()') && /'error-callback'[\s\S]{0,400}detach\(\)/.test(ts),
+    '任何失败都移除出错 widget 并清空容器（杜绝旧 Success! 与错误提示同屏）')
+  assert(ts.includes('RENDER_TIMEOUT_MS') && ts.includes("querySelector('iframe')") && ts.includes("kind: 'timeout'"),
+    '挑战请求无响应时超时兜底，且已渲染出 iframe 时不误判（不打断用户勾选）')
+  assert(ts.includes("kind: 'load'"),
+    '脚本真正加载失败单独归类 load（广告拦截指引只用于这一种）')
+
+  // ★ 2026-10-30 实测：迅雷下载嗅探插件拦 Turnstile 脚本，无痕窗口立即可用。
+  //   三语提示都必须【先给无痕】，再给关插件/换浏览器 —— 多数用户不会去翻扩展列表。
+  {
+    const notice = readFileSync(new URL('../src/components/TurnstileNotice.tsx', import.meta.url), 'utf8')
+    // ★ 逐语言核对：只查「三个词出现过」会被任一语言满足（牙口实测过，删掉简中仍绿）
+    // 取三条 load: 行（顺序即 zh-Hans / zh-Hant / en），逐条核对各自语言的无痕指引
+    // 第一行是类型声明 `load: string`，只取带回引号的三条实际文案
+    const loadLines = notice.split('\n').filter((l) => l.trim().startsWith('load:') && l.includes("'"))
+    const perLang = ['无痕窗口', '無痕視窗', 'incognito']
+    const missing = perLang.filter((hint, i) => !(loadLines[i] ?? '').includes(hint))
+      .map((hint) => hint)
+    assert(missing.length === 0,
+      '人机验证失败提示：三语都先给无痕窗口（最快、用户会照做）',
+      `失败提示缺无痕指引：${missing.join('、')}`)
+  }
+
+  for (const [p, loc] of [
+    ['../src/app/(zh)/auth/page.tsx', 'zh-Hans'],
+    ['../src/app/tw/auth/Client.tsx', 'zh-Hant'],
+    ['../src/app/en/auth/Client.tsx', 'en'],
+  ]) {
+    const src = stripComments(read(p))
+    assert(src.includes('<TurnstileNotice') && src.includes(`locale="${loc}"`),
+      `${p} 复用 TurnstileNotice 并传 ${loc}（三树提示一致）`)
+    assert(!src.includes('人机验证加载失败'),
+      `${p} 不再写死单一失败原因（文案交给 TurnstileNotice 按类型分流）`)
+  }
+  const notice = stripComments(read('../src/components/TurnstileNotice.tsx'))
+  assert(notice.includes("kind === 'challenge'") && notice.includes('error.code'),
+    '提示按失败类型分流，挑战错误带出 Cloudflare 错误码')
+  assert(notice.includes('重试验证') && notice.includes('Retry'),
+    '中文仍保留「重试验证」入口，英文为 Retry')
   assert(authTouched.includes('正在加载人机验证'),
     'Turnstile 加载中显示占位提示（禁用按钮必有解释）')
 
