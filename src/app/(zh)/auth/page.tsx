@@ -12,7 +12,8 @@ import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
 import { useRouter } from 'next/navigation'
 import { safeNext } from '@/lib/safeNext'
-import Turnstile from '@/components/Turnstile'
+import Turnstile, { type TurnstileFailure } from '@/components/Turnstile'
+import TurnstileNotice from '@/components/TurnstileNotice'
 
 // B 层防恶意注册：Cloudflare Turnstile（配合 Supabase Captcha protection）
 //  - 未配置 NEXT_PUBLIC_TURNSTILE_SITE_KEY 时验证码整体关闭，行为与从前一致
@@ -63,19 +64,19 @@ export default function AuthPage() {
   const [message, setMessage] = useState('')
   const [captchaToken, setCaptchaToken] = useState<string | null>(null)
   const [tsResetKey, setTsResetKey] = useState(0)
-  // 人机验证加载失败可感知（2026-10-16 手机端静默锁死修复）：脚本被浏览器拦截时
-  // 按钮会因无 token 一直禁用——必须给出解释＋重试入口，不能无声锁死
-  const [tsFailed, setTsFailed] = useState(false)
+  // 人机验证失败可感知（2026-11-05 按原因区分）：脚本被拦截、挑战报错（含错误码）、
+  // 挑战请求无响应超时——三种情况给不同指引，不再一律甩锅「广告拦截」
+  const [tsError, setTsError] = useState<TurnstileFailure | null>(null)
   const handleTsToken = (t: string | null) => {
     setCaptchaToken(t)
-    if (t) setTsFailed(false)
+    if (t) setTsError(null)
   }
   const retryTurnstile = () => {
-    setTsFailed(false)
+    setTsError(null)
     setTsResetKey((k) => k + 1)
   }
   // 加载中占位：启用验证但尚无 token 且未失败——禁用按钮必须有解释，不能无声
-  const tsPending = TURNSTILE_ENABLED && !captchaToken && !tsFailed
+  const tsPending = TURNSTILE_ENABLED && !captchaToken && !tsError
 
   // 双标签切换（设计稿要素）：切换即清空上一轮的提示
   const switchMode = (login: boolean) => {
@@ -228,24 +229,11 @@ export default function AuthPage() {
                   </p>
                 )}
 
-                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)} />
+                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={(f) => setTsError(f)} />
                 {tsPending && (
                   <p className="text-xs text-ink-light text-center">正在加载人机验证…</p>
                 )}
-                {tsFailed && (
-                  <div className="text-center space-y-2">
-                    <p className="text-sm text-red-600">
-                      人机验证加载失败：请关闭浏览器的广告/拦截功能，或更换浏览器（Chrome／Edge／Safari）后重试
-                    </p>
-                    <button
-                      type="button"
-                      onClick={retryTurnstile}
-                      className="text-sm text-amber-600 hover:text-ink"
-                    >
-                      重试验证
-                    </button>
-                  </div>
-                )}
+                <TurnstileNotice error={tsError} onRetry={retryTurnstile} locale="zh-Hans" />
 
                 <button
                   type="submit"
@@ -330,24 +318,11 @@ export default function AuthPage() {
                   </p>
                 )}
 
-                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)} />
+                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={(f) => setTsError(f)} />
                 {tsPending && (
                   <p className="text-xs text-ink-light text-center">正在加载人机验证…</p>
                 )}
-                {tsFailed && (
-                  <div className="text-center space-y-2">
-                    <p className="text-sm text-red-600">
-                      人机验证加载失败：请关闭浏览器的广告/拦截功能，或更换浏览器（Chrome／Edge／Safari）后重试
-                    </p>
-                    <button
-                      type="button"
-                      onClick={retryTurnstile}
-                      className="text-sm text-amber-600 hover:text-ink"
-                    >
-                      重试验证
-                    </button>
-                  </div>
-                )}
+                <TurnstileNotice error={tsError} onRetry={retryTurnstile} locale="zh-Hans" />
 
                 <button
                   type="submit"

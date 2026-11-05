@@ -11,7 +11,8 @@ import Link from 'next/link';
 import { getSupabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { safeNext } from '@/lib/safeNext';
-import Turnstile from '@/components/Turnstile';
+import Turnstile, { type TurnstileFailure } from '@/components/Turnstile';
+import TurnstileNotice from '@/components/TurnstileNotice';
 import { tEn } from '@/lib/i18n';
 const H = (s: string) => tEn(s);
 // B 层防恶意注册：Cloudflare Turnstile（配合 Supabase Captcha protection）
@@ -58,20 +59,21 @@ export default function AuthPage() {
     const [message, setMessage] = useState('');
     const [captchaToken, setCaptchaToken] = useState<string | null>(null);
     const [tsResetKey, setTsResetKey] = useState(0);
-    // 人机验证加载失败可感知（2026-10-16 手机端静默锁死修复）：脚本被浏览器拦截时
-    // 按钮会因无 token 一直禁用——必须给出解释＋重试入口，不能无声锁死
-    const [tsFailed, setTsFailed] = useState(false);
+    // Verification failures are now split by cause: blocked script, challenge error
+    // (with the Cloudflare error code) or a silent timeout — no more blaming ad blockers.
+    const [tsError, setTsError] = useState<TurnstileFailure | null>(null);
     const handleTsToken = (t: string | null) => {
         setCaptchaToken(t);
         if (t)
-            setTsFailed(false);
+            setTsError(null);
     };
     const retryTurnstile = () => {
-        setTsFailed(false);
+        setTsError(null);
         setTsResetKey((k) => k + 1);
     };
-    // 加载中占位：启用验证但尚无 token 且未失败——禁用按钮必须有解释，不能无声
-    const tsPending = TURNSTILE_ENABLED && !captchaToken && !tsFailed;
+    // Loading placeholder: verification is enabled but no token yet and no failure —
+    // a disabled button must always explain itself.
+    const tsPending = TURNSTILE_ENABLED && !captchaToken && !tsError;
     // 双标签切换（设计稿要素）：切换即清空上一轮的提示
     const switchMode = (login: boolean) => {
         setIsLogin(login);
@@ -211,12 +213,9 @@ export default function AuthPage() {
                     {H(message)}
                   </p>)}
 
-                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)}/>
+                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={(f) => setTsError(f)}/>
                 {tsPending && (<p className="text-xs text-ink-light text-center">{H("正在加载人机验证…")}</p>)}
-                {tsFailed && (<div className="text-center space-y-2">
-                    <p className="text-sm text-red-600">{H("人机验证加载失败：请关闭浏览器的广告/拦截功能，或更换浏览器（Chrome／Edge／Safari）后重试")} </p>
-                    <button type="button" onClick={retryTurnstile} className="text-sm text-amber-600 hover:text-ink">{H("重试验证")} </button>
-                  </div>)}
+                <TurnstileNotice error={tsError} onRetry={retryTurnstile} locale="en" />
 
                 <button type="submit" disabled={loading || (TURNSTILE_ENABLED && !captchaToken)} className="hw-c-btnBig">
                   {loading ? 'Sending…' : 'Send reset email'}
@@ -257,12 +256,9 @@ export default function AuthPage() {
                     {H(message)}
                   </p>)}
 
-                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={() => setTsFailed(true)}/>
+                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={(f) => setTsError(f)}/>
                 {tsPending && (<p className="text-xs text-ink-light text-center">{H("正在加载人机验证…")}</p>)}
-                {tsFailed && (<div className="text-center space-y-2">
-                    <p className="text-sm text-red-600">{H("人机验证加载失败：请关闭浏览器的广告/拦截功能，或更换浏览器（Chrome／Edge／Safari）后重试")} </p>
-                    <button type="button" onClick={retryTurnstile} className="text-sm text-amber-600 hover:text-ink">{H("重试验证")} </button>
-                  </div>)}
+                <TurnstileNotice error={tsError} onRetry={retryTurnstile} locale="en" />
 
                 <button type="submit" disabled={loading || (TURNSTILE_ENABLED && !captchaToken)} className="hw-c-btnBig">
                   {loading ? 'Processing…' : (isLogin ? 'Sign in' : 'Create account')}

@@ -366,8 +366,6 @@ export const EN: Record<string, string> = {
   '注册邮箱': 'Email', '邮箱': 'Email', '密码': 'Password', '密碼': 'Password', '确认密码': 'Confirm password',
   '我已阅读并同意': 'I have read and agree to the',
   '正在加载人机验证…': 'Loading human verification…',
-  '人机验证加载失败：请关闭浏览器的广告/拦截功能，或更换浏览器（Chrome／Edge／Safari）后重试':
-    'Verification failed to load. Disable ad blockers or try another browser (Chrome / Edge / Safari).',
   '重试验证': 'Retry', '返回登录': 'Back to sign in', '忘记密码？': 'Forgot password?',
   '或使用邮箱（新用户将自动创建账号）': 'Or use email (a new account is created automatically)',
   '登录后可保存你的命盘和已解锁的命书。': 'Sign in to save your chart and unlocked Fate Book.',
