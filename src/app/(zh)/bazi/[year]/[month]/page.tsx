@@ -2,15 +2,11 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { getYearGanZhi, getZodiac, getConstellation } from '@/lib/baziData'
 
-export function generateStaticParams() {
-  const params: { year: string; month: string }[] = []
-  for (let y = 1950; y <= 2010; y++) {
-    for (let m = 1; m <= 12; m++) {
-      params.push({ year: String(y), month: String(m).padStart(2, '0') })
-    }
-  }
-  return params
-}
+// ★ 2026-11-05：不再预渲染 732 个月页（1950–2010 × 12）。
+//   原因：Vercel Hobby 的部署存储 10 GB 已超（每次部署约 205 MB，其中 732 个月页
+//   的 HTML+RSC 约占 40 MB），而这批月页全是【过去年份】的薄内容，
+//   此前已按决策从 sitemap 撤出。改为按需生成 + ISR 缓存（revalidate 见下），
+//   SEO 不受影响：页面仍可访问、仍可索引，只是不再在构建期落盘。
 
 export const revalidate = 86400
 
