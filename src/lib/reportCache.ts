@@ -16,6 +16,9 @@
 //   用户补填出生地后四柱可能变化，键若不变会命中错误缓存，故全量入键；
 //   nowYear 也入键：流年窗口（-8..+2）随年份滚动，跨年后旧缓存自然失效。
 import { GENUINE_AI_SOURCE } from './reportGate'
+
+// 兼容旧引用：判据的唯一来源在 reportGate（客户端安全），此处仅转发
+export { GENUINE_AI_SOURCE }
 import { createHash } from 'node:crypto'
 import type { SupabaseClient } from '@supabase/supabase-js'
 
