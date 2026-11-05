@@ -79,7 +79,7 @@ export default function MyCharts() {
           const res = await fetch('/api/unlock', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: session.access_token, chart: data }),
+            body: JSON.stringify({ token: session.access_token, chart: data, locale: 'zh-Hans' }),
           })
           const out = await res.json().catch(() => null)
           if (res.ok && out?.success && out?.data?.chartData) {

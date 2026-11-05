@@ -264,7 +264,7 @@ export default function ChartPage() {
           const res = await fetch('/api/unlock', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ token: session.access_token, chart }),
+            body: JSON.stringify({ token: session.access_token, chart, locale: 'zh-Hans' }),
           })
           const out = await res.json().catch(() => null)
           if (out?.chartId) setScreenChartId(out.chartId)
