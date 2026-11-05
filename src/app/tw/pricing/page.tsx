@@ -81,10 +81,8 @@ const CARDS: PriceCard[] = [
     membership: false,
     features: [
       '四柱八字排盤（干支 / 十神 / 藏干）',
-      '胎元 · 命宮 · 身宮',
       '旺衰判定 · 格局定格',
       '九步大運（起運時間）',
-      '生肖 / 節氣 / 命理知識全站內容',
     ],
     cta: { text: '免費排盤', href: '/tw' },
   },

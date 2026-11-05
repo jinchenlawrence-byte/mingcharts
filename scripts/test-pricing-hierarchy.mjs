@@ -56,6 +56,20 @@ for (const [loc, f] of PAGES) {
     `${loc}：免费档链接仍是主色蓝（一页出现两个强调色）`)
 }
 
+console.log('—— ②C 信息量分层 ——')
+// 免费档是入口，不是卖点清单：条目应显著少于付费档（层级靠密度，不靠颜色）
+// ★ 英文页用对照表（free: boolean 逐项打勾），没有条目数组，故只校验 zh/tw。
+for (const [loc, f] of PAGES) {
+  const lines = readFileSync(f, 'utf8').split('\n')
+  const i = lines.findIndex((l) => /name: '(免费排盘|免費排盤)'/.test(l))
+  if (i < 0) { ok(`${loc}：无条目数组（对照表形态），跳过`); continue }
+  const j = lines.findIndex((l, k) => k > i && /^\s*\],?\s*$/.test(l))
+  const n = lines.slice(i, j).filter((l) => /^\s*'/.test(l) && l.trim().endsWith("',")).length
+  assert(n <= 3 && n > 0,
+    `${loc}：免费档条目 ${n} 条（≤3，保持入口定位）`,
+    `${loc}：免费档条目 ${n} 条，应 ≤3（信息量未分层）`)
+}
+
 console.log('—— ③ 组件默认样式未被改动 ——')
 {
   const btn = readFileSync('src/components/MembershipButton.tsx', 'utf8')
