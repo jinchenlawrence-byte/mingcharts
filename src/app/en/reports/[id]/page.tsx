@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useParams, useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
-import { kindLabelEn, isLegacyChineseReport, LEGACY_BADGE_EN, REGENERATE_EN } from '@/lib/enReportLabels'
+import { kindLabelEn, isLegacyChineseReport, LEGACY_BADGE_EN } from '@/lib/enReportLabels'
 
 interface ReportRow {
   id: string
@@ -14,13 +14,6 @@ interface ReportRow {
   created_at: string
 }
 
-const MODULE_HREF: Record<string, string> = {
-  hemun: '/en/hemun',
-  ziwei: '/en/ziwei',
-  geo: '/en/geo',
-  annual: '/en/liunian',
-  fatebook: '/en/chart',
-}
 
 const TITLES: Record<string, Record<string, string>> = {
   hemun: {
@@ -181,31 +174,13 @@ export default function EnReportDetailPage() {
                   <p className="hw-c-body">
                     This report&apos;s body is the original Chinese version and has not been translated.
                     The Chinese text is deliberately not rendered on the English route.
-                    Regenerate it to receive a new English reading for this report only; no other saved report is changed.
+                    It stays readable in your account. Readings generated from now on will be written in English.
                   </p>
                 </>
               ) : (
                 <p className="hw-c-body">
                   This saved report has no English text yet. It may have been generated before the English edition, or the AI service returned the rule-engine version without English body text.
                 </p>
-              )}
-              {MODULE_HREF[row.kind] && (
-                row.kind === 'fatebook' ? (
-                  <button
-                    type="button"
-                    className="hw-c-btnBig inline-block mt-4"
-                    onClick={() => {
-                      if (chartPayload) localStorage.setItem('currentChart', JSON.stringify(chartPayload))
-                      router.push('/en/chart')
-                    }}
-                  >
-                    {REGENERATE_EN}
-                  </button>
-                ) : (
-                  <Link href={MODULE_HREF[row.kind]} className="hw-c-btnBig inline-block mt-4">
-                    {REGENERATE_EN}
-                  </Link>
-                )
               )}
               <Link href="/en/reports" className="hw-c-btnBig inline-block mt-4">Back to my reports</Link>
             </div>

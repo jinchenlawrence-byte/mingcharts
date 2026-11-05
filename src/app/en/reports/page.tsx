@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
-import { kindLabelEn, isLegacyChineseReport, LEGACY_BADGE_EN, REGENERATE_EN } from '@/lib/enReportLabels'
+import { kindLabelEn, isLegacyChineseReport, LEGACY_BADGE_EN } from '@/lib/enReportLabels'
 
 interface ReportRow {
   id: string
@@ -108,11 +108,6 @@ export default function EnReportsPage() {
     setError('')
   }
 
-  const regenerateFatebook = (reportId: string) => {
-    const payload = chartPayloads[reportId]
-    if (payload) localStorage.setItem('currentChart', JSON.stringify(payload))
-    router.push('/en/chart')
-  }
 
   return (
     <div className="hw-wrap hw-c-pg">
@@ -150,20 +145,11 @@ export default function EnReportsPage() {
                   <p className="text-xs text-ink-light/60">{new Date(r.created_at).toLocaleDateString('en-US')}</p>
                   {legacy && (
                     <p className="mt-1 text-xs text-ink-light/70">
-                      Its body is the original Chinese report and has not been translated. Regenerating creates a new English version for this report only.
+                      Its body is the original Chinese report and has not been translated. It stays readable in your account; readings generated from now on will be in English.
                     </p>
                   )}
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
-                  {legacy && MODULE_HREF[r.kind] && (
-                    r.kind === 'fatebook' ? (
-                      <button type="button" className="hw-c-link" onClick={() => regenerateFatebook(r.id)}>
-                        {REGENERATE_EN} →
-                      </button>
-                    ) : (
-                      <Link href={MODULE_HREF[r.kind]} className="hw-c-link">{REGENERATE_EN} →</Link>
-                    )
-                  )}
                   <Link href={`/en/reports/${r.id}`} className="hw-c-link">Open report →</Link>
                     <button
                       type="button"

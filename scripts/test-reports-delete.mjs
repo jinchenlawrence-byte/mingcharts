@@ -39,6 +39,24 @@ for (const [loc, f] of PAGES) {
     `${loc}：删除条件里出现 user_id —— 归属判定被搬到前端`)
 }
 
+console.log('—— ③ 不得有「免费重新生成」入口 ——')
+// 决策（2026-11-05，用户拍板）：撤掉英文报告页的「Regenerate in English」。
+// 原因不是文案问题 —— 命书是单次付费商品，重新生成要再跑一次 AI；
+// 若入口对已购用户开放且不计次，就是「付一次、无限生成」的刷量漏洞。
+// 遗留的中文报告保持可读，标注清楚即可。
+{
+  const pages = ['src/app/en/reports/page.tsx', 'src/app/en/reports/[id]/page.tsx']
+  for (const f of pages) {
+    const src = readFileSync(f, 'utf8')
+    assert(!/REGENERATE_EN|Regenerate (in English|it)|regenerateFatebook/.test(src),
+      `${f.split('/').slice(-2).join('/')}：无重新生成入口（防刷量）`,
+      `${f.split('/').slice(-2).join('/')}：仍有重新生成入口 —— 付费报告可被无限免费生成`)
+    assert(/has not been translated/.test(src),
+      `${f.split('/').slice(-2).join('/')}：遗留报告仍标注「未翻译」`,
+      `${f.split('/').slice(-2).join('/')}：遗留报告没有标注未翻译（用户会以为是新生成的）`)
+  }
+}
+
 console.log('')
 if (allPass) console.log('REPORTS_DELETE_PASS')
 else {
