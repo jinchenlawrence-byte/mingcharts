@@ -468,7 +468,8 @@ function SubscriptionCard({ sub, onChanged }: { sub: SubStatus; onChanged: () =>
       const res = await fetch('/api/membership/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: session.access_token, action }),
+        body: JSON.stringify({
+            locale: 'en', token: session.access_token, action }),
       })
       const json = await res.json()
       if (!res.ok || !json.success) throw new Error(json.error || 'The operation failed.')

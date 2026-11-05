@@ -109,6 +109,7 @@ export default function GeoPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+            locale: 'zh-Hans',
           year: parseInt(formData.year),
           month: parseInt(formData.month),
           day: parseInt(formData.day),

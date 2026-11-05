@@ -130,6 +130,7 @@ export default function HehunPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+            locale: 'zh-Hans',
           male: personPayload(male),
           female: personPayload(female),
           ...(token ? { token } : {})

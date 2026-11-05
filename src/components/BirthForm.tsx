@@ -42,6 +42,7 @@ export default function BirthForm({ ctaText = '开始排盘', className = '', lo
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+            locale,
           ...formData,
           year: parseInt(formData.year),
           month: parseInt(formData.month),

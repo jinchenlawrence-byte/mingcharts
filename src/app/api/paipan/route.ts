@@ -13,7 +13,7 @@ import { localeFromRequest } from '@/lib/locale'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const locale = localeFromRequest(request, body)
+    const locale = localeFromRequest(body)
     const toInt = (v: unknown, def = 0): number => {
       if (v === undefined || v === null || v === '') return def
       const n = parseInt(String(v), 10)

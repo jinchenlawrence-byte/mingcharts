@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     const chartId = typeof body?.chartId === 'string' ? body.chartId.trim() : ''
     const returnTo = typeof body?.returnTo === 'string' ? body.returnTo.trim() : ''
     // 收银台语言：body.locale ＞ cookie ＞ 默认简体（繁体入口传 zh-Hant → 收银台 zh-Hant-TW）
-    const locale = localeFromRequest(request, body)
+    const locale = localeFromRequest(body)
     if (!token || !sku) {
       return NextResponse.json({ error: '参数缺失或格式错误' }, { status: 400 })
     }

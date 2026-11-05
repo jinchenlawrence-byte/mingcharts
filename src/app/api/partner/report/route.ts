@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
       brandName: body.brandName,
       brandContact: body.brandContact,
       requestId: body.requestId,
-      locale: localeFromRequest(request, body),
+      locale: localeFromRequest(body),
     })
 
     if (!result.ok) {

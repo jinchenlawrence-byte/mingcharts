@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { token, chart } = body
     // 输出语言：body.locale ＞ cookie ＞ 默认简体（lib/locale 单一事实源）
-    const locale = localeFromRequest(request, body)
+    const locale = localeFromRequest(body)
     if (!token || !chart?.input || !chart?.pillars) {
       return NextResponse.json({ error: '参数缺失或格式错误' }, { status: 400 })
     }

@@ -20,7 +20,7 @@ const ZIWEI_LOCKED_PREVIEW_EN = 'The full English Zi Wei report covers the twelv
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const locale = localeFromRequest(request, body)
+    const locale = localeFromRequest(body)
     const lockedPreview = locale === 'en' ? ZIWEI_LOCKED_PREVIEW_EN : ZIWEI_LOCKED_PREVIEW
     const toInt = (v: unknown, def = 0): number => {
       if (v === undefined || v === null || v === '') return def

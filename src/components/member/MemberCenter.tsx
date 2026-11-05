@@ -414,7 +414,7 @@ function UsageRow({ multiChart, ask, isMember, H, L }: Helpers & {
  * ★ 一切渠道调用都在服务端（/api/membership/cancel）：本组件只收 boolean 与日期，
  *   渠道订阅单号 ORD_ 不出现在任何响应里。
  */
-function SubscriptionCard({ sub, onChanged, H, L, dateLocale }: Helpers & {
+function SubscriptionCard({ sub, onChanged, H, L, dateLocale, locale }: Helpers & {
   sub: SubStatus
   onChanged: () => void
   locale?: SiteLang
@@ -456,7 +456,7 @@ function SubscriptionCard({ sub, onChanged, H, L, dateLocale }: Helpers & {
       const res = await fetch('/api/membership/cancel', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token: session.access_token, action }),
+        body: JSON.stringify({ token: session.access_token, action, locale }),
       })
       const json = await res.json()
       if (!res.ok || !json.success) throw new Error(json.error || H('操作失败'))

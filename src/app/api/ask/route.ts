@@ -59,7 +59,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json()
     const { token, chartId, chart, question } = body
     // 输出语言：body.locale ＞ cookie ＞ 默认简体；追问应与所问那份报告同语言
-    const locale = localeFromRequest(request, body)
+    const locale = localeFromRequest(body)
 
     if (!token) return NextResponse.json({ error: '缺少 token' }, { status: 400 })
     if (!chart?.input || !chart?.pillars) {

@@ -80,7 +80,7 @@ export async function POST(req: NextRequest) {
       agreeAutoRenew?: boolean
       locale?: string
     }
-    const entryLocale = localeFromRequest(req, body)
+    const entryLocale = localeFromRequest(body)
 
     if (!token || !planId) {
       return NextResponse.json({ error: '参数缺失' }, { status: 400 })

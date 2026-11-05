@@ -25,7 +25,7 @@ const GEO_LOCKED_PREVIEW_EN = 'The full English city report covers the direction
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const locale = localeFromRequest(request, body)
+    const locale = localeFromRequest(body)
     const lockedPreview = locale === 'en' ? GEO_LOCKED_PREVIEW_EN : GEO_LOCKED_PREVIEW
     const toInt = (v: unknown, def = 0): number => {
       if (v === undefined || v === null || v === '') return def

@@ -49,17 +49,17 @@ export function resolveLocale(...candidates: unknown[]): OutputLocale {
 }
 
 /**
- * API route 统一入口：body.locale 优先，其次 request cookie，最后默认。
- * 只取一次、只在这里取一次 —— 避免「每个 route 各写一遍 if」导致入口漂移（§8.5）。
+ * API route 统一入口：只认 body.locale，否则默认简体。
+ *
+ * ★ 2026-11-05 删掉「回落到 cookie」这一层。原因（线上实测三连事故）：
+ *   产出语言曾按 mc_locale cookie 兜底，而 cookie 会被任意语言页的访问改写 ——
+ *   中文用户点过 /en 之后，命书生成与追问回答全变英文（甚至出现报告中文、追问英文）。
+ *   现在语言只由【发起请求的那棵树】显式声明；没声明就是简体。
+ *   cookie 从机制上不再影响产出语言。守门断言：scripts/test-output-locale.mjs
  */
-export function localeFromRequest(
-  request: { cookies?: { get(name: string): { value: string } | undefined } } | null | undefined,
-  body?: unknown
-): OutputLocale {
+export function localeFromRequest(body?: unknown): OutputLocale {
   const fromBody = parseLocale((body as { locale?: unknown } | null | undefined)?.locale)
-  if (fromBody) return fromBody
-  const fromCookie = parseLocale(request?.cookies?.get?.(LOCALE_COOKIE)?.value)
-  return fromCookie ?? DEFAULT_LOCALE
+  return fromBody ?? DEFAULT_LOCALE
 }
 
 /**

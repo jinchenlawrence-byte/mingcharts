@@ -66,7 +66,7 @@ async function parseBirth(raw: RawBirth, expectGender: 1 | 0): Promise<{ data?: 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const locale = localeFromRequest(request, body)
+    const locale = localeFromRequest(body)
     const lockedPreview = locale === 'en' ? HEMUN_LOCKED_PREVIEW_EN : HEMUN_LOCKED_PREVIEW
     const [m, f] = await Promise.all([
       parseBirth(body.male || {}, 1),
