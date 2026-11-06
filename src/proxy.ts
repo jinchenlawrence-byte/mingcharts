@@ -60,5 +60,17 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/', '/bazi/:path*'],
+  // ★ 2026-11-06 matcher 收窄：旧的全量通配（/bazi/:path*）会让 /bazi 下全部 URL（含约 7.3 万日页）
+  //   每个请求都进一次 middleware。但本文件只对「月份或日期未补零」的形态做 308，
+  //   已补零的 URL 不会产生任何响应差异。以下三条正则只命中需要归一的三种形态：
+  //     /bazi/1990/3      → 月 1 位
+  //     /bazi/1990/3/15   → 月 1 位（日任意）
+  //     /bazi/1990/03/5   → 日 1 位
+  //   /bazi、/bazi/1990、/bazi/1990/03、/bazi/1990/03/15 等规范路径不再经过 middleware。
+  matcher: [
+    '/',
+    '/bazi/:year(\\d{4})/:month(\\d)',
+    '/bazi/:year(\\d{4})/:month(\\d)/:day(\\d{1,2})',
+    '/bazi/:year(\\d{4})/:month(\\d{2})/:day(\\d)',
+  ],
 }

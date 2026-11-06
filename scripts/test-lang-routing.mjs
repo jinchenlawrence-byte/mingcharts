@@ -108,8 +108,12 @@ console.log('—— ⑤ proxy 只导向根路径 ——')
 {
   const src = read('src/proxy.ts')
   let f = 0
-  // 2026-11 收录整治：matcher 额外包含 /bazi/:path*，仅用于补零 308 归一，不做语言跳转。
-  if (!src.includes("matcher: ['/', '/bazi/:path*']")) { f++; fail('proxy matcher 不是「根路径 + /bazi 归一」') }
+  // 2026-11 收录整治：matcher 额外包含 /bazi 的年/月/日归一规则，仅用于补零 308，不做语言跳转。
+  // 2026-11-06 收窄：由 /bazi/:path* 改为三条「未补零」规则，日页不再每个请求都进 middleware。
+  if (!src.includes("'/'") || (src.match(/\/bazi\/:year\(/g) || []).length < 3) {
+    f++; fail('proxy matcher 不是「根路径 + /bazi 补零归一（收窄后）」。')
+  }
+  if (src.includes("'/bazi/:path*'")) { f++; fail('proxy matcher 仍是全量通配 /bazi/:path*（未收窄）') }
   {
     const entries = (src.match(/matcher:\s*\[([^\]]*)\]/) || [])[1] || ''
     if (entries.includes('/tw') || entries.includes('/en')) { f++; fail('proxy matcher 误含 /tw 或 /en（会重定向深链）') }

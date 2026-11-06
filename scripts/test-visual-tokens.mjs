@@ -11,11 +11,13 @@
 //      主区块统一由 .hw-section 承载；任一树退回卡片盒/紧凑标题类即 fail
 //   ④ 重要提示（警示 / 免责 / 限流）走共享的 .hw-alert / .hw-alert--note，不许各页自写；
 //      旧的 .hw-c-fine 已升格为「加大加粗 + 琥珀色条」
-//   ⑤ 报告结果页 AI 正文行宽收口到 .hw-c-read（30rem）；动态枚举所有 *ResultView.tsx，
-//      新增第五个实现而漏挂即 fail；该探针不得波及盘面/表格/卡片
+//   ⑤ 报告结果页 AI 正文行宽收口到 .hw-c-read（30rem）；按【路由维度】逐个解析实现：
+//      12 条路径（简繁英 × 紫微/合婚/方位/年运）各自枚举共享 ResultView 导入与本地内联 AiSections，
+//      任一实现漏挂即 fail；另动态枚举所有 *ResultView.tsx 与所有内联 AiSections 定义作漂移兜底；
+//      该探针不得波及盘面/表格/卡片
 //   ⑥ 牙口自检：--self-test 会注入带 #ff0000 的探针、把定价页 hw-sec 改回 mb-14、
-//      把英文首页 h1 改回 hw-c-h1、新增一个漏挂的 ProbeResultView，
-//      四类断言都必须翻红（然后清理探针）
+//      把英文首页 h1 改回 hw-c-h1、新增一个漏挂的 ProbeResultView、去掉英文合婚的 hw-c-read、
+//      新增一个漏挂的内联 AiSections，各类断言都必须翻红（然后清理探针）
 //
 // 运行：tsx scripts/test-visual-tokens.mjs [--self-test]
 
@@ -247,14 +249,77 @@ for (const [label, file] of Object.entries(ALERT_SURFACES)) {
   assert(read(file).includes('hw-alert'), `${label} 使用 .hw-alert 共享提示`)
 }
 
-// ── ⑤ 报告结果页 AI 正文行宽 ─────────────────────────────────
-console.log('\n[5] 报告结果页 AI 正文行宽')
+// ── ⑤ 报告结果页 AI 正文行宽（按路由维度） ───────────────────
+console.log('\n[5] 报告结果页 AI 正文行宽（逐路由解析实现）')
 const RESULT_DIR = 'src/components/reports'
-// ★ 动态枚举，不写死四个文件名：新增第五个同类 ResultView 而漏挂 hw-c-read 时会翻红
+
+// 12 条路径 = 简繁英 × 紫微/合婚/方位/年运。
+// ★ 2026-11-06 修正：旧断言只扫 src/components/reports/*ResultView.tsx，
+//   看不到英文三页各自内联的 AiSections，于是「/en/hemun、/en/geo、/en/liunian
+//   的 AI 区实测 1240px、无 .hw-c-read」没被任何断言拦住。
+//   现在改为路由维度：先定位该路由的文件，再枚举它实际用到的 AI 容器实现。
+const AI_ROUTES = {
+  '/ziwei': 'src/app/(zh)/ziwei/page.tsx',
+  '/tw/ziwei': 'src/app/tw/ziwei/Client.tsx',
+  '/en/ziwei': 'src/app/en/ziwei/Client.tsx',
+  '/hemun': 'src/app/(zh)/hemun/page.tsx',
+  '/tw/hemun': 'src/app/tw/hemun/Client.tsx',
+  '/en/hemun': 'src/app/en/hemun/Client.tsx',
+  '/geo': 'src/app/(zh)/geo/page.tsx',
+  '/tw/geo': 'src/app/tw/geo/Client.tsx',
+  '/en/geo': 'src/app/en/geo/Client.tsx',
+  '/liunian': 'src/app/(zh)/liunian/page.tsx',
+  '/tw/liunian': 'src/app/tw/liunian/page.tsx',
+  '/en/liunian': 'src/app/en/liunian/Client.tsx',
+}
+// 入口页白名单：该路由当前只做转化入口、不渲染任何 AI 容器（不是漏挂）。
+// 一旦它接上结果视图，下面的枚举会要求挂 .hw-c-read。
+const ENTRY_ONLY = new Set(['/tw/liunian'])
+
+/** 纯函数：一段源码在「AI 行宽」上的问题，供断言与牙口自检共用 */
+export function aiReadIssues(text) {
+  const issues = []
+  if (!text.includes('hw-c-read')) issues.push('未挂 hw-c-read')
+  const bad = text.split(/\r?\n/).filter((l) => l.includes('hw-c-read') && /grid|hw-c-bar|hw-c-box|overflow|<table/.test(l))
+  if (bad.length) issues.push('hw-c-read 波及表格/盘面/卡片：' + bad[0].trim())
+  return issues
+}
+
+/** 纯函数：从路由文件枚举 AI 容器实现（共享 ResultView 导入 + 本地内联 AiSections） */
+export function aiSourcesOf(text) {
+  const out = []
+  for (const m of text.matchAll(/@\/components\/reports\/(\w+ResultView)/g)) {
+    out.push(`${RESULT_DIR}/${m[1]}.tsx`)
+  }
+  if (/function AiSections\s*\(/.test(text)) out.push('__SELF__')
+  return [...new Set(out)]
+}
+
+for (const [route, file] of Object.entries(AI_ROUTES)) {
+  if (!existsSync(join(root, file))) { fail(`${route} 路由文件不存在：${file}`); continue }
+  const text = read(file)
+  const sources = aiSourcesOf(text).map((s) => (s === '__SELF__' ? file : s))
+  if (sources.length === 0) {
+    assert(ENTRY_ONLY.has(route), `${route} 未枚举到任何 AI 容器实现（仅入口页允许无结果视图）`)
+    continue
+  }
+  const issues = sources.flatMap((s) => aiReadIssues(read(s)).map((i) => `${s}：${i}`))
+  assert(issues.length === 0, `${route} AI 区挂 .hw-c-read（实现：${sources.join(' / ')}）${issues.length ? '；' + issues.join('；') : ''}`)
+}
+
+// 漂移兜底 A：共享 ResultView 动态枚举（新增第五个实现而漏挂即 fail）
 const resultViews = readdirSync(join(root, RESULT_DIR)).filter((f) => f.endsWith('ResultView.tsx'))
 const missingRead = resultViews.filter((f) => !read(`${RESULT_DIR}/${f}`).includes('hw-c-read'))
 assert(resultViews.length >= 4, `发现 ${resultViews.length} 个 ResultView 实现（≥4）`)
 assert(missingRead.length === 0, `所有 ResultView 的 AI 区块都挂了 hw-c-read${missingRead.length ? '；漏挂：' + missingRead.join('、') : ''}`)
+
+// 漂移兜底 B：全 src 扫「自定义 AiSections」——新增一套内联实现而漏挂，自动入网
+const inlineAiFiles = walk(join(root, 'src')).filter((abs) => /function AiSections\s*\(/.test(readFileSync(abs, 'utf8')))
+const inlineAiMissing = inlineAiFiles.filter((abs) => !readFileSync(abs, 'utf8').includes('hw-c-read'))
+assert(inlineAiFiles.length >= 3, `发现 ${inlineAiFiles.length} 处内联 AiSections 实现（英文三页）`)
+assert(inlineAiMissing.length === 0,
+  `所有内联 AiSections 都挂了 hw-c-read${inlineAiMissing.length ? '；漏挂：' + inlineAiMissing.map((p) => relative(root, p)).join('、') : ''}`)
+
 assert(/\.hw-c-read\s*\{[^}]*max-width:\s*30rem/.test(css), '.hw-c-read 定义 30rem（480px）可读行宽')
 assert(/\.hw-c-read\s*\{[^}]*margin-inline:\s*auto/.test(css), '.hw-c-read 居中')
 // hw-c-read 只能挂在 AI 区块容器上：不得同时出现在 grid / 表格 / 盘面 / 卡片类上
@@ -297,6 +362,25 @@ if (process.argv.includes('--self-test')) {
   const cardProbe = homeIssues(cardMutated, HOME_SECTION_MIN['zh-Hant'])
   assert(cardProbe.length > 0, '把繁体一个 hw-section 改回卡片盒 → 开放式版式断言翻红')
   if (cardProbe.length) console.log(`      命中：${cardProbe.join('；')}`)
+
+  // 行宽牙口 A：英文内联实现去掉 hw-c-read，路由级断言必须翻红
+  const enHemunMutated = read(AI_ROUTES['/en/hemun']).replace('mt-6 hw-c-read', 'mt-6')
+  const routeProbe = aiReadIssues(enHemunMutated)
+  assert(routeProbe.length > 0, '英文合婚去掉 hw-c-read → 路由级行宽断言翻红')
+  if (routeProbe.length) console.log(`      命中：${routeProbe.join('；')}`)
+
+  // 行宽牙口 B：新增一套内联 AiSections 且漏挂，枚举与判据都必须翻红
+  const inlineProbe = join(root, 'src/components/__visual_inline_probe.tsx')
+  writeFileSync(inlineProbe, 'function AiSections() { return <div className="space-y-4"><p>x</p></div> }\nexport default AiSections\n', 'utf8')
+  try {
+    const txt = readFileSync(inlineProbe, 'utf8')
+    assert(aiSourcesOf(txt).includes('__SELF__'), '新增内联 AiSections 被路由枚举识别')
+    assert(aiReadIssues(txt).length > 0, '新增内联 AiSections 漏挂 hw-c-read → 行宽断言翻红')
+    assert(!txt.includes('hw-c-read'), '内联探针确为漏挂形态')
+  } finally {
+    unlinkSync(inlineProbe)
+  }
+  assert(!existsSync(inlineProbe), '内联行宽探针已清理')
 
   // 行宽牙口：新增第五个 ResultView 且漏挂 hw-c-read，断言必须翻红
   const viewProbe = join(root, RESULT_DIR, 'ProbeResultView.tsx')

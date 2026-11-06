@@ -203,7 +203,8 @@ export default function EnHemunClient() {
             </div>
             )}
             <EnHemunRules male={data.male} female={data.female} />
-            <div className="mt-6">
+            {/* Readable line width for the AI body (2026-11-06): same 30rem cap as the shared ResultView; the rule table stays full width. */}
+            <div className="mt-6 hw-c-read">
               <AiSections data={data} />
             </div>
           </div>

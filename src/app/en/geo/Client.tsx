@@ -232,7 +232,8 @@ export default function EnGeoClient() {
             </div>
             )}
             <EnGeoRules geo={data.geo} />
-            <div className="mt-6">
+            {/* Readable line width for the AI body (2026-11-06): same 30rem cap as the shared ResultView; the rule table stays full width. */}
+            <div className="mt-6 hw-c-read">
               <AiSections data={data} />
             </div>
           </div>
