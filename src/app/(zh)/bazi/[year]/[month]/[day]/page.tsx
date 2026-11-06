@@ -12,6 +12,26 @@ import { getZodiac, getNaYin, getConstellation, getXiu, getSanShiCai } from '@/l
 //   降不了「每请求花多少」—— 真正的省法是恢复 ISR：第一次算、之后命中缓存。
 //   代价：只有真被访问过的日期才落一份缓存（约 104 KB），不是 2.2 万页全落。
 export const revalidate = 604800 // 7 天
+// ★ 2026-11-05（第二次修正）：只删 force-dynamic 不够 ——
+//   Next 对「动态段但没有 generateStaticParams」的路由判为 ƒ（每次请求都渲染），
+//   实测响应头仍是 `Cache-Control: private, no-cache, no-store`。
+//   给出一个小的预渲染集合后，该路由才被判定可静态化，其余日期走按需 ISR
+//   （首次访问生成并缓存，之后命中）。这里只预渲染最近 30 天 —— 最可能被访问的一段。
+export const dynamicParams = true // 未预渲染的日期：首次访问时生成并缓存
+
+export function generateStaticParams() {
+  const params: { year: string; month: string; day: string }[] = []
+  const now = new Date()
+  for (let i = 0; i < 30; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i)
+    params.push({
+      year: String(d.getFullYear()),
+      month: String(d.getMonth() + 1).padStart(2, '0'),
+      day: String(d.getDate()).padStart(2, '0'),
+    })
+  }
+  return params
+}
 
 export async function generateMetadata({ params }: { params: Promise<{ year: string; month: string; day: string }> }) {
   const { year, month, day } = await params

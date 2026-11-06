@@ -46,6 +46,21 @@ console.log('—— ② 日页必须是 ISR，不能 force-dynamic ——')
     '日页不再 noindex —— 2.2 万条薄内容会进索引')
 }
 
+console.log('—— ②B 日页必须有 generateStaticParams（否则 Next 判为 ƒ，ISR 不生效）——')
+// 实测教训（2026-11-05）：只删 force-dynamic 不够 ——
+// 动态段路由若没有 generateStaticParams，Next 仍判为 ƒ（每次请求渲染），
+// 线上响应头依旧是 `private, no-cache, no-store`。补一个小的预渲染集合后
+// 才被判定可静态化，其余日期走按需 ISR。
+{
+  const src = readFileSync('src/app/(zh)/bazi/[year]/[month]/[day]/page.tsx', 'utf8')
+  assert(/export function generateStaticParams\(\)/.test(src),
+    '日页提供 generateStaticParams（路由被判定可静态化）',
+    '日页缺 generateStaticParams —— Next 会判为 ƒ，ISR 缓存不生效')
+  assert(/export const dynamicParams = true/.test(src),
+    'dynamicParams = true（未预渲染的日期按需生成并缓存）',
+    '未声明 dynamicParams —— 未预渲染的日期会 404，而不是按需生成')
+}
+
 console.log('—— ③ 日页不得进 sitemap ——')
 {
   const src = readFileSync('src/app/sitemap.ts', 'utf8')
