@@ -22,6 +22,8 @@ const BUILD_INPUTS = [
   /^package\.json$/,
   /^package-lock\.json$/,
   /^vercel\.json$/,
+  /^\.vercelignore$/, // 影响哪些文件被上传 —— 改它必须重建
+  /^scripts\/(should-build|strip-deploy-maps)\.mjs$/, // 部署期脚本
   /^postcss\.config\./, // 样式管线
   /^tsconfig\.json$/,
 ]

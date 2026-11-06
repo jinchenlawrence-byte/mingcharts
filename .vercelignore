@@ -14,7 +14,14 @@ temp/
 
 # ────────── 开发与文档（部署不需要）──────────
 docs/
-scripts/
+# ★ 2026-11-05：不能整目录排除 —— 部署期要用到其中两个脚本：
+#   · scripts/should-build.mjs      → vercel.json 的 ignoreCommand
+#   · scripts/strip-deploy-maps.mjs → build 命令的收尾
+#   整目录排除会让它们在 Vercel 上 MODULE_NOT_FOUND，构建直接失败。
+#   gitignore 语义：父目录一旦被排除，子文件无法再放行，故改为「排除内容 + 点名放行」。
+scripts/*
+!scripts/should-build.mjs
+!scripts/strip-deploy-maps.mjs
 .trae/
 .trae-cn/
 .vscode/
