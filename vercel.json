@@ -10,5 +10,6 @@
       "path": "/api/cron/daily-push",
       "schedule": "0 0 * * *"
     }
-  ]
+  ],
+  "ignoreCommand": "node scripts/should-build.mjs"
 }
