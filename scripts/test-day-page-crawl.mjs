@@ -1,11 +1,21 @@
-// 日页的抓取边界（2026-11-05）
+// 日页的边界守门（2026-11-05，历经三次修正后的最终口径）
 //
-// 背景：/bazi/{year}/{MM}/{DD} 约 2.2 万条薄内容，已设 noindex（不进索引）、
-// 不在 sitemap。但 noindex 只阻止【收录】，不阻止【抓取】——爬虫会顺着月页里
-// 那 30 条日页链接逐月抓一遍，而日页是 force-dynamic：每抓一次就 SSR 渲染一次，
-// 直接消耗 Fluid Active CPU（Hobby 只有 4h / 滚动 30 天，超了会暂停项目）。
+// 对象：/bazi/{year}/{MM}/{DD}（约 2.2 万条薄内容）
 //
-// 判据：robots 必须挡住日页；同时日页自身仍保留 noindex（双保险，且人类访问不受影响）。
+// 三条已定的事实（别再退回旧做法）：
+//   1. 日页是 noindex —— 所以 robots 【不能】Disallow 它。
+//      挡住抓取后 Google 读不到 noindex，已收录 URL 会长期卡在
+//      「已编入索引，但被 robots.txt 屏蔽」，比不挡更难清理。
+//   2. 省 CPU 的正解是 ISR，不是 robots / UA 判断：
+//      日页曾用 force-dynamic，线上响应头是 private, no-cache, no-store，
+//      每次访问都重算排盘。现改为 revalidate + generateStaticParams
+//      （只预渲染最近 30 天，其余按需生成后缓存），实测 X-Vercel-Cache: HIT。
+//      ★ 只删 force-dynamic 不够：没有 generateStaticParams 的路由会被 Next
+//        判为 ƒ 动态渲染，revalidate 不落地。
+//   3. 月页不再在服务端 HTML 里输出 30 条日页链接（折叠组件），减少被发现的入口。
+//      ★ 不要做「爬虫给空壳、真人给全文」的 UA 分流 —— 那是 cloaking。
+//
+// 本文件的断言与上面三条一一对应；改了做法就要一起改这里。
 import { readFileSync } from 'node:fs'
 
 let allPass = true
