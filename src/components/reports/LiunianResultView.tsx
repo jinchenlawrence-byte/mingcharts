@@ -186,7 +186,7 @@ export default function LiunianResultView({ data, onRegen, regenBusy, locale = '
 
       {/* AI 深度解读板块 */}
       {data.ai && (
-      <div className="space-y-4">
+      <div className="space-y-4 hw-c-read">
         {AI_SECTIONS.map(({ key, name }) => {
           const text = data.ai![key]
           if (!text) return null
@@ -225,7 +225,7 @@ export default function LiunianResultView({ data, onRegen, regenBusy, locale = '
 
       {/* ★ 试读：6 个 AI 板块只给标题 + 模糊占位（route 未生成、未下发全文） */}
       {previewMode && !data.ai && (
-        <div className="space-y-3">
+        <div className="space-y-3 hw-c-read">
           <h2 className="hw-c-h1">{L('年运深度解读')}</h2>
           {AI_SECTIONS.map(({ key, name }) => <LockedCard key={key} title={L(name)} locale={locale} />)}
         </div>

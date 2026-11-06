@@ -11,8 +11,11 @@
 //      主区块统一由 .hw-section 承载；任一树退回卡片盒/紧凑标题类即 fail
 //   ④ 重要提示（警示 / 免责 / 限流）走共享的 .hw-alert / .hw-alert--note，不许各页自写；
 //      旧的 .hw-c-fine 已升格为「加大加粗 + 琥珀色条」
-//   ⑤ 牙口自检：--self-test 会注入一个带 #ff0000 的探针文件 + 把定价页的一个 hw-sec 改回 mb-14，
-//      两处断言都必须翻红（然后清理探针）
+//   ⑤ 报告结果页 AI 正文行宽收口到 .hw-c-read（30rem）；动态枚举所有 *ResultView.tsx，
+//      新增第五个实现而漏挂即 fail；该探针不得波及盘面/表格/卡片
+//   ⑥ 牙口自检：--self-test 会注入带 #ff0000 的探针、把定价页 hw-sec 改回 mb-14、
+//      把英文首页 h1 改回 hw-c-h1、新增一个漏挂的 ProbeResultView，
+//      四类断言都必须翻红（然后清理探针）
 //
 // 运行：tsx scripts/test-visual-tokens.mjs [--self-test]
 
@@ -244,9 +247,28 @@ for (const [label, file] of Object.entries(ALERT_SURFACES)) {
   assert(read(file).includes('hw-alert'), `${label} 使用 .hw-alert 共享提示`)
 }
 
-// ── ⑤ 牙口自检 ─────────────────────────────────────────────
+// ── ⑤ 报告结果页 AI 正文行宽 ─────────────────────────────────
+console.log('\n[5] 报告结果页 AI 正文行宽')
+const RESULT_DIR = 'src/components/reports'
+// ★ 动态枚举，不写死四个文件名：新增第五个同类 ResultView 而漏挂 hw-c-read 时会翻红
+const resultViews = readdirSync(join(root, RESULT_DIR)).filter((f) => f.endsWith('ResultView.tsx'))
+const missingRead = resultViews.filter((f) => !read(`${RESULT_DIR}/${f}`).includes('hw-c-read'))
+assert(resultViews.length >= 4, `发现 ${resultViews.length} 个 ResultView 实现（≥4）`)
+assert(missingRead.length === 0, `所有 ResultView 的 AI 区块都挂了 hw-c-read${missingRead.length ? '；漏挂：' + missingRead.join('、') : ''}`)
+assert(/\.hw-c-read\s*\{[^}]*max-width:\s*30rem/.test(css), '.hw-c-read 定义 30rem（480px）可读行宽')
+assert(/\.hw-c-read\s*\{[^}]*margin-inline:\s*auto/.test(css), '.hw-c-read 居中')
+// hw-c-read 只能挂在 AI 区块容器上：不得同时出现在 grid / 表格 / 盘面 / 卡片类上
+for (const f of resultViews) {
+  const bad = read(`${RESULT_DIR}/${f}`)
+    .split(/\r?\n/)
+    .filter((line) => line.includes('hw-c-read'))
+    .filter((line) => /grid|hw-c-bar|hw-c-box|overflow|<table/.test(line))
+  assert(bad.length === 0, `${f} 的 hw-c-read 只挂 AI 容器，未波及表格/盘面/卡片${bad.length ? '；越界：' + bad[0].trim() : ''}`)
+}
+
+// ── ⑥ 牙口自检 ─────────────────────────────────────────────
 if (process.argv.includes('--self-test')) {
-  console.log('\n[5] 牙口自检（故意制造违规，断言必须翻红）')
+  console.log('\n[6] 牙口自检（故意制造违规，断言必须翻红）')
   const probe = join(root, 'src/components/__visual_probe.tsx')
   writeFileSync(probe, 'export default function Probe() { return <div className="text-[#ff0000]">x</div> }\n', 'utf8')
   try {
@@ -275,6 +297,20 @@ if (process.argv.includes('--self-test')) {
   const cardProbe = homeIssues(cardMutated, HOME_SECTION_MIN['zh-Hant'])
   assert(cardProbe.length > 0, '把繁体一个 hw-section 改回卡片盒 → 开放式版式断言翻红')
   if (cardProbe.length) console.log(`      命中：${cardProbe.join('；')}`)
+
+  // 行宽牙口：新增第五个 ResultView 且漏挂 hw-c-read，断言必须翻红
+  const viewProbe = join(root, RESULT_DIR, 'ProbeResultView.tsx')
+  writeFileSync(viewProbe, 'export default function ProbeResultView() { return <div /> }\n', 'utf8')
+  try {
+    const probed = readdirSync(join(root, RESULT_DIR))
+      .filter((f) => f.endsWith('ResultView.tsx'))
+      .filter((f) => !read(`${RESULT_DIR}/${f}`).includes('hw-c-read'))
+    assert(probed.includes('ProbeResultView.tsx'), '新增第五个 ResultView 漏挂 hw-c-read → 行宽断言翻红')
+    console.log(`      命中：${probed.join('、')} 未挂 hw-c-read`)
+  } finally {
+    unlinkSync(viewProbe)
+  }
+  assert(!existsSync(viewProbe), '行宽探针文件已清理')
   assert(!existsSync(probe), '探针文件已清理')
 }
 

@@ -1120,6 +1120,14 @@ h1, h2, h3, .font-serif-sc {
   opacity: 0.88;
   white-space: pre-line;
 }
+/* ★ 报告 AI 正文可读行宽（2026-11-06）：只套在「深度解读」区块容器上，
+   不套卡片，故十二宫盘/表格/免责/CTA 仍全宽。
+   30rem = 480px：14px 正文约 74 英文字符/行、约 34 汉字/行，同时落在
+   英 45–75 字符与中 30–40 汉字的可读区间。 */
+.hw-c-read {
+  max-width: 30rem;
+  margin-inline: auto;
+}
 .hw-c-link {
   text-decoration: underline;
   text-underline-offset: 3px;

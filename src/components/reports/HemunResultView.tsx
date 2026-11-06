@@ -175,7 +175,7 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
       </div>
 
       {data.ai && (
-      <div className="space-y-3">
+      <div className="space-y-3 hw-c-read">
         <div className="flex items-center justify-between">
           <h2 className="hw-c-h3">{L('合婚深度解读')}</h2>
           <span className="text-xs text-ink-light">{L('文字来源：')}{L(data.aiSource)}</span>
@@ -207,7 +207,7 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
 
       {/* ★ 试读：6 个 AI 板块只给标题 + 模糊占位（route 未生成、未下发全文） */}
       {previewMode && (
-        <div className="space-y-3">
+        <div className="space-y-3 hw-c-read">
           <div className="flex items-center justify-between">
             <h2 className="hw-c-h3">{L('合婚深度解读')}</h2>
             <span className="text-xs text-ink-light">{L('解锁后可见')}</span>

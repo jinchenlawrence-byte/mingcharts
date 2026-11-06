@@ -411,7 +411,7 @@ export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh
       ))}
 
       {ai && (
-        <div className="space-y-4">
+        <div className="space-y-4 hw-c-read">
           {/* ★ 英文 aiSource 为中文（规则版标记），英文树不渲染它，只给统一标题 */}
           <h2 className="hw-c-h1">{isEn ? EN.inDepth : `${L('深度解读 ·')} ${L(aiSource)}`}</h2>
           {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
@@ -446,7 +446,7 @@ export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh
 
       {/* ★ 试读：12 个 AI 板块只给标题 + 模糊占位（route 未生成、未下发全文） */}
       {previewMode && !ai && (
-        <div className="space-y-3">
+        <div className="space-y-3 hw-c-read">
           <h2 className="hw-c-h1">{isEn ? EN.inDepth : L('深度解读')}</h2>
           {SECTIONS.map(([key, title]) => (
             <LockedCard key={key} title={isEn ? ZIWEI_AI_TITLES_EN[key] : L(title)} locale={locale} chip={isEn ? EN.lockedChip : undefined} />
