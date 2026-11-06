@@ -10,12 +10,11 @@ export default function robots(): MetadataRoute.Robots {
     rules: {
       userAgent: '*',
       allow: '/',
-      // ★ 2026-11-05：日页（/bazi/{year}/{MM}/{DD}，约 2.2 万条）已是 noindex，
-      //   但 noindex 只阻止「收录」，不阻止「抓取」——爬虫会顺着月页的日页链接抓一遍，
-      //   而日页是 force-dynamic，每抓一次就 SSR 渲染一次，直接烧 Fluid Active CPU
-      //   （Hobby 仅 4h / 滚动 30 天，超了会暂停项目）。故补 disallow：
-      //   零 SEO 损失（本来就不收录），换来爬虫不再触发渲染。
-      disallow: ['/api/', '/charts', '/auth', '/bazi/*/*/*']
+      // ★ 2026-11-05（修正）：日页【不要】在这里 Disallow。
+      //   原因：日页本身是 noindex。若 robots 挡住抓取，Google 就读不到那个 noindex，
+      //   已收录的 URL 会长期卡在「已编入索引，但被 robots.txt 屏蔽」这个最难清理的状态。
+      //   正确顺序是：先让 noindex 被读到、页面干净退出索引。省 CPU 靠 ISR，不靠 robots。
+      disallow: ['/api/', '/charts', '/auth']
     },
     sitemap: `${BASE_URL}/sitemap.xml`
   }

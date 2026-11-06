@@ -14,24 +14,36 @@ const fail = (m) => { allPass = false; failures.push(m); console.log('  ✗ ' + 
 const ok = (m) => console.log('  · ' + m)
 const assert = (c, msg, fmsg) => (c ? ok(msg) : fail(fmsg ?? msg))
 
-console.log('—— ① robots 挡住日页（爬虫不再触发 SSR）——')
+console.log('—— ① robots 不得挡住日页（否则 noindex 读不到）——')
+// ★ 2026-11-05 修正：先前这里要求 robots Disallow 日页，是错的 ——
+//   日页是 noindex。robots 挡住抓取后 Google 读不到 noindex，
+//   已收录 URL 会卡在「已编入索引，但被 robots.txt 屏蔽」，比不挡更难清理。
+//   省 CPU 的正解是 ISR（见 ②），不是 robots。
 {
   const src = readFileSync('src/app/robots.ts', 'utf8')
-  assert(/disallow:\s*\[[^\]]*'\/bazi\/\*\/\*\/\*'/.test(src),
-    "robots disallow 含 '/bazi/*/*/*'",
-    "robots 未挡住日页 —— 爬虫会逐月抓 2.2 万条 force-dynamic 页面，烧 CPU")
-  // 必须保留原有的三条，别为了加新规则把旧规则挤掉
+  assert(!/disallow:\s*\[[^\]]*'\/bazi\/\*\/\*\/\*'/.test(src),
+    'robots 未 Disallow 日页（noindex 可被读到）',
+    'robots 又挡住日页 —— noindex 读不到，URL 会长期卡在「已编入索引但被屏蔽」')
   for (const p of ["'/api/'", "'/charts'", "'/auth'"]) {
-    assert(src.includes(p), `robots 仍挡 ${p}`, `robots 丢了 ${p}（新规则覆盖了旧规则）`)
+    assert(src.includes(p), `robots 仍挡 ${p}`, `robots 丢了 ${p}`)
   }
 }
 
-console.log('—— ② 日页自身仍是 noindex（双保险）——')
+console.log('—— ② 日页必须是 ISR，不能 force-dynamic ——')
+// 实测（2026-11-05）：force-dynamic 时线上响应头是
+//   Cache-Control: private, no-cache, no-store  ·  X-Vercel-Cache: MISS
+// 即每次访问都重算排盘 —— robots 与折叠只能减少请求数，降不了单次成本。
 {
   const src = readFileSync('src/app/(zh)/bazi/[year]/[month]/[day]/page.tsx', 'utf8')
+  assert(!/export const dynamic = 'force-dynamic'/.test(src),
+    '日页未使用 force-dynamic（ISR 缓存生效）',
+    '日页仍是 force-dynamic —— 每个请求都重算，ISR 形同虚设')
+  assert(/export const revalidate = \d+/.test(src),
+    '日页声明了 revalidate（ISR 缓存周期）',
+    '日页没有 revalidate —— 不会缓存')
   assert(/index:\s*false/.test(src),
-    '日页仍是 noindex（不进索引）',
-    '日页不再是 noindex —— 薄内容会进索引')
+    '日页仍是 noindex（薄内容不进索引）',
+    '日页不再 noindex —— 2.2 万条薄内容会进索引')
 }
 
 console.log('—— ③ 日页不得进 sitemap ——')

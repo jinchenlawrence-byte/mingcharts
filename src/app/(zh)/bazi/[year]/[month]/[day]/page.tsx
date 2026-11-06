@@ -5,8 +5,13 @@ import { generateAnalysis, type AnalyzableChart } from '@/lib/analysis'
 import { getZodiac, getNaYin, getConstellation, getXiu, getSanShiCai } from '@/lib/baziData'
 
 // 不预生成全部日期（约15000页），用 ISR 按需生成缓存
-export const dynamic = 'force-dynamic'
-export const revalidate = 86400 // 缓存1天
+// ★ 2026-11-05（修正）：此前这里写的是 force-dynamic，注释却说「用 ISR 按需生成缓存」——
+//   force-dynamic 把那个意图彻底废掉了：线上响应头是
+//   `Cache-Control: private, no-cache, no-store` + `X-Vercel-Cache: MISS`，
+//   等于每次访问都重算一遍排盘。而 robots / 折叠链接只能减少「有多少请求」，
+//   降不了「每请求花多少」—— 真正的省法是恢复 ISR：第一次算、之后命中缓存。
+//   代价：只有真被访问过的日期才落一份缓存（约 104 KB），不是 2.2 万页全落。
+export const revalidate = 604800 // 7 天
 
 export async function generateMetadata({ params }: { params: Promise<{ year: string; month: string; day: string }> }) {
   const { year, month, day } = await params
