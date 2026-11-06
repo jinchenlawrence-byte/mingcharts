@@ -42,6 +42,24 @@ console.log('—— ③ 日页不得进 sitemap ——')
     'sitemap 又把日页收进来了（2.2 万条会把站点质量分拉低）')
 }
 
+console.log('—— ④ 月页不得在服务端 HTML 里输出日页链接 ——')
+// B 方案（2026-11-05）：日页是站内工具。若月页把 30 条日页链接写进 HTML，
+// 抓取方就能发现它们 —— 每条日页都是 force-dynamic，被抓一次渲染一次。
+// 判据：月页必须用 MonthDays 组件（折叠），且自己不直接渲染 /bazi/{y}/{m}/{d} 链接。
+{
+  const month = readFileSync('src/app/(zh)/bazi/[year]/[month]/page.tsx', 'utf8')
+  assert(/<MonthDays\s/.test(month),
+    '月页使用折叠组件 MonthDays',
+    '月页未使用折叠组件 —— 日页链接会直接进 HTML')
+  assert(!/href=\{`\/bazi\/\$\{year\}\/\$\{month\}\/\$\{/.test(month),
+    '月页不再直接输出日页链接',
+    '月页仍直接渲染日页链接 —— 抓取方会发现 2.2 万条日页')
+  const comp = readFileSync('src/components/bazi/MonthDays.tsx', 'utf8')
+  assert(/useState/.test(comp) && /open \?/.test(comp),
+    'MonthDays 默认折叠、点击才渲染链接',
+    'MonthDays 未做折叠 —— 链接仍在首屏 HTML')
+}
+
 console.log('')
 if (allPass) console.log('DAY_PAGE_CRAWL_PASS')
 else {

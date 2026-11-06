@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Nav from '@/components/Nav'
+import MonthDays from '@/components/bazi/MonthDays'
 import { getYearGanZhi, getZodiac, getConstellation } from '@/lib/baziData'
 
 // ★ 2026-11-05（两次修正后的定稿）：月页只预渲染 1990–2010，其余年份按需生成。
@@ -71,21 +72,11 @@ export default async function MonthPage({ params }: { params: Promise<{ year: st
           {year}年{ganZhi}年属{zodiac.name}，{monthNum}月出生。本月涵盖星座：{constellations.join('、')}。
         </p>
 
-        <div className="hw-c-box mb-6">
-          <h2 className="hw-c-secTitle">选择出生日期</h2>
-          <div className="grid grid-cols-5 sm:grid-cols-7 md:grid-cols-10 gap-2">
-            {days.map(d => (
-              <Link
-                key={d}
-                href={`/bazi/${year}/${month}/${String(d).padStart(2, '0')}`}
-                className="bg-gold/5 hover:bg-gold/10 border border-gold/20 rounded p-2 text-center transition-colors"
-              >
-                <div className="font-bold text-ink">{d}</div>
-                <div className="text-xs text-ink-light">日</div>
-              </Link>
-            ))}
-          </div>
-        </div>
+        {/* ★ 2026-11-05（B 方案）：30 个日页链接折叠起来，默认不渲染 ——
+            日页是站内工具（noindex、不进 sitemap、robots 已挡），
+            写进服务端 HTML 只会让抓取方发现它们，而每条日页都是 force-dynamic。
+            需要的人点「展开整月」即可。 */}
+        <MonthDays year={year} month={month} days={days} />
 
         <div className="hw-c-box bg-gold/5! text-sm">
           <p className="font-semibold text-ink mb-2">{year}年{monthNum}月出生总览</p>
