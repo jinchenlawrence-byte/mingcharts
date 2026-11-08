@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { paipan, getWangShuai } from '@/lib/paipan'
+import { paipan, getWangShuai, getGeJu } from '@/lib/paipan'
 import { analyzeGeo } from '@/lib/geo'
 import citiesData from '@/data/geo-cities.json'
 import { checkDSTTransition } from '@/lib/solarTime'
@@ -16,17 +16,22 @@ import { checkAiBudget } from '@/lib/aiBudget'
 import { saveReport, deriveReportTitle } from '@/lib/reportSave'
 import { stripEntitlementState, reportCacheKey, readReportCache, resolveModuleCachedHit, GEO_CACHE_VERSION } from '@/lib/reportCache'
 import { localeFromRequest } from '@/lib/locale'
+import { isRegenRequest, regenGate } from '@/lib/regenPolicy'
+import { toHant } from '@/lib/hant'
 import type { WX } from '@/lib/geo'
 
 /** 未解锁时的 preview（入库剥离、命中重算时共用，避免两处文案漂移） */
-const GEO_LOCKED_PREVIEW = '方位总论 · 现居城市影响 · 财富/事业/贵/安居/才华五城解读 · 迁居开运建议（AI 深度解读，共 8 节）解锁后可见。'
-const GEO_LOCKED_PREVIEW_EN = 'The full English city report covers the directional overview, the current-city impact, the wealth, career, benefactor, settling and talent cities, and relocation advice. Unlock to read the full report.'
+// ★ 2026-11-09 免费分层文案：写清免费开放哪一类、付费后补哪几类，不用「解锁更多」。
+const GEO_LOCKED_PREVIEW = '免费试读开放「事业之城」与现居城市影响。付费后可看完整版：财富、事业、贵人、安居、才华五类城市推荐（每类最多 6 座）、现居城市影响详解、8 节 AI 深度解读与 5 次 AI 追问。'
+const GEO_LOCKED_PREVIEW_EN = 'The free preview opens Career cities and the current-city impact. The paid report adds the other four categories — Wealth, Benefactor, Settling and Talent (up to 6 cities each) — plus the full current-city reading, the eight-part AI analysis and five AI follow-ups.'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const locale = localeFromRequest(body)
-    const lockedPreview = locale === 'en' ? GEO_LOCKED_PREVIEW_EN : GEO_LOCKED_PREVIEW
+    const lockedPreview = locale === 'en'
+      ? GEO_LOCKED_PREVIEW_EN
+      : locale === 'zh-Hant' ? toHant(GEO_LOCKED_PREVIEW) : GEO_LOCKED_PREVIEW
     const toInt = (v: unknown, def = 0): number => {
       if (v === undefined || v === null || v === '') return def
       const n = parseInt(String(v), 10)
@@ -70,6 +75,9 @@ export async function POST(request: NextRequest) {
       birthZone: ref?.zone
     })
     const wangShuai = getWangShuai(chart)
+    const geJu = getGeJu(chart)
+    // ★ AI 追问需要完整 AnalyzeableChart（此前缺 geJu，追问提示词出现 undefined）
+    const askChart = { ...chart, analysis: { wangShuai, geJu, isPaid: false } }
 
     // 夏令时切换点检测（gap/重复时刻），仅作提示
     const dstNotice = ref ? checkDSTTransition(ref.zone, { year, month, day, hour, minute }) : null
@@ -108,6 +116,11 @@ export async function POST(request: NextRequest) {
     }
     const unlocked = reportUnlocked(ent, 'geo')
 
+    // ★ 接口层重新生成门槛（2026-11-09）：未购买却声明 regen → 402；付费规则版不限次数
+    const regen = isRegenRequest(body) || request.nextUrl?.searchParams?.get('regen') === '1'
+    const regenBlocked = regenGate(regen, unlocked, locale)
+    if (regenBlocked) return regenBlocked
+
     // ★ 报告缓存短路读取（token 防盗用第三档）：登录用户的【同参数重复请求】直接命中存量全文，
     //   零 AI、零限流、零预算（必须放在限流/预算/AI 之前）。命中处置全在纯函数 resolveModuleCachedHit：
     //   只短路【真·AI 结果】（aiSource='AI 深度解读'）—— AI 失败/当日预算熔断写下的规则兜底视为未命中，
@@ -130,7 +143,7 @@ export async function POST(request: NextRequest) {
         : null
       if (resolved) {
         // ★ 缓存命中也要带同一试读标记，避免免费用户从存量全文缓存拿到完整渲染路径
-        const data = { ...resolved.data, preview: previewPayload('geo', unlocked) }
+        const data = { ...resolved.data, chart: askChart, preview: previewPayload('geo', unlocked) }
         return NextResponse.json({ success: true, data, reportId: resolved.reportId, cached: true })
       }
     }
@@ -176,11 +189,11 @@ export async function POST(request: NextRequest) {
     const aiSource = !unlocked ? '未解锁' : rawAiSource
 
     const data = {
-      chart: { ...chart, analysis: { wangShuai, isPaid: false } },
+      chart: askChart,
       geo: analysis,
       // ★ free 层保留【结构化的城市推荐与指数】—— 这是"试吃"：让用户看到有什么
       free: {
-        chart: { ...chart, analysis: { wangShuai, isPaid: false } },
+        chart: askChart,
         geo: analysis
       },
       // ★★ locked 在已解锁时为 null（与现在一致 ✓）；未解锁时给 preview 与 skus

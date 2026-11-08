@@ -6,10 +6,12 @@ import Link from 'next/link';
 import { getSupabase } from '@/lib/supabase';
 import { REPORT_KIND_LABELS, type ReportKind } from '@/lib/reportSave';
 import { REPORT_GATE, gateReportForDetail, canRegenContent, isRuleVersion } from '@/lib/reportGate';
+import { isReportPaid } from '@/lib/reportAccess';
 import { grantsCover } from '@/lib/entitlement';
 import type { SkuId } from '@/lib/pricing';
 import HemunResultView from '@/components/reports/HemunResultView';
 import type { HemunData } from '@/components/reports/HemunResultView';
+import ReportActions from '@/components/ReportActions';
 import ZiweiResultView from '@/components/reports/ZiweiResultView';
 import type { ZiweiResultData } from '@/components/reports/ZiweiResultView';
 import GeoResultView from '@/components/reports/GeoResultView';
@@ -104,7 +106,7 @@ export default function ReportDetailPage() {
             // ② 按当前权益重算 locked/ai/aiSource（2026-10-18 修复：付费后即刻生效）
             const gate = REPORT_GATE[detail.kind];
             const owned = !!gate && grantsCover(ent, gate.grant);
-            let rendered = gateReportForDetail(detail.kind, content, ent);
+            let rendered = gateReportForDetail(detail.kind, content, ent, 'zh-Hant');
             // ③ 已解锁但库里没有全文（报告生成于解锁之前）→ 视【存档是否完整】分两种处置：
             //    · 存档完整 + 模块开启了 regenApi（年运）→ 用存档要素【就地补算】：
             //      付费用户点开旧报告即刻见全文，不必重填一遍出生信息（成本只这一次，
@@ -147,11 +149,12 @@ export default function ReportDetailPage() {
     // ★ 规则版兜底时的「免费重新生成」出口（仅年运，见 REPORT_GATE.annual.regenApi）：
     //   同要素 + force=true 重调 AI（绕过缓存重新调、覆盖写同一 cache_key，不新增报告行），
     //   成功后原地替换渲染。存档不全（缺出生地/分钟键）时不显示按钮；补算失败静默保持原内容。
-    const canRegen = !!row && canRegenContent(row.kind, row.input);
+    const detailPaid = !!row && isReportPaid(row.kind, result);
+    const canRegen = !!row && detailPaid && canRegenContent(row.kind, row.input);
     // ★ 规则版但【无可就地重生成的能力】（紫微/合婚/地理：存档不足以忠实回放，regenApi=null）
     //   → 详情页不能重写，必须给「前往模块页重新生成」的出路，否则付费用户只能要求退款。
     //   与 needsRegen（库里没全文）互斥：那种情形已由上面的诚实提示块引导。
-    const ruleVersionNoRegen = !needsRegen && !canRegen && isRuleVersion((result as Record<string, unknown> | null)?.aiSource);
+    const ruleVersionNoRegen = detailPaid && !needsRegen && !canRegen && isRuleVersion((result as Record<string, unknown> | null)?.aiSource);
     const regenReport = async () => {
         if (!row || !canRegen)
             return;
@@ -169,6 +172,7 @@ export default function ReportDetailPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     ...(row.input as Record<string, unknown>),
+                    reportId: row.id,
                     force: true,
                     locale: 'zh-Hant',
                     token: session.access_token,
@@ -218,10 +222,10 @@ export default function ReportDetailPage() {
         </div>
       </main>);
     }
-    return (<main className="hw-page">
+    return (<main className="hw-page hw-report-theme hw-print">
       <div className="hw-wrap hw-c-pg">
-        <div className="hw-narrow">
-          <div className="flex items-center justify-between gap-4 mb-6">
+        <div className="hw-c-report">
+          <div className="flex items-start justify-between gap-4 mb-6">
             <div className="min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className={`text-xs px-2 py-0.5 rounded ${KIND_STYLE[row.kind] ?? 'bg-paper-dark/40 text-ink-light'}`}>
@@ -233,7 +237,10 @@ export default function ReportDetailPage() {
               </div>
               <h1 className="text-xl font-bold text-ink truncate">{H(row.title)}</h1>
             </div>
-            <Link href="/tw/reports" className="hw-c-blue text-sm shrink-0">{H("← 我的報告")} </Link>
+            <ReportActions
+              backHref="/tw/reports"
+              labels={{ back: H('← 我的報告'), share: H('分享'), export: H('匯出 PDF'), copied: H('連結已複製'), shareTitle: H('我的命理報告') }}
+            />
           </div>
 
           {needsRegen && (<div className="hw-c-box mb-4">
@@ -251,10 +258,10 @@ export default function ReportDetailPage() {
             </div>)}
 
           {/* ★ 渲染的是按当前权益重算后的 result（不是 row.result）*/}
-          {row.kind === 'hemun' && <HemunResultView data={result as unknown as HemunData} locale="zh-Hant" />}
-          {row.kind === 'ziwei' && <ZiweiResultView data={result as unknown as ZiweiResultData} locale="zh-Hant" />}
-          {row.kind === 'geo' && <GeoResultView data={result as unknown as GeoResultData} locale="zh-Hant" />}
-          {row.kind === 'annual' && (<LiunianResultView data={result as unknown as LiunianResultData} onRegen={canRegen ? regenReport : undefined} regenBusy={regenBusy} locale="zh-Hant" />)}
+          {row.kind === 'hemun' && <HemunResultView data={result as unknown as HemunData} locale="zh-Hant" reportId={row.id} />}
+          {row.kind === 'ziwei' && <ZiweiResultView data={result as unknown as ZiweiResultData} locale="zh-Hant" reportId={row.id} />}
+          {row.kind === 'geo' && <GeoResultView data={result as unknown as GeoResultData} locale="zh-Hant" reportId={row.id} />}
+          {row.kind === 'annual' && (<LiunianResultView data={result as unknown as LiunianResultData} reportId={row.id} onRegen={canRegen ? regenReport : undefined} regenBusy={regenBusy} locale="zh-Hant" />)}
         </div>
       </div>
     </main>);

@@ -296,6 +296,11 @@ export default function HantPricingPage() {
                     <div className="text-xs text-ink-light mt-1">/ 次</div>
                   </div>
                 </div>
+                {/* ★ 追問額度為所有單項報告共有（entitlement 按每份報告派生 ASK_PER_REPORT 次），
+                    與命書卡同一措辭；.hw-alert 強調，避免使用者誤以為只有命書才贈。 */}
+                <p className="hw-alert hw-alert--info text-xs">
+                  {H(`購買後贈送 ${ASK_PER_REPORT} 次 AI 追問（終身有效，不重置）`)}
+                </p>
                 <CheckoutButton
                   sku={s.id}
                   available={waffoProductId(s.id) !== null}

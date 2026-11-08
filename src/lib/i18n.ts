@@ -275,6 +275,8 @@ export const EN: Record<string, string> = {
   '绘制中…': 'Drawing…', '繪製中…': 'Drawing…',
   '下载图片': 'Download image', '下載圖片': 'Download image',
   '每日日签分享卡': 'Daily sign share card', '每日日籤分享卡': 'Daily sign share card',
+  '日签': 'daily-sign', '日籤': 'daily-sign',
+  '今日五行': "Today's element",
   '八字命理 · 每日日签': 'Bazi · Daily sign', '八字命理 · 每日日籤': 'Bazi · Daily sign',
   '明理 mingcharts.com · 免费排盘': 'MingCharts mingcharts.com · Free Bazi',
   '对【你】而言的日运': 'Your personal daily reading',
@@ -318,6 +320,20 @@ export const EN: Record<string, string> = {
   '次、会员每月': ', membership includes',
   '次。涉医疗、法律、投资、生死与重大取舍的「该不该」类问题，命理不作判决——只讲倾向，供你自行权衡。':
     ' per month. On medical, legal, investment, life-and-death or major trade-off questions, fate reading does not deliver a verdict — only tendencies, for you to weigh.',
+  // ───────── 追问面板 · 入口永在（2026-11-08） ─────────
+  '正在获取追问额度…': 'Checking your question quota…',
+  '登录后即可就这份报告向命理师追问。': 'Sign in to ask the astrologer about this report.',
+  '暂时无法获取追问额度，请稍后重试。': 'Could not load your question quota. Please retry in a moment.',
+  '重试': 'Retry',
+  '本报告为免费试读，购买后可向命理师追问。': 'This report is a free preview. Purchase it to ask the astrologer.',
+  '当前账号尚未购买付费报告或会员，暂时无法追问。': 'This account has no paid report or membership yet, so questions are unavailable.',
+  '购买本报告后可追问': 'Buy this report to ask questions',
+  '查看报告与会员方案': 'View reports and membership plans',
+  '该报告不属于当前账号，无法追问。': 'This report does not belong to the current account, so you cannot ask about it.',
+  '追问次数已用完。可购买追问包（': 'You are out of questions. Buy a question pack (',
+  '）继续提问。': ') to keep asking.',
+  '本报告缺少排盘参数，暂时无法追问。': 'This report is missing chart inputs, so questions are unavailable.',
+  '追问对象：': 'Ask about:',
 
   // ───────── 我的命盘 / 我的报告 ─────────
   '我的命盘': 'My charts', '我的命盤': 'My charts',
@@ -359,6 +375,9 @@ export const EN: Record<string, string> = {
   '本報告為規則版解讀': 'This report is the rule-engine version',
   '→ 前往重新生成': '→ Regenerate it', '← 返回我的报告': '← Back to my reports', '← 返回我的報告': '← Back to my reports',
   '合婚详批': 'Synastry report', '紫微深度': 'Zi Wei report', '地理方位': 'Location & Direction report',
+  // ★ 解锁按钮直接用 SKUS[].name，缺词会回退中文（英文页曾出现「解锁 地理 · 财富之城」）
+  '地理 · 财富之城': 'Location & Direction · City of Wealth',
+  '地理 · 財富之城': 'Location & Direction · City of Wealth',
 
   // ───────── 账号 / 登录 ─────────
   '登录 / 注册': 'Sign in / Sign up',

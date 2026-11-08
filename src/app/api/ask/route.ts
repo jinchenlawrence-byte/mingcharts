@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase'
-import { ENTITLEMENT_ENFORCE, getAskRemaining } from '@/lib/entitlement'
+import { ENTITLEMENT_ENFORCE, getAskRemaining, getEntitlements, grantsCover } from '@/lib/entitlement'
+import { REPORT_GATE } from '@/lib/reportGate'
+import type { ReportKind } from '@/lib/reportSave'
 import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RULES, ASK_RULES } from '@/lib/rateLimit'
 import { checkAiBudget } from '@/lib/aiBudget'
 import type { AnalyzableChart } from '@/lib/analysis'
@@ -57,7 +59,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { token, chartId, chart, question } = body
+    const { token, chartId, chart, question, context, reportId: rawReportId } = body
+    const reportId = typeof rawReportId === 'string' ? rawReportId : ''
     // 输出语言：body.locale ＞ cookie ＞ 默认简体；追问应与所问那份报告同语言
     const locale = localeFromRequest(body)
 
@@ -96,6 +99,33 @@ export async function POST(request: NextRequest) {
     const rl = await checkRateLimit(admin, clientKey(user.id, request), [...ASK_RULES, ...USER_RULES])
     if (!rl.allowed) return NextResponse.json(rateLimitedBody(rl), { status: 429 })
 
+    // ★ 报告级校验（2026-11-08）：带 reportId 时，必须属于当前账号，且该报告类型已购买。
+    //   不能用入库 result 里的 locked 判断——saveReport 前已 stripEntitlementState 剥掉权益状态，
+    //   入库行永远没有 locked，必须按【当前权益】重算。
+    if (reportId) {
+      const { data: row } = await admin
+        .from('reports')
+        .select('id,user_id,kind')
+        .eq('id', reportId)
+        .maybeSingle()
+      if (!row || row.user_id !== user.id) {
+        return NextResponse.json(
+          { error: '该报告不属于当前账号，无法追问。', code: 'ASK_REPORT_FORBIDDEN', remaining: 0 },
+          { status: 403 }
+        )
+      }
+      const gate = REPORT_GATE[row.kind as ReportKind]
+      if (gate) {
+        const current = await getEntitlements(admin, user.id)
+        if (!grantsCover(current, gate.grant)) {
+          return NextResponse.json(
+            { error: '该报告为免费试读，购买后可追问。', code: 'ASK_REQUIRES_PAID', remaining: 0 },
+            { status: 403 }
+          )
+        }
+      }
+    }
+
     // ③ 硬拒答：在调用 AI 之前判定（零成本、可逐条审核、不扣额度）
     const refusedCategory = classifyAskQuestion(q)
     if (refusedCategory) {
@@ -120,6 +150,31 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // ★ 幂等（2026-11-08）：同一账号 20 秒内重复提交同一问题（连点/网络重试）直接回上一条答案，
+    //   不调 AI、不重复扣额、不重复落库。
+    const dedupeSince = new Date(Date.now() - 20_000).toISOString()
+    const { data: dup } = await admin
+      .from('ask_messages')
+      .select('answer, created_at')
+      .eq('user_id', user.id)
+      .eq('question', q)
+      .gte('created_at', dedupeSince)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    if (dup?.answer) {
+      return NextResponse.json({
+        answer: dup.answer,
+        disclaimer: ASK_DISCLAIMER,
+        remaining: quota.total,
+        memberRemaining: quota.member,
+        reportRemaining: quota.report,
+        inviteRemaining: quota.invite,
+        packRemaining: quota.pack,
+        deduped: true,
+      })
+    }
+
     // ★★ 全局日预算熔断（token 防盗用第三档）：超额 → 全站当日降级（不调 AI、不扣额，返兜底话术）。
     //   置于拒答/额度校验【之后】—— 拒答与额度不足本就不调 AI，无需计入预算。
     const budget = await checkAiBudget(admin, Date.now())
@@ -133,7 +188,9 @@ export async function POST(request: NextRequest) {
     }
 
     // ⑤ 生成（AI + 合规重试）；失败 → 合规兜底、不扣额
-    const answer = await generateAskAnswer(chart as AnalyzableChart, q, { locale })
+    // ★ 紫微报告额外携带紫微盘/分析摘要（context），服务端据此切换紫微专属提示词；
+    //   其它模块不传 context，仍走原八字口径，prompt 逻辑不变。
+    const answer = await generateAskAnswer(chart as AnalyzableChart, q, { locale, context })
     if (!answer) {
       return NextResponse.json({
         answer: ASK_FALLBACK_TEXT,

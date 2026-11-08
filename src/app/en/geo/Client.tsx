@@ -1,12 +1,15 @@
 'use client'
 
 import { GENUINE_AI_SOURCE } from '@/lib/reportGate'
+import { isReportPaid } from '@/lib/reportAccess'
 import { useRef, useState } from 'react'
 import Link from 'next/link'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import type { GeoResultData } from '@/components/reports/GeoResultView'
 import { EnGeoRules } from '@/components/en/EnRuleTables'
+import AskPanel from '@/components/AskPanel'
+import { geoAskChart } from '@/lib/askChart'
 import { loadWorldData, searchCities } from '@/lib/worldCitiesClient'
 import { getAuthToken } from '@/lib/authToken'
 
@@ -114,18 +117,23 @@ export default function EnGeoClient() {
   const [loading, setLoading] = useState(false)
   const [data, setData] = useState<GeoResultData | null>(null)
   const [saved, setSaved] = useState<boolean | null>(null)
+  /** Report id of this generation (used by the server to verify ownership). */
+  const [reportId, setReportId] = useState<string | null>(null)
   const [error, setError] = useState('')
+
+  // Follow-ups reuse the same chart the report was built from; hidden when the payload has none.
+  const askChart = data ? geoAskChart(data) : null
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     await runGenerate()
   }
 
-  const runGenerate = async () => {
-    setLoading(true); setError(''); setSaved(null)
+  const runGenerate = async (opts?: { regen?: boolean }) => {
+    setLoading(true); setError(''); setSaved(null); setReportId(null)
     try {
       const token = await getAuthToken()
-      const res = await fetch('/api/geo', {
+      const res = await fetch(opts?.regen ? '/api/geo?regen=1' : '/api/geo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -149,6 +157,7 @@ export default function EnGeoClient() {
       if (json.success) {
         setData(json.data as GeoResultData)
         setSaved(!!json.reportId)
+        setReportId(typeof json.reportId === 'string' ? json.reportId : null)
       } else {
         setError('Could not analyse the cities. Please try again.')
       }
@@ -160,7 +169,7 @@ export default function EnGeoClient() {
   }
 
   return (
-    <div className="hw-page">
+    <div className="hw-page hw-report-theme">
       <main className="hw-wrap hw-c-pg">
         <Link href="/en" className="hw-c-back">‹ Home</Link>
         <header>
@@ -219,11 +228,11 @@ export default function EnGeoClient() {
                 Sign in to save this report and reopen it under My Reports.
               </p>
             ) : null}
-            {((data as { aiSource?: string } | null)?.aiSource !== GENUINE_AI_SOURCE) && (
+            {((data as { aiSource?: string } | null)?.aiSource !== GENUINE_AI_SOURCE) && isReportPaid('geo', data) && (
 <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
               <button
                 type="button"
-                onClick={() => runGenerate()}
+                onClick={() => runGenerate({ regen: true })}
                 disabled={loading}
                 className="px-5 py-2 rounded-full border border-gold/15 bg-white text-sm font-medium hover:border-ink transition disabled:opacity-50"
               >
@@ -231,11 +240,23 @@ export default function EnGeoClient() {
               </button>
             </div>
             )}
-            <EnGeoRules geo={data.geo} />
+            <EnGeoRules geo={data.geo}
+              previewOnly={data.preview?.only ?? !!data.locked}
+              unlockPreview={data.locked?.preview}
+            />
             {/* Readable line width for the AI body (2026-11-06): same 30rem cap as the shared ResultView; the rule table stays full width. */}
             <div className="mt-6 hw-c-read">
               <AiSections data={data} />
             </div>
+            {/* AI follow-ups: same entry and placement as the chart result page */}
+            <AskPanel
+              chart={askChart}
+              locale="en"
+              reportId={reportId}
+              reportPaid={isReportPaid('geo', data)}
+              unlockSku="geo"
+              hint="Ask about favorable directions, city choices, and how your current city affects you. Major relocation decisions are discussed as tendencies only; make the final call with real-world factors."
+            />
           </div>
         )}
       </main>

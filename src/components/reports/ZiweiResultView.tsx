@@ -6,15 +6,19 @@
 // ★ 三语共用骨架（2026-11-05）：/ziwei、/tw/ziwei、/en/ziwei 走同一套区块顺序与卡片规格。
 //   简/繁由 localize 转写；英文由 enRule.ziweiEn 产出同形结构（enView），逐块替换文案。
 //   禁止英文树再另写一套表格视图 —— 版式漂移由 test-en-tools.mjs 断言守护。
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import type { ZwChart, ZiweiAnalysis, PeriodRead } from '@/lib/ziwei'
 import type { ZiweiAIReport } from '@/lib/aiZiwei'
 import { isRuleVersion } from '@/lib/reportGate'
+import { isReportPaid } from '@/lib/reportAccess'
 import { PREVIEW_FREE } from '@/lib/reportPreview'
 import { LockedCard, UnlockCta } from '@/components/reports/PreviewLock'
+import AskPanel from '@/components/AskPanel'
+import type { AnalyzableChart } from '@/lib/analysis'
+import { ziweiAskContext, askBaziSourceFrom, fetchAskBaziChart } from '@/lib/askChart'
 import { localize } from '@/lib/hant'
-import type { SiteLang } from '@/lib/lang'
+import { pathForLang, type SiteLang } from '@/lib/lang'
 import type { ZiweiRuleEn } from '@/lib/enRule'
 import { ZIWEI_UI_EN, ZIWEI_AI_TITLES_EN, LEVEL_STYLE_EN, mutagenStyleEn } from '@/lib/ziweiUiEn'
 
@@ -34,6 +38,8 @@ export interface ZiweiResultData {
     offsetMin: number
     dstNotice: string | null
   } | null
+  /** ★ 追问用八字盘（同一份出生数据补算；只作紫微问题的补充上下文） */
+  baziChart?: AnalyzableChart
 }
 
 // 传统盘 4×4 布局（palace index）
@@ -76,7 +82,7 @@ const SECTIONS: Array<[keyof ZiweiAIReport, string]> = [
   ['advice', '趋避建议']
 ]
 
-export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh-Hans', enView }: {
+export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh-Hans', enView, reportId }: {
   data: ZiweiResultData
   /** ★ 规则版兜底时的「重新生成」出口（模块页下传）；回看页无此能力时不传＝不显示 */
   onRegen?: () => void
@@ -85,12 +91,26 @@ export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh
   locale?: SiteLang
   /** 英文樹傳入 enRule 的英文重写层；简繁不传，保持原有渲染路径 */
   enView?: ZiweiRuleEn
+  /** 报告 id（报告详情页传入；服务端据此校验追问归属） */
+  reportId?: string | null
 }) {
   const isEn = locale === 'en'
   const EN = ZIWEI_UI_EN
   const L = (s: string) => (isEn ? s : localize(s, locale))
   const { chart, analysis, ai, aiSource, trueSolar, locked } = data
   const [selected, setSelected] = useState<number | null>(chart.mingIndex)
+  // ★ 报告级权益（与重新生成按钮同一判定）：免费试读 → 不显示重新生成，追问给购买引导
+  const paid = isReportPaid('ziwei', data)
+  // ★ 旧报告没有 baziChart：用已存档的紫微盘补算同一张八字盘，入口不再消失
+  const [askChart, setAskChart] = useState<AnalyzableChart | null>(data.baziChart ?? null)
+  useEffect(() => {
+    if (askChart) return
+    const src = askBaziSourceFrom(chart)
+    if (!src) return
+    let cancelled = false
+    fetchAskBaziChart(src).then((c) => { if (!cancelled && c) setAskChart(c) })
+    return () => { cancelled = true }
+  }, [askChart, chart])
   // ★ 付费用户拿到规则版兜底（AI 结果未过合规校验）时，标签旁必须给出口，否则只能要求退款
   const ruleVersion = isRuleVersion(aiSource)
   // ★ 试读：十二宫星盘与基础信息常显；规则板块只放 patterns / transforms；大限流年锁
@@ -410,59 +430,86 @@ export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh
         <LockedCard key={key} title={periodText(key, p).title} locale={locale} chip={isEn ? EN.lockedChip : undefined} />
       ))}
 
-      {ai && (
-        <div className="space-y-4 hw-c-read">
-          {/* ★ 英文 aiSource 为中文（规则版标记），英文树不渲染它，只给统一标题 */}
-          <h2 className="hw-c-h1">{isEn ? EN.inDepth : `${L('深度解读 ·')} ${L(aiSource)}`}</h2>
-          {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
-          {ruleVersion && onRegen && (
-            <div className="flex flex-wrap items-center gap-3">
-              <button
-                type="button"
-                onClick={onRegen}
-                disabled={regenBusy}
-                className="px-4 py-1.5 rounded-full border border-gold/20 bg-white text-sm font-medium text-ink hover:border-ink transition disabled:opacity-50"
-              >
-                {isEn ? (regenBusy ? EN.regenBusy : EN.regen) : (regenBusy ? L('重新生成中...') : L('免费重新生成'))}
-              </button>
-              <span className="text-xs text-ink-light">{isEn ? EN.regenNote : L('不额外收费 · AI 将重写全文并覆盖本报告')}</span>
-            </div>
-          )}
-          {/* ★ 按【存在键】渲染（2026-10-18）：老报告（库里 6 键）照旧显示原有板块，
-              缺键不出现空标题；新报告 12 板块全量显示 */}
-          {SECTIONS
-            .filter(([key]) => {
-              const v = ai[key] as string | undefined
-              return typeof v === 'string' && v.trim().length > 0
-            })
-            .map(([key, title]) => (
+      {(() => {
+        // ★ 免费分层（2026-11-09 用户口径）：未购用户拿到 in-depth reading 列表的
+        //   前两个模块（命格总论、性格底色）规则版；付费墙从第三个模块起，
+        //   其余模块只渲染标题 + 模糊占位（route 不下发正文）。
+        const shown = SECTIONS.filter(([key]) => {
+          const v = ai ? (ai[key] as string | undefined) : undefined
+          return typeof v === 'string' && v.trim().length > 0
+        })
+        const shownKeys = new Set(shown.map(([key]) => key))
+        const lockedSections = previewMode ? SECTIONS.filter(([key]) => !shownKeys.has(key)) : []
+        if (shown.length === 0 && lockedSections.length === 0) return null
+        return (
+          <div className="space-y-4 hw-c-read">
+            {/* ★ 英文 aiSource 为中文（规则版标记），英文树不渲染它，只给统一标题 */}
+            <h2 className="hw-c-h1">
+              {isEn ? EN.inDepth : `${L('深度解读')} · ${previewMode ? L('试读') : L(aiSource)}`}
+            </h2>
+            {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费。
+                ★ 免费试读不显示（paid=false），这条与其它报告一致。 */}
+            {ruleVersion && paid && onRegen && (
+              <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={onRegen}
+                  disabled={regenBusy}
+                  className="px-4 py-1.5 rounded-full border border-gold/20 bg-white text-sm font-medium text-ink hover:border-ink transition disabled:opacity-50"
+                >
+                  {isEn ? (regenBusy ? EN.regenBusy : EN.regen) : (regenBusy ? L('重新生成中...') : L('免费重新生成'))}
+                </button>
+                <span className="text-xs text-ink-light">{isEn ? EN.regenNote : L('不额外收费 · AI 将重写全文并覆盖本报告')}</span>
+              </div>
+            )}
+            {/* ★ 按【存在键】渲染（2026-10-18）：老报告（库里 6 键）照旧显示原有板块，
+                缺键不出现空标题；新报告 12 板块全量显示 */}
+            {shown.map(([key, title]) => (
               <div key={key} className="hw-c-box hw-c-boxLg">
                 <h3 className="hw-c-h3">{isEn ? ZIWEI_AI_TITLES_EN[key] : L(title)}</h3>
-                <p className="text-sm text-ink/70 leading-relaxed whitespace-pre-line">{L(ai[key] as string)}</p>
+                <p className="text-sm text-ink/70 leading-relaxed whitespace-pre-line">{L(ai![key] as string)}</p>
               </div>
             ))}
-        </div>
-      )}
-
-      {/* ★ 试读：12 个 AI 板块只给标题 + 模糊占位（route 未生成、未下发全文） */}
-      {previewMode && !ai && (
-        <div className="space-y-3 hw-c-read">
-          <h2 className="hw-c-h1">{isEn ? EN.inDepth : L('深度解读')}</h2>
-          {SECTIONS.map(([key, title]) => (
-            <LockedCard key={key} title={isEn ? ZIWEI_AI_TITLES_EN[key] : L(title)} locale={locale} chip={isEn ? EN.lockedChip : undefined} />
-          ))}
-        </div>
-      )}
+            {/* ★ 付费墙：从第三个模块起；文案写清锁定模块数量与范围 */}
+            {lockedSections.length > 0 && (
+              <div className="space-y-3" data-ziwei-paywall={lockedSections.length}>
+                <p className="hw-lk-note">
+                  {isEn
+                    ? `The remaining ${lockedSections.length} modules are part of the paid report. Each locked block below is a full section in the complete version.`
+                    : `${L('以下')}${lockedSections.length}${L('个模块属于付费内容，下方每个锁定块都是完整版中的一个完整模块。')}`}
+                </p>
+                {lockedSections.map(([key, title]) => (
+                  <LockedCard key={key} title={isEn ? ZIWEI_AI_TITLES_EN[key] : L(title)} locale={locale} chip={isEn ? EN.lockedChip : undefined} />
+                ))}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* ★ 未解锁：锁定区末尾统一解锁按钮（英文树无 SKU 中文文案，走 /en/pricing） */}
       {locked && (isEn ? (
         <div className="hw-lk-cta">
           {locked.preview && <p className="hw-lk-note">{locked.preview}</p>}
-          <Link href="/en/pricing" className="hw-c-btnBig inline-block">{EN.unlock}</Link>
+          <Link href={pathForLang('/pricing', locale)} className="hw-c-btnBig inline-block">{EN.unlock}</Link>
         </div>
       ) : (
-        <UnlockCta skus={locked.skus} preview={locked.preview ? L(locked.preview) : undefined} locale={locale} returnTo={locale === 'zh-Hant' ? '/tw/reports' : '/reports'} />
+        <UnlockCta skus={locked.skus} preview={locked.preview ? L(locked.preview) : undefined} locale={locale} returnTo={pathForLang('/reports', locale)} />
       ))}
+
+      {/* AI 追问：携带紫微盘 + 四化 + 大限流年 + 报告摘要，按紫微口径作答；
+          八字盘只作补充上下文。旧报告缺 baziChart 时用紫微盘补算，入口始终可见。 */}
+      <AskPanel
+        chart={askChart}
+        locale={locale}
+        reportId={reportId}
+        reportPaid={paid}
+        unlockSku="ziwei_deep"
+        context={ziweiAskContext(data)}
+        hint={isEn
+          ? 'Ask about palaces, star brightness, the Four Transformations, or a specific decade or year. Answers follow Zi Wei Dou Shu logic, using the chart shown above.'
+          : L('可就宫位、主星庙旺、四化飞星、大限流年追问；回答按紫微斗数口径，只使用本盘星曜。')}
+      />
     </div>
   )
 }

@@ -262,6 +262,10 @@ export default function EnPricingPage() {
                     <div className="text-xs text-ink-light mt-1">/ use</div>
                   </div>
                 </div>
+                {/* Every single report grants ASK_PER_REPORT follow-ups (derived per report in entitlement). */}
+                <p className="hw-alert hw-alert--info text-xs">
+                  Includes {ASK_PER_REPORT} AI follow-up questions (lifetime, never resets)
+                </p>
                 <CheckoutButton sku={s.id} available={waffoProductId(s.id) !== null} requireChart={false} authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
                   Buy now
                 </CheckoutButton>

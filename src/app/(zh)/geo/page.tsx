@@ -12,6 +12,7 @@ import GeoResultView from '@/components/reports/GeoResultView'
 import type { GeoResultData } from '@/components/reports/GeoResultView'
 import { loadWorldData, searchCities } from '@/lib/worldCitiesClient'
 import { getAuthToken } from '@/lib/authToken'
+import { isReportPaid } from '@/lib/reportAccess'
 
 // ---------- 现居城市搜索选择（全球库 3.2 万城；替代旧 380 城下拉） ----------
 function CurrentCitySelect({ value, onChange }: {
@@ -89,6 +90,8 @@ export default function GeoPage() {
   const [data, setData] = useState<GeoResultData | null>(null)
   // 报告资产：saved=true 已入账户；false=游客（提示登录后可保存）
   const [saved, setSaved] = useState<boolean | null>(null)
+  /** 本次生成/覆盖的报告 id（传给追问面板做服务端归属校验） */
+  const [reportId, setReportId] = useState<string | null>(null)
   const [error, setError] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -99,13 +102,14 @@ export default function GeoPage() {
   // ★ 生成/重新生成共用同一入口（2026-10-18 退款事故）：同要素重调 AI，结果按同一 cacheKey
   //   覆盖写（不新增报告行、重复点击不堆积）；规则版兜底时用户据此免费重写，不必要求退款。
   //   重新生成不清空旧结果（留在屏上，按钮只是 loading），与年运页同型。
-  const runGenerate = async () => {
+  const runGenerate = async (opts?: { regen?: boolean }) => {
     setLoading(true)
     setError('')
     setSaved(null)
+    setReportId(null)
     try {
       const token = await getAuthToken()
-      const res = await fetch('/api/geo', {
+      const res = await fetch(opts?.regen ? '/api/geo?regen=1' : '/api/geo', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -131,6 +135,7 @@ export default function GeoPage() {
       if (json.success) {
         setData(json.data as GeoResultData)
         setSaved(!!json.reportId)
+        setReportId(typeof json.reportId === 'string' ? json.reportId : null)
       } else {
         setError(json.error || '解析失败')
       }
@@ -142,7 +147,7 @@ export default function GeoPage() {
   }
 
   return (
-    <div className="hw-page">
+    <div className="hw-page hw-report-theme">
       <Nav />
       <main className="hw-wrap hw-c-pg">
         <Link href="/" className="hw-c-back">‹ 首页</Link>
@@ -235,19 +240,13 @@ export default function GeoPage() {
                 登录后生成结果可保存到「我的报告」，随时回看
               </p>
             ) : null}
-            {/* 重新生成入口（与年运页同型）：同要素重调 AI，覆盖写同一报告不堆积 */}
-            <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
-              <button
-                type="button"
-                onClick={() => runGenerate()}
-                disabled={loading}
-                className="px-5 py-2 rounded-full border border-gold/15 bg-white text-sm font-medium hover:border-ink transition disabled:opacity-50"
-              >
-                重新生成本报告
-              </button>
-              <span className="text-xs text-ink-light">对解读不满意？AI 将重写全文并覆盖原报告</span>
-            </div>
-            <GeoResultView data={data} onRegen={() => runGenerate()} regenBusy={loading} />
+            {/* 重新生成入口只在 ResultView 内出现（规则版 + 已付费），避免免费试读也显示 */}
+            <GeoResultView
+              data={data}
+              reportId={reportId}
+              onRegen={isReportPaid('geo', data) ? () => runGenerate({ regen: true }) : undefined}
+              regenBusy={loading}
+            />
           </div>
         )}
       </main>

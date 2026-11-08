@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { paipanZiwei, analyzeZiwei } from '@/lib/ziwei'
-import { generateAIZiwei, fallbackZiweiText } from '@/lib/aiZiwei'
+import { paipan, getWangShuai, getGeJu } from '@/lib/paipan'
+import { generateAIZiwei, fallbackZiweiText, englishRuleZiweiText } from '@/lib/aiZiwei'
 import { checkDSTTransition } from '@/lib/solarTime'
 import { resolveBirthFromBody } from '@/lib/birthRequest'
 import { getEntitlements, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
-import { reportUnlocked, previewPayload } from '@/lib/reportPreview'
+import { reportUnlocked, previewPayload, PREVIEW_FREE, pickPreviewSections, ZIWEI_LOCKED_PREVIEW, ZIWEI_LOCKED_PREVIEW_EN } from '@/lib/reportPreview'
 import { createServerSupabase } from '@/lib/supabase'
 import type { SupabaseClient } from '@supabase/supabase-js'
 import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RULES } from '@/lib/rateLimit'
@@ -12,16 +13,20 @@ import { checkAiBudget } from '@/lib/aiBudget'
 import { saveReport, deriveReportTitle } from '@/lib/reportSave'
 import { stripEntitlementState, reportCacheKey, readReportCache, resolveModuleCachedHit, ZIWEI_CACHE_VERSION } from '@/lib/reportCache'
 import { localeFromRequest } from '@/lib/locale'
+import { isRegenRequest, regenGate } from '@/lib/regenPolicy'
+import { toHant } from '@/lib/hant'
 
 /** 未解锁时的 preview（入库剥离、命中重算时共用，避免两处文案漂移） */
-const ZIWEI_LOCKED_PREVIEW = '紫微十二宫深度解读（命格、性格、十二宫导读、事业、财运、婚姻、健康、生年四化、格局成败、大限十年、流年流月、趋避建议）解锁后可见。'
-const ZIWEI_LOCKED_PREVIEW_EN = 'The full English Zi Wei report covers the twelve palaces, temperament, career, wealth, marriage, health, the Four Transformations, patterns, the decade and the annual/monthly periods. Unlock to read the full report.'
+// ★ 2026-11-09 免费分层：文案集中在 reportPreview（route 与详情页同源），
+//   写清付费后能看到哪些模块，不用「解锁更多」。
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const locale = localeFromRequest(body)
-    const lockedPreview = locale === 'en' ? ZIWEI_LOCKED_PREVIEW_EN : ZIWEI_LOCKED_PREVIEW
+    const lockedPreview = locale === 'en'
+      ? ZIWEI_LOCKED_PREVIEW_EN
+      : locale === 'zh-Hant' ? toHant(ZIWEI_LOCKED_PREVIEW) : ZIWEI_LOCKED_PREVIEW
     const toInt = (v: unknown, def = 0): number => {
       if (v === undefined || v === null || v === '') return def
       const n = parseInt(String(v), 10)
@@ -64,6 +69,22 @@ export async function POST(request: NextRequest) {
       birthLng: ref?.lng,
       birthZone: ref?.zone
     })
+    // ★ 追问用八字盘：由同一份出生数据补算。紫微追问以紫微盘为主，
+    //   八字盘只在用户主动问八字/十神/大运时作补充上下文（见 lib/aiAsk.ts）。
+    const baziChart = (() => {
+      try {
+        const c = paipan({
+          year, month, day, hour, minute, gender,
+          birthLng: ref?.lng,
+          birthZone: ref?.zone
+        })
+        return { ...c, analysis: { wangShuai: getWangShuai(c), geJu: getGeJu(c), isPaid: false } }
+      } catch (e) {
+        // 补算失败不阻断紫微主流程，但要留痕：缺 baziChart 会让报告页追问退化为「缺盘」态
+        console.warn('[ziwei] 追问用八字盘补算失败', e)
+        return undefined
+      }
+    })()
     // ★ 身份/门禁先解析（§8.5.1 单一判定）——先于 AI 调用，供下方成本护栏使用。
     // ★ 报告门禁按【是否持有 SKU】判定（reportUnlocked → grantsCover），不依赖 ENTITLEMENT_ENFORCE：
     //   未购用户一律进入试读（免费板块全文 + 其余锁定 + 不生成 AI）。
@@ -77,6 +98,12 @@ export async function POST(request: NextRequest) {
       if (user) { userId = user.id; ent = await getEntitlements(admin, user.id) }
     }
     const unlocked = reportUnlocked(ent, 'ziwei_deep')
+
+    // ★ 接口层重新生成门槛（2026-11-09）：前端隐藏按钮只是 UX。
+    //   未购买却声明 regen → 402；已付费的规则版不设次数上限（缓存只短路真 AI，规则版自然重算）。
+    const regen = isRegenRequest(body) || request.nextUrl?.searchParams?.get('regen') === '1'
+    const regenBlocked = regenGate(regen, unlocked, locale)
+    if (regenBlocked) return regenBlocked
 
     // ★ 报告缓存短路读取（token 防盗用第三档）：登录用户的【同参数重复请求】直接命中存量全文，
     //   零 AI、零限流、零预算（放在限流/预算/AI 之前）。命中处置全在 resolveModuleCachedHit：
@@ -95,11 +122,16 @@ export async function POST(request: NextRequest) {
     if (userId && admin) {
       const hit = await readReportCache(admin, userId, 'ziwei', cacheKey)
       const resolved = hit
-        ? resolveModuleCachedHit(hit, { unlocked, skus: ['ziwei_deep'], lockedPreview })
+        ? resolveModuleCachedHit(hit, {
+            unlocked,
+            skus: ['ziwei_deep'],
+            lockedPreview,
+            freeKeys: unlocked ? undefined : PREVIEW_FREE.ziwei_deep,
+          })
         : null
       if (resolved) {
         // ★ 缓存命中也要带同一试读标记，避免免费用户从存量全文缓存拿到完整渲染路径
-        const data = { ...resolved.data, preview: previewPayload('ziwei_deep', unlocked) }
+        const data = { ...resolved.data, baziChart, preview: previewPayload('ziwei_deep', unlocked) }
         return NextResponse.json({ success: true, data, reportId: resolved.reportId, cached: true })
       }
     }
@@ -126,12 +158,18 @@ export async function POST(request: NextRequest) {
 
     // ★ 入库只存【内容】（locked 剥掉、ai 存全量全文）；门禁只作用于【响应】——
     //   读取侧按当前权益重算（详情页 reportGate），试吃→付费即刻生效。
-    const rawAi = aiReport || fallbackZiweiText(chart, analysis)
+    // ★ 英文站不得落回中文规则版（2026-11-09 免费分层后暴露：前两模块英文用户看到整段中文）
+    const rawAi = aiReport || (locale === 'en' ? englishRuleZiweiText(chart, analysis) : fallbackZiweiText(chart, analysis))
     const rawAiSource = aiReport ? 'AI 深度解读'
       : aiBlocked ? '规则版（当日 AI 额度已用尽，次日恢复）'
       : userId ? '规则版（AI结果未过合规校验）'
       : '规则版（登录后可见 AI 深度解读）'
-    const ai = unlocked ? rawAi : null
+    // ★ 免费分层（2026-11-09 用户口径更正）：未购用户不是零内容，而是深度解读列表的
+    //   前两个模块（命格总论、性格底色）的【规则版】；付费墙从第三个模块（十二宫导读）起。
+    //   规则版由确定性 fallbackZiweiText 产出，不调 AI、零成本；其余模块不下发。
+    const ai = unlocked
+      ? rawAi
+      : (pickPreviewSections(rawAi as unknown as Record<string, string>, PREVIEW_FREE.ziwei_deep) as unknown as typeof rawAi)
     const aiSource = !unlocked ? '未解锁' : rawAiSource
     const dstNotice = ref ? checkDSTTransition(ref.zone, { year, month, day, hour, minute }) : null
 
@@ -140,6 +178,8 @@ export async function POST(request: NextRequest) {
       analysis,
       // ★ free 层保留结构化星盘数据；ai 在未解锁时为 null
       free: { chart, analysis },
+      // ★ 追问用八字盘（不含紫微正文，未解锁也能拿到盘面）
+      baziChart,
       locked: unlocked ? null : {
         skus: ['ziwei_deep'],
         preview: lockedPreview

@@ -1,6 +1,7 @@
 'use client'
 
 import { GENUINE_AI_SOURCE } from '@/lib/reportGate'
+import { isReportPaid } from '@/lib/reportAccess'
 import { useState } from 'react'
 import Link from 'next/link'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
@@ -8,6 +9,7 @@ import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import type { HemunData } from '@/components/reports/HemunResultView'
 import type { PaipanResult } from '@/lib/paipan'
 import { EnHemunRules } from '@/components/en/EnRuleTables'
+import AskPanel from '@/components/AskPanel'
 import { getAuthToken } from '@/lib/authToken'
 
 type HemunDataEn = HemunData & { male?: PaipanResult; female?: PaipanResult }
@@ -118,6 +120,8 @@ export default function EnHemunClient() {
   const [error, setError] = useState('')
   const [data, setData] = useState<HemunDataEn | null>(null)
   const [saved, setSaved] = useState<boolean | null>(null)
+  /** Report id of this generation (used by the server to verify ownership). */
+  const [reportId, setReportId] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -125,11 +129,11 @@ export default function EnHemunClient() {
     await runGenerate()
   }
 
-  const runGenerate = async () => {
-    setLoading(true); setError(''); setSaved(null)
+  const runGenerate = async (opts?: { regen?: boolean }) => {
+    setLoading(true); setError(''); setSaved(null); setReportId(null)
     try {
       const token = await getAuthToken()
-      const res = await fetch('/api/hemun', {
+      const res = await fetch(opts?.regen ? '/api/hemun?regen=1' : '/api/hemun', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -143,6 +147,7 @@ export default function EnHemunClient() {
       if (json.success) {
         setData(json.data as HemunDataEn)
         setSaved(!!json.reportId)
+        setReportId(typeof json.reportId === 'string' ? json.reportId : null)
       } else {
         setError('Could not generate the synastry report. Please try again.')
       }
@@ -154,7 +159,7 @@ export default function EnHemunClient() {
   }
 
   return (
-    <div className="hw-page">
+    <div className="hw-page hw-report-theme">
       <main className="hw-wrap hw-c-pg">
         <Link href="/en" className="hw-c-back">‹ Home</Link>
         <header>
@@ -190,11 +195,11 @@ export default function EnHemunClient() {
                 Sign in to save this report and reopen it under My Reports.
               </p>
             ) : null}
-            {((data as { aiSource?: string } | null)?.aiSource !== GENUINE_AI_SOURCE) && (
+            {((data as { aiSource?: string } | null)?.aiSource !== GENUINE_AI_SOURCE) && isReportPaid('hemun', data) && (
 <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
               <button
                 type="button"
-                onClick={() => runGenerate()}
+                onClick={() => runGenerate({ regen: true })}
                 disabled={loading}
                 className="px-5 py-2 rounded-full border border-gold/15 bg-white text-sm font-medium hover:border-ink transition disabled:opacity-50"
               >
@@ -202,10 +207,24 @@ export default function EnHemunClient() {
               </button>
             </div>
             )}
-            <EnHemunRules male={data.male} female={data.female} />
+            <EnHemunRules male={data.male} female={data.female} previewOnly={!!data.locked} />
             {/* Readable line width for the AI body (2026-11-06): same 30rem cap as the shared ResultView; the rule table stays full width. */}
             <div className="mt-6 hw-c-read">
               <AiSections data={data} />
+            </div>
+            {/* AI follow-ups: male chart by default, switchable to the female chart */}
+            <div className="mt-6">
+              <AskPanel
+                chart={data.male ?? data.female ?? null}
+                locale="en"
+                reportId={reportId}
+                reportPaid={isReportPaid('hemun', data)}
+                unlockSku="hemun"
+                chartOptions={[
+                  ...(data.male ? [{ key: 'male', label: 'Male chart', chart: data.male }] : []),
+                  ...(data.female ? [{ key: 'female', label: 'Female chart', chart: data.female }] : []),
+                ]}
+              />
             </div>
           </div>
         )}

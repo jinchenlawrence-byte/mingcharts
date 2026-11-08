@@ -313,6 +313,11 @@ export default function PricingPage() {
                     <div className="text-xs text-ink-light mt-1">/ 次</div>
                   </div>
                 </div>
+                {/* ★ 追问额度为所有单项报告共有（entitlement 按每份报告派生 ASK_PER_REPORT 次），
+                    与命书卡同一措辞；.hw-alert 强调，避免用户误以为只有命书才赠。 */}
+                <p className="hw-alert hw-alert--info text-xs">
+                  购买后赠送 {ASK_PER_REPORT} 次 AI 追问（终身有效，不重置）
+                </p>
                 {/* ★ 2026-10-15：五个单次商品 productId 已登记（waffo-products.ts），
                     购买入口与命书卡同模式（未登记时 CheckoutButton 自动显示「即将推出」）。
                     bundle3 无模块页，这里的按钮是它唯一的购买入口。 */}

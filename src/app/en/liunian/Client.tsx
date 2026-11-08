@@ -1,12 +1,15 @@
 'use client'
 
 import { GENUINE_AI_SOURCE } from '@/lib/reportGate'
+import { isReportPaid } from '@/lib/reportAccess'
 import { useState } from 'react'
 import Link from 'next/link'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import type { LiunianResultData } from '@/components/reports/LiunianResultView'
 import { EnLiunianRules } from '@/components/en/EnRuleTables'
+import AskPanel from '@/components/AskPanel'
+import { liunianAskChart } from '@/lib/askChart'
 import { getAuthToken } from '@/lib/authToken'
 
 const TITLES: Record<string, string> = {
@@ -71,7 +74,11 @@ export default function EnLiunianClient() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [data, setData] = useState<LiunianResultData | null>(null)
+  // Follow-ups use the same chart plus the full luck cycles (daYun) the report was built from.
+  const askChart = data ? liunianAskChart(data) : null
   const [saved, setSaved] = useState<boolean | null>(null)
+  /** Report id of this generation (used by the server to verify ownership). */
+  const [reportId, setReportId] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -82,6 +89,7 @@ export default function EnLiunianClient() {
     setLoading(true)
     setError('')
     setSaved(null)
+    setReportId(null)
     try {
       const token = await getAuthToken()
       const res = await fetch('/api/liunian', {
@@ -109,6 +117,7 @@ export default function EnLiunianClient() {
       if (json.success) {
         setData(json.data as LiunianResultData)
         setSaved(!!json.reportId)
+        setReportId(typeof json.reportId === 'string' ? json.reportId : null)
       } else {
         setError('Could not generate the annual report. Please try again.')
       }
@@ -120,7 +129,7 @@ export default function EnLiunianClient() {
   }
 
   return (
-    <div className="hw-page">
+    <div className="hw-page hw-report-theme">
       <main className="hw-wrap hw-c-pg">
         <Link href="/en" className="hw-c-back">‹ Home</Link>
         <header>
@@ -184,7 +193,7 @@ export default function EnLiunianClient() {
                 Sign in to save this report and reopen it under My Reports.
               </p>
             ) : null}
-            {((data as { aiSource?: string } | null)?.aiSource !== GENUINE_AI_SOURCE) && (
+            {((data as { aiSource?: string } | null)?.aiSource !== GENUINE_AI_SOURCE) && isReportPaid('annual', data) && (
 <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
               <button
                 type="button"
@@ -202,11 +211,22 @@ export default function EnLiunianClient() {
               curDaYun={data.curDaYun ?? null}
               liuNian={data.liuNian}
               liuYue={data.liuYue ?? null}
+              previewOnly={!!data.locked}
+              targetYear={data.targetYear}
             />
             {/* Readable line width for the AI body (2026-11-06): same 30rem cap as the shared ResultView; the rule table stays full width. */}
             <div className="mt-6 hw-c-read">
               <AiSections data={data} />
             </div>
+            {/* AI follow-ups: same entry and placement as the chart result page */}
+            <AskPanel
+              chart={askChart}
+              locale="en"
+              reportId={reportId}
+              reportPaid={isReportPaid('annual', data)}
+              unlockSku="annual_report"
+              hint="Ask about this year's career, wealth, relationships, health, or the monthly rhythm. Make specific decisions with real-world context and professional advice."
+            />
           </div>
         )}
       </main>

@@ -9,7 +9,7 @@ import { resolveBirthFromBody } from '@/lib/birthRequest'
 import { getEntitlements, EMPTY_ENTITLEMENTS } from '@/lib/entitlement'
 import { reportUnlocked, previewPayload } from '@/lib/reportPreview'
 import { createServerSupabase } from '@/lib/supabase'
-import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RULES, FORCE_RULES } from '@/lib/rateLimit'
+import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RULES } from '@/lib/rateLimit'
 import { checkAiBudget } from '@/lib/aiBudget'
 import { saveReport, deriveReportTitle } from '@/lib/reportSave'
 import {
@@ -17,6 +17,7 @@ import {
   type AnnualCacheInput
 } from '@/lib/reportCache'
 import { localeFromRequest } from '@/lib/locale'
+import { annualLockedPreviewOf, zonedNow } from '@/lib/liunianFree'
 
 export async function POST(request: NextRequest) {
   try {
@@ -36,7 +37,10 @@ export async function POST(request: NextRequest) {
     const gender: 1 | 0 = body.gender === 1 || body.gender === '1' ? 1 : 0
     // ★ 重新生成入口（HANDOFF §四）：force=true 绕过缓存重新调 AI，结果覆盖写同一 cache_key。
     //   限流：暂不做（成本敞口在回执写明）；覆盖写保证不堆积重复行。
-    const force = body.force === true
+    // force 为旧参数；regen 为新统一参数，二者同义（重新生成 = 绕过缓存重调 AI）
+    // ★ 2026-11-09：重新生成同时接受 query 参数（与 ziwei/hemun/geo 接口统一）
+    const force = body.force === true || body.regen === true || body.regen === '1'
+      || request.nextUrl?.searchParams?.get('regen') === '1'
 
     if (year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) {
       return NextResponse.json(
@@ -52,9 +56,10 @@ export async function POST(request: NextRequest) {
     }
 
     // 目标流年：只能是今年/明年/后年（= 规则引擎 liuNian 三年窗口）
-    const nowYear = new Date().getFullYear()
+    // ★ 2026-11-09：年份按用户时区（默认 Asia/Shanghai）取，不用 UTC —— 东八区跨年当晚不能错一年。
+    const nowYear = zonedNow(null).year
     const targetYear = toInt(body.targetYear, -1)
-    const lockedPreviewEn = `The ${targetYear} Annual Pillar report covers career, wealth, relationships and health. Unlock to read the full report.`
+
     if (![nowYear, nowYear + 1, nowYear + 2].includes(targetYear)) {
       return NextResponse.json(
         { error: '目标年份不合法：年运报告目前仅支持今年、明年或后年' },
@@ -97,28 +102,34 @@ export async function POST(request: NextRequest) {
     }
     const unlocked = reportUnlocked(ent, 'annual_report')
 
-    // ★ 缓存读取（HANDOFF §3.4 流程②）：命中处置全在纯函数 resolveCachedHit（REPLY-23 发现①）——
-    //   判可用 → 按当前权益重算 locked/ai/aiSource → 组装响应，route 只剩一行调用；
-    //   「未解锁命中带全文缓存」的安全方向由断言⑦直接喂数据守护（ENFORCE=false 下路由造不出未解锁）。
-    //   force=true（重新生成）与未登录用户跳过读取。
-    if (!force && userId && admin) {
-      const hit = await readReportCache(admin, userId, 'annual', cacheKey)
-      const resolved = hit
-      ? resolveCachedHit(hit, {
-          unlocked,
-          skus: ['annual_report'],
-          targetYear,
-          ...(locale === 'en' ? { lockedPreview: lockedPreviewEn } : {}),
-        })
-      : null
-      if (resolved) {
-        // ★ 缓存命中也要带同一试读标记，避免免费用户从存量全文缓存拿到完整渲染路径
-        const data = { ...resolved.data, preview: previewPayload('annual_report', unlocked) }
-        return NextResponse.json({ success: true, data, reportId: resolved.reportId, cached: true })
+    // ★ 重新生成的服务端门槛（2026-11-08）：force 只在【登录 + 已购年运报告】时可用；
+    //   前端隐藏按钮只是 UX，不能当作授权。带 reportId 时还必须归属当前账号且 kind=annual。
+    // ★ 2026-11-09：已付费且本次只有规则版时，重新生成不设次数上限（不叠加额外计数规则）。
+    const reportIdInput = typeof body.reportId === 'string' ? body.reportId : ''
+    if (force) {
+      if (!userId || !admin || !unlocked) {
+        return NextResponse.json(
+          { error: '重新生成需要购买年运报告后使用', code: 'REGEN_REQUIRES_PAID' },
+          { status: 402 }
+        )
+      }
+      if (reportIdInput) {
+        const { data: row } = await admin
+          .from('reports')
+          .select('id,user_id,kind')
+          .eq('id', reportIdInput)
+          .maybeSingle()
+        if (!row || row.user_id !== userId || row.kind !== 'annual') {
+          return NextResponse.json(
+            { error: '该报告不属于当前账号，无法重新生成', code: 'REGEN_REPORT_FORBIDDEN' },
+            { status: 403 }
+          )
+        }
       }
     }
 
     // 排盘 → 旺衰/格局 → 规则引擎结构化岁运（大运/流年/流月，确定性计算）
+    // ★ 提前到缓存读取之前：缓存命中也要能补齐追问所需的 daYun（纯计算，不调 AI）
     const chart = paipan({
       year, month, day, hour, minute, gender,
       birthLng: ref?.lng,
@@ -135,17 +146,66 @@ export async function POST(request: NextRequest) {
       // 校验兜底：targetYear 校验在前，正常到不了这里
       return NextResponse.json({ error: '目标年份超出可批范围' }, { status: 400 })
     }
+    // ★ 免费分层文案（2026-11-09）：写清付费后可见的年份与流月；时区按 Asia/Shanghai 判断「今年」。
+    const annualPreview = annualLockedPreviewOf({
+      nowYear: zonedNow(null).year,
+      targetYear,
+      targetGanZhi: target.ganZhi,
+      future: luck.liuNian.map(y => ({ year: y.year, ganZhi: y.ganZhi })),
+      lang: locale,
+    })
+
+    // ★ 缓存读取（HANDOFF §3.4 流程②）：命中处置全在纯函数 resolveCachedHit（REPLY-23 发现①）——
+    //   判可用 → 按当前权益重算 locked/ai/aiSource → 组装响应，route 只剩一行调用；
+    //   「未解锁命中带全文缓存」的安全方向由断言⑦直接喂数据守护（ENFORCE=false 下路由造不出未解锁）。
+    //   force=true（重新生成）与未登录用户跳过读取。
+    // ★ 幂等（2026-11-08）：同一 cache_key 5 秒内刚被重新生成过，就把 force 降级为普通缓存命中，
+    //   只挡「同一份报告的连点/网络重试」，不挡用户正常再次重新生成。
+    //   必须带 reportId 才启用：前端连点必带同一 id；不带 id 的 force（脚本/测试/新生成）不受影响。
+    let recentlyRegenerated = false
+    if (force && reportIdInput && userId && admin) {
+      const { data: fresh } = await admin
+        .from('reports')
+        .select('created_at')
+        .eq('id', reportIdInput)
+        .eq('user_id', userId)
+        .eq('kind', 'annual')
+        .maybeSingle()
+      const ts = fresh?.created_at ? new Date(fresh.created_at).getTime() : 0
+      if (ts && Date.now() - ts < 5_000) recentlyRegenerated = true
+    }
+    const skipCache = force && !recentlyRegenerated
+
+    if (!skipCache && userId && admin) {
+      const hit = await readReportCache(admin, userId, 'annual', cacheKey)
+      const resolved = hit
+      ? resolveCachedHit(hit, {
+          unlocked,
+          skus: ['annual_report'],
+          targetYear,
+          lockedPreview: annualPreview,
+        })
+      : null
+      if (resolved) {
+        // ★ 缓存命中也要带同一试读标记，避免免费用户从存量全文缓存拿到完整渲染路径
+        const data = { ...resolved.data, daYun: luck.daYun, preview: previewPayload('annual_report', unlocked) }
+        return NextResponse.json({ success: true, data, reportId: resolved.reportId, cached: true })
+      }
+    }
+
+    // 排盘 → 旺衰/格局 → 规则引擎结构化岁运（大运/流年/流月，确定性计算）
+    // ★ 已在缓存读取前完成（见上方），此处只做夏令时提示
 
     // 夏令时切换点检测（gap/重复时刻），仅作提示
     const dstNotice = ref ? checkDSTTransition(ref.zone, { year, month, day, hour, minute }) : null
 
     // ★ 速率限制（token 防盗用第二档）：默认关闭（内测放行）；开启后按 u:<id>/ip:<hash> 固定窗口计数，
     //   超限返 429。放在【缓存读取之后、AI 生成之前】—— 命中缓存不计数，只有真要重算才算额度。
-    //   force=true（绕过缓存重算）叠加 FORCE_RULES（3/时 + 10/日），比普通请求收紧。
+    // ★ 2026-11-09：重新生成不叠加 FORCE_RULES —— 已付费规则版重生成不限次数（用户口径）。
     const rl = await checkRateLimit(
       admin ?? (RATE_LIMIT_ENFORCE ? createServerSupabase() : null),
       clientKey(userId, request),
-      force ? [...FORCE_RULES, ...USER_RULES] : USER_RULES
+      USER_RULES
     )
     if (!rl.allowed) return NextResponse.json(rateLimitedBody(rl), { status: 429 })
 
@@ -188,6 +248,8 @@ export async function POST(request: NextRequest) {
       favorable: favorSets.favorable,
       unfavorable: favorSets.unfavorable,
       curDaYun,
+      // ★ 追问用完整大运列表（/api/ask 需要 daYun）
+      daYun: luck.daYun,
       liuNian: luck.liuNian,
       liuYue,
       ai,
@@ -197,9 +259,7 @@ export async function POST(request: NextRequest) {
       free: { targetYear, liuNian: luck.liuNian, liuYue },
       locked: unlocked ? null : {
         skus: ['annual_report'],
-        preview: locale === 'en'
-        ? lockedPreviewEn
-        : `${targetYear}年（${target.ganZhi}年）流年详批：事业/财运/感情/健康分维度深度解读解锁后可见。`
+        preview: annualPreview,
       },
       preview: previewPayload('annual_report', unlocked)
     }

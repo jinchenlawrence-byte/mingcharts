@@ -11,6 +11,15 @@
 import { grantsCover } from './entitlement'
 import type { GrantId, SkuId } from './pricing'
 import type { ReportKind } from './reportSave'
+import { pickPreviewSections, PREVIEW_FREE, ZIWEI_LOCKED_PREVIEW } from './reportPreview'
+import { annualLockedPreviewOf, zonedNow } from './liunianFree'
+import type { SiteLang } from './lang'
+import { toHant } from './hant'
+
+/** 各报告「免费分层」可见的板块键（当前仅紫微：深度解读前两个模块） */
+const FREE_KEYS: Partial<Record<ReportKind, string[]>> = {
+  ziwei: PREVIEW_FREE.ziwei_deep,
+}
 
 /**
  * 各报告模块的门禁口径（详情页重算用；模块页 route 的 locked 文案与此同源）。
@@ -27,14 +36,14 @@ export const REPORT_GATE: Record<
   hemun: {
     sku: 'hemun',
     grant: 'hemun',
-    preview: '合婚双人九维深度解读（典籍干支、古法纳音、民俗生肖分级呈现）解锁后可见。',
+    preview: '免费试读开放 3 个维度：生肖配对、日柱夫妻宫、五行互补。付费后可看其余 6 个维度：年柱干支、年柱纳音、配偶星、婚姻宫稳定度、十神互见、大运同步，以及九维合婚 AI 深度解读与追问。',
     // 不开启补算：合婚请求体是 {male,female} 双人形态，且老行存档缺出生地键
     regenApi: null,
   },
   ziwei: {
     sku: 'ziwei_deep',
     grant: 'ziwei_deep',
-    preview: '紫微十二宫深度解读（命格、性格、十二宫导读、事业、财运、婚姻、健康、生年四化、格局成败、大限十年、流年流月、趋避建议）解锁后可见。',
+    preview: ZIWEI_LOCKED_PREVIEW,
     // 不开启补算：老行存档缺 birthZone/birthLng，回放会按默认时区算出另一张盘
     regenApi: null,
   },
@@ -42,7 +51,7 @@ export const REPORT_GATE: Record<
     sku: 'geo',
     grant: 'geo',
     preview:
-      '方位总论 · 现居城市影响 · 财富/事业/贵/安居/才华五城解读 · 迁居开运建议（AI 深度解读，共 8 节）解锁后可见。',
+      '免费试读开放「事业之城」与现居城市影响。付费后可看完整版：财富、事业、贵人、安居、才华五类城市推荐（每类最多 6 座）、现居城市影响详解、8 节 AI 深度解读与 5 次 AI 追问。',
     // 不开启补算：地理还依赖【现居城市】，该要素不在存档里，回放会给出不同的五城推荐
     regenApi: null,
   },
@@ -79,7 +88,7 @@ export function canRegenContent(kind: ReportKind, input: unknown): boolean {
 }
 
 /** 年运未解锁文案：能读到内容里的目标流年时补上「{年}（{干支}年）」前缀（与模块页同口径） */
-function annualPreviewOf(content: Record<string, unknown>): string {
+function annualPreviewOf(content: Record<string, unknown>, lang: SiteLang = 'zh-Hans'): string {
   const targetYear =
     (content.targetYear as number | undefined) ??
     ((content.free as { targetYear?: number } | undefined)?.targetYear as number | undefined)
@@ -87,15 +96,30 @@ function annualPreviewOf(content: Record<string, unknown>): string {
   const item = Array.isArray(liuNian)
     ? (liuNian as Array<{ year?: number; ganZhi?: string }>).find((y) => y.year === targetYear)
     : undefined
-  const base = '流年详批：事业/财运/感情/健康分维度深度解读解锁后可见。'
-  return targetYear ? `${targetYear}年（${item?.ganZhi ?? ''}年）${base}` : base
+  if (!targetYear) return REPORT_GATE.annual?.preview ?? ''
+  return annualLockedPreviewOf({
+    nowYear: zonedNow(null).year,
+    targetYear,
+    targetGanZhi: item?.ganZhi ?? '',
+    future: Array.isArray(liuNian)
+      ? (liuNian as Array<{ year?: number; ganZhi?: string }>)
+          .filter((y): y is { year: number; ganZhi: string } => typeof y.year === 'number' && typeof y.ganZhi === 'string')
+      : [],
+    lang,
+  })
 }
 
 /** 未解锁引导文案（纯函数，可断言） */
-export function lockedPreviewOf(kind: ReportKind, content: Record<string, unknown>): string {
+export function lockedPreviewOf(
+  kind: ReportKind,
+  content: Record<string, unknown>,
+  lang: SiteLang = 'zh-Hans'
+): string {
   const gate = REPORT_GATE[kind]
   if (!gate) return ''
-  return kind === 'annual' ? annualPreviewOf(content) : gate.preview
+  return kind === 'annual'
+    ? annualPreviewOf(content, lang)
+    : lang === 'zh-Hant' ? toHant(gate.preview) : gate.preview
 }
 
 /**
@@ -128,15 +152,22 @@ export function isRuleVersion(aiSource: unknown): boolean {
 export function gateReportForDetail(
   kind: ReportKind,
   content: Record<string, unknown>,
-  ent: { memberSkus: SkuId[]; ownedSkus: SkuId[] | Set<SkuId> }
+  ent: { memberSkus: SkuId[]; ownedSkus: SkuId[] | Set<SkuId> },
+  lang: SiteLang = 'zh-Hans'
 ): Record<string, unknown> {
   const gate = REPORT_GATE[kind]
   if (!gate) return content
   const owned = grantsCover(ent, gate.grant)
+  const freeKeys = FREE_KEYS[kind]
   return {
     ...content,
-    locked: owned ? null : { skus: [gate.sku], preview: lockedPreviewOf(kind, content) },
-    ai: owned ? (content.ai ?? null) : null,
+    locked: owned ? null : { skus: [gate.sku], preview: lockedPreviewOf(kind, content, lang) },
+    // ★ 免费分层（2026-11-09）：未持有紫微时只下发深度解读前两个模块的规则版内容
+    ai: owned
+      ? (content.ai ?? null)
+      : freeKeys
+        ? pickPreviewSections(content.ai as Record<string, unknown> | null, freeKeys)
+        : null,
     aiSource: owned ? (content.aiSource ?? null) : '未解锁',
   }
 }

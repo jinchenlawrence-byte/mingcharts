@@ -1,6 +1,7 @@
 'use client'
 
 import { GENUINE_AI_SOURCE } from '@/lib/reportGate'
+import { isReportPaid } from '@/lib/reportAccess'
 import { useMemo, useState } from 'react'
 import Link from 'next/link'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
@@ -19,6 +20,8 @@ export default function EnZiweiClient() {
   const [error, setError] = useState('')
   const [data, setData] = useState<ZiweiResultData | null>(null)
   const [saved, setSaved] = useState<boolean | null>(null)
+  /** Report id of this generation (used by the server to verify ownership). */
+  const [reportId, setReportId] = useState<string | null>(null)
 
   // English rewrite layer: shares ZiweiResultView with the two Chinese trees;
   // only the copy comes from enRule.
@@ -32,13 +35,14 @@ export default function EnZiweiClient() {
     await runGenerate()
   }
 
-  const runGenerate = async () => {
+  const runGenerate = async (opts?: { regen?: boolean }) => {
     setLoading(true)
     setError('')
     setSaved(null)
+    setReportId(null)
     try {
       const token = await getAuthToken()
-      const res = await fetch('/api/ziwei', {
+      const res = await fetch(opts?.regen ? '/api/ziwei?regen=1' : '/api/ziwei', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -61,6 +65,7 @@ export default function EnZiweiClient() {
       if (json.success) {
         setData(json.data as ZiweiResultData)
         setSaved(!!json.reportId)
+        setReportId(typeof json.reportId === 'string' ? json.reportId : null)
       } else {
         setError('Could not build the Zi Wei chart. Please try again.')
       }
@@ -72,7 +77,7 @@ export default function EnZiweiClient() {
   }
 
   return (
-    <div className="hw-page">
+    <div className="hw-page hw-report-theme">
       <main className="hw-wrap hw-c-pg">
         <Link href="/en" className="hw-c-back">‹ Home</Link>
         <header>
@@ -124,11 +129,11 @@ export default function EnZiweiClient() {
                 Sign in to save this report and reopen it under My Reports.
               </p>
             ) : null}
-            {((data as { aiSource?: string } | null)?.aiSource !== GENUINE_AI_SOURCE) && (
+            {((data as { aiSource?: string } | null)?.aiSource !== GENUINE_AI_SOURCE) && isReportPaid('ziwei', data) && (
 <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
               <button
                 type="button"
-                onClick={() => runGenerate()}
+                onClick={() => runGenerate({ regen: true })}
                 disabled={loading}
                 className="px-5 py-2 rounded-full border border-gold/15 bg-white text-sm font-medium hover:border-ink transition disabled:opacity-50"
               >
@@ -138,9 +143,10 @@ export default function EnZiweiClient() {
             )}
             <ZiweiResultView
               data={data}
+              reportId={reportId}
               locale="en"
               enView={enView}
-              onRegen={() => runGenerate()}
+              onRegen={isReportPaid('ziwei', data) ? () => runGenerate({ regen: true }) : undefined}
               regenBusy={loading}
             />
           </div>

@@ -7,6 +7,7 @@ import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import ZiweiResultView from '@/components/reports/ZiweiResultView'
 import type { ZiweiResultData } from '@/components/reports/ZiweiResultView'
 import { getAuthToken } from '@/lib/authToken'
+import { isReportPaid } from '@/lib/reportAccess'
 import { toHant } from '@/lib/hant'
 
 // 紫微斗數（繁體）：與 /ziwei 同構、同功能；AI 全文由 locale=zh-Hant 直出。
@@ -22,19 +23,22 @@ export default function HantZiweiClient() {
   const [error, setError] = useState('')
   const [data, setData] = useState<ZiweiResultData | null>(null)
   const [saved, setSaved] = useState<boolean | null>(null)
+  /** 本次生成/覆蓋的報告 id（傳給追問面板做服務端歸屬校驗） */
+  const [reportId, setReportId] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     await runGenerate()
   }
 
-  const runGenerate = async () => {
+  const runGenerate = async (opts?: { regen?: boolean }) => {
     setLoading(true)
     setError('')
     setSaved(null)
+    setReportId(null)
     try {
       const token = await getAuthToken()
-      const res = await fetch('/api/ziwei', {
+      const res = await fetch(opts?.regen ? '/api/ziwei?regen=1' : '/api/ziwei', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -57,6 +61,7 @@ export default function HantZiweiClient() {
       if (json.success) {
         setData(json.data as ZiweiResultData)
         setSaved(!!json.reportId)
+        setReportId(typeof json.reportId === 'string' ? json.reportId : null)
       } else {
         setError(json.error || H('排盤失敗'))
       }
@@ -68,7 +73,7 @@ export default function HantZiweiClient() {
   }
 
   return (
-    <div className="hw-page">
+    <div className="hw-page hw-report-theme">
       <main className="hw-wrap hw-c-pg">
         <Link href="/tw" className="hw-c-back">{H('‹ 首頁')}</Link>
         <header>
@@ -148,18 +153,14 @@ export default function HantZiweiClient() {
                 {H('登入後生成結果可保存到「我的報告」，隨時回看')}
               </p>
             ) : null}
-            <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
-              <button
-                type="button"
-                onClick={() => runGenerate()}
-                disabled={loading}
-                className="px-5 py-2 rounded-full border border-gold/15 bg-white text-sm font-medium hover:border-ink transition disabled:opacity-50"
-              >
-                {H('重新生成本報告')}
-              </button>
-              <span className="text-xs text-ink-light">{H('對解讀不滿意？AI 將重寫全文並覆蓋原報告')}</span>
-            </div>
-            <ZiweiResultView data={data} onRegen={() => runGenerate()} regenBusy={loading} locale="zh-Hant" />
+            {/* 重新生成入口只在 ResultView 內出現（規則版 + 已付費），避免免費試讀也顯示 */}
+            <ZiweiResultView
+              data={data}
+              reportId={reportId}
+              onRegen={isReportPaid('ziwei', data) ? () => runGenerate({ regen: true }) : undefined}
+              regenBusy={loading}
+              locale="zh-Hant"
+            />
           </div>
         )}
       </main>

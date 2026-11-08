@@ -16,6 +16,7 @@
 //   用户补填出生地后四柱可能变化，键若不变会命中错误缓存，故全量入键；
 //   nowYear 也入键：流年窗口（-8..+2）随年份滚动，跨年后旧缓存自然失效。
 import { GENUINE_AI_SOURCE } from './reportGate'
+import { pickPreviewSections } from './reportPreview'
 
 // 兼容旧引用：判据的唯一来源在 reportGate（客户端安全），此处仅转发
 export { GENUINE_AI_SOURCE }
@@ -37,7 +38,8 @@ export const ANNUAL_CACHE_VERSION = 2
 export const HEMUN_CACHE_VERSION = 1
 // ★ 2：2026-10-18 紫微 6 板块 → 12 板块（prompt 结构改写，纪律要求 +1）
 export const ZIWEI_CACHE_VERSION = 2
-export const GEO_CACHE_VERSION = 1
+// ★ 2：城市数据新增 en/regionEn 列，旧缓存命中会让英文页城市名退化为占位
+export const GEO_CACHE_VERSION = 2
 
 /** 年运缓存的入键参数全量（route 的 reportInput 与此同源） */
 export interface AnnualCacheInput {
@@ -172,7 +174,7 @@ export function resolveCachedHit(
  */
 export function resolveModuleCachedHit(
   hit: ReportCacheHit,
-  opts: { unlocked: boolean; skus: string[]; lockedPreview: string }
+  opts: { unlocked: boolean; skus: string[]; lockedPreview: string; freeKeys?: string[] }
 ): { reportId: string; data: Record<string, unknown> } | null {
   if (!isCacheContentUsable(hit.content)) return null
   if (hit.content.aiSource !== GENUINE_AI_SOURCE) return null
@@ -181,6 +183,14 @@ export function resolveModuleCachedHit(
     skus: opts.skus,
     lockedPreview: opts.lockedPreview
   })
+  // ★ 免费分层（2026-11-09）：紫微未购用户拿【规则版】前两个模块，其余已在 recompute 里置空；
+  //   这里只从缓存全文中挑出白名单键，付费模块一个字符都不下发。
+  if (!opts.unlocked && opts.freeKeys) {
+    data.ai = pickPreviewSections(
+      (hit.content.ai ?? null) as Record<string, unknown> | null,
+      opts.freeKeys
+    )
+  }
   return { reportId: hit.reportId, data }
 }
 

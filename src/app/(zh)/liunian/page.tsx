@@ -11,6 +11,7 @@ import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import LiunianResultView from '@/components/reports/LiunianResultView'
 import type { LiunianResultData } from '@/components/reports/LiunianResultView'
 import { getAuthToken } from '@/lib/authToken'
+import { isReportPaid } from '@/lib/reportAccess'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
 
 // 目标流年选项：今年/明年/后年（与 route 校验口径一致）
@@ -44,6 +45,8 @@ export default function LiunianPage() {
   const [data, setData] = useState<LiunianResultData | null>(null)
   // 报告资产：saved=true 已入账户；false=游客（提示登录后可保存）
   const [saved, setSaved] = useState<boolean | null>(null)
+  /** 本次生成/覆盖的报告 id（传给追问面板做服务端归属校验） */
+  const [reportId, setReportId] = useState<string | null>(null)
 
   const options = yearOptions()
 
@@ -57,6 +60,7 @@ export default function LiunianPage() {
     setLoading(true)
     setError('')
     setSaved(null)
+    setReportId(null)
     try {
       const token = await getAuthToken()
       const res = await fetch('/api/liunian', {
@@ -72,6 +76,7 @@ export default function LiunianPage() {
           gender: formData.gender,
           targetYear,
           ...(force ? { force: true } : {}),
+          ...(force && reportId ? { reportId } : {}),
           // 出生地：城市 → birthCityId；其它 → birthZone（进阶经度 birthLng）
           ...(birth.mode === 'city'
             ? { birthCityId: birth.cityId }
@@ -85,6 +90,7 @@ export default function LiunianPage() {
       if (json.success) {
         setData(json.data as LiunianResultData)
         setSaved(!!json.reportId)
+        setReportId(typeof json.reportId === 'string' ? json.reportId : null)
       } else {
         setError(json.error || '年运报告生成失败')
       }
@@ -96,7 +102,7 @@ export default function LiunianPage() {
   }
 
   return (
-    <div className="hw-page">
+    <div className="hw-page hw-report-theme">
       <Nav />
       <main className="hw-wrap hw-c-pg">
         <Link href="/" className="hw-c-back">‹ 首页</Link>
@@ -222,19 +228,13 @@ export default function LiunianPage() {
                 登录后生成结果可保存到「我的报告」，随时回看
               </p>
             ) : null}
-            {/* 重新生成入口（HANDOFF §四）：force=true 绕过缓存重调 AI，覆盖写同一报告不堆积 */}
-            <div className="flex flex-wrap items-center justify-center gap-3 mb-6">
-              <button
-                type="button"
-                onClick={() => runGenerate(true)}
-                disabled={loading}
-                className="px-5 py-2 rounded-full border border-gold/15 bg-white text-sm font-medium hover:border-ink transition disabled:opacity-50"
-              >
-                重新生成本报告
-              </button>
-              <span className="text-xs text-ink-light">对解读不满意？AI 将重写全文并覆盖原报告</span>
-            </div>
-            <LiunianResultView data={data} onRegen={() => runGenerate(true)} regenBusy={loading} />
+            {/* 重新生成入口只在 ResultView 内出现（规则版 + 已付费），避免免费试读也显示 */}
+            <LiunianResultView
+              data={data}
+              reportId={reportId}
+              onRegen={isReportPaid('annual', data) ? () => runGenerate(true) : undefined}
+              regenBusy={loading}
+            />
           </div>
         )}
       </main>

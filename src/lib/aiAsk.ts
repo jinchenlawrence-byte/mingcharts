@@ -114,9 +114,160 @@ const SYSTEM_PROMPT = `你是一位精通传统子平命理的资深命理师，
 
 const ASK_SHAPE = '一段纯文本回答（150–400 字，末尾含固定免责语）'
 
+// ─────────────────────────────────────────────────────────────
+// 追问上下文（紫微斗数）：与八字盘并存，但只用于紫微专问；八字盘降为补充
+// ─────────────────────────────────────────────────────────────
+export interface AskContext {
+  /** 'ziwei' 时启用紫微斗数专属提示词 */
+  kind?: string
+  /** 紫微盘（ZwChart） */
+  chart?: unknown
+  /** 紫微分析结果（ZiweiAnalysis） */
+  analysis?: unknown
+  /** 该报告已生成的紫微分析正文摘要 */
+  report?: string
+}
+
+type Obj = Record<string, unknown>
+const asObj = (v: unknown): Obj => (v && typeof v === 'object' ? (v as Obj) : {})
+const asList = (v: unknown): Obj[] => (Array.isArray(v) ? v.map(asObj) : [])
+const asStr = (v: unknown, max = 60): string =>
+  typeof v === 'string' ? v.slice(0, max) : ''
+
+function starsText(v: unknown): string {
+  return asList(v)
+    .map((s) => {
+      const name = asStr(s.name, 12)
+      if (!name) return ''
+      const brightness = asStr(s.brightness, 4)
+      const mutagen = asStr(s.mutagen, 2)
+      return `${name}${brightness ? `(${brightness})` : ''}${mutagen ? `化${mutagen}` : ''}`
+    })
+    .filter(Boolean)
+    .join('、')
+}
+
+/** 把紫微盘/分析拼成提示词事实块；返回事实块与其中的干支（供合规溯源） */
+export function buildZiweiContextBlock(context: AskContext): { text: string; facts: string[] } {
+  const chart = asObj(context.chart)
+  const analysis = asObj(context.analysis)
+  const palaces = asList(chart.palaces)
+  const facts: string[] = []
+  const lines: string[] = []
+
+  const head: string[] = []
+  if (asStr(chart.lunarDate)) head.push(`农历：${asStr(chart.lunarDate, 24)}`)
+  if (asStr(chart.fiveElementsClass)) head.push(`五行局：${asStr(chart.fiveElementsClass, 12)}`)
+  if (asStr(chart.soul)) head.push(`命主：${asStr(chart.soul, 8)}`)
+  if (asStr(chart.body)) head.push(`身主：${asStr(chart.body, 8)}`)
+  const ming = palaces.find((p) => asStr(p.name) === '命宫')
+  const bodyPalace = palaces.find((p) => p.isBodyPalace === true)
+  if (ming) {
+    head.push(`命宫：${asStr(ming.name, 6)}（${asStr(ming.ganZhi, 6)}）`)
+    if (asStr(ming.ganZhi)) facts.push(asStr(ming.ganZhi, 6))
+  }
+  if (bodyPalace) head.push(`身宫：${asStr(bodyPalace.name, 6)}（${asStr(bodyPalace.ganZhi, 6)}）`)
+  if (head.length) lines.push(head.join('；'))
+
+  if (palaces.length) {
+    lines.push('十二宫：')
+    for (const p of palaces.slice(0, 12)) {
+      const name = asStr(p.name, 6)
+      if (!name) continue
+      const ganZhi = asStr(p.ganZhi, 6)
+      if (ganZhi) facts.push(ganZhi)
+      const major = starsText(p.majorStars)
+      const minor = starsText(p.minorStars)
+      const adj = Array.isArray(p.adjectiveStars)
+        ? p.adjectiveStars.map((s) => asStr(s, 8)).filter(Boolean).join('、')
+        : ''
+      lines.push(
+        `- ${name}宫${ganZhi ? `（${ganZhi}）` : ''}${p.isBodyPalace === true ? '[身宫]' : ''}：` +
+        `主星${major || '（空宫）'}${minor ? `；辅星${minor}` : ''}${adj ? `；杂曜${adj}` : ''}`
+      )
+    }
+  }
+
+  const transforms = asList(analysis.transforms)
+  if (transforms.length) {
+    lines.push(
+      `生年四化：${transforms
+        .slice(0, 8)
+        .map((t) => `${asStr(t.star, 8)}化${asStr(t.type, 2)}${asStr(t.palace, 6) ? `入${asStr(t.palace, 6)}` : ''}`)
+        .filter((s) => s.length > 2)
+        .join('；')}`
+    )
+  }
+
+  const periodLine = (label: string, period: unknown): string | null => {
+    const p = asObj(period)
+    if (!Object.keys(p).length) return null
+    const ganZhi = asStr(p.ganZhi, 6)
+    if (ganZhi) facts.push(ganZhi)
+    const parts = [
+      asStr(p.title, 30) ? `${asStr(p.title, 30)}` : '',
+      ganZhi,
+      asStr(p.range, 20) ? `（${asStr(p.range, 20)}）` : '',
+      asStr(p.basePalace, 6) ? `坐${asStr(p.basePalace, 6)}` : '',
+    ].filter(Boolean)
+    const stars = Array.isArray(p.stars) ? p.stars.map((s) => asStr(s, 12)).filter(Boolean).join('、') : ''
+    if (stars) parts.push(`星曜：${stars}`)
+    const tf = Array.isArray(p.transforms) ? p.transforms.map((s) => asStr(s, 20)).filter(Boolean).join('；') : ''
+    if (tf) parts.push(`四化：${tf}`)
+    return `${label}：${parts.join(' ')}`
+  }
+
+  for (const [label, key] of [['大限', 'decadal'], ['流年', 'yearly'], ['流月', 'monthly']] as const) {
+    const line = periodLine(label, analysis[key])
+    if (line) lines.push(line)
+  }
+  const xiaoxian = asObj(analysis.xiaoxian)
+  if (Object.keys(xiaoxian).length) {
+    const ganZhi = asStr(xiaoxian.ganZhi, 6)
+    if (ganZhi) facts.push(ganZhi)
+    const nominalAge = typeof xiaoxian.nominalAge === 'number' ? `${xiaoxian.nominalAge}` : ''
+    lines.push(`小限：${nominalAge ? `${nominalAge}岁 ` : ''}${ganZhi}${asStr(xiaoxian.basePalace, 6) ? ` 坐${asStr(xiaoxian.basePalace, 6)}` : ''}`)
+  }
+
+  const patterns = asList(analysis.patterns)
+  if (patterns.length) {
+    lines.push(
+      `格局：${patterns
+        .slice(0, 6)
+        .map((p) => `${asStr(p.name, 16)}（${asStr(p.level, 2)}）`)
+        .filter((s) => s.length > 3)
+        .join('、')}`
+    )
+  }
+
+  const report = asStr(context.report, 4000)
+  const text = [
+    lines.length ? `【紫微斗数盘事实（确定性格盘，报价与宫位必须与此一致）】\n${lines.join('\n')}` : '',
+    report ? `【本报告已生成的紫微分析摘要（用于承接上文，不得逐段复述）】\n${report}` : '',
+  ].filter(Boolean).join('\n\n')
+
+  return { text, facts: [...new Set(facts.filter(Boolean))] }
+}
+
+const ZIWEI_SYSTEM_PROMPT = `你是一位精通紫微斗数的资深命理师，熟读《紫微斗数全书》《紫微斗数全集》与飞星四化一脉。
+用户在某份已购紫微斗数报告的正文之后【追问】某个具体问题，你只就该问题作答，不要重复整份报告。
+
+写作要求：
+1. 以紫微斗数体系作答：宫位（命宫/身宫/十二宫）、主星庙旺利陷、六吉六凶辅星、生年四化与宫干四化（禄权科忌）、大限、流年、小限、流月，以及格局成败。
+2. 严格紧扣下面给出的【紫微斗数盘事实】，星曜、宫位、四化、大限流年均为确定性格盘结果，你只做解读，严禁修改、否认或与其矛盾。
+3. 严禁混用八字口径（十神、日主、旺衰、格局、大运）来回答紫微问题；下方【八字补充】仅在用户明确询问八字/十神/大运时才可参考，不得让它主导紫微问题的回答。
+4. 回答控制在 150–400 字，语言典雅而通俗；可引一句古籍原意并附白话解释，但不堆砌。
+5. 断语留余地，用"倾向""易""需注意""往往""多半"等表述，严禁绝对化的生死、灾祸断言；不吓唬用户。
+6. 【硬拒答】涉及医疗、法律、投资、生死、重大人生取舍的"该不该/要不要"类问题，一律不给判决——
+   只讲盘面倾向与你自己的权衡，并提示参照相应专业意见。（命理不替代专业意见，也不替你下决定。）
+   ${FORBIDDEN_WORDS_PROMPT}
+7. 分析要针对此盘的具体星曜组合与宫位结构，禁止写放之四海皆准的套话。
+8. 结尾固定附一句免责语，原文照写：${ASK_DISCLAIMER}
+9. 直接输出纯文本（可分段），不要 markdown 代码块、不要任何额外文字、不要复述本要求。`
+
 // ★ 事实集（逐字对齐原则：prompt 给了的事实，AI 引用不算编造）——
 //   与 aiAnalysis 同口径（四柱/胎元/命宫/九步大运/三年流年/当年流月）。
-function buildFacts(chart: AnalyzableChart): Set<string> {
+function buildFacts(chart: AnalyzableChart, extra: string[] = []): Set<string> {
   const now = new Date()
   const luck = buildLuckCycles(chart, now)
   return new Set([
@@ -126,10 +277,11 @@ function buildFacts(chart: AnalyzableChart): Set<string> {
     ...chart.daYun.map(d => d.ganZhi),
     ...luck.liuNian.map(y => y.ganZhi),
     ...luck.liuYue.map(m => m.ganZhi),
+    ...extra,
   ])
 }
 
-function buildUserPrompt(chart: AnalyzableChart, question: string): string {
+function buildBaziFactsBlock(chart: AnalyzableChart): string {
   const p = chart.pillars
   const gender = chart.input.gender === 1 ? '男' : '女'
   const now = new Date()
@@ -140,8 +292,7 @@ function buildUserPrompt(chart: AnalyzableChart, question: string): string {
     `${label}：${pl.ganZhi}（天干${pl.gan}＝${pl.tenGodGan || '日主'}；地支${pl.zhi}藏${pl.cangGan.map((g, i) => `${g}＝${pl.tenGodCangGan[i]}`).join('、')}）`
   const daYunLines = chart.daYun.map(d => `${d.startYear}-${d.endYear}年（${d.startAge}岁起）${d.ganZhi}`).join('；')
 
-  return `【命盘事实（确定性算法结果，引用必须与此一致）】
-性别：${gender}
+  return `性别：${gender}
 公历：${chart.input.year}年${chart.input.month}月${chart.input.day}日${chart.input.hour}时${chart.input.minute ?? 0}分
 日主：${chart.dayMaster}
 旺衰（不得更改）：${chart.analysis.wangShuai}
@@ -152,7 +303,12 @@ ${pillarLine('日柱', p.day)}
 ${pillarLine('时柱', p.hour)}
 胎元：${chart.taiYuan}　命宫：${chart.mingGong}
 大运：${daYunLines}
-当前时间锚点：${now.getFullYear()}年，流年干支${yearGZ}。
+当前时间锚点：${now.getFullYear()}年，流年干支${yearGZ}。`
+}
+
+function buildUserPrompt(chart: AnalyzableChart, question: string): string {
+  return `【命盘事实（确定性算法结果，引用必须与此一致）】
+${buildBaziFactsBlock(chart)}
 
 【用户追问】
 ${question.trim()}
@@ -160,26 +316,53 @@ ${question.trim()}
 请只回答这个追问本身（150–400 字，末尾附固定免责语）。凡涉干支只能引用上面出现过者，不得自行编造；五行相克只能称"克"，不得称"冲"。`
 }
 
+/** 紫微追问：紫微盘为主、八字盘只作补充，避免八字口径主导紫微问题 */
+function buildZiweiUserPrompt(chart: AnalyzableChart, question: string, ziweiText: string): string {
+  return `${ziweiText}
+
+【八字补充（仅当用户明确询问八字、十神、大运时才参考；紫微问题不得用八字口径作答）】
+${buildBaziFactsBlock(chart)}
+
+【用户追问】
+${question.trim()}
+
+请以紫微斗数体系回答这个追问（150–400 字，末尾附固定免责语）。星曜、宫位、四化、大限流年只能引用上面出现过者，不得自行编造。`
+}
+
 
 /**
  * 生成一条追问回答。成功且过合规 → 返回文本；否则 null（调用方返回合规兜底、不扣额度）。
  * ★ 复用 withComplianceRetry（首次留痕 + 带反馈重试），validate = 干支溯源 + 禁用词。
  */
-export async function generateAskAnswer(chart: AnalyzableChart, question: string, opts?: { locale?: OutputLocale }): Promise<string | null> {
+export async function generateAskAnswer(
+  chart: AnalyzableChart,
+  question: string,
+  opts?: { locale?: OutputLocale } & { context?: AskContext }
+): Promise<string | null> {
   if (!AI_API_KEY) {
     console.warn('[ask] 未配置 AI_API_KEY，本次无法作答')
     return null
   }
-  const facts = buildFacts(chart)
+  // ★ 紫微追问走专属提示词：紫微盘为主、八字盘只作补充（用户明确问八字时才参考）
+  const isZiwei = opts?.context?.kind === 'ziwei'
+  const ziwei = isZiwei ? buildZiweiContextBlock(opts!.context!) : null
+  const facts = buildFacts(chart, ziwei?.facts ?? [])
   const isEn = opts?.locale === 'en'
+  // 紫微追问用紫微系统提示词；其它模块保持原 SYSTEM_PROMPT 逐字不变
+  const systemPrompt = isZiwei
+    ? ZIWEI_SYSTEM_PROMPT + localeDirective(opts?.locale)
+    : SYSTEM_PROMPT + localeDirective(opts?.locale)
+  const userPrompt = ziwei
+    ? buildZiweiUserPrompt(chart, question, ziwei.text)
+    : buildUserPrompt(chart, question)
 
   const stats = newStats('ask')
 
   const attempt = async (feedback?: string): Promise<string | null> => {
     try {
       const messages: Array<{ role: string; content: string }> = [
-        { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
-        { role: 'user', content: buildUserPrompt(chart, question) },
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: userPrompt },
       ]
       if (feedback) messages.push({
         role: 'user',

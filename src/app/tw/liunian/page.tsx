@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { triAlternates } from '@/lib/lang'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
+import HantLiunianClient from './Client'
 
 // 繁體年運報告入口頁（2026-10-23 第 33 輪）
 //
@@ -42,7 +43,7 @@ export default function HantLiunianEntry() {
         </ul>
 
         <div className="flex flex-wrap items-center gap-3 mt-5">
-          <Link href="/tw" className="hw-c-btnBig">前往排盤 →</Link>
+          <a href="#liunian-generator" className="hw-c-btnBig">前往排盤 →</a>
           <span className="text-sm text-ink-light">{price}/次 · 解鎖後永久回看</span>
         </div>
 
@@ -55,6 +56,12 @@ export default function HantLiunianEntry() {
           <span className="text-ink-light mx-2">·</span>
           <Link href="/tw/liunian/taisui-biao" className="hw-c-link">十二生肖太歲對照表 →</Link>
         </p>
+      </section>
+
+      {/* 繁體年運生成器（2026-11-08）：重新生成在繁體樹內就地完成，不再跳回首頁排盤 */}
+      <section className="mb-8">
+        <h2 className="hw-c-h1">開始排盤</h2>
+        <HantLiunianClient />
       </section>
 
       <section className="hw-c-box mb-6">
