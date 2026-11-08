@@ -47,15 +47,15 @@ const SYSTEM_PROMPT = `你是一位精通子平命理与方位地理的资深命
 6. "overview"（方位总论）板块必须以这句固定免责语收尾、原文照写：
    "以上方位分析仅供参考，非确定性结论，不构成迁居决策依据；福地福人居，个人努力为本。"`
 
-function catLine(a: GeoAnalysis, key: string): string {
+function catLine(a: GeoAnalysis, key: string, isEn = false): string {
   const cat = a.categories.find((c) => c.key === key)!
   return cat.cities.map((c) =>
-    `${c.name}（${c.region}）：方位${c.fangLabel}→五行${c.menWx}${c.menWx !== c.fangWx ? `（取宽泛方位；卦位五行${c.fangWx}）` : ''}${c.diqi ? `，地气${c.diqi}（产品设定）` : ''}，影响指数${c.score}【${c.impact}】` +
+    `${isEn ? c.nameEn : c.name}（${isEn ? c.regionEn : c.region}）：方位${c.fangLabel}→五行${c.menWx}${c.menWx !== c.fangWx ? `（取宽泛方位；卦位五行${c.fangWx}）` : ''}${c.diqi ? `，地气${c.diqi}（产品设定）` : ''}，影响指数${c.score}【${c.impact}】` +
     `；依据：${c.reasons.join('；')}`
   ).join('\n')
 }
 
-function buildUserPrompt(a: GeoAnalysis): string {
+function buildUserPrompt(a: GeoAnalysis, isEn = false): string {
   // 未提供现居城市时，该板块不进入 prompt 与校验
   const specs = SECTION_SPECS.filter((s) => s.key !== 'currentCity' || a.currentCity)
   const sections = specs.map((s, i) => `${i + 1}. "${s.key}"（${s.name}）：${s.requirement}`).join('\n')
@@ -63,7 +63,7 @@ function buildUserPrompt(a: GeoAnalysis): string {
   const cc = a.currentCity
   const currentCityBlock = cc
     ? `【现居城市】（此为命主当前居住地，非推荐结果）
-${cc.name}：主判五行${cc.primaryWx ?? '无法判定'}${cc.primarySource ? `（来源：${cc.primarySource}）` : ''}${cc.godRelation ? `，与日主成${cc.godRelation}` : ''}，${cc.favorable ? '属命局喜用' : cc.primaryWx ? '属命局忌神' : ''}，影响指数${cc.score}【${cc.impact}】${cc.fangWx ? `，相对出生地${cc.fangLabel}` : cc.center ? '，与出生地同城近距（中央土）' : ''}；
+${isEn ? cc.nameEn || cc.name : cc.name}：主判五行${cc.primaryWx ?? '无法判定'}${cc.primarySource ? `（来源：${cc.primarySource}）` : ''}${cc.godRelation ? `，与日主成${cc.godRelation}` : ''}，${cc.favorable ? '属命局喜用' : cc.primaryWx ? '属命局忌神' : ''}，影响指数${cc.score}【${cc.impact}】${cc.fangWx ? `，相对出生地${cc.fangLabel}` : cc.center ? '，与出生地同城近距（中央土）' : ''}；
 确定性影响事实：${cc.effects.join('；')}
 确定性建议：${cc.advice.join('；')}
 `
@@ -77,22 +77,22 @@ ${cc.name}：主判五行${cc.primaryWx ?? '无法判定'}${cc.primarySource ? `
 忌讳五行：${a.unfavorableWx.join('、')}
 宜行方位：${a.favorableDirections.join('、')}
 忌行方位：${a.unfavorableDirections.join('、')}
-出生地参照：${a.birthplace ? `${a.birthplace.name}（方位计算基准）` : '未提供（不论相对方位）'}
+出生地参照：${a.birthplace ? `${isEn ? a.birthplaceEn || a.birthplace.name : a.birthplace.name}（方位计算基准）` : '未提供（不论相对方位）'}
 
 ${currentCityBlock}【财富之城】（目标：${a.categories[0].targetGod}${a.categories[0].targetWx}）
-${catLine(a, 'wealth')}
+${catLine(a, 'wealth', isEn)}
 
 【事业之城】（目标：${a.categories[1].targetGod}${a.categories[1].targetWx}）
-${catLine(a, 'career')}
+${catLine(a, 'career', isEn)}
 
 【贵人之城】（目标：${a.categories[2].targetGod}${a.categories[2].targetWx}）
-${catLine(a, 'patron')}
+${catLine(a, 'patron', isEn)}
 
 【安居之城】（目标：${a.categories[3].targetGod}${a.categories[3].targetWx}）
-${catLine(a, 'home')}
+${catLine(a, 'home', isEn)}
 
 【才华之城】（目标：${a.categories[4].targetGod}${a.categories[4].targetWx}）
-${catLine(a, 'talent')}
+${catLine(a, 'talent', isEn)}
 
 请严格按以下结构输出 JSON（共${specs.length}个键，值为该板块正文，可用 \n\n 分段）：
 ${sections}`
@@ -180,7 +180,7 @@ export async function generateAIGeo(a: GeoAnalysis, opts?: { locale?: OutputLoca
 
       const messages: Array<{ role: string; content: string }> = [
         { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
-        { role: 'user', content: buildUserPrompt(a) }
+        { role: 'user', content: buildUserPrompt(a, isEn) }
       ]
       if (feedback) messages.push({
         role: 'user',

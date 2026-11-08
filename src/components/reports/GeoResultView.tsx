@@ -6,13 +6,18 @@ import { useMemo, useRef, useState } from 'react'
 import { geoMercator, geoPath, geoGraticule10 } from 'd3-geo'
 import type { FeatureCollection, Geometry } from 'geojson'
 import worldData from '@/data/world-countries.json'
-import type { GeoAnalysis, CategoryResult, GeoCityHit } from '@/lib/geo'
+import type { GeoAnalysis, CategoryResult, GeoCityHit, GeoScoreTier } from '@/lib/geo'
+import { geoScoreTier } from '@/lib/geo'
 import type { GeoAIReport } from '@/lib/aiGeo'
 import { isRuleVersion } from '@/lib/reportGate'
+import { isReportPaid } from '@/lib/reportAccess'
 import { PREVIEW_FREE } from '@/lib/reportPreview'
 import { LockedCard, UnlockCta } from '@/components/reports/PreviewLock'
+import AskPanel from '@/components/AskPanel'
+import type { AnalyzableChart } from '@/lib/analysis'
+import { geoAskChart } from '@/lib/askChart'
 import { localize } from '@/lib/hant'
-import type { SiteLang } from '@/lib/lang'
+import { pathForLang, type SiteLang } from '@/lib/lang'
 import { GEO_PALETTE } from '@/lib/visual-tokens'
 
 export interface GeoResultData {
@@ -22,10 +27,39 @@ export interface GeoResultData {
   } | null
   ai: GeoAIReport | null
   aiSource: string
+  /** ★ 追问用完整命盘（含 geJu）；旧缓存缺字段时不渲染入口 */
+  chart?: AnalyzableChart
   // ★ 门禁（§8.5.1）：未解锁时给 preview 与 skus，已解锁为 null
   locked?: { skus: string[]; preview: string } | null
   /** ★ 试读标记（route 下发；详情页无此字段时按 locked 推断） */
   preview?: { only: boolean; keys: string[] }
+}
+
+// ---------- 分数分级（高/中/低 + good/neutral/bad 语义色） ----------
+function tierLabel(tier: GeoScoreTier, L: (s: string) => string): string {
+  return tier === 'good' ? L('高') : tier === 'bad' ? L('低') : L('中')
+}
+
+function scoreTone(tier: GeoScoreTier): string {
+  return tier === 'good' ? 'good' : tier === 'bad' ? 'bad' : 'flat'
+}
+
+function ScoreBadge({ score, L }: { score: number; L: (s: string) => string }) {
+  const tier = geoScoreTier(score)
+  return (
+    <span className={`hw-badge hw-badge--${scoreTone(tier)}`}>
+      {tierLabel(tier, L)} · {score.toFixed(1)}{L('分')}
+    </span>
+  )
+}
+
+function ScoreBar({ score }: { score: number }) {
+  const tier = geoScoreTier(score)
+  return (
+    <span className={`hw-scorebar hw-scorebar--${tier}`} aria-hidden>
+      <i style={{ width: `${Math.max(0, Math.min(100, score))}%` }} />
+    </span>
+  )
 }
 
 // ---------- SVG 地图组件（离线渲染，无瓦片请求） ----------
@@ -69,8 +103,10 @@ function PopupCard({ p, onClose, locale }: { p: PopupState; onClose: () => void;
         {L(c.region)}　{L('方位')}{L(c.fangLabel)}（{L('五行')}{L(c.menWx)}{c.menWx !== c.fangWx ? `，${L('卦位')}${L(c.fangWx)}` : ''}）
         {c.diqi ? <>　{L('地气')}{L(c.diqi)}（{L('产品设定')}）</> : ''}
       </div>
-      <div className="font-semibold mt-1">
-        {L('影响指数')} {c.score.toFixed(1)}（{L(c.impact)}）
+      <div className="font-semibold mt-1 flex flex-wrap items-center gap-1.5">
+        <span>{L('影响指数')} {c.score.toFixed(1)}</span>
+        <ScoreBadge score={c.score} L={L} />
+        <span className="font-normal text-ink-light">（{L(c.impact)}）</span>
       </div>
       <div className="text-ink-light mt-1.5 leading-relaxed">{L(c.reasons[0] ?? '')}</div>
     </div>
@@ -177,9 +213,9 @@ function CategorySection({ cat, locale }: { cat: CategoryResult; locale: SiteLan
   const L = (s: string) => localize(s, locale)
   return (
     <div className="hw-c-box hw-c-boxLg">
-      <h3 className="font-semibold mb-3" style={{ color: cat.color }}>
-        {cat.icon} {L(cat.label)}
-        <span className="text-xs text-ink-light font-normal ml-2">
+      <h3 className="mb-3 flex flex-wrap items-baseline gap-2">
+        <span className={`hw-cat-badge hw-cat--${cat.key}`}>{cat.icon} {L(cat.label)}</span>
+        <span className="text-xs text-ink-light font-normal">
           {L('目标')}{L(cat.targetGod)} · {L(cat.targetWx)}
         </span>
       </h3>
@@ -191,13 +227,16 @@ function CategorySection({ cat, locale }: { cat: CategoryResult; locale: SiteLan
         )}
         {cat.cities.map((c) => (
           <div key={c.name} className="rounded-md border border-gold/15 p-3">
-            <div className="flex flex-wrap items-baseline gap-2">
-              <span className="font-bold text-ink">{L(c.name)}</span>
-              <span className="text-xs text-ink-light">{L(c.region)}</span>
-              <span className="text-xs px-2 py-0.5 rounded-full text-white ml-auto"
-                style={{ background: cat.color }}>
-                {c.score.toFixed(1)}{L('分')} · {L(c.impact)}
-              </span>
+            <div className="flex flex-wrap items-start gap-2">
+              <div className="min-w-0">
+                <span className="font-bold text-ink">{L(c.name)}</span>
+                <span className="text-xs text-ink-light ml-2">{L(c.region)}</span>
+              </div>
+              <div className="ml-auto flex flex-col items-end gap-1 min-w-[110px]">
+                <ScoreBadge score={c.score} L={L} />
+                <span className="text-[11px] text-ink-light">{L(c.impact)}</span>
+                <ScoreBar score={c.score} />
+              </div>
             </div>
             <div className="text-xs text-ink-light mt-1">
               {L('方位')}{L(c.fangLabel)}（{L('五行')}{L(c.menWx)}{c.menWx !== c.fangWx ? `，${L('卦位')}${L(c.fangWx)}` : ''}）{c.diqi ? ` · ${L('地气')}${L(c.diqi)}（${L('产品设定')}）` : ''}
@@ -216,18 +255,23 @@ function CategorySection({ cat, locale }: { cat: CategoryResult; locale: SiteLan
   )
 }
 
-export default function GeoResultView({ data, onRegen, regenBusy, locale = 'zh-Hans' }: {
+export default function GeoResultView({ data, onRegen, regenBusy, locale = 'zh-Hans', reportId }: {
   data: GeoResultData
   /** ★ 规则版兜底时的「重新生成」出口（模块页下传）；回看页无此能力时不传＝不显示 */
   onRegen?: () => void
   regenBusy?: boolean
   /** 繁體樹傳 zh-Hant（UI 文案与规则版正文一并轉繁；AI 全文由 locale 直出） */
   locale?: SiteLang
+  /** 报告 id（报告详情页传入；服务端据此校验追问归属） */
+  reportId?: string | null
 }) {
   const L = (s: string) => localize(s, locale)
   const { geo, solar, ai, aiSource, locked } = data
+  const askChart = geoAskChart(data)
   // ★ 付费用户拿到规则版兜底（AI 结果未过合规校验）时，标签旁必须给出口，否则只能要求退款
   const ruleVersion = isRuleVersion(aiSource)
+  // ★ 报告级权益（与追问入口同一判定）：免费试读不显示重新生成
+  const paid = isReportPaid('geo', data)
   // ★ 试读：地图 + 现居城市 + career 类别免费；其余 4 类别与 8 个 AI 板块锁
   const previewMode = data.preview?.only ?? !!locked
   const freeCats = previewMode
@@ -277,7 +321,7 @@ export default function GeoResultView({ data, onRegen, regenBusy, locale = 'zh-H
         <div className="hw-c-box hw-c-boxLg border-l-4" style={{ borderColor: geo.currentCity.level === '吉' ? GEO_PALETTE.good : geo.currentCity.level === '忌' ? GEO_PALETTE.bad : GEO_PALETTE.caution }}>
           <div className="flex items-center justify-between flex-wrap gap-2 mb-2">
             <h2 className="hw-c-h3">{L('现居城市 ·')} {L(geo.currentCity.name)}</h2>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1.5 flex-wrap justify-end">
               <span className={`text-[11px] rounded px-2 py-0.5 border ${
                 geo.currentCity.level === '吉'
                   ? 'bg-green-50 border-green-200 text-green-700'
@@ -285,10 +329,14 @@ export default function GeoResultView({ data, onRegen, regenBusy, locale = 'zh-H
                     ? 'bg-red-50 border-red-200 text-red-700'
                     : 'bg-gold/5 border-gold/20 text-ink/70'
               }`}>{L(geo.currentCity.level)}</span>
-              <span className="text-[11px] rounded px-2 py-0.5 bg-sky-50 border border-sky-200 text-sky-700">
+              <ScoreBadge score={geo.currentCity.score} L={L} />
+              <span className="text-[11px] text-ink-light">
                 {L('影响指数')} {geo.currentCity.score} · {L(geo.currentCity.impact)}
               </span>
             </div>
+          </div>
+          <div className="mb-3 max-w-[220px]">
+            <ScoreBar score={geo.currentCity.score} />
           </div>
           <div className="grid md:grid-cols-2 gap-2 text-sm mb-3">
             <div>
@@ -347,6 +395,25 @@ export default function GeoResultView({ data, onRegen, regenBusy, locale = 'zh-H
         </div>
       </div>
 
+      {/* 分类图例：五类固定语义色 + 释义（三语一致） */}
+      <div className="hw-c-box hw-c-boxLg">
+        <h2 className="hw-c-h3">{L('分类图例')}</h2>
+        <p className="text-xs text-ink-light mb-3">
+          {L('分类表示方位五行对应的取用方向，不代表城市优劣；城市分数按高/中/低分档，并附数值。')}
+        </p>
+        <div className="hw-geo-legend">
+          {geo.categories.map((c) => (
+            <div key={c.key} className="hw-geo-legend-item">
+              <i className={`hw-cat-dot hw-cat--${c.key}`} aria-hidden />
+              <span>
+                <b className={`hw-cat--${c.key}`}>{c.icon} {L(c.label)}</b>
+                <span className="hw-geo-legend-desc">　{L(c.desc)}</span>
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* 城市明细（试读：仅 career 类别全量，其余锁定） */}
       {freeCats.map((cat) => (
         <CategorySection key={cat.key} cat={cat} locale={locale} />
@@ -357,7 +424,7 @@ export default function GeoResultView({ data, onRegen, regenBusy, locale = 'zh-H
         <div className="space-y-4 hw-c-read">
           <h2 className="hw-c-h1">{L('深度解读 ·')} {L(aiSource)}</h2>
           {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
-          {ruleVersion && onRegen && (
+          {ruleVersion && paid && onRegen && (
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
@@ -400,7 +467,17 @@ export default function GeoResultView({ data, onRegen, regenBusy, locale = 'zh-H
       )}
 
       {/* ★ 未解锁：锁定区末尾统一解锁按钮 */}
-      {locked && <UnlockCta skus={locked.skus} preview={locked.preview ? L(locked.preview) : undefined} locale={locale} returnTo={locale === 'zh-Hant' ? '/tw/reports' : '/reports'} />}
+      {locked && <UnlockCta skus={locked.skus} preview={locked.preview ? L(locked.preview) : undefined} locale={locale} returnTo={pathForLang('/reports', locale)} />}
+
+      {/* AI 追问：入口始终可见，缺盘交给面板提示；提示语引导问题落在方位/城市范围 */}
+      <AskPanel
+        chart={askChart}
+        locale={locale}
+        reportId={reportId}
+        reportPaid={paid}
+        unlockSku="geo"
+        hint={L('可就喜用方位、城市选择与现居影响追问；迁居等重大取舍只谈命理倾向，具体决定请结合现实情况。')}
+      />
     </div>
   )
 }

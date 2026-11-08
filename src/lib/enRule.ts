@@ -944,6 +944,7 @@ export interface GeoCityEn {
 export interface GeoCategoryEn {
   key: string
   label: string
+  desc: string
   targetWx: string
   targetGod: string
   cities: GeoCityEn[]
@@ -984,6 +985,14 @@ export interface GeoRuleEn {
 const CATEGORY_LABEL_EN: Record<string, string> = {
   wealth: 'City of Wealth', career: 'City of Career', patron: 'City of Benefactors',
   home: 'City of Settling', talent: 'City of Talent',
+}
+
+const CATEGORY_DESC_EN: Record<string, string> = {
+  wealth: 'Directions that support wealth or reinforce the Day Master, aiding earning and income building.',
+  career: 'Directions that support Officer-and-Killing or Resource, aiding position, platform and responsibility.',
+  patron: 'Directions that support Resource, aiding mentors, introductions and access to resources.',
+  home: 'Directions that support Companion, aiding a stable home and a settled foundation.',
+  talent: 'Directions that support Output, aiding creative expression and reputation.',
 }
 
 const GOD_EN: Record<string, string> = {
@@ -1123,10 +1132,9 @@ function geoCityReasonsEn(city: GeoCityHit, targetWx: WX, strong: boolean, fav: 
 }
 
 function cityEn(city: GeoCityHit, targetWx: WX, strong: boolean, fav: WX[], tiaoHou: WX[]): GeoCityEn {
-  const pname = city.name
   return {
-    name: pinyinName(pname),
-    region: pinyinName(city.region),
+    name: city.nameEn || 'City',
+    region: city.regionEn,
     score: city.score,
     impact: IMPACT_EN[city.impact] ?? 'Supportive',
     menWx: wxEn(city.menWx),
@@ -1137,23 +1145,6 @@ function cityEn(city: GeoCityHit, targetWx: WX, strong: boolean, fav: WX[], tiao
     diqi: city.diqi ? wxEn(city.diqi) : '',
     diqiNote: city.diqi ? (GE_QI_EN[city.diqi] ?? '') : '',
     reasons: geoCityReasonsEn(city, targetWx, strong, fav, tiaoHou),
-  }
-}
-
-/** 城市名中文 → 拼音（页面零 CJK 要求；拼音与国家名已在数据层保留英文时原样返回） */
-function pinyinName(s: string): string {
-  if (!s) return ''
-  if (!CJK_RE.test(s)) return s
-  try {
-    // 懒加载，避免把 pinyin-pro 打进中文路径的包体
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { pinyin } = require('pinyin-pro') as { pinyin: (t: string, o?: Record<string, unknown>) => string }
-    return pinyin(s, { toneType: 'none', type: 'string', v: false })
-      .split(' ')
-      .map((w) => (w ? w[0].toUpperCase() + w.slice(1) : ''))
-      .join(' ')
-  } catch {
-    return 'Chinese city'
   }
 }
 
@@ -1212,7 +1203,7 @@ function currentCityEn(c: GeoAnalysis['currentCity'], strong: boolean): GeoCurre
       ]
 
   return {
-    name: pinyinName(c.name),
+    name: c.nameEn || (CJK_RE.test(c.name) ? 'Current city' : c.name),
     level: CURRENT_CITY_LEVEL_EN[c.level] ?? 'Neutral',
     score: c.score,
     impact: IMPACT_EN[c.impact] ?? '',
@@ -1252,11 +1243,12 @@ export function geoEn(geo: GeoAnalysis, tiaoHou: WX[] = []): GeoRuleEn {
     unfavorableWx: geo.unfavorableWx.map(wxEn),
     favorableDirections: geo.favorableDirections.map(directionEn).filter(Boolean),
     unfavorableDirections: geo.unfavorableDirections.map(directionEn).filter(Boolean),
-    birthplace: geo.birthplace ? pinyinName(geo.birthplace.name) : '',
+    birthplace: geo.birthplaceEn || (geo.birthplace && !CJK_RE.test(geo.birthplace.name) ? geo.birthplace.name : ''),
     currentCity: currentCityEn(geo.currentCity, geo.strong),
     categories: geo.categories.map((c) => ({
       key: c.key,
       label: CATEGORY_LABEL_EN[c.key] ?? '',
+      desc: CATEGORY_DESC_EN[c.key] ?? '',
       targetWx: wxEn(c.targetWx),
       targetGod: GOD_EN[c.targetGod] ?? 'target element',
       cities: c.cities.map((city) => cityEn(city, c.targetWx, geo.strong, geo.favorableWx, tiaoHou)),

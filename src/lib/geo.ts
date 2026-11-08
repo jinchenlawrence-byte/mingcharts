@@ -39,7 +39,9 @@ const BAGUA_DIRS: Array<{ angle: number; label: string; wx: WX; full: string }> 
 interface CityRecord {
   id: number
   name: string
+  en: string              // 国际通行英文名（英文页只读此列）
   region: string
+  regionEn: string        // 地区英文名
   lat: number
   lng: number
   diqi: WX | null        // 城市固有地气（产品设定）
@@ -71,11 +73,14 @@ export interface CategoryMeta {
   targetWx: WX
   targetGod: string          // 财星 / 官杀 / 印星 / 比劫
   color: string              // 主题色（marker）
+  desc: string               // 分类释义（图例用）
 }
 
 export interface GeoCityHit {
   name: string
+  nameEn: string
   region: string
+  regionEn: string
   lat: number
   lng: number
   menWx: WX             // 五行门控（宽泛方位扇区）
@@ -105,13 +110,22 @@ export interface GeoAnalysis {
   favorableDirections: string[]
   unfavorableDirections: string[]
   birthplace: BirthplaceRef | null
+  birthplaceEn: string
   currentCity: CurrentCityImpact | null
   categories: CategoryResult[]
+}
+
+/** 分数分级：与现居城市 吉/平/忌 阈值一致（≥70 高、≥45 中、否则低） */
+export type GeoScoreTier = 'good' | 'neutral' | 'bad'
+
+export function geoScoreTier(score: number): GeoScoreTier {
+  return score >= 70 ? 'good' : score >= 45 ? 'neutral' : 'bad'
 }
 
 // ---------- 现居城市影响 ----------
 export interface CurrentCityImpact {
   name: string
+  nameEn: string
   lat: number
   lng: number
   fangWx: WX | null       // 方位五行（相对出生地；无出生地/同城时为 null）
@@ -466,7 +480,9 @@ function buildCategory(
   const TOP_N = 6
   const citiesOut = picks.slice(0, TOP_N).map((p) => ({
     name: p.city.name,
+    nameEn: p.city.en,
     region: p.city.region,
+    regionEn: p.city.regionEn,
     lat: p.city.lat,
     lng: p.city.lng,
     menWx: p.fang.menWx,
@@ -579,6 +595,9 @@ function analyzeCurrentCity(
 
   return {
     name: city.name,
+    nameEn: known
+      ? known.en
+      : /[\u4e00-\u9fff]/.test(city.name) ? '' : city.name,
     lat: city.lat,
     lng: city.lng,
     fangWx, fangLabel, bearing, center, distanceKm,
@@ -615,14 +634,14 @@ export function analyzeGeo(input: GeoInput): GeoAnalysis {
   // 事业之城取印星扶身（化杀生身，根基稳后堪当大任）；身旺则直取财官
   const metas: CategoryMeta[] = [
     strong
-      ? { key: 'wealth', label: '财富之城', icon: '💰', targetWx: WO_KE[dayWx], targetGod: '财星', color: GEO_CATEGORY_COLORS.wealth }
-      : { key: 'wealth', label: '财富之城', icon: '💰', targetWx: dayWx, targetGod: '比劫（帮身任财）', color: GEO_CATEGORY_COLORS.wealth },
+      ? { key: 'wealth', label: '财富之城', icon: '💰', targetWx: WO_KE[dayWx], targetGod: '财星', color: GEO_CATEGORY_COLORS.wealth, desc: '方位五行助财或帮身，利求财与收入积累' }
+      : { key: 'wealth', label: '财富之城', icon: '💰', targetWx: dayWx, targetGod: '比劫（帮身任财）', color: GEO_CATEGORY_COLORS.wealth, desc: '方位五行助财或帮身，利求财与收入积累' },
     strong
-      ? { key: 'career', label: '事业之城', icon: '🏛️', targetWx: KE_WO[dayWx], targetGod: '官杀', color: GEO_CATEGORY_COLORS.career }
-      : { key: 'career', label: '事业之城', icon: '🏛️', targetWx: SHENG_WO[dayWx], targetGod: '印星（扶身立业）', color: GEO_CATEGORY_COLORS.career },
-    { key: 'patron', label: '贵人之城', icon: '🌟', targetWx: SHENG_WO[dayWx], targetGod: '印星', color: GEO_CATEGORY_COLORS.patron },
-    { key: 'home', label: '安居之城', icon: '🏡', targetWx: dayWx, targetGod: '比劫', color: GEO_CATEGORY_COLORS.home },
-    { key: 'talent', label: '才华之城', icon: '🎨', targetWx: WO_SHENG[dayWx], targetGod: '食伤', color: GEO_CATEGORY_COLORS.talent }
+      ? { key: 'career', label: '事业之城', icon: '🏛️', targetWx: KE_WO[dayWx], targetGod: '官杀', color: GEO_CATEGORY_COLORS.career, desc: '方位五行助官杀或印星，利职位、平台与责任' }
+      : { key: 'career', label: '事业之城', icon: '🏛️', targetWx: SHENG_WO[dayWx], targetGod: '印星（扶身立业）', color: GEO_CATEGORY_COLORS.career, desc: '方位五行助官杀或印星，利职位、平台与责任' },
+    { key: 'patron', label: '贵人之城', icon: '🌟', targetWx: SHENG_WO[dayWx], targetGod: '印星', color: GEO_CATEGORY_COLORS.patron, desc: '方位五行助印，利师长提携与资源' },
+    { key: 'home', label: '安居之城', icon: '🏡', targetWx: dayWx, targetGod: '比劫', color: GEO_CATEGORY_COLORS.home, desc: '方位五行助比劫，利稳定居所与生活根基' },
+    { key: 'talent', label: '才华之城', icon: '🎨', targetWx: WO_SHENG[dayWx], targetGod: '食伤', color: GEO_CATEGORY_COLORS.talent, desc: '方位五行助食伤，利创作表达与名声' }
   ]
 
   const birth = input.birthplace || null
@@ -664,7 +683,23 @@ export function analyzeGeo(input: GeoInput): GeoAnalysis {
     favorableDirections: dirsByWx(favorable),
     unfavorableDirections: dirsByWx(unfavorable),
     birthplace: birth,
+    birthplaceEn: englishCityName(birth),
     currentCity,
     categories
   }
+}
+
+/** 出生地英文名：优先数据表英文列，其次 0.5° 内近配；非中文原名原样保留 */
+function englishCityName(ref: BirthplaceRef | null): string {
+  if (!ref) return ''
+  const exact = CITIES.find((c) => c.name === ref.name)
+  if (exact) return exact.en
+  let hit: CityRecord | undefined
+  let best = Infinity
+  for (const c of CITIES) {
+    const d = Math.abs(c.lat - ref.lat) + Math.abs(c.lng - ref.lng)
+    if (d < 0.5 && d < best) { best = d; hit = c }
+  }
+  if (hit) return hit.en
+  return /[\u4e00-\u9fff]/.test(ref.name) ? '' : ref.name
 }
