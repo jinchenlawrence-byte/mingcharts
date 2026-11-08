@@ -118,6 +118,11 @@ console.log('⑥ 夹命类格局分布与判据正确性')
   for (const name of FLANK_NAMES) hitCount[name] = 0
   let judgmentErrors = []
 
+  // ★ 进度输出（2026-11-08）：本段是全链最慢的一步（4992 盘 × 约 84ms ≈ 7 分钟，纯 CPU、不联网）。
+  //   此前无任何输出，后台跑 verify 时会被误判为「卡住」；按年打印进度 + 耗时，便于区分慢与死。
+  const scanT0 = Date.now()
+  let scanned = 0
+
   // 大样本扫描（HANDOFF-积压旧账清理 §一-1.1：h 步长 6→1）
   // ★ 空劫/昌曲/火铃的布局由时辰决定（getKongJieIndex(timeIndex)），
   //   步长 6 只覆盖 4 个时辰、漏一半布局——曾因此误断言「三条夹命格局数学上不可能成立」；
@@ -139,6 +144,10 @@ console.log('⑥ 夹命类格局分布与判据正确性')
         for (let h = 0; h < 24; h += 1) {
           const c = paipanZiwei({ year: y, month: m, day: d, hour: h, minute: 0, gender: y % 2 })
           const an = analyzeZiwei(c, now)
+          scanned++
+          if (h === 23 && m === 10 && d === 22) {
+            console.log(`      … y=${y} 已扫 ${scanned} 盘 ${((Date.now() - scanT0) / 1000).toFixed(1)}s`)
+          }
           const names = new Set(an.patterns.map((p) => p.name))
           // 命宫前后两宫的星
           const mi = c.mingIndex

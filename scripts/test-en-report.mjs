@@ -96,5 +96,22 @@ console.log('—— ④ 英文禁词 / 输出指令 ——')
   assert(ai.includes('SYSTEM_PROMPT_EN'), '命书英文 system prompt 独立存在')
 }
 
+console.log('—— ⑤ 英文紫微规则版（免费试读前两模块）零 CJK ——')
+{
+  const { paipanZiwei, analyzeZiwei } = await import('../src/lib/ziwei.ts')
+  const { englishRuleZiweiText } = await import('../src/lib/aiZiwei.ts')
+  const zwChart = paipanZiwei({ year: 1990, month: 6, day: 15, hour: 10, minute: 30, gender: 1 })
+  const zwAnalysis = analyzeZiwei(zwChart, new Date('2026-11-09T12:00:00+08:00'))
+  const rule = englishRuleZiweiText(zwChart, zwAnalysis)
+  const freeKeys = ['overview', 'personality']
+  assert(freeKeys.every((k) => typeof rule[k] === 'string' && rule[k].trim().length > 80), '免费试读两卷均有实质正文')
+  const cjk = findCJK(freeKeys.map((k) => rule[k]).join('\n'))
+  assert(cjk.length === 0, `英文紫微规则版零 CJK（若命中：${cjk.slice(0, 10).join('、')}）`)
+  assert(rule.overview.includes('Life Palace') && rule.overview.includes('for reference only'), 'overview 用英文术语并含免责句')
+  assert(rule.personality.includes('Fortune Palace'), 'personality 覆盖福德宫')
+  const route = read('src/app/api/ziwei/route.ts')
+  assert(route.includes('englishRuleZiweiText') && /locale === 'en' \? englishRuleZiweiText/.test(route), '紫微接口在 en 时走英文规则版，不回退中文兜底')
+}
+
 console.log('\n' + (allPass ? 'EN_REPORT_PASS' : 'EN_REPORT_FAIL'))
 process.exit(allPass ? 0 : 1)

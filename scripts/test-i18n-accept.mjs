@@ -52,7 +52,8 @@ for (const [rel, want] of [['值', '值'], ['害', '害'], ['刑', '刑'], ['合
   if (hantTaiSui(rel) !== want) { convFail++; fail(`hantTaiSui(${rel}) 应为「${want}」`) }
 }
 // 静态：繁体页不得再对单字调 toHant(ln.relation)（会把「衝太歲」放出去）
-for (const f of ['app/tw/shengxiao/[animal]/[year]/page.tsx', 'app/tw/shengxiao/page.tsx']) {
+// 2026-11-09 生肖详情收敛到共享组件后，判据跟到 components/shengxiao/ShengXiaoDetail.tsx
+for (const f of ['app/tw/shengxiao/[animal]/[year]/page.tsx', 'components/shengxiao/ShengXiaoDetail.tsx']) {
   const src = readFileSync(near(f), 'utf8')
   if (src.includes('toHant(ln.relation)')) { convFail++; fail(`${f} 仍对单字用 toHant（会产出「衝太歲」），应改 hantTaiSui`) }
   if (!src.includes('hantTaiSui(ln.relation)')) { convFail++; fail(`${f} 未使用 hantTaiSui 处理太岁关系`) }
@@ -173,9 +174,16 @@ if (!sync.includes('document.cookie') || !sync.includes('LOCALE_COOKIE')) { tree
 if (!sync.includes("'use client'")) { treeFail++; fail('LocaleSync 必须是客户端组件（服务端不能写 cookie）') }
 const landing = readFileSync(near('app/tw/page.tsx'), 'utf8')
 if (!landing.includes('SHENGXIAO.map')) { treeFail++; fail('/tw 落地页未列出 12 属相') }
-const detail = readFileSync(near('app/tw/shengxiao/[animal]/page.tsx'), 'utf8')
-for (const label of ['性格特點', '事業運', '財運', '婚姻感情', '健康養生', '生肖配對表', '幸運物']) {
-  if (!detail.includes(label)) { treeFail++; fail(`繁体详情页缺板块「${label}」`) }
+const detailPage = readFileSync(near('app/tw/shengxiao/[animal]/page.tsx'), 'utf8')
+if (!detailPage.includes('<ShengXiaoDetail locale="zh-Hant"')) {
+  treeFail++; fail('繁体详情页未渲染共享 ShengXiaoDetail（又会回到第二套实现）')
+}
+const detail = readFileSync(near('components/shengxiao/ShengXiaoDetail.tsx'), 'utf8')
+for (const label of ['性格特点', '事业运', '财运', '婚姻感情', '健康养生', '生肖配对表', '幸运物']) {
+  if (!detail.includes(label)) { treeFail++; fail(`生肖详情共享组件缺板块「${label}」`) }
+}
+if (!detail.includes("locale === 'zh-Hant' ? toHant")) {
+  treeFail++; fail('生肖详情共享组件未对繁中走 toHant（会漏出简体）')
 }
 // 繁体页不得直接引用简体 Nav（否则导航文案混语言）
 for (const f of ['app/tw/page.tsx', 'app/tw/shengxiao/page.tsx', 'app/tw/shengxiao/[animal]/page.tsx']) {
@@ -307,7 +315,7 @@ const { relatedHantArticles, pickBySlug, categoriesWithCount, SHENGXIAO_ARTICLE_
   const pages = {
     'app/tw/page.tsx': ['categoriesWithCount', '/tw/article/'],
     'app/tw/article/[slug]/page.tsx': ['relatedHantArticles', '/tw/article/'],
-    'app/tw/shengxiao/[animal]/page.tsx': ['SHENGXIAO_ARTICLE_SLUGS', '/tw/article/'],
+    'components/shengxiao/ShengXiaoDetail.tsx': ['SHENGXIAO_ARTICLE_SLUGS', 'pathForLang(`/article/'],
     'app/tw/shengxiao/[animal]/[year]/page.tsx': ['LIUNIAN_ARTICLE_SLUGS', '/tw/article/'],
   }
   for (const [f, needles] of Object.entries(pages)) {

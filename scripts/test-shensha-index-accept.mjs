@@ -143,7 +143,7 @@ console.log('—— ⑦ 免费查神煞页 ——')
   assert(/new Set|includes\(key\)/.test(check), '命中项做了去重（同一神煞多柱命中只出现一次）')
   assert(check.includes('不作吉凶判断') || check.includes('不作吉凶判断'), '页面有「不作吉凶判断」的口径')
   assert(check.includes('总目录可查'), '不在索引里的神煞有兜底文案（不静默丢弃）')
-  assert(/locale === 'zh-Hant' \? '\/tw' : ''/.test(check), '链接前缀按语言切换（简体无前缀 / 繁体 /tw）')
+  assert(check.includes("pathForLang('/', locale)"), '链接前缀按语言切换（简体无前缀 / 繁体 /tw / 英文 /en）')
   assert(hans.includes('locale="zh-Hans"') && hant.includes('locale="zh-Hant"'), '两页各自传对 locale')
   assert(!hant.includes('import Nav'), '繁体页不重复引简体 Nav')
   assert(hans.includes('alternates') && hant.includes('alternates'), '两页均声明 alternates')
@@ -151,7 +151,7 @@ console.log('—— ⑦ 免费查神煞页 ——')
   // 目录页要有入口
   // ★ 承接：只推已经能买的两样（命书 / 日运会员），不新增 SKU；
   //   两个目标页目前只有简体版，如实标注（不假装有繁体）
-  assert(check.includes('href="/pricing"') && check.includes('href="/member"'),
+  assert(check.includes('/pricing`') && check.includes('/member`'),
     '结果页承接已上线的两个产品（命书 / 日运会员）',
     '结果页缺少承接（命书 / 日运会员）')
   assert(check.includes('目前为简体版'),

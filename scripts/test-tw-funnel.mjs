@@ -63,9 +63,16 @@ console.log('—— ② CTA 指向 /tw ——')
     'src/app/tw/liunian/taisui-biao/page.tsx',
   ]
   // /tw 自身就是排盘首页（表单即入口），不要求它再链回自己
+  // 生肖简/繁/英已收敛到共享组件（2026-11-09）：页面本身不再写死 href="/tw"，
+  // CTA 由共享组件用 pathForLang('/', locale) 生成 —— 按真实组件校验，别按字面量校验。
+  const sharedShengXiao = read('src/components/shengxiao/ShengXiaoIndex.tsx') + read('src/components/shengxiao/ShengXiaoDetail.tsx')
+  const sharedCtaOk = /pathForLang\('\/', locale\)/.test(sharedShengXiao)
   const missing = mustCta.filter((f) => {
     const src = read(f)
     if (f === 'src/app/tw/page.tsx') return !/action=""|onSubmit=\{handleSubmit\}/.test(src)
+    if (/src\/app\/tw\/shengxiao\//.test(f) && /<ShengXiao(Index|Detail)/.test(src)) {
+      return !(/locale="zh-Hant"/.test(src) && sharedCtaOk)
+    }
     return !/href="\/tw"/.test(src)
   })
   if (missing.length) fail(`繁体 CTA 未指向 /tw：${missing.join(', ')}`)

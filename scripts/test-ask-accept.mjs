@@ -243,14 +243,19 @@ const strip = (s) => s.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
   if (!panel.includes('setEnforced')) { f++; fail('Panel 未接收 enforced') }
 
   // ★ 牙口：购买入口的条件必须同时覆盖「初始即 0 次」与「刚被 402」
-  if (!/const quotaOut\s*=\s*enforced\s*&&/.test(panel)) {
-    f++; fail('Panel 未按 enforced 派生 quotaOut（额满仍可能不显示购买入口）')
+  //   2026-11-08：入口改为「永在」，quotaOut 只决定是否显示购买胶囊；
+  //   是否锁输入框再由 enforced 派生（内测口径服务端仍放行，前端不能误锁）。
+  if (!/const quotaOut\s*=\s*exhausted\s*\|\|/.test(panel)) {
+    f++; fail('Panel 未派生 quotaOut（额满仍可能不显示购买入口）')
   }
   if (!/quotaOut\s*&&\s*\(/.test(panel)) { f++; fail('购买入口未由 quotaOut 控制') }
   if (/remaining !== null && remaining <= 0/.test(panel) === false) {
     f++; fail('quotaOut 未覆盖「首次加载即剩余 0」的情形（本次修复的核心场景）')
   }
   if (!panel.includes('exhausted ||')) { f++; fail('quotaOut 未覆盖「追问时收到 402」的情形') }
+  if (!/const inputLocked\s*=\s*quotaOut\s*&&\s*enforced/.test(panel)) {
+    f++; fail('inputLocked 未同时受 quotaOut + enforced 约束')
+  }
 
   // 购买入口本身：ask_pack + 已登记商品才可点
   if (!/<CheckoutButton[\s\S]{0,200}sku="ask_pack"/.test(panel)) { f++; fail('缺少 ask_pack 购买按钮') }
@@ -258,8 +263,8 @@ const strip = (s) => s.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
   if (!panel.includes("waffoProductId('ask_pack')")) { f++; fail('购买按钮未按商品登记状态决定可用') }
 
   // 额满时输入区禁用，避免每次点击都白跑 402
-  if (!/disabled=\{quotaOut\}/.test(panel)) { f++; fail('额满时输入框未禁用') }
-  if (!/disabled=\{sending \|\| quotaOut/.test(panel)) { f++; fail('额满时追问按钮未禁用') }
+  if (!/disabled=\{inputLocked\}/.test(panel)) { f++; fail('额满时输入框未禁用') }
+  if (!/disabled=\{sending \|\| inputLocked/.test(panel)) { f++; fail('额满时追问按钮未禁用') }
 
   console.log(f === 0
     ? '✓ 追问面板：剩余 0 即显示购买入口（enforced 服务端下发）+ 额满禁用输入'

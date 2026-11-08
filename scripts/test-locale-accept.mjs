@@ -200,7 +200,7 @@ console.log('—— ⑦ API route 传参 ——')
 let routeFail = 0
 const ROUTES = {
   'unlock/route.ts': 'generateAIAnalysis(analyzable, { locale })',
-  'ask/route.ts': 'generateAskAnswer(chart as AnalyzableChart, q, { locale })',
+  'ask/route.ts': 'generateAskAnswer(chart as AnalyzableChart, q, { locale, context })',
   'liunian/route.ts': 'generateAILiunian(analyzable, luck, targetYear, { locale })',
   'ziwei/route.ts': 'generateAIZiwei(chart, analysis, { locale })',
   'geo/route.ts': 'generateAIGeo(analysis, { locale })',

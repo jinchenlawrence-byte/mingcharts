@@ -57,7 +57,7 @@ assert(successIdx > -1 && submitIdx > successIdx && submitIdx < home.indexOf("ro
 
 const checkout = read('src/components/CheckoutButton.tsx')
 assert(/track\('pay_click', \{ sku \}\)/.test(checkout), 'CheckoutButton 记 pay_click')
-assert(checkout.indexOf("track('pay_click'") < checkout.indexOf('router.push(authPath)'), 'pay_click 在登录跳转前记录（未登录也计入；authPath 按语言树可配）')
+assert(checkout.indexOf("track('pay_click'") < checkout.indexOf('router.push(loginPath)'), 'pay_click 在登录跳转前记录（未登录也计入；loginPath 按语言树可配）')
 
 const preview = read('src/components/reports/PreviewLock.tsx')
 assert(/track\('preview_view'/.test(preview), 'UnlockCta 记 preview_view')
@@ -69,7 +69,7 @@ assert(/utm_source/.test(share) && /utm_medium/.test(share), '分享链接带 UT
 assert(/ml_ref/.test(share), '分享链接继续携带 ref 码')
 assert(/navigator\.share/.test(share) && /clipboard\.writeText/.test(share), '优先系统分享，降级复制链接')
 assert(/rememberRef/.test(read('src/components/TrackPageView.tsx')), '落地页记住 ref 码')
-assert(/<ShareLink/.test(read('src/app/(zh)/daily/page.tsx')), '日签页挂载分享按钮')
+assert(/<ShareLink/.test(read('src/components/daily/DailyView.tsx')), '日签页挂载分享按钮')
 assert(/<ShareLink/.test(read('src/app/(zh)/chart/page.tsx')), '排盘结果页挂载分享按钮')
 
 // ── ④c 邀请奖励 ─────────────────────────────────────────────

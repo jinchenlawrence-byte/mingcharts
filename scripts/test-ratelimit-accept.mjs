@@ -2,7 +2,7 @@
 // 覆盖：① 纯函数（fixedWindowStart / clientKey / rateLimitedBody）
 //       ② 开关关闭时【不查库】直接放行（子进程删 env 验证）
 //       ③ 开关开启时固定窗口计数（子进程 env=true 验证）：第 N+1 次拦截、窗口重置、多规则、fail-open
-//       ④ 六个 AI 路由的接线（checkRateLimit 先于 AI 调用；liunian 含 FORCE_RULES；ask 含 ASK_RULES）
+//       ④ 六个 AI 路由的接线（checkRateLimit 先于 AI 调用；liunian 不设 FORCE_RULES 次数上限；ask 含 ASK_RULES）
 import { readFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
@@ -74,16 +74,19 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
     const iAi = code.indexOf(`await ${aiFn}(`)
     if (iRl < 0 || iAi < 0 || iRl > iAi) { f++; fail(`${p} 限流未先于 AI 调用（顺序错误）`) }
   }
-  // liunian 必须对 force 叠加收紧规则
-  if (!strip(read('../src/app/api/liunian/route.ts')).includes('FORCE_RULES')) {
-    f++; fail('liunian 未对 force=true 叠加 FORCE_RULES')
+  // liunian 重新生成：付费规则版【不设次数上限】（2026-11-09 口径），不得再叠加 FORCE_RULES；
+  // 门槛改由接口层 402（REGEN_REQUIRES_PAID）执行
+  {
+    const lc = strip(read('../src/app/api/liunian/route.ts'))
+    if (lc.includes('FORCE_RULES')) { f++; fail('liunian 仍对 force 叠加次数上限（与「付费不限次」冲突）') }
+    if (!lc.includes('REGEN_REQUIRES_PAID')) { f++; fail('liunian 未在接口层校验重新生成的付费门槛') }
   }
   // ask 必须叠加追问单独日桶（否则囤额度用户可吃满 50/日 总桶）
   if (!strip(read('../src/app/api/ask/route.ts')).includes('ASK_RULES')) {
     f++; fail('ask 未叠加 ASK_RULES（追问缺少单独日桶）')
   }
   console.log(f === 0
-    ? '✓ 接线：六个 AI 路由均限流先于 AI 调用；liunian force 叠加收紧规则；ask 叠加 ASK_RULES'
+    ? '✓ 接线：六个 AI 路由均限流先于 AI 调用；liunian 重新生成不设次数上限（402 门槛）；ask 叠加 ASK_RULES'
     : '✗ 接线断言失败')
 }
 

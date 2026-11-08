@@ -87,6 +87,148 @@ assert(!!fineBlock && fineBlock[0].includes('font-size: var(--fs-base)') && fine
 const tokenLiteral = ['--sp-section', '--sp-card', '--r-lg'].every((v) => new RegExp(`${v}:\\s*\\d+px`).test(css))
 assert(tokenLiteral, '间距/圆角令牌为具体数值（不是空引用）')
 
+// ── ①b 四柱原有五行实色配置锁定（2026-11-09 回滚）──────────
+// 用户更正：四柱（年/月/日/时柱）原样式没问题，上一轮改成浅 tint 属误判，已回滚。
+// 这里正向锁定原样式（实色令牌值 + 实色底 + 深色字），并禁止再出现 .hw-g 覆盖或 --hw-*Soft 改造。
+console.log('\n[1b] 四柱保持原有五行实色配置')
+
+const hexToRgb = (h) => {
+  const n = parseInt(h.replace('#', ''), 16)
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+}
+const relLum = (hex) => {
+  const [r, g, b] = hexToRgb(hex).map((v) => {
+    const c = v / 255
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4)
+  })
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+const pickHex = (name) => {
+  const m = css.match(new RegExp(`${name}:\\s*#([0-9a-fA-F]{6}|[0-9a-fA-F]{3})\\b`))
+  if (!m) return ''
+  const h = m[1].toLowerCase()
+  return h.length === 3 ? '#' + h.split('').map((c) => c + c).join('') : '#' + h
+}
+
+const PINNED = {
+  wood: { token: '#3cc796', color: '#07281c' },
+  fire: { token: '#ff6b5b', color: '#3a0a05' },
+  earth: { token: '#f6c24f', color: '#3a2800' },
+  metal: { token: '#d6dbe6', color: '#1b1838' },
+  water: { token: '#3a66ff', color: '#ffffff' },
+}
+const ELEMENTS = Object.keys(PINNED)
+
+const tokenDrift = ELEMENTS.filter((e) => pickHex(`--hw-${e}`) !== PINNED[e].token)
+assert(
+  tokenDrift.length === 0,
+  `五行实色令牌保持原值（${ELEMENTS.length} 项）${tokenDrift.length ? '；漂移：' + tokenDrift.map((e) => `${e}=${pickHex('--hw-' + e)}`).join(', ') : ''}`
+)
+
+const rulesBad = ELEMENTS.filter((e) => {
+  // 行首锚定，避免误匹配 .hw-g.hw-wood 这类组合选择器
+  const m = css.match(new RegExp(`(?:^|\\n)\\.hw-${e}\\s*\\{[^}]+\\}`))
+  if (!m) return true
+  const block = m[0]
+  const wantColor = PINNED[e].color === '#ffffff' ? '#fff' : PINNED[e].color
+  return (
+    !new RegExp(`background:\\s*var\\(--hw-${e}\\)`).test(block) ||
+    !new RegExp(`color:\\s*${wantColor}\\b`, 'i').test(block)
+  )
+})
+assert(
+  rulesBad.length === 0,
+  `.hw-wood/.hw-fire… 仍为实色底 + 深色字${rulesBad.length ? '；不合规：' + rulesBad.join(', ') : ''}`
+)
+
+assert(!/\.hw-g\.hw-(wood|fire|earth|metal|water)/.test(css), '四柱格子（.hw-g）未被额外覆盖')
+assert(!/--hw-\w+Soft:/.test(css), '不存在 --hw-*Soft 类改造令牌')
+
+const lowContrast = ELEMENTS.map((e) => {
+  const bg = PINNED[e].token
+  const fg = PINNED[e].color
+  const ratio = (Math.max(relLum(fg), relLum(bg)) + 0.05) / (Math.min(relLum(fg), relLum(bg)) + 0.05)
+  return { e, r: +ratio.toFixed(2) }
+}).filter((x) => x.r < 4.5)
+assert(
+  lowContrast.length === 0,
+  `四柱文字对比度 ≥ 4.5${lowContrast.length ? '；不足：' + lowContrast.map((x) => `${x.e}=${x.r}`).join(', ') : ''}`
+)
+
+// ── ①c 全站页面底色唯一（2026-11-09 方案 B）──────────────────
+// 报告页原先用 .hw-report-theme 把 --hw-bg 覆盖成米黄 #faf6ee，与首页排盘页
+// 的灰底 --hw-bg #f1f0fa 形成两套底色。此处守护：报告页不得自带页面底色，
+// body / .hw-page / 三棵树 layout 的页面底色必须指向同一个令牌 --hw-bg。
+console.log('\n[1c] 页面底色全站统一到 --hw-bg')
+
+const reportTheme = (css.match(/(?:^|\n)\.hw-report-theme\s*\{[^}]*\}/) || [''])[0]
+assert(reportTheme.length > 0, '.hw-report-theme 作用域仍存在')
+
+const themeBgTokens = [
+  '--hw-bg', '--hw-surface', '--hw-soft', '--hw-tile', '--hw-line',
+  '--hw-ink', '--hw-mute', '--color-paper', '--color-paper-dark',
+  '--color-ink', '--color-ink-light',
+]
+const themeLeaks = themeBgTokens.filter((t) => reportTheme.includes(t + ':'))
+assert(
+  themeLeaks.length === 0,
+  `报告页不再覆盖底色/纸面令牌${themeLeaks.length ? '；仍覆盖：' + themeLeaks.join(', ') : ''}`
+)
+assert(!/background\s*:/.test(reportTheme), '报告页作用域不声明 background')
+
+const bodyRule = (css.match(/(?:^|\n)body\s*\{[^}]*\}/) || [''])[0]
+assert(/background:\s*var\(--hw-bg\)/.test(bodyRule), 'body 页面底色 = var(--hw-bg)')
+
+const pageRule = (css.match(/(?:^|\n)\.hw-page\s*\{[^}]*\}/) || [''])[0]
+assert(/background:\s*var\(--hw-bg\)/.test(pageRule), '.hw-page 页面底色 = var(--hw-bg)')
+
+assert(!/background:\s*var\(--color-paper\)/.test(css), '不再有页面用 --color-paper 另起一套底色')
+assert(/--background:\s*var\(--hw-bg\)/.test(css), '--background（bg-background 入口）指向同一页面底色令牌')
+
+const LAYOUTS = ['src/app/(zh)/layout.tsx', 'src/app/tw/layout.tsx', 'src/app/en/layout.tsx']
+const layoutBad = LAYOUTS.filter((p) => {
+  const src = read(p)
+  return !/<body[^>]*bg-hw-bg/.test(src) || /<body[^>]*bg-paper\b/.test(src)
+})
+assert(
+  layoutBad.length === 0,
+  `三棵树 body 底色令牌一致（${LAYOUTS.length} 个 layout）${layoutBad.length ? '；不合规：' + layoutBad.join(', ') : ''}`
+)
+
+// 报告页容器不得自带页面级底色（内联 hex / style background 都算）
+const reportFiles = walk(join(root, 'src')).filter((abs) => readFileSync(abs, 'utf8').includes('hw-report-theme'))
+const reportBgBad = reportFiles.filter((abs) => {
+  const src = readFileSync(abs, 'utf8')
+  return /bg-\[#|style=\{\{[^}]*background/.test(src)
+})
+assert(
+  reportBgBad.length === 0,
+  `报告页容器未自带页面底色（扫描 ${reportFiles.length} 个文件）${reportBgBad.length ? '；命中：' + reportBgBad.map((p) => relative(root, p)).join('、') : ''}`
+)
+
+// 撤掉米黄底后，正文/次要文字在灰底与白卡上的对比度仍须 ≥ 4.5
+const pageBg = pickHex('--hw-bg')
+const surface = pickHex('--hw-surface')
+const contrastPairs = [
+  ['--hw-ink', '--hw-bg'],
+  ['--hw-mute', '--hw-bg'],
+  ['--hw-ink', '--hw-surface'],
+  ['--hw-mute', '--hw-surface'],
+]
+const contrastFail = contrastPairs.filter(([fg, bg]) => {
+  const a = pickHex(fg)
+  const b = pickHex(bg)
+  if (!a || !b) return true
+  const ratio = (Math.max(relLum(a), relLum(b)) + 0.05) / (Math.min(relLum(a), relLum(b)) + 0.05)
+  return ratio < 4.5
+})
+assert(pageBg && surface, '页面底色与卡片面令牌为具体色值')
+assert(
+  contrastFail.length === 0,
+  `灰底撤米黄后正文对比度 ≥ 4.5${contrastFail.length ? '；不足：' + contrastFail.map(([f, b]) => `${f}/${b}`).join(', ') : ''}`
+)
+
+
 // ── ② 页面/组件层无硬编码色值 ───────────────────────────────
 console.log('\n[2] 页面与组件层的硬编码色值')
 const ALLOW_COLOR_LITERALS = new Set([
@@ -198,12 +340,12 @@ export function homeIssues(text, minOwnSections = 2) {
   return issues
 }
 
-// 共享首页组件自带的 .hw-section（命书样例 + 更多查询），运行时计入三树首页
+// 共享首页组件自带的 .hw-section（命书样例 + 更多查询 + 功能 Bento）
 const SHARED_HOME_SECTIONS = (read('src/components/home/HomeSections.tsx').match(/<section\s+className="hw-section"/g) || []).length
-assert(SHARED_HOME_SECTIONS === 2, `HomeSections 提供 2 个共享 .hw-section（实际 ${SHARED_HOME_SECTIONS}）`)
+assert(SHARED_HOME_SECTIONS === 3, `HomeSections 提供 3 个共享 .hw-section（实际 ${SHARED_HOME_SECTIONS}）`)
 
-// 各树自有主区块下限：简体 2（其余由共享组件 + 单区块承载），繁/英 5（各自独有内容的区块）
-const HOME_SECTION_MIN = { 'zh-Hans': 2, 'zh-Hant': 5, en: 5 }
+// 各树自有主区块下限：功能 Bento 收进共享组件后，自有部分各减 1
+const HOME_SECTION_MIN = { 'zh-Hans': 1, 'zh-Hant': 4, en: 4 }
 
 for (const [locale, file] of Object.entries(HOME)) {
   const text = read(file)
@@ -329,6 +471,26 @@ for (const f of resultViews) {
     .filter((line) => line.includes('hw-c-read'))
     .filter((line) => /grid|hw-c-bar|hw-c-box|overflow|<table/.test(line))
   assert(bad.length === 0, `${f} 的 hw-c-read 只挂 AI 容器，未波及表格/盘面/卡片${bad.length ? '；越界：' + bad[0].trim() : ''}`)
+}
+
+// ⑤b 报告页宽度分层：外层内容区放宽到 800–900px，只有 AI 长文收窄
+const reportRule = css.match(/\.hw-c-report\s*\{[^}]*max-width:\s*(\d+)px/)
+assert(
+  reportRule && Number(reportRule[1]) >= 800 && Number(reportRule[1]) <= 900,
+  `报告正文外层 .hw-c-report 取 800–900px（当前 ${reportRule ? reportRule[1] + 'px' : '未定义'}）`
+)
+const REPORT_DETAIL_PAGES = {
+  '/reports/[id]': 'src/app/(zh)/reports/[id]/page.tsx',
+  '/tw/reports/[id]': 'src/app/tw/reports/[id]/Client.tsx',
+  '/en/reports/[id]': 'src/app/en/reports/[id]/page.tsx',
+}
+for (const [label, file] of Object.entries(REPORT_DETAIL_PAGES)) {
+  const text = read(file)
+  assert(text.includes('hw-c-report'), `${label} 报告正文外层使用 .hw-c-report（整页不再被 640px 卡窄）`)
+  const bad = text
+    .split(/\r?\n/)
+    .filter((line) => line.includes('hw-c-report') && line.includes('hw-c-read'))
+  assert(bad.length === 0, `${label} 不得把 hw-c-read 套到整页容器上${bad.length ? '；越界：' + bad[0].trim() : ''}`)
 }
 
 // ── ⑥ 牙口自检 ─────────────────────────────────────────────

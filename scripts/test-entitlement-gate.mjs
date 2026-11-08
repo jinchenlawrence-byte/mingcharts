@@ -63,13 +63,15 @@ try {
   if (geoJson.data?.preview?.only !== true) {
     fail(`geo 未购 preview.only 应为 true，实际 ${JSON.stringify(geoJson.data?.preview)}`); geoBehaviorFail++
   }
-  if (geoJson.data?.preview?.keys?.join() !== 'current,career') {
-    fail(`geo 免费板块应为 current,career，实际 ${JSON.stringify(geoJson.data?.preview?.keys)}`); geoBehaviorFail++
+  // ★ 2026-11-08：categories 只有 wealth/career/patron/home/talent，'current' 是幽灵 key；
+  //   现居城市在渲染层常显，不属于类别白名单，故免费类别修正为 ['career']。
+  if (geoJson.data?.preview?.keys?.join() !== 'career') {
+    fail(`geo 免费板块应为 career，实际 ${JSON.stringify(geoJson.data?.preview?.keys)}`); geoBehaviorFail++
   }
   if (geoJson.data?.ai != null) { fail('geo 未购不得下发 AI 全文（ai 应为 null）'); geoBehaviorFail++ }
   if (!geoJson.data?.free?.geo) { fail('geo free.geo 不存在（试吃内容缺失）'); geoBehaviorFail++ }
   console.log(geoBehaviorFail === 0
-    ? '✓ geo 试读结构：未购 locked 非空 + preview.only=true + 免费板块 current/career + ai 未下发 + free.geo 有数据'
+    ? '✓ geo 试读结构：未购 locked 非空 + preview.only=true + 免费板块 career（现居城市常显）+ ai 未下发 + free.geo 有数据'
     : `✗ geo 行为断言失败 ${geoBehaviorFail} 处`)
 } catch (e) {
   geoBehaviorFail++; fail(`geo 行为断言异常：${e instanceof Error ? e.message : e}`)

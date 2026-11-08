@@ -288,7 +288,11 @@ for (const [name, path] of PAGES) {
   const code = stripComments(read(path))
   if (!code.includes('runGenerate(')) { regenFail++; fail(`${name}页 无 runGenerate 入口（重新生成按钮无来源）`) }
   if (!code.includes('onRegen=')) { regenFail++; fail(`${name}页 未把 onRegen 下传给 ResultView（标签旁出口失效）`) }
-  if (!code.includes('重新生成本报告')) { regenFail++; fail(`${name}页 缺页面级「重新生成本报告」按钮`) }
+  // ★ 2026-11-08：页头无条件按钮已移除（免费试读也会显示）。唯一入口在 ResultView，
+  //   必须由 isReportPaid 判定后下传；同时把 reportId 传给追问面板做服务端归属校验。
+  if (!code.includes("onRegen={isReportPaid(")) { regenFail++; fail(`${name}页 onRegen 未接付费判定`) }
+  if (!code.includes('reportId={reportId}')) { regenFail++; fail(`${name}页 未把 reportId 下传给结果组件`) }
+  if (code.includes('重新生成本报告')) { regenFail++; fail(`${name}页 仍有页面级「重新生成本报告」按钮（免费试读会误显示）`) }
 }
 if (!detailCode.includes('onRegen=')) { regenFail++; fail('/reports/[id] 未把 onRegen 下传（年运规则版无法就地重生成）') }
 if (!detailCode.includes('force: true')) { regenFail++; fail('/reports/[id] 就地重生成未带 force=true（会命中缓存，AI 根本没被重调）') }
@@ -298,7 +302,7 @@ if (!detailCode.includes('!canRegen && isRuleVersion(')) {
 }
 if (!detailCode.includes('前往重新生成')) { regenFail++; fail('/reports/[id] 无就地补算的规则版缺「前往重新生成」链接') }
 console.log(regenFail === 0
-  ? `✓ 规则版出口：isRuleVersion ${RULE_CASES.length} 用例真跑通过；4 个 View 判据+入口+接口齐备；4 个模块页均有按钮与下传；详情页就地重生成带 force、无能力时给「前往重新生成」引导`
+  ? `✓ 规则版出口：isRuleVersion ${RULE_CASES.length} 用例真跑通过；4 个 View 判据+入口+接口齐备；4 个模块页均按付费判定下传 onRegen 且无页头无条件按钮；详情页就地重生成带 force、无能力时给「前往重新生成」引导`
   : '✗ 规则版出口断言失败')
 
 console.log('\n' + (allPass ? 'REPORTS_ACCEPT_PASS' : 'REPORTS_ACCEPT_FAIL'))

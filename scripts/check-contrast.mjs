@@ -113,7 +113,120 @@ for (const [name, fgName, bgName, min] of PAIRS) {
   if (!ok) failures.push(`${name}: ${ratio.toFixed(2)}:1 < ${min}:1`)
 }
 
-// 改前基线（信息项，不参与判定）：ink-light 60% 不透明度叠在两种底色上的实测对比度
+// ── 2b. 报告页主题（.hw-report-theme 只做语义色校准，底色继承 :root）──
+function readRuleBlock(source, selector, from = 0) {
+  const start = source.indexOf(selector, from)
+  if (start < 0) return null
+  const open = source.indexOf('{', start)
+  const close = source.indexOf('}', open)
+  const block = source.slice(open, close)
+  const tokens = {}
+  for (const m of block.matchAll(/--([\w-]+):\s*([^;]+);/g)) tokens[m[1]] = m[2].trim()
+  return { tokens, index: start }
+}
+
+const reportLightRule = readRuleBlock(css, '.hw-report-theme {')
+if (!reportLightRule) failures.push('globals.css 缺少 .hw-report-theme（报告页主题）')
+// 2026-11-09 方案 B：报告页不再自带宣纸底色与暗色覆盖，底色/卡片面回落到 :root
+// 同一套令牌（--hw-bg / --hw-surface），这里只需按「:root + 报告页语义色」合并计算。
+const reportDarkRule = null
+
+const REPORT_PAIRS = [
+  ['报告正文 ink / 页面底', '--color-ink', '--hw-bg'],
+  ['报告正文 ink / 卡片面', '--color-ink', '--hw-surface'],
+  ['报告次要 ink-light / 页面底', '--color-ink-light', '--hw-bg'],
+  ['报告次要 ink-light / 卡片面', '--color-ink-light', '--hw-surface'],
+  ['朱砂强调 / 卡片面', '--color-cinnabar', '--hw-surface'],
+  ['五行木 / 卡片面', '--hw-woodInk', '--hw-surface'],
+  ['五行火 / 卡片面', '--hw-fireInk', '--hw-surface'],
+  ['五行土 / 卡片面', '--hw-earthInk', '--hw-surface'],
+  ['五行金 / 卡片面', '--hw-metalInk', '--hw-surface'],
+  ['五行水 / 卡片面', '--hw-water', '--hw-surface'],
+  ['吉徽章 / 吉底', '--hw-woodInk', '--hw-okBg'],
+  ['平徽章 / 中性底', '--hw-mute', '--hw-tile'],
+  ['忌徽章 / 忌底', '--danger-ink', '--danger-bg'],
+  ['分类财富 / 卡片面', '--hw-cat-wealth', '--hw-surface'],
+  ['分类事业 / 卡片面', '--hw-cat-career', '--hw-surface'],
+  ['分类贵人 / 卡片面', '--hw-cat-patron', '--hw-surface'],
+  ['分类安居 / 卡片面', '--hw-cat-home', '--hw-surface'],
+  ['分类才华 / 卡片面', '--hw-cat-talent', '--hw-surface'],
+]
+
+for (const [mode, rule] of [['亮色', reportLightRule], ['暗色', reportDarkRule]]) {
+  if (!rule) continue
+  const merged = { ...light, ...rule.tokens }
+  for (const [name, fgName, bgName] of REPORT_PAIRS) {
+    const fg = resolveColor(fgName.replace('--', ''), merged)
+    const bg = resolveColor(bgName.replace('--', ''), merged)
+    if (!fg || !bg) {
+      failures.push(`[${mode}] ${name}: 令牌无法解析为色值（${fgName} / ${bgName}）`)
+      continue
+    }
+    const ratio = contrast(fg, bg)
+    checked++
+    const ok = ratio >= 4.5
+    console.log(`[${mode}] ${name.padEnd(width)}  ${fg} on ${bg}  ${ratio.toFixed(2)}:1  ${ok ? 'PASS' : 'FAIL'} (need 4.5:1)`)
+    if (!ok) failures.push(`[${mode}] ${name}: ${ratio.toFixed(2)}:1 < 4.5:1`)
+  }
+}
+
+
+// ── 2b. 暗色主题（prefers-color-scheme: dark）：text-ink 系列色对必须同样 ≥4.5 ──
+// ★ 2026-11-09：此前暗色令牌完全没进色对校验，暗色下墨色/卡片面可能同亮 → 白字压白卡也测不出来。
+function readDarkTokens(source) {
+  const mediaStart = source.indexOf('@media (prefers-color-scheme: dark)')
+  if (mediaStart < 0) return null
+  const rootStart = source.indexOf(':root', mediaStart)
+  if (rootStart < 0) return null
+  const open = source.indexOf('{', rootStart)
+  let depth = 0
+  let end = -1
+  for (let i = open; i < source.length; i++) {
+    if (source[i] === '{') depth++
+    else if (source[i] === '}') {
+      depth--
+      if (depth === 0) { end = i; break }
+    }
+  }
+  if (end < 0) return null
+  const tokens = {}
+  for (const m of source.slice(open, end).matchAll(/--([\w-]+):\s*([^;]+);/g)) tokens[m[1]] = m[2].trim()
+  return tokens
+}
+
+const darkTokens = readDarkTokens(css)
+if (!darkTokens) {
+  failures.push('globals.css 缺少 @media (prefers-color-scheme: dark) 的 :root 暗色令牌')
+} else {
+  // 暗色必须真的覆盖页面底/卡片面/墨色，否则令牌回落到亮色值（等于没做暗色）
+  for (const required of ['hw-bg', 'hw-surface', 'hw-ink', 'hw-mute', 'color-ink', 'color-ink-light']) {
+    if (!darkTokens[required]) failures.push(`暗色主题缺少 --${required} 覆盖（暗色下会落回亮色令牌）`)
+  }
+  const mergedDark = { ...light, ...darkTokens }
+  const DARK_PAIRS = [
+    ['暗色 正文 ink / 页面底', '--color-ink', '--hw-bg'],
+    ['暗色 正文 ink / 卡片面', '--color-ink', '--hw-surface'],
+    ['暗色 辅助 ink-light / 页面底', '--color-ink-light', '--hw-bg'],
+    ['暗色 辅助 ink-light / 卡片面', '--color-ink-light', '--hw-surface'],
+    ['暗色 弱化 hw-mute / 卡片面', '--hw-mute', '--hw-surface'],
+    ['暗色 正文 hw-ink / 卡片面', '--hw-ink', '--hw-surface'],
+  ]
+  for (const [name, fgName, bgName] of DARK_PAIRS) {
+    const fg = resolveColor(fgName.replace('--', ''), mergedDark)
+    const bg = resolveColor(bgName.replace('--', ''), mergedDark)
+    if (!fg || !bg) {
+      failures.push(`${name}: 令牌无法解析为色值（${fgName} / ${bgName}）`)
+      continue
+    }
+    const ratio = contrast(fg, bg)
+    checked++
+    const ok = ratio >= 4.5
+    console.log(`${name.padEnd(width)}  ${fg} on ${bg}  ${ratio.toFixed(2)}:1  ${ok ? 'PASS' : 'FAIL'} (need 4.5:1)`)
+    if (!ok) failures.push(`${name}: ${ratio.toFixed(2)}:1 < 4.5:1`)
+  }
+}
+
+
 const baselines = [
   ['改前 ink-light@60% / 宣纸 paper', '--color-ink-light', '--color-paper'],
   ['改前 ink-light@60% / 卡片白 surface', '--color-ink-light', '--hw-surface'],
@@ -124,6 +237,52 @@ for (const [name, fgName, bgName] of baselines) {
   const mixed = blend(fg, bg, 0.6)
   const ratio = contrast(mixed, bg)
   notes.push(`${name}: ${mixed} on ${bg} = ${ratio.toFixed(2)}:1`)
+}
+
+// ── 2c. 每日日签五行配色：5 个五行 × 明暗两套主题，全部 ≥4.5 ──
+// 色板唯一来源是 src/lib/dailyElement.ts；tint 必须落在 8–10%（浅）/14%（深）附近，
+// 字色由 inkOn() 按背景实际亮度选择——这里用同一条判据复算，避免「跳过暗色主题」。
+const DAILY_ELEMENT_PATH = path.join(ROOT, 'src', 'lib', 'visual-tokens.ts')
+const dailyElementSrc = fs.readFileSync(DAILY_ELEMENT_PATH, 'utf8')
+const PALETTE_RE =
+  /(wood|fire|earth|metal|water):\s*\{\s*bar:\s*'(#[0-9a-fA-F]{6})',\s*tint:\s*'(#[0-9a-fA-F]{6})',\s*tintDark:\s*'(#[0-9a-fA-F]{6})'\s*\}/g
+const ELEMENTS = ['wood', 'fire', 'earth', 'metal', 'water']
+const palette = {}
+for (const m of dailyElementSrc.matchAll(PALETTE_RE)) {
+  palette[m[1]] = { bar: m[2], tint: m[3], tintDark: m[4] }
+}
+const missing = ELEMENTS.filter((e) => !palette[e])
+if (missing.length) failures.push(`日签五行色板缺项：${missing.join(', ')}`)
+
+const inkOnFor = (bg) => (luminance(hexToRgb(bg)) > 0.5 ? '#1b1838' : '#ffffff')
+const DARK_SURFACE = '#1a1a2e'
+for (const el of ELEMENTS) {
+  const p = palette[el]
+  if (!p) continue
+  const maxDelta = (a, b) => Math.max(...hexToRgb(a).map((c, i) => Math.abs(c - hexToRgb(b)[i])))
+  // 浅底 = 元素色 9% 叠白
+  const lightMix = blend(p.bar, '#ffffff', 0.09)
+  if (maxDelta(lightMix, p.tint) > 3) {
+    failures.push(`日签${el} 浅底 ${p.tint} 与「${p.bar} 9% 叠白」${lightMix} 偏差过大（应在 8–10%）`)
+  }
+  // 深底 = 元素色 14% 叠暗面
+  const darkMix = blend(p.bar, DARK_SURFACE, 0.14)
+  if (maxDelta(darkMix, p.tintDark) > 3) {
+    failures.push(`日签${el} 深底 ${p.tintDark} 与「${p.bar} 14% 叠 ${DARK_SURFACE}」${darkMix} 偏差过大`)
+  }
+  // 色带必须复用 :root 的 --hw-<el>，不得另造色
+  const token = resolveColor(`hw-${el}`, light)
+  if (!token || token.toLowerCase() !== p.bar.toLowerCase()) {
+    failures.push(`日签${el} 色带 ${p.bar} 与 --hw-${el}（${token || '缺失'}）不一致`)
+  }
+  for (const [mode, bg] of [['亮色', p.tint], ['暗色', p.tintDark]]) {
+    const fg = inkOnFor(bg)
+    const ratio = contrast(fg, bg)
+    checked++
+    const ok = ratio >= 4.5
+    console.log(`[日签·${mode}] ${el.padEnd(6)} ${fg} on ${bg}  ${ratio.toFixed(2)}:1  ${ok ? 'PASS' : 'FAIL'} (need 4.5:1)`)
+    if (!ok) failures.push(`日签·${mode} ${el}: ${ratio.toFixed(2)}:1 < 4.5:1`)
+  }
 }
 
 // ── 3. 源码扫描：低对比写法与错误正文色不得回潮 ──
