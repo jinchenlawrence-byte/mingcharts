@@ -7,6 +7,8 @@ import {
 } from './ai-check'
 import { aiConcurrency, addUsage, logAiStats, mapWithConcurrency, newStats, parseJsonObject, requestCompletion, sectionMaxTokens } from './aiCall'
 import { localeDirective, type OutputLocale } from './locale'
+import { ziweiEn } from './enRule'
+import { branchEn } from './enTerms'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -178,6 +180,56 @@ export function englishFallbackText(_chart: ZwChart, _a: ZiweiAnalysis): ZiweiAI
     decadal: note('decadal cycle'),
     yearly: note('annual and monthly'),
     advice: note('practical advice'),
+  }
+}
+
+/**
+ * 英文【规则版】正文（免费试读用）
+ *
+ * ★ 2026-11-09：紫微免费分层改为开放 in-depth reading 前两个模块（overview / personality）。
+ *   规则版由 fallbackZiweiText 产出，但那是中文——英文站直接渲染会整段中文泄漏。
+ *   englishFallbackText 又只是「本次未生成」提示，不适合免费试读。
+ *   这里按同一组盘面事实重写英文：只覆盖实际下发的两个模块，其余仍用提示占位
+ *   （付费降级路径继续走 englishFallbackText，不编造断语）。
+ */
+export function englishRuleZiweiText(chart: ZwChart, a: ZiweiAnalysis): ZiweiAIReport {
+  const en = ziweiEn(chart, a)
+  const life = en.grid[chart.mingIndex]
+  const trioNames = [4, 8, 6].map((o) => en.grid[(chart.mingIndex + o) % 12].name)
+  const starText = (p: (typeof en.grid)[number]) =>
+    p.majorStars.length
+      ? p.majorStars
+          .map((s) => `${s.name}${s.brightness ? ` (${s.brightness})` : ''}${s.mutagen ? ` ${s.mutagen}` : ''}`)
+          .join(', ')
+      : 'no major star (an empty palace that borrows from the opposite palace)'
+  const auxText = (p: (typeof en.grid)[number]) => {
+    const r = en.palaces.find((x) => x.name === p.name)
+    if (!r) return ''
+    return (
+      (r.auspicious.length ? `; auspicious stars: ${r.auspicious.join(', ')}` : '') +
+      (r.ominous.length ? `; inauspicious stars: ${r.ominous.join(', ')}` : '')
+    )
+  }
+  const fortune = en.grid.find((p) => p.name === 'Fortune') ?? en.grid[(chart.mingIndex + 10) % 12]
+  const patterns = en.patterns.length
+    ? en.patterns.map((p) => p.name).join(', ')
+    : 'No classical pattern label; judge from the Life Palace and its trine.'
+
+  return {
+    ...englishFallbackText(chart, a),
+    overview:
+      `The Life Palace sits in the ${branchEn(chart.palaces[chart.mingIndex].earthlyBranch)} branch and holds ${starText(life)}${auxText(life)}. ` +
+      `The five-element bureau is ${en.header.fiveElementsClass}; the Life Ruler is ${en.header.soul} and the Body Ruler is ${en.header.body}. ` +
+      `Chart strength scores ${en.score} (${en.scoreLabel}). Structural patterns: ${patterns} ` +
+      `The trine and opposite palaces are ${trioNames.join(', ')}; temperament and opportunity largely arise from how these four palaces interweave. ` +
+      `Overall, follow the strengths of the stars, work on the weak points through steady self-cultivation, and move forward one step at a time. ` +
+      `These are tendency-based reflections, for reference only; they are non-deterministic and are not a basis for any decision.`,
+    personality:
+      `Life Palace major stars: ${starText(life)}${auxText(life)}. The trine and opposite palaces are ${trioNames.join(', ')}; ` +
+      `the Fortune Palace holds ${starText(fortune)}${auxText(fortune)}. ` +
+      `Temperament is shaped mainly by the Life and Fortune palaces: the Life Palace shows your outward style in dealing with people and events, while the Fortune Palace shows your inner disposition and emotional tone. ` +
+      `Where stars are well placed, lean into their strengths; where inauspicious stars gather, guard against stubbornness or impatience and pause a step to hear others out. ` +
+      `Natural talent usually corresponds to what the Life and Career palaces govern, so deepen your strengths there.`,
   }
 }
 
