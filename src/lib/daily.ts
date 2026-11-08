@@ -12,7 +12,13 @@
 import { Solar } from 'lunar-javascript'
 import type { LuckTag } from './analysis'
 import { isValidZone, DEFAULT_ZONE } from './solarTime'
-import { DAILY_SIGNS, DAILY_SIGN_DISCLAIMER } from '@/data/daily-signs'
+import { DAILY_SIGNS, DAILY_SIGN_DISCLAIMER, DAILY_SIGN_DAY_BOUNDARY } from '@/data/daily-signs'
+import {
+  DAILY_SIGNS_EN,
+  DAILY_SIGN_DISCLAIMER_EN,
+  DAILY_SIGN_DAY_BOUNDARY_EN,
+} from '@/data/daily-signs-en'
+import type { SiteLang } from './lang'
 import { shiShenOf } from './paipan'
 import type { ShiShen } from './paipan'
 import { dayBranchRelation } from './branchRelations'
@@ -107,6 +113,13 @@ export function pickDailySign(ganZhi: string, dayNumber: number): string {
   return pickVariant(trio, dayNumber)
 }
 
+/** 英文日签：与中文同一 key／同一变体轮换规则，只换文案层。缺键同样显式抛错。 */
+export function pickDailySignEn(ganZhi: string, dayNumber: number): string {
+  const trio = DAILY_SIGNS_EN[ganZhi]
+  if (!trio) throw new Error(`English daily sign missing for jiazi: ${ganZhi}`)
+  return pickVariant(trio, dayNumber)
+}
+
 /** 3 变体轮换：每过 60 天换一种角度（意象/处事/心绪），确定性、不随机。日签与日运共用，不复制第二份（HANDOFF-个性化日运 §4.2）。 */
 export function pickVariant<T>(trio: readonly [T, T, T], dayNumber: number): T {
   return trio[Math.floor(dayNumber / 60) % 3]
@@ -129,21 +142,28 @@ export interface DailySignView {
  */
 export function dailySignFor(
   zoneInput: string | null | undefined,
-  now: Date = new Date()
+  now: Date = new Date(),
+  lang: SiteLang = 'zh-Hans'
 ): DailySignView {
   const zone = isValidZone(zoneInput ?? '') ? (zoneInput as string) : DEFAULT_ZONE
   // ★ 归日只走 dailyDateInZone（晚子时 23:00 已内建）
   const { year, month, day } = dailyDateInZone(zone, now)
   const ganZhi = liuRiOf(year, month, day).ganZhi
   const dayNumber = Math.floor(Date.UTC(year, month - 1, day) / 86400000)
+  const en = lang === 'en'
   return {
     date: `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
     zone,
     liuRi: ganZhi,
     jiaziIndex: jiaziIndex(ganZhi),
-    sign: pickDailySign(ganZhi, dayNumber),
-    disclaimer: DAILY_SIGN_DISCLAIMER,
+    sign: en ? pickDailySignEn(ganZhi, dayNumber) : pickDailySign(ganZhi, dayNumber),
+    disclaimer: en ? DAILY_SIGN_DISCLAIMER_EN : DAILY_SIGN_DISCLAIMER,
   }
+}
+
+/** 晚子时换日文案（三语页面直接取词，避免页面各写一份） */
+export function dayBoundaryFor(lang: SiteLang): string {
+  return lang === 'en' ? DAILY_SIGN_DAY_BOUNDARY_EN : DAILY_SIGN_DAY_BOUNDARY
 }
 
 /**

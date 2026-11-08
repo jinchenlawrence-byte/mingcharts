@@ -63,7 +63,7 @@ export default function SiteHeader({ locale = 'zh-Hans' }: { locale?: SiteLang }
   const handleLogout = async () => {
     setOpen(false)
     await getSupabase().auth.signOut()
-    router.push('/')
+    router.push(pathForLang('/', locale))
   }
 
   const accountItems = itemsFor(locale, ACCOUNT_ITEMS)

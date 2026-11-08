@@ -172,7 +172,7 @@ const TRUST: Record<SiteLang, { color: string; text: string }[]> = {
 export function TrustBar({ locale }: { locale: SiteLang }) {
   const aria = locale === 'en' ? 'Our commitments' : locale === 'zh-Hant' ? '平台承諾' : '平台承诺'
   return (
-    <div className="hw-trust" aria-label={aria}>
+    <div className="hw-trust" aria-label={aria} data-section="trust">
       {TRUST[locale].map((t) => (
         <span key={t.text}>
           <i style={{ background: `var(--hw-${t.color})` }} />
@@ -236,7 +236,7 @@ const SAMPLE_QUOTES: { text: Copy; src: Copy }[] = [
 
 export function FatebookSample({ locale }: { locale: SiteLang }) {
   return (
-    <section className="hw-section">
+    <section className="hw-section" data-section="fatebook">
       <div className="hw-sample">
         <div className="hw-hd">
           <b>{SAMPLE_TITLE[locale]}</b>
@@ -292,7 +292,7 @@ const MORE: Record<SiteLang, { path: string; t: string; s: string }[]> = {
 export function MoreQueries({ locale }: { locale: SiteLang }) {
   const title = locale === 'en' ? 'More readings' : locale === 'zh-Hant' ? '更多命理查詢' : '更多命理查询'
   return (
-    <section className="hw-section">
+    <section className="hw-section" data-section="more">
       <h2 className="hw-h2">{title}</h2>
       <div className="hw-more">
         {MORE[locale].map((m) => (
@@ -300,6 +300,152 @@ export function MoreQueries({ locale }: { locale: SiteLang }) {
             <b>{m.t}</b>
             <span>{m.s}</span>
           </Link>
+        ))}
+      </div>
+    </section>
+  )
+}
+
+// ---------- 功能 Bento（2026-11-09 三语对齐） ----------
+// 简体首页此前用 .hw-bento 大色块展示六个功能；繁体退化成灰框小列表、
+// 英文只留 4 张文字卡 —— 内容在、形态不在，纯文本对等断言因此一直没抓到。
+// 现在三棵树共用本组件，并挂 data-section="features" 供断言比对。
+// 英文树 2026-11-09 补了 /en/daily，六张卡与简繁一致（.hw-bento--five 仅作兜底）。
+type BentoTone = 'wood' | 'fire' | 'earth' | 'metal' | 'water'
+
+interface BentoItem {
+  key: string
+  slot: 'hw-b1' | 'hw-b2' | 'hw-b3' | 'hw-b4' | 'hw-b5' | 'hw-b6'
+  glyph: string
+  tone: BentoTone
+  title: string
+  desc: string
+  path: string
+}
+
+const BENTO: Record<SiteLang, { title: string; items: BentoItem[] }> = {
+  'zh-Hans': {
+    title: '排完盘，接着玩',
+    items: [
+      {
+        key: 'fatebook', slot: 'hw-b1', glyph: '命', tone: 'water', title: '命书详批',
+        desc: '格局、调候、用神、大运，再到事业、婚姻、子女、健康，万字命书逐条引用经典原文。',
+        path: '/pricing',
+      },
+      {
+        key: 'hemun', slot: 'hw-b2', glyph: '合', tone: 'fire', title: '合婚配对',
+        desc: '双方命局怎么互动，缘分有多深。',
+        path: '/hemun',
+      },
+      {
+        key: 'ziwei', slot: 'hw-b3', glyph: '紫', tone: 'earth', title: '紫微斗数',
+        desc: '十四主星四化，十二宫深度分析。',
+        path: '/ziwei',
+      },
+      {
+        key: 'daily', slot: 'hw-b4', glyph: '签', tone: 'wood', title: '每日日签',
+        desc: '每天抽一张，看看今天的运势。',
+        path: '/daily',
+      },
+      {
+        key: 'liunian', slot: 'hw-b6', glyph: '运', tone: 'metal', title: '年运报告',
+        desc: '流年干支与原局冲合，事业、财运、感情、健康分维度解读。',
+        path: '/liunian',
+      },
+      {
+        key: 'geo', slot: 'hw-b5', glyph: '方', tone: 'metal', title: '方位城市',
+        desc: '财富之城、事业之城，按五行地气看你适合去哪。',
+        path: '/geo',
+      },
+    ],
+  },
+  'zh-Hant': {
+    title: '排完盤，接著玩',
+    items: [
+      {
+        key: 'fatebook', slot: 'hw-b1', glyph: '命', tone: 'water', title: '命書詳批',
+        desc: '格局、調候、用神、大運，再到事業、婚姻、子女、健康，萬字命書逐條引用經典原文。',
+        path: '/pricing',
+      },
+      {
+        key: 'hemun', slot: 'hw-b2', glyph: '合', tone: 'fire', title: '合婚配對',
+        desc: '雙方命局怎麼互動，緣分有多深。',
+        path: '/hemun',
+      },
+      {
+        key: 'ziwei', slot: 'hw-b3', glyph: '紫', tone: 'earth', title: '紫微斗數',
+        desc: '十四主星四化，十二宮深度分析。',
+        path: '/ziwei',
+      },
+      {
+        key: 'daily', slot: 'hw-b4', glyph: '籤', tone: 'wood', title: '每日日籤',
+        desc: '每天抽一張，看看今天的運勢。',
+        path: '/daily',
+      },
+      {
+        key: 'liunian', slot: 'hw-b6', glyph: '運', tone: 'metal', title: '年運報告',
+        desc: '流年干支與原局沖合，事業、財運、感情、健康分維度解讀。',
+        path: '/liunian',
+      },
+      {
+        key: 'geo', slot: 'hw-b5', glyph: '方', tone: 'metal', title: '方位城市',
+        desc: '財富之城、事業之城，按五行地氣看你適合去哪。',
+        path: '/geo',
+      },
+    ],
+  },
+  en: {
+    title: 'What to read next',
+    items: [
+      {
+        key: 'fatebook', slot: 'hw-b1', glyph: '命', tone: 'water', title: 'The Fate Book',
+        desc: 'Structure, climate and Useful God, then luck pillars, career, marriage, children and health — long-form, with classical citations.',
+        path: '/mingshu',
+      },
+      {
+        key: 'hemun', slot: 'hw-b2', glyph: '合', tone: 'fire', title: 'Synastry',
+        desc: 'How two charts interact, and how deep the bond runs.',
+        path: '/hemun',
+      },
+      {
+        key: 'ziwei', slot: 'hw-b3', glyph: '紫', tone: 'earth', title: 'Zi Wei Dou Shu',
+        desc: 'Fourteen major stars, the Four Transformations, twelve palaces.',
+        path: '/ziwei',
+      },
+      {
+        key: 'daily', slot: 'hw-b4', glyph: '日', tone: 'wood', title: 'Daily reading',
+        desc: "One sign a day: today's element, the stem-branch and a line to sit with.",
+        path: '/daily',
+      },
+      {
+        key: 'liunian', slot: 'hw-b6', glyph: '运', tone: 'metal', title: 'Annual report',
+        desc: 'Annual pillars against your natal chart — career, money, relationships, health.',
+        path: '/liunian',
+      },
+      {
+        key: 'geo', slot: 'hw-b5', glyph: '方', tone: 'metal', title: 'Cities & direction',
+        desc: 'Wealth cities, career cities, read through the Five Elements of direction.',
+        path: '/geo',
+      },
+    ],
+  },
+}
+
+export function FeatureBento({ locale }: { locale: SiteLang }) {
+  const copy = BENTO[locale]
+  const five = copy.items.length === 5
+  return (
+    <section className="hw-section" data-section="features">
+      <h2 className="hw-h2">{copy.title}</h2>
+      <div className={five ? 'hw-bento hw-bento--five' : 'hw-bento'}>
+        {copy.items.map((it) => (
+          <a key={it.key} className={`hw-card ${it.slot} hw-${it.tone}`} href={pathForLang(it.path, locale)}>
+            <span className="hw-z">{it.glyph}</span>
+            <div>
+              <h3>{it.title}</h3>
+              <p>{it.desc}</p>
+            </div>
+          </a>
         ))}
       </div>
     </section>

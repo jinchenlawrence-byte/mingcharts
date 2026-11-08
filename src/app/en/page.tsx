@@ -3,7 +3,7 @@ import Link from 'next/link'
 import { triAlternates } from '@/lib/lang'
 import { SHENGXIAO } from '@/lib/shengxiaoData'
 import { branchEn, elementEn } from '@/lib/enTerms'
-import { ExampleChart, TrustBar, FatebookSample, MoreQueries } from '@/components/home/HomeSections'
+import { ExampleChart, TrustBar, FatebookSample, MoreQueries, FeatureBento } from '@/components/home/HomeSections'
 import EnHomeForm from './EnHomeForm'
 
 // 英文首頁（第一批）：完整英文說明 + 真實排盤表單（→ /en/chart）。
@@ -43,7 +43,7 @@ export default function EnHome() {
   return (
     <div className="hw-wrap hw-c-pg hw-home-pg">
       {/* Open Hero: form on the left, interactive sample chart on the right (same rhythm as `/`). */}
-      <div className="hw-hero" id="chart">
+      <div className="hw-hero" id="chart" data-section="hero">
         <div>
           <h1 className="hw-h1">Bazi, the Four Pillars of Destiny — read clearly</h1>
           <p className="hw-lede">
@@ -87,43 +87,7 @@ export default function EnHome() {
         </ul>
       </section>
 
-      <section className="hw-section">
-        <h2 className="hw-h2">Other readings</h2>
-        <div className="grid sm:grid-cols-2 gap-3 text-sm">
-          <div className="border border-gold/20 rounded-lg p-3">
-            <div className="font-bold text-ink">Zi Wei Dou Shu / Purple Star Astrology</div>
-            <p className="text-ink-light mt-1">
-              A twelve-palace chart with fourteen major stars and the Four Transformations, read by
-              decade and by year.
-            </p>
-            <Link href="/en/ziwei" className="hw-c-link inline-block mt-2">Open Zi Wei (English edition) →</Link>
-          </div>
-          <div className="border border-gold/20 rounded-lg p-3">
-            <div className="font-bold text-ink">Bazi Synastry</div>
-            <p className="text-ink-light mt-1">
-              Two charts compared: Day Pillar spouse palace, zodiac year pillars, spouse stars,
-              Five Elements complementarity and Ten Gods interaction.
-            </p>
-            <Link href="/en/hemun" className="hw-c-link inline-block mt-2">Open synastry (English edition) →</Link>
-          </div>
-          <div className="border border-gold/20 rounded-lg p-3">
-            <div className="font-bold text-ink">Cities &amp; direction</div>
-            <p className="text-ink-light mt-1">
-              Wealth, career, benefactor, settling and talent cities, chosen by the Five Elements of
-              direction relative to your birthplace.
-            </p>
-            <Link href="/en/geo" className="hw-c-link inline-block mt-2">Open Location &amp; Direction (English edition) →</Link>
-          </div>
-          <div className="border border-gold/20 rounded-lg p-3">
-            <div className="font-bold text-ink">Annual report</div>
-            <p className="text-ink-light mt-1">
-              Three years of Annual Pillars with monthly rhythm, read against your natal chart and
-              current Luck Pillar.
-            </p>
-            <Link href="/en/liunian" className="hw-c-link inline-block mt-2">Open annual report (English edition) →</Link>
-          </div>
-        </div>
-      </section>
+      <FeatureBento locale="en" />
 
       <section className="hw-section">
         <h2 className="hw-h2">Twelve zodiac signs</h2>
@@ -149,7 +113,7 @@ export default function EnHome() {
       {/* Batch 2 parity: more readings — only links whose English pages exist. */}
       <MoreQueries locale="en" />
 
-      <section className="hw-section">
+      <section className="hw-section" data-section="faq">
         <h2 className="hw-h2">FAQ</h2>
         <div className="space-y-3">
           {FAQS.map((f) => (

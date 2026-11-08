@@ -34,7 +34,7 @@ export const viewport = siteViewport
 export default function EnRootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={rootFontClassName}>
-      <body className="min-h-full flex flex-col bg-paper text-ink">
+      <body className="min-h-full flex flex-col bg-hw-bg text-ink">
         <main className="hw-page" lang="en">
           {/* 把语言写进 mc_locale：AI 命书与收银台据此出英文 */}
           <LocaleSync locale="en" />

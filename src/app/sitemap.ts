@@ -204,6 +204,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/en/hemun`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/en/ziwei`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/en/geo`, changeFrequency: 'monthly', priority: 0.7 },
+    // 英文每日日签：2026-11-09 补齐，与 /daily、/tw/daily hreflang 三向互指
+    { url: `${BASE_URL}/en/daily`, changeFrequency: 'daily', priority: 0.7 },
     { url: `${BASE_URL}/en/terms`, changeFrequency: 'yearly', priority: 0.4 },
     { url: `${BASE_URL}/en/privacy`, changeFrequency: 'yearly', priority: 0.4 },
   ]

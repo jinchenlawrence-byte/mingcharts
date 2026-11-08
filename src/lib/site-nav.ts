@@ -39,8 +39,7 @@ export const NAV_ITEMS: NavEntry[] = [
     path: '/daily',
     more: true,
     label: { 'zh-Hans': '每日日签', 'zh-Hant': '每日日籤', en: 'Daily reading' },
-    // 英文树暂无 /en/daily 页面；不放假链接，由断言显式列出“声明缺失”。
-    available: ['zh-Hans', 'zh-Hant'],
+    // 英文 /en/daily 已补齐（2026-11-09），三语均可导航
   },
   {
     path: '/bazi',

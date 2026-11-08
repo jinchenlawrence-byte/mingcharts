@@ -14,6 +14,23 @@ export const BRAND_DOTS = [
   'var(--hw-water)',
 ] as const
 
+/**
+ * 每日日签五行配色（2026-11-09）。
+ * bar 与 --hw-wood/fire/earth/metal/water 同值，只作卡片左/顶色带；
+ * tint = 元素色 9% 叠白底；tintDark = 元素色 14% 叠 #1a1a2e。
+ * 字色不在这里写死：由 dailyElement.inkOn() 按背景实际亮度自动选深/浅。
+ */
+export const ELEMENT_PALETTE = {
+  wood: { bar: '#3cc796', tint: '#edfaf6', tintDark: '#1f323d' },
+  fire: { bar: '#ff6b5b', tint: '#fff2f0', tintDark: '#3a2534' },
+  earth: { bar: '#f6c24f', tint: '#fefaef', tintDark: '#393233' },
+  metal: { bar: '#d6dbe6', tint: '#fbfcfd', tintDark: '#343548' },
+  water: { bar: '#3a66ff', tint: '#edf1ff', tintDark: '#1e254b' },
+} as const
+
+/** 日签卡片文字色：inkOn() 按背景实际亮度二选一（与 --hw-ink / 白同值） */
+export const DAILY_INK = { dark: '#1b1838', light: '#ffffff' } as const
+
 /** 每日日签分享图（canvas 绘制，需具体色值） */
 export const SHARE_PALETTE = {
   bgTop: '#fffaf0',

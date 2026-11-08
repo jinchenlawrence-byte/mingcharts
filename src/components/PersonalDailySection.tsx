@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
 import { localize } from '@/lib/hant'
 import type { SiteLang } from '@/lib/lang'
+import { pathForLang } from '@/lib/lang'
 
 interface PersonalData {
   dayMaster: string
@@ -28,7 +29,7 @@ interface DailyResp {
 // 个性化日运段（订阅权益 daily；HANDOFF-个性化日运 §6.2 三种状态）
 export default function PersonalDailySection({ zone, locale = 'zh-Hans' }: { zone: string; locale?: SiteLang }) {
   const L = (s: string) => localize(s, locale)
-  const prefix = locale === 'zh-Hant' ? '/tw' : ''
+  const prefix = pathForLang('/', locale).replace(/\/$/, '')
   const [data, setData] = useState<DailyResp | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -66,7 +67,7 @@ export default function PersonalDailySection({ zone, locale = 'zh-Hans' }: { zon
           {L('登录并保存命盘后，日运会结合你的日主与日支给出专属一省。')}
         </p>
         <div className="flex justify-center gap-3">
-          <Link href="/auth" className="bg-amber-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-amber-700 transition">{L('去登录')}</Link>
+          <Link href={`${prefix}/auth`} className="bg-amber-600 text-white px-5 py-2 rounded-full text-sm font-semibold hover:bg-amber-700 transition">{L('去登录')}</Link>
           <Link href={`${prefix}/`} className="bg-white text-ink/70 ring-1 ring-amber-200 px-5 py-2 rounded-full text-sm font-semibold hover:bg-gold/5 transition">{L('去排盘')}</Link>
         </div>
       </div>

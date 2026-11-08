@@ -2,7 +2,10 @@
 
 /* ── 水墨现代色彩体系 ── */
 :root {
-  --background: #f7f3eb;
+  /* ★ 2026-11-09 方案 B：页面底色只留一个来源 --hw-bg。
+     --background 是 Tailwind 的 bg-background 入口，这里直接指向同一令牌，
+     防止再出现第二套页面底色。 */
+  --background: var(--hw-bg);
   --foreground: #2c2c43;
 
   /* 宣纸底 */
@@ -138,6 +141,8 @@
   --hw-woodInk: #147a5b;
   --hw-earthInk: #8a5a00;
   --hw-fireInk: #e04a3a;
+  /* 金（五行）：低明度古铜金，保证在宣纸/卡片上的正文对比度 */
+  --hw-metalInk: #5f5540;
   /* 浅色补充面：内层小格 / 未激活卡 / 已解锁标记 */
   --hw-tile: #f7f7fd;
   --hw-soft: #fbfaff;
@@ -192,6 +197,7 @@ html[lang="zh-CN"] {
   --color-hw-wood-ink: var(--hw-woodInk);
   --color-hw-earth-ink: var(--hw-earthInk);
   --color-hw-fire-ink: var(--hw-fireInk);
+  --color-hw-metal-ink: var(--hw-metalInk);
   --color-hw-warn-bg: var(--warn-bg);
   --color-hw-warn-line: var(--warn-line);
   /* 语义深色文字（2026-11-05 对比度批次）：此前漏映射，页面只能用 text-hw-fire 顶替 */
@@ -203,19 +209,34 @@ html[lang="zh-CN"] {
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #1a1a2e;
-    --foreground: #d4d4e0;
-    --color-paper: #1a1a2e;
-    --color-paper-dark: #151523;
-    --color-ink: #d4d4e0;
-    --color-ink-light: #a0a0b8;
+    --background: var(--hw-bg);
+    --foreground: #ececf6;
+    --color-paper: #12122a;
+    --color-paper-dark: #0d0d1c;
+    --color-ink: #ececf6;
+    --color-ink-light: #b3b3cf;
     --color-gold: #c4b87e;
     --color-gold-light: #d4c890;
+    /* ★ 2026-11-09：暗色主题必须同时覆盖 hw-* 面/墨色，否则暗色下仍是浅底深字 → 深底浅字错配。
+       check-contrast.mjs 的暗色色对校验守护这组令牌（正文/辅助/弱化 × 页面底/卡片面）。 */
+    --hw-bg: #12122a;
+    --hw-surface: #1d1d33;
+    --hw-ink: #ececf6;
+    --hw-mute: #b3b3cf;
+    --hw-line: #35355a;
+    --hw-tile: #24243f;
+    --hw-soft: #1a1a2e;
+    --btn-primary-bg: #4b4b86;
+    --btn-primary-bg-hover: #5a5a9c;
+    --btn-primary-fg: #fff;
+    --geo-sea: #1a2440;
   }
 }
 
 body {
-  background: var(--color-paper);
+  /* ★ 2026-11-09 方案 B：body 与 .hw-page 统一到同一个页面底色令牌 --hw-bg，
+     不再用 --color-paper（#f7f3eb 米黄）另起一套。 */
+  background: var(--hw-bg);
   color: var(--color-ink);
   font-family: var(--font-ui);
   /* 宣纸纹理：极淡的噪点叠加 */
@@ -701,6 +722,10 @@ h1, h2, h3, .font-serif-sc {
   .hw-b6 {
     grid-column: span 4;
   }
+  /* 五卡变体（英文树无日签）：b4 缺席时 b6 补满整行，避免第 3 行空出两列 */
+  .hw-bento--five .hw-b6 {
+    grid-column: span 6;
+  }
 }
 .hw-card {
   display: flex;
@@ -1128,6 +1153,283 @@ h1, h2, h3, .font-serif-sc {
   max-width: 30rem;
   margin-inline: auto;
 }
+/* ── 报告页主题（2026-11-09 方案 B：底色回归全站统一令牌）──
+   原先这里把 --hw-bg 覆盖成米黄 #faf6ee、卡片覆盖成 #fffdf8，导致报告页
+   与首页排盘页是两套底色。现在底色、卡片面、正文墨色、分隔线全部回落到
+   :root 的同一套令牌（--hw-bg / --hw-surface / --hw-ink / --hw-line），
+   本作用域只保留「报告页语义色校准」，不再声明任何背景或纸面令牌。 */
+.hw-report-theme {
+  /* 报告页火行文字改用深朱红，保证浅底上 4.5:1 正文对比度 */
+  --hw-fireInk: #b0342a;
+  /* 方位五类语义色（与地图同色系，压深以保证正文 4.5:1） */
+  --hw-cat-wealth: #8a4b00;
+  --hw-cat-career: #5b21b6;
+  --hw-cat-patron: #0f5f78;
+  --hw-cat-home: #0f6b46;
+  --hw-cat-talent: #9d174d;
+  font-size: var(--fs-md);
+  line-height: var(--lh-base);
+}
+/* 总评分数环：conic-gradient 画进度，内圈纸面留白 */
+.hw-score-ring {
+  width: 104px;
+  height: 104px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: conic-gradient(
+    var(--color-cinnabar) calc(var(--score, 0) * 1%),
+    var(--hw-line) 0
+  );
+  flex: none;
+}
+.hw-score-ring-inner {
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  background: var(--hw-surface);
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+.hw-score-num {
+  font-family: var(--font-title);
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--color-cinnabar);
+}
+.hw-score-denom {
+  font-size: 12px;
+  color: var(--hw-mute);
+}
+/* 五行干支字色（金木水火土） */
+.hw-el-wood { color: var(--hw-woodInk); }
+.hw-el-fire { color: var(--hw-fireInk); }
+.hw-el-earth { color: var(--hw-earthInk); }
+.hw-el-metal { color: var(--hw-metalInk); }
+.hw-el-water { color: var(--hw-water); }
+/* 命盘四柱：日柱突出 */
+.hw-gz {
+  font-family: var(--font-title);
+  font-size: 24px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: 0.04em;
+}
+.hw-pillar {
+  border: 1px solid var(--hw-line);
+  border-radius: var(--r-md);
+  background: var(--hw-surface);
+  padding: 10px 8px;
+  text-align: center;
+}
+.hw-pillar--day {
+  border-color: var(--color-cinnabar);
+  background: var(--hw-soft);
+  box-shadow: inset 0 0 0 1px var(--color-cinnabar);
+}
+/* 结论徽章（身强 / 七杀格 等） */
+.hw-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1.4;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--hw-line);
+  background: var(--hw-tile);
+  color: var(--hw-ink);
+}
+.hw-badge--accent {
+  border-color: var(--color-cinnabar);
+  color: var(--color-cinnabar);
+  background: var(--hw-soft);
+}
+/* 维度吉/平/忌语义徽章 */
+.hw-badge--good {
+  border-color: var(--hw-okLine);
+  color: var(--hw-woodInk);
+  background: var(--hw-okBg);
+}
+.hw-badge--flat {
+  border-color: var(--hw-line);
+  color: var(--hw-mute);
+  background: var(--hw-tile);
+}
+.hw-badge--bad {
+  border-color: var(--danger-ink);
+  color: var(--danger-ink);
+  background: var(--danger-bg);
+}
+/* 方位五类：固定语义色 + 徽章（不靠背景填充区分） */
+.hw-cat--wealth { color: var(--hw-cat-wealth); }
+.hw-cat--career { color: var(--hw-cat-career); }
+.hw-cat--patron { color: var(--hw-cat-patron); }
+.hw-cat--home { color: var(--hw-cat-home); }
+.hw-cat--talent { color: var(--hw-cat-talent); }
+.hw-cat-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.4;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid currentColor;
+  background: var(--hw-surface);
+}
+.hw-cat-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+  margin-top: 4px;
+}
+.hw-geo-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 20px;
+  padding: 12px 14px;
+  border: 1px solid var(--hw-line);
+  border-radius: var(--r-md);
+  background: var(--hw-soft);
+}
+.hw-geo-legend-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.hw-geo-legend-desc { color: var(--hw-mute); }
+/* 城市分数条：颜色分级 + 数值/文字标签（不只靠颜色） */
+.hw-scorebar {
+  display: block;
+  width: 100%;
+  min-width: 88px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--hw-line);
+  overflow: hidden;
+}
+.hw-scorebar > i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--hw-mute);
+}
+.hw-scorebar--good > i { background: var(--hw-woodInk); }
+.hw-scorebar--neutral > i { background: var(--hw-mute); }
+.hw-scorebar--bad > i { background: var(--danger-ink); }
+/* 九维度卡片：左侧 4px 语义色带 */
+.hw-dim {
+  border-left: 4px solid var(--hw-line);
+}
+.hw-dim--good { border-left-color: var(--hw-woodInk); }
+.hw-dim--flat { border-left-color: var(--hw-mute); }
+.hw-dim--bad { border-left-color: var(--danger-ink); }
+/* 依据来源徽章：同一款式，只换颜色 */
+.hw-basis {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  line-height: 1.4;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--hw-line);
+  background: var(--hw-soft);
+  color: var(--hw-ink);
+}
+.hw-basis--classic {
+  border-color: var(--hw-earthInk);
+  color: var(--hw-earthInk);
+}
+.hw-basis--folk {
+  border-color: var(--hw-mute);
+  color: var(--hw-mute);
+}
+.hw-basis--old {
+  border-color: var(--color-gold);
+  color: var(--hw-metalInk);
+}
+.hw-basis--product {
+  border-style: dashed;
+  border-color: var(--hw-line);
+  color: var(--hw-mute);
+}
+/* 依据折叠：默认收起，展开为完整原文 */
+.hw-basis-toggle {
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-cinnabar);
+  list-style: none;
+  user-select: none;
+}
+.hw-basis-toggle::-webkit-details-marker { display: none; }
+.hw-basis-toggle:hover { text-decoration: underline; text-underline-offset: 3px; }
+/* 九维度 3×3 概览格 */
+.hw-dim-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+.hw-dim-cell {
+  display: block;
+  padding: 8px 6px;
+  border: 1px solid var(--hw-line);
+  border-radius: var(--r-md);
+  background: var(--hw-surface);
+  text-align: center;
+  line-height: 1.35;
+}
+.hw-dim-cell:hover {
+  border-color: var(--color-cinnabar);
+}
+.hw-dim-cell b {
+  display: block;
+  font-size: 13px;
+  color: var(--hw-ink);
+}
+.hw-dim-cell span {
+  font-size: 12px;
+  color: var(--hw-mute);
+}
+/* 报告页右上操作区 */
+.hw-report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.hw-report-actions a,
+.hw-report-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 0 14px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--hw-line);
+  background: var(--hw-surface);
+  color: var(--hw-ink);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+}
+.hw-report-actions a:hover,
+.hw-report-actions button:hover {
+  border-color: var(--color-cinnabar);
+  color: var(--color-cinnabar);
+}
 .hw-c-link {
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -1325,6 +1627,12 @@ h1, h2, h3, .font-serif-sc {
   max-width: 640px;
   margin: 0 auto;
 }
+/* 报告页内容区：整页放宽到 880px（桌面 800–900 区间）；
+   仅 AI 长文再收窄到 .hw-c-read（30rem），盘面/表格/卡片保持全宽。 */
+.hw-c-report {
+  max-width: 880px;
+  margin: 0 auto;
+}
 /* 层叠注意：hw- 未分层类会压过 Tailwind @layer 工具类，居中需用修饰类而非 text-center/mx-auto */
 .hw-c-h2C {
   text-align: center;
@@ -1377,6 +1685,45 @@ h1, h2, h3, .font-serif-sc {
   max-width: 460px;
   margin: 24px auto 0;
   text-align: center;
+}
+
+/* ── 每日日签五行配色（2026-11-09）────────────────────────────────────────────
+   只作用于日签卡片内层：9% 浅 tint 底 ＋ 左/顶色带 ＋ 五行标签。
+   ★ 页面底色不在这里参与——body / .hw-page 仍由 --hw-bg 决定，绝不整页上色。
+   ★ 字色由 src/lib/dailyElement.ts 的 inkOn() 按背景实际亮度算好后经 --d-on 传入；
+     深色主题换 --d-tint-dark / --d-on-dark（同一判据，不会白字压白卡）。 */
+.hw-d-card--el {
+  background: var(--d-tint, var(--hw-surface));
+  color: var(--d-on, var(--hw-ink));
+  border-left: 6px solid var(--d-bar, var(--hw-line));
+  border-top: 4px solid var(--d-bar, var(--hw-line));
+}
+.hw-d-strong { color: inherit; font-size: 14px; font-weight: 600; }
+.hw-d-meta { color: inherit; opacity: 0.7; font-size: 12px; }
+.hw-d-quote {
+  color: inherit;
+  font-size: clamp(20px, 3vw, 26px);
+  line-height: 1.7;
+  font-weight: 600;
+}
+.hw-d-rule { height: 1px; background: var(--d-bar, var(--hw-line)); opacity: 0.35; }
+.hw-d-el {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 12px;
+  border: 1px solid var(--d-bar, var(--hw-line));
+  border-radius: 999px;
+  color: inherit;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+@media (prefers-color-scheme: dark) {
+  .hw-d-card--el {
+    background: var(--d-tint-dark, #1a1a2e);
+    color: var(--d-on-dark, #ffffff);
+  }
 }
 
 /* ── 五页轻量风格统一（2026-10-17）：ziwei / auth / liunian / geo / shengxiao 接入 hw- 设计语言 ──
@@ -2293,6 +2640,11 @@ h1, h2, h3, .font-serif-sc {
     font-size: 12pt;
     line-height: 1.75;
     color: #000 !important;
+    /* ★ 2026-11-08：导出 PNG/PDF 默认会抑制背景色，导致九维度色带、
+       徽章底色、分类色全部丢失（用户在导出图里看到「配色没生效」）。
+       整份报告统一保留配色，语义色以 border/背景两种形式都能落地。 */
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
   .hw-print h1 {
     font-size: 18pt;
@@ -2308,6 +2660,28 @@ h1, h2, h3, .font-serif-sc {
     content: " (" attr(href) ")";
     font-size: 9pt;
     color: #666;
+  }
+  /* 报告页：卡片/栅格保留细边框，避免背景被抑制后糊成一片。
+     ★ 2026-11-08：不再覆盖 .hw-dim / .hw-badge / .hw-basis ——
+     这三类的边框本身就是语义色（九维度色带、吉/平/凶徽章、依据来源），
+     统一刷成 #c9c0b0 会把它们全部抹平。 */
+  .hw-print .hw-c-tile,
+  .hw-print .hw-pillar,
+  .hw-print .hw-dim-cell {
+    border-color: #c9c0b0 !important;
+    box-shadow: none !important;
+  }
+  /* 分数环是背景色图形，打印时保留其配色 */
+  .hw-print .hw-score-ring {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  /* 折叠的「依据」：脚本未展开时也强制显示正文，保证 PDF 不丢内容 */
+  .hw-print details > summary { display: none !important; }
+  .hw-print details > *:not(summary) { display: block !important; }
+  .hw-print details::details-content {
+    content-visibility: visible !important;
+    display: block !important;
   }
 }
 

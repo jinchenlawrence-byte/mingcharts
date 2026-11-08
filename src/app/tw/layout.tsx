@@ -35,7 +35,7 @@ export const viewport = siteViewport
 export default function HantRootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-Hant" className={rootFontClassName}>
-      <body className="min-h-full flex flex-col bg-paper text-ink">
+      <body className="min-h-full flex flex-col bg-hw-bg text-ink">
         <main className="hw-page" lang="zh-Hant">
           {/* 把语言写进 mc_locale：后续 AI 命书与收银台据此出繁体（见 lib/locale.ts） */}
           <LocaleSync locale="zh-Hant" />

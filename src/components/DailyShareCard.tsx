@@ -9,6 +9,7 @@ import { SHARE_PALETTE as P } from '@/lib/visual-tokens'
 interface Props {
   dateLabel: string      // 如 2026年10月8日
   liuRi: string          // 壬子
+  liuRiLabel?: string    // 英文页用拼音（Ren Zi），缺省回退 liuRi
   jiaziIndex: number     // 49
   sign: string
   disclaimer: string
@@ -65,7 +66,7 @@ export default function DailyShareCard(props: Props) {
       ctx.textAlign = 'center'
       ctx.fillStyle = P.brand
       ctx.font = '600 34px "Songti SC", "SimSun", serif'
-      ctx.fillText('明理', center, 92)
+      ctx.fillText(props.locale === 'en' ? 'MingCharts' : '明理', center, 92)
       ctx.fillStyle = P.subBrand
       ctx.font = '22px "PingFang SC", "Microsoft YaHei", sans-serif'
       ctx.fillText(L('八字命理 · 每日日签'), center, 132)
@@ -73,10 +74,20 @@ export default function DailyShareCard(props: Props) {
       // 日期 ＋ 干支
       ctx.fillStyle = P.date
       ctx.font = '600 34px "Songti SC", "SimSun", serif'
-      ctx.fillText(`${props.dateLabel} · ${props.liuRi}${L('日')}`, center, 232)
+      ctx.fillText(
+        `${props.dateLabel} · ${props.liuRiLabel ?? props.liuRi}${props.locale === 'en' ? ' day' : L('日')}`,
+        center,
+        232
+      )
       ctx.fillStyle = P.subBrand
       ctx.font = '24px "PingFang SC", "Microsoft YaHei", sans-serif'
-      ctx.fillText(L(`六十甲子第 ${props.jiaziIndex} 位`), center, 278)
+      ctx.fillText(
+        props.locale === 'en'
+          ? `Jiazi cycle no. ${props.jiaziIndex} of 60`
+          : L(`六十甲子第 ${props.jiaziIndex} 位`),
+        center,
+        278
+      )
 
       // 分隔细线
       ctx.strokeStyle = P.rule

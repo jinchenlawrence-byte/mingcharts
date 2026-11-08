@@ -23,7 +23,7 @@ export default function CheckoutButton({
   chartId: chartIdProp,
   requireChart = true,
   returnTo,
-  authPath = '/auth',
+  authPath,
   locale = 'zh-Hans',
   children,
 }: {
@@ -40,7 +40,7 @@ export default function CheckoutButton({
   requireChart?: boolean
   /** ★ 支付成功后回跳的站内路径（模块购买回原模块页看已解锁内容）；缺省走成功页默认 */
   returnTo?: string
-  /** 未登录时的登录页路径（英文树传 /en/auth）；仅路由提示，不改支付逻辑 */
+  /** 未登录时的登录页路径；缺省按 locale 推导，避免英文/繁体掉回简体登录页 */
   authPath?: string
   /** 仅文案与回跳路径：支付 / 权益 / SKU 逻辑完全不变 */
   locale?: 'zh-Hans' | 'zh-Hant' | 'en'
@@ -53,6 +53,7 @@ export default function CheckoutButton({
   const en = locale === 'en'
   const hant = locale === 'zh-Hant'
   const L = (s: string) => (hant ? toHant(s) : s)
+  const loginPath = authPath ?? (en ? '/en/auth' : hant ? '/tw/auth' : '/auth')
 
   if (!available) {
     return (
@@ -75,7 +76,7 @@ export default function CheckoutButton({
         data: { session },
       } = await supabase.auth.getSession()
       if (!session) {
-        router.push(authPath)
+        router.push(loginPath)
         return
       }
 

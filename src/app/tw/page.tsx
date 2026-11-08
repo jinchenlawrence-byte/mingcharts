@@ -8,7 +8,7 @@ import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import { SHENGXIAO } from '@/lib/shengxiaoData'
 import { toHant } from '@/lib/hant'
 import { categoriesWithCount, pickBySlug } from '@/lib/relatedArticles'
-import { ExampleChart, TrustBar, FatebookSample, MoreQueries } from '@/components/home/HomeSections'
+import { ExampleChart, TrustBar, FatebookSample, MoreQueries, FeatureBento } from '@/components/home/HomeSections'
 
 // 繁體首頁：與簡體首頁 / 同構、同功能（排盤表單 → 命盤結果），文案原生繁體。
 // ★ 內鏈：12 屬相 + 文章庫，保證繁中頁面不是孤島。
@@ -99,7 +99,7 @@ export default function HantHome() {
   return (
     <div className="hw-wrap hw-c-pg hw-home-pg">
       {/* 開放式 Hero：左表單 + 右交互示例盤（與簡體 `/` 同一版式節奏） */}
-      <div className="hw-hero" id="chart">
+      <div className="hw-hero" id="chart" data-section="hero">
         <div>
           <h1 className="hw-h1">{H('你的八字，一眼就看懂')}</h1>
           <p className="hw-lede">
@@ -190,35 +190,7 @@ export default function HantHome() {
       {/* 第二批补齐：信任条（排盘免费/真太阳时/数据加密/仅供参考） */}
       <TrustBar locale="zh-Hant" />
 
-      <section className="hw-section">
-        <h2 className="hw-h2">{H('排完盤，接著玩')}</h2>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <Link href="/tw/pricing" className="border border-gold/20 rounded-lg p-3 hover:bg-gold/5 transition">
-            <div className="font-bold text-ink">{H('命書詳批')}</div>
-            <div className="text-xs text-ink-light mt-1">{H('格局、調候、用神、大運，再到事業、婚姻、子女、健康')}</div>
-          </Link>
-          <Link href="/tw/hemun" className="border border-gold/20 rounded-lg p-3 hover:bg-gold/5 transition">
-            <div className="font-bold text-ink">{H('合婚配對')}</div>
-            <div className="text-xs text-ink-light mt-1">{H('雙方命局怎麼互動，緣分有多深')}</div>
-          </Link>
-          <Link href="/tw/ziwei" className="border border-gold/20 rounded-lg p-3 hover:bg-gold/5 transition">
-            <div className="font-bold text-ink">{H('紫微斗數')}</div>
-            <div className="text-xs text-ink-light mt-1">{H('十四主星四化，十二宮深度分析')}</div>
-          </Link>
-          <Link href="/tw/daily" className="border border-gold/20 rounded-lg p-3 hover:bg-gold/5 transition">
-            <div className="font-bold text-ink">{H('每日日籤')}</div>
-            <div className="text-xs text-ink-light mt-1">{H('每天抽一張，看看今天的運勢')}</div>
-          </Link>
-          <Link href="/tw/liunian" className="border border-gold/20 rounded-lg p-3 hover:bg-gold/5 transition">
-            <div className="font-bold text-ink">{H('年運報告')}</div>
-            <div className="text-xs text-ink-light mt-1">{H('流年干支與原局沖合，事業、財運、感情、健康分維度解讀')}</div>
-          </Link>
-          <Link href="/tw/geo" className="border border-gold/20 rounded-lg p-3 hover:bg-gold/5 transition">
-            <div className="font-bold text-ink">{H('方位城市')}</div>
-            <div className="text-xs text-ink-light mt-1">{H('財富之城、事業之城，按五行地氣看你適合去哪')}</div>
-          </Link>
-        </div>
-      </section>
+      <FeatureBento locale="zh-Hant" />
 
       <section className="hw-section">
         <h2 className="hw-h2">{H('十二生肖 · 性格與配對')}</h2>
@@ -279,7 +251,7 @@ export default function HantHome() {
         </p>
       </section>
 
-      <section className="hw-section">
+      <section className="hw-section" data-section="faq">
         <h2 className="hw-h2">{H('常見疑問')}</h2>
         <div className="space-y-3">
           {FAQS.map((f) => (

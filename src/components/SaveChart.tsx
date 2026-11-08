@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
 import { localize } from '@/lib/hant'
 import type { SiteLang } from '@/lib/lang'
+import { pathForLang } from '@/lib/lang'
 
 export default function SaveChart({ locale = 'zh-Hans' }: { locale?: SiteLang }) {
   const L = (s: string) => localize(s, locale)
@@ -25,7 +26,7 @@ export default function SaveChart({ locale = 'zh-Hans' }: { locale?: SiteLang })
     if (!session) {
       setStatus('error')
       setMessage(L('请先登录后再保存'))
-      setTimeout(() => router.push('/auth'), 1200)
+      setTimeout(() => router.push(pathForLang('/auth', locale)), 1200)
       return
     }
     const stored = localStorage.getItem('currentChart')

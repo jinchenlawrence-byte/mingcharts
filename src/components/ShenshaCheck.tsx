@@ -16,6 +16,7 @@ import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import { localize } from '@/lib/hant'
 import type { SiteLang } from '@/lib/lang'
+import { pathForLang } from '@/lib/lang'
 import { SHEN_SHA_SLUG } from '@/lib/shenshaArticles'
 import { SHENSHA_GROUPS } from '@/lib/shenshaIndex'
 
@@ -35,7 +36,7 @@ const SLUG_GROUP: Record<string, string> = (() => {
 
 export default function ShenshaCheck({ locale }: { locale: SiteLang }) {
   const L = (s: string) => localize(s, locale)
-  const prefix = locale === 'zh-Hant' ? '/tw' : ''
+  const prefix = pathForLang('/', locale).replace(/\/$/, '')
 
   const [year, setYear] = useState('')
   const [month, setMonth] = useState('')
@@ -238,10 +239,10 @@ export default function ShenshaCheck({ locale }: { locale: SiteLang }) {
               {L('想知道这些神煞在你盘里到底怎么作用？')}
             </p>
             <div className="flex flex-wrap items-center gap-3">
-              <Link href="/pricing" className="hw-c-btnBig inline-block">
+              <Link href={`${prefix}/pricing`} className="hw-c-btnBig inline-block">
                 {L('看命书 · 十卷万字 →')}
               </Link>
-              <Link href="/member" className="hw-c-back inline-block">
+              <Link href={`${prefix}/member`} className="hw-c-back inline-block">
                 {L('日运会员 · 每月 $9.9')}
               </Link>
             </div>

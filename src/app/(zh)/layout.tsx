@@ -25,7 +25,7 @@ export const viewport = siteViewport
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-CN" className={rootFontClassName}>
-      <body className="min-h-full flex flex-col bg-paper text-ink">
+      <body className="min-h-full flex flex-col bg-hw-bg text-ink">
         {children}
         <SiteChrome lang="zh-Hans" />
       </body>

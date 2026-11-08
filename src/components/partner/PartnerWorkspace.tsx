@@ -288,7 +288,7 @@ export default function PartnerWorkspace({ locale }: { locale: OutputLocale }) {
             <h1 className="hw-c-h1">{L('伙伴工作台')}</h1>
             <p className="hw-c-dx mt-3">{L('请先登录伙伴账号')}</p>
             <p className="mt-4">
-              <Link href="/auth" className="hw-c-btnBig">{L('去登录')}</Link>
+              <Link href={locale === 'zh-Hant' ? '/tw/auth' : locale === 'en' ? '/en/auth' : '/auth'} className="hw-c-btnBig">{L('去登录')}</Link>
             </p>
           </div>
         </main>

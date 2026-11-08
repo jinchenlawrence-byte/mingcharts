@@ -12,7 +12,7 @@ import Nav from '@/components/Nav'
 import LangPromptBar from '@/components/LangPromptBar'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
-import { ExampleChart, TrustBar, FatebookSample, MoreQueries } from '@/components/home/HomeSections'
+import { ExampleChart, TrustBar, FatebookSample, MoreQueries, FeatureBento } from '@/components/home/HomeSections'
 import { track } from '@/lib/track'
 
 const YEARS = Array.from({ length: 2026 - 1930 + 1 }, (_, i) => 1930 + i)
@@ -142,7 +142,7 @@ export default function Home() {
       <Nav />
       <main className="hw-wrap">
         {/* Hero：左表单 + 右交互示例盘 */}
-        <div className="hw-hero" id="chart">
+        <div className="hw-hero" id="chart" data-section="hero">
           <div>
             <h1 className="hw-h1">
               你的<span className="hw-u8">八字</span>，
@@ -231,57 +231,8 @@ export default function Home() {
         {/* 信任条 */}
         <TrustBar locale="zh-Hans" />
 
-        {/* 功能 Bento */}
-        <section className="hw-section" data-rv>
-          <h2 className="hw-h2">排完盘，接着玩</h2>
-          <div className="hw-bento">
-            <a className="hw-card hw-b1 hw-water" href="/pricing">
-              <span className="hw-z">命</span>
-              <div>
-                <h3>命书详批</h3>
-                <p>格局、调候、用神、大运，再到事业、婚姻、子女、健康，万字命书逐条引用经典原文。</p>
-              </div>
-            </a>
-            <a className="hw-card hw-b2 hw-fire" href="/hemun">
-              <span className="hw-z">合</span>
-              <div>
-                <h3>合婚配对</h3>
-                <p>双方命局怎么互动，缘分有多深。</p>
-              </div>
-            </a>
-            <a className="hw-card hw-b3 hw-earth" href="/ziwei">
-              <span className="hw-z">紫</span>
-              <div>
-                <h3>紫微斗数</h3>
-                <p>十四主星四化，十二宫深度分析。</p>
-              </div>
-            </a>
-            <a className="hw-card hw-b4 hw-wood" href="/daily">
-              <span className="hw-z">签</span>
-              <div>
-                <h3>每日日签</h3>
-                <p>每天抽一张，看看今天的运势。</p>
-              </div>
-            </a>
-            {/* ★ 年运报告卡（2026-10-20 用户反馈：Bento 少这一项）。
-                DOM 顺序刻意放在 b4 与 b5 之间 —— 自动布局下它填满第 3 行空出的 4 列，
-                b5 仍落第 4 行整行（见 globals.css 的 .hw-b5 / .hw-b6 规则）。 */}
-            <a className="hw-card hw-b6 hw-metal" href="/liunian">
-              <span className="hw-z">运</span>
-              <div>
-                <h3>年运报告</h3>
-                <p>流年干支与原局冲合，事业、财运、感情、健康分维度解读。</p>
-              </div>
-            </a>
-            <a className="hw-card hw-b5 hw-metal" href="/geo">
-              <span className="hw-z">方</span>
-              <div>
-                <h3>方位城市</h3>
-                <p>财富之城、事业之城，按五行地气看你适合去哪。</p>
-              </div>
-            </a>
-          </div>
-        </section>
+        {/* 功能 Bento（三语共用 FeatureBento，含 data-section="features"） */}
+        <FeatureBento locale="zh-Hans" />
 
         {/* 样例命书节选 */}
         <FatebookSample locale="zh-Hans" />
@@ -290,7 +241,7 @@ export default function Home() {
         <MoreQueries locale="zh-Hans" />
 
         {/* FAQ */}
-        <section className="hw-section" data-rv>
+        <section className="hw-section" data-rv data-section="faq">
           <h2 className="hw-h2">常见疑问</h2>
           <div className="hw-faq">
             {FAQ.map((f) => (

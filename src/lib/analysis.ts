@@ -114,7 +114,7 @@ export type AnalyzableChart = PaipanResult & {
   }
 }
 
-const GAN_WUXING: Record<string, string> = {
+export const GAN_WUXING: Record<string, string> = {
   '甲': '木', '乙': '木', '丙': '火', '丁': '火', '戊': '土',
   '己': '土', '庚': '金', '辛': '金', '壬': '水', '癸': '水'
 }
