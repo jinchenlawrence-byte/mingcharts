@@ -1700,9 +1700,10 @@ h1, h2, h3, .font-serif-sc {
 .hw-sku-focus,
 .hw-sku-focus-card {
   scroll-margin-top: 96px;
-  border-color: var(--hw-water) !important;
+  border-color: var(--hw-earth) !important;
   border-radius: var(--r-lg);
-  box-shadow: 0 0 0 2px var(--hw-water), 0 10px 28px rgba(58, 102, 255, 0.18) !important;
+  /* 与命书的蓝色主推环刻意区分：前者是「你当前要看这一项」的金环，避免两张卡都蓝框 */
+  box-shadow: 0 0 0 3px var(--hw-earth), 0 10px 28px rgba(246, 194, 79, 0.28) !important;
 }
 .hw-c-pr {
   font-family: var(--font-title);
