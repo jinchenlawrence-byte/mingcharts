@@ -8,6 +8,7 @@ import {
   type GrantId, type SkuId,
 } from '@/lib/pricing'
 import { waffoProductId } from '@/lib/waffo-products'
+import { SKU_EN } from '@/lib/pricingEn'
 import { triAlternates } from '@/lib/lang'
 
 // English pricing page: all prices and grants derive from pricing.ts (single source of truth).
@@ -19,49 +20,9 @@ export const metadata: Metadata = {
   alternates: { canonical: '/en/pricing', languages: triAlternates('/pricing') },
 }
 
-// English product and entitlement names. Pricing amounts stay in lib/pricing.ts;
-// this map only translates display copy so no Chinese leaks into the English page.
-const SKU_EN: Record<SkuId, { name: string; desc: string }> = {
-  fatebook: {
-    name: 'Fate Book',
-    desc: 'A full-length reading that shows the whole chart at a glance',
-  },
-  annual_report: {
-    name: 'Annual report',
-    desc: 'Three years of Annual Pillars with monthly rhythm — this year, next year and the year after',
-  },
-  hemun: {
-    name: 'Bazi synastry',
-    desc: 'Two-chart compatibility across nine dimensions, graded by classics, classical method and folk custom',
-  },
-  ziwei_deep: {
-    name: 'Zi Wei Dou Shu in depth',
-    desc: 'Full twelve-palace chart plus twelve written sections: chart overview, temperament, palaces, career, wealth, marriage, health, Four Transformations, structure, decadal cycle, annual cycle and guidance',
-  },
-  geo: {
-    name: 'Location & Direction · Cities of wealth',
-    desc: 'Directional Five Elements and city qi, with five city recommendations',
-  },
-  bundle3: {
-    name: 'Fate Book bundle',
-    desc: 'Fate Book + Zi Wei Dou Shu + Location & Direction in one purchase',
-  },
-  member_monthly: {
-    name: 'Monthly membership',
-    desc: `Daily personal reading + monthly rhythm + ${MEMBER_ASK_PER_MONTH} AI questions per month`,
-  },
-  member_yearly: {
-    name: 'Annual membership',
-    desc: `Daily personal reading + monthly rhythm + ${MEMBER_ASK_PER_MONTH} AI questions per month, at a better annual rate`,
-  },
-  ask_pack: {
-    name: 'Question pack',
-    desc: `${ASK_PACK_SIZE} AI astrologer questions`,
-  },
-  partner_credits_10: { name: 'Partner report pack · 10', desc: 'Ten client reports for professional readers.' },
-  partner_credits_50: { name: 'Partner report pack · 50', desc: 'Fifty client reports for professional readers.' },
-  partner_credits_200: { name: 'Partner report pack · 200', desc: 'Two hundred client reports for professional readers.' },
-}
+// English product names and descriptions live in lib/pricingEn.ts (single source of truth),
+// shared with scripts/create-en-products.mjs so the storefront and the created products match.
+// Pricing amounts stay in lib/pricing.ts.
 
 const GRANT_EN: Record<GrantId, string> = {
   fatebook: 'Full Fate Book (ten sections)',
