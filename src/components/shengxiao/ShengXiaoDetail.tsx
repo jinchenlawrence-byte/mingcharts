@@ -314,18 +314,21 @@ function EnDetail({ sx }: { sx: ShengXiao }) {
         <h2 className="hw-c-secTitle">{copy?.name} annual pillars (2024–2031)</h2>
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {notes.map((n) => (
-            <div key={n.year} className={`border rounded-lg p-3 text-center ${TONE_EN_BOX[n.tone]}`}>
+            <Link
+              key={n.year}
+              href={`/en/shengxiao/${sx.slug}/${n.year}`}
+              className={`block border rounded-lg p-3 text-center transition ${TONE_EN_BOX[n.tone]}`}
+            >
               <div className="font-bold text-lg">{n.year}</div>
               <div className={`text-xs mt-0.5 ${TONE_EN_TX[n.tone]}`}>
                 {n.ganZhi} · {n.relationText}
               </div>
-            </div>
+            </Link>
           ))}
         </div>
         <p className="text-xs text-ink-light mt-3">
           Green marks a harmonious year, red a harm or punishment year, orange a clash year and grey a
-          steady year. Year-by-year English pages are not published yet; this table is the summary for
-          each year.
+          steady year. Each year opens a full English reading for this sign.
         </p>
       </div>
 

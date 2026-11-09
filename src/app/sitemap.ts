@@ -196,6 +196,14 @@ export default function sitemap(): MetadataRoute.Sitemap {
       changeFrequency: 'monthly' as const,
       priority: 0.8
     })),
+    // 英文流年页（96 页）：与简体 /shengxiao/<属相>/<年>、繁体 /tw/shengxiao/<属相>/<年> 一一对应
+    ...SHENGXIAO.flatMap(s =>
+      LIUNIAN_YEARS.map(y => ({
+        url: `${BASE_URL}/en/shengxiao/${s.slug}/${y}`,
+        changeFrequency: 'yearly' as const,
+        priority: 0.7
+      }))
+    ),
     // 我的命盘（英文）：需登录，低优先级提交；与 /charts、/tw/charts 互指
     { url: `${BASE_URL}/en/charts`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE_URL}/en/pricing`, changeFrequency: 'monthly', priority: 0.8 },

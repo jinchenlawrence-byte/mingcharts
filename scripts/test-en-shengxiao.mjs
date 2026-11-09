@@ -1,4 +1,4 @@
-// English zodiac batch acceptance (2026-11-05)
+// English zodiac batch acceptance (2026-11-05, extended 2026-11-09 with the year pages)
 //
 // What this guards:
 //   ① 12 English sign pages exist with the same five sections as the Chinese data;
@@ -6,9 +6,12 @@
 //   ③ the new English sources contain no CJK;
 //   ④ every new page has its own canonical plus triAlternates (three-way hreflang);
 //   ⑤ /en/shengxiao and /en/charts are real nav entries, not declared gaps;
-//   ⑥ the sitemap carries 13 zodiac URLs plus /en/charts;
+//   ⑥ the sitemap carries the index, 12 signs, 96 year pages and /en/charts;
 //   ⑦ (after a build) the rendered page content contains no CJK;
-//   ⑧ teeth: injecting one Chinese character must turn the scanner red.
+//   ⑧ the 96 English year pages use the shared view, cover 12 × 8 params, and the
+//      English year copy module is CJK-free;
+//   ⑨ zh/tw year pages use the same shared view (anti-regression);
+//   ⑩ teeth: injecting one Chinese character must turn the scanner red.
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { join } from 'node:path'
 
@@ -20,17 +23,25 @@ const assert = (cond, m) => (cond ? ok(m) : fail(m))
 const root = new URL('..', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1')
 const read = (p) => readFileSync(join(root, p), 'utf8')
 const { findCJK } = await import('../src/lib/ai-check.ts')
-const { SHENGXIAO } = await import('../src/lib/shengxiaoData.ts')
+const { SHENGXIAO, LIUNIAN_YEARS } = await import('../src/lib/shengxiaoData.ts')
 const { SHENGXIAO_EN, PAIR_EN, yearNotesEn } = await import('../src/lib/shengxiaoEn.ts')
+const { RELATION_COPY_EN, getLiunianEn, LIUNIAN_2027_DETAIL_EN } = await import('../src/lib/shengxiaoYearEn.ts')
 
 const SECTIONS = ['personality', 'career', 'wealth', 'marriage', 'health']
 const EN_SOURCES = [
   'src/lib/shengxiaoEn.ts',
+  'src/lib/shengxiaoYearEn.ts',
   'src/app/en/shengxiao/page.tsx',
   'src/app/en/shengxiao/[animal]/page.tsx',
+  'src/app/en/shengxiao/[animal]/[year]/page.tsx',
   'src/app/en/charts/page.tsx',
   'src/app/en/charts/Client.tsx',
 ]
+const YEAR_FILES = {
+  en: 'src/app/en/shengxiao/[animal]/[year]/page.tsx',
+  zh: 'src/app/(zh)/shengxiao/[animal]/[year]/page.tsx',
+  tw: 'src/app/tw/shengxiao/[animal]/[year]/page.tsx',
+}
 
 // ---------- ① data completeness ----------
 console.log('—— ① 12 属相英文数据完整 ——')
@@ -88,12 +99,15 @@ console.log('—— ④ canonical 与三语 hreflang ——')
   const animal = read('src/app/en/shengxiao/[animal]/page.tsx')
   assert(/canonical: `\/en\/shengxiao\/\$\{sx\.slug\}`/.test(animal), '属相页 canonical 指 /en/shengxiao/<slug>')
   assert(/triAlternates\(`\/shengxiao\/\$\{sx\.slug\}`\)/.test(animal), '属相页 hreflang 由 triAlternates(/shengxiao/<slug>) 生成')
+  assert(read('src/components/shengxiao/ShengXiaoDetail.tsx').includes('href={`/en/shengxiao/${sx.slug}/${n.year}`}'), '英文属相页的年份表格已链到英文流年页（入口可点通）')
+
+  const yearPage = read(YEAR_FILES.en)
+  assert(yearPage.includes('canonical: `/en/shengxiao/${sx.slug}/${year}`'), '英文流年页 canonical 自指 /en/shengxiao/<slug>/<year>')
+  assert(yearPage.includes('triAlternates(`/shengxiao/${sx.slug}/${year}`)'), '英文流年页 hreflang 由 triAlternates(/shengxiao/<slug>/<year>) 生成')
 
   const charts = read('src/app/en/charts/page.tsx')
   assert(charts.includes("canonical: '/en/charts'"), '/en/charts canonical 指自身')
   assert(charts.includes("triAlternates('/charts')"), '/en/charts hreflang 由 triAlternates(/charts) 生成')
-
-  assert(!/\/en\/shengxiao\/\$\{[^}]*\}\/\$\{/.test(animal), '属相页不链到尚未发布的英文流年页（无死链）')
 }
 
 // ---------- ⑤ nav entries ----------
@@ -107,17 +121,23 @@ console.log('—— ⑤ 导航不再声明缺失 ——')
 }
 
 // ---------- ⑥ sitemap ----------
-console.log('—— ⑥ sitemap 收录 13 + 1 条 ——')
+console.log('—— ⑥ sitemap 收录索引 + 12 属相 + 96 流年 + 我的命盘 ——')
 {
   const { default: sitemap } = await import('../src/app/sitemap.ts')
   const urls = sitemap().map((u) => u.url)
   const sx = urls.filter((u) => u.includes('/en/shengxiao'))
-  assert(sx.length === 13, `sitemap 含 /en/shengxiao 索引 + 12 属相（实际 ${sx.length}）`)
+  assert(sx.length === 1 + 12 + 96, `sitemap 含 /en/shengxiao 索引 + 12 属相 + 96 流年（实际 ${sx.length}）`)
+  const missingSign = SHENGXIAO.filter((s) => !urls.some((u) => u.endsWith(`/en/shengxiao/${s.slug}`))).map((s) => s.slug)
+  assert(missingSign.length === 0, `sitemap 含 12 个英文属相页（缺：${missingSign.join(', ') || '无'}）`)
+  const missingYear = []
   for (const s of SHENGXIAO) {
-    assert(urls.some((u) => u.endsWith(`/en/shengxiao/${s.slug}`)), `sitemap 含 /en/shengxiao/${s.slug}`)
+    for (const y of LIUNIAN_YEARS) {
+      if (!urls.some((u) => u.endsWith(`/en/shengxiao/${s.slug}/${y}`))) missingYear.push(`${s.slug}/${y}`)
+    }
   }
+  assert(missingYear.length === 0, `sitemap 含 96 个英文流年页（缺：${missingYear.slice(0, 8).join(', ') || '无'}）`)
   assert(urls.some((u) => u.endsWith('/en/charts')), 'sitemap 含 /en/charts')
-  ok(`本批新增 sitemap 条目 14（${sx.length} + 1），英文条目合计 ${urls.filter((u) => u.includes('/en/') || u.endsWith('/en')).length}`)
+  ok(`英文条目合计 ${urls.filter((u) => u.includes('/en/') || u.endsWith('/en')).length}`)
 }
 
 // ---------- ⑦ built HTML zero CJK (page content only) ----------
@@ -159,11 +179,75 @@ console.log('—— ⑦ 构建 HTML 正文零 CJK ——')
   }
 }
 
-// ---------- ⑧ teeth ----------
-console.log('—— ⑧ 牙口自检 ——')
+// ---------- ⑧ English year pages: shared view + params + copy ----------
+console.log('—— ⑧ 英文流年页（96）——')
 {
-  const injected = read('src/app/en/shengxiao/[animal]/page.tsx') + '\nconst leak = "属鼠";\n'
-  assert(findCJK(injected).length > 0, '往英文属相页注入一个汉字 → 零 CJK 断言翻红')
+  assert(existsSync(join(root, YEAR_FILES.en)), '英文流年页文件存在')
+  const yearPage = read(YEAR_FILES.en)
+  assert(yearPage.includes("from '@/components/shengxiao/ShengXiaoYearView'"), '英文流年页使用共享 ShengXiaoYearView')
+  assert(yearPage.includes('locale="en"'), '英文流年页显式传 locale="en"')
+  assert(yearPage.includes('generateStaticParams'), '英文流年页有 generateStaticParams')
+  assert(yearPage.includes('SHENGXIAO.flatMap') && yearPage.includes('LIUNIAN_YEARS.map'), 'generateStaticParams 遍历 12 属相 × LIUNIAN_YEARS')
+  assert(SHENGXIAO.length * LIUNIAN_YEARS.length === 96, `静态参数覆盖 12 × 8 = 96（实际 ${SHENGXIAO.length * LIUNIAN_YEARS.length}）`)
+
+  const view = read('src/components/shengxiao/ShengXiaoYearView.tsx')
+  assert(view.includes('getLiunianEn(sx, year)'), '共享视图英文分支走 shengxiaoYearEn')
+  assert(view.includes("locale === 'en'") && view.includes("locale === 'zh-Hant'"), '共享视图按 locale 分流三语')
+  assert(view.includes("pathForLang(`/shengxiao/${sx.slug}/"), '相邻年份链接按 locale 前缀生成')
+
+  const RELATIONS = ['zhi', 'chong', 'hai', 'xing', 'he', 'neutral']
+  const FIELDS = ['summary', 'overview', 'career', 'wealth', 'relationship', 'health', 'advice', 'taisui', 'decision']
+  const relMissing = RELATIONS.filter((k) => !RELATION_COPY_EN[k])
+  assert(relMissing.length === 0, `六类关系文案齐全（缺：${relMissing.join(', ') || '无'}）`)
+  const fieldMissing = RELATIONS.flatMap((k) => FIELDS.filter((f) => !(RELATION_COPY_EN[k][f] || '').trim()).map((f) => `${k}.${f}`))
+  assert(fieldMissing.length === 0, `六类关系的 9 个字段都有内容（缺：${fieldMissing.join(', ') || '无'}）`)
+
+  let cjkRows = 0
+  let emptyRows = 0
+  for (const s of SHENGXIAO) {
+    for (const y of LIUNIAN_YEARS) {
+      const c = getLiunianEn(s, y)
+      if (findCJK(JSON.stringify(c)).length > 0) cjkRows++
+      if (!c.overview || !c.career || !c.wealth || !c.relationship || !c.health || !c.advice) emptyRows++
+    }
+  }
+  assert(cjkRows === 0, `12 × 8 英文流年文案零 CJK（命中 ${cjkRows}）`)
+  assert(emptyRows === 0, `12 × 8 英文流年文案无空段（空 ${emptyRows}）`)
+}
+
+// ---------- ⑨ zh/tw year pages use the same shared view ----------
+console.log('—— ⑨ 简/繁流年页防回流 ——')
+{
+  for (const [lang, file, locale] of [
+    ['zh', YEAR_FILES.zh, 'zh-Hans'],
+    ['tw', YEAR_FILES.tw, 'zh-Hant'],
+  ]) {
+    const src = read(file)
+    assert(src.includes('ShengXiaoYearView') && src.includes(`locale="${locale}"`), `${lang} 流年页使用共享视图并显式传 ${locale}`)
+    assert(src.includes('triAlternates(`/shengxiao/${sx.slug}/${year}`)'), `${lang} 流年页 hreflang 走三语矩阵`)
+  }
+}
+
+// ---------- ⑨b 2027 专属落点区块三语对等 ----------
+console.log('—— ⑨b 2027 专属落点区块 ——')
+{
+  assert(Object.keys(LIUNIAN_2027_DETAIL_EN).length === SHENGXIAO.length, `2027 落点覆盖 12 属相（实际 ${Object.keys(LIUNIAN_2027_DETAIL_EN).length}）`)
+  const missing = SHENGXIAO.filter((s) => {
+    const d = LIUNIAN_2027_DETAIL_EN[s.slug]
+    return !d || !d.focus?.trim() || !d.action?.trim()
+  })
+  assert(missing.length === 0, `2027 落点 focus/action 齐全（缺：${missing.map((s) => s.slug).join(', ') || '无'}）`)
+  const cjk = findCJK(JSON.stringify(LIUNIAN_2027_DETAIL_EN))
+  assert(cjk.length === 0, `2027 英文落点零 CJK（命中 ${cjk.slice(0, 8).join('、')}）`)
+  const view = read('src/components/shengxiao/ShengXiaoYearView.tsx')
+  assert(view.includes('LIUNIAN_2027_DETAIL_EN') && view.includes('year === 2027'), '共享视图在 2027 渲染专属落点，英文不再少一个区块')
+}
+
+// ---------- ⑩ teeth ----------
+console.log('—— ⑩ 牙口自检 ——')
+{
+  const injected = read(YEAR_FILES.en) + '\nconst leak = "属鼠";\n'
+  assert(findCJK(injected).length > 0, '往英文流年页注入一个汉字 → 零 CJK 断言翻红')
   assert(findCJK('Rat · Zi · Water').length === 0, '英文正文不误报')
   const zhFive = SECTIONS.filter((k) => (SHENGXIAO[0][k] || '').trim().length > 0).length
   const enFour = SECTIONS.filter((k) => k !== 'health' && (SHENGXIAO_EN[0][k] || '').trim().length > 0).length

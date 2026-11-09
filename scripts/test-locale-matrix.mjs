@@ -169,6 +169,17 @@ for (const [lang, f] of Object.entries({
   check(lang, f, /ShengXiaoDetail/, '生肖详情页使用共享组件')
 }
 
+// ── 8b. 生肖流年页（年份页，三语同构） ──
+for (const [lang, f] of Object.entries({
+  zh: 'src/app/(zh)/shengxiao/[animal]/[year]/page.tsx',
+  tw: 'src/app/tw/shengxiao/[animal]/[year]/page.tsx',
+  en: 'src/app/en/shengxiao/[animal]/[year]/page.tsx',
+})) {
+  check(lang, f, /ShengXiaoYearView/, '生肖流年页使用共享组件')
+}
+check('zh', 'src/components/shengxiao/ShengXiaoYearView.tsx', /getLiunianEn/, '英文流年文案接入共享视图')
+check('en', 'src/lib/shengxiaoYearEn.ts', /RELATION_COPY_EN/, '英文流年文案按六类太岁关系组织')
+
 // ── 9. 每日日签与五行配色 ──
 for (const [lang, f] of Object.entries({
   zh: 'src/app/(zh)/daily/page.tsx',
@@ -200,6 +211,42 @@ for (const [lang, f] of Object.entries({
   check(lang, f, /ReportActions/, '报告详情页含操作按钮组')
 }
 
+// ── 12. 生成等待时长文案（按实测分档，三语全覆盖） ──
+// 紫微约 1–2 分钟；合婚、方位、年运通常 30 秒内。不许四类统一写同一句。
+const WAIT_FILES = {
+  ziwei: {
+    zh: ['src/app/(zh)/ziwei/page.tsx', /loading \?[^:]{0,80}约 1–2 分钟/],
+    tw: ['src/app/tw/ziwei/Client.tsx', /loading \?[^:]{0,100}約 1–2 分鐘/],
+    en: ['src/app/en/ziwei/Client.tsx', /loading \?[^:]{0,100}about 1–2 minutes/i],
+  },
+  hemun: {
+    zh: ['src/app/(zh)/hemun/page.tsx', /loading \?[^:]{0,80}通常 30 秒内/],
+    tw: ['src/app/tw/hemun/Client.tsx', /loading \?[^:]{0,100}通常 30 秒內/],
+    en: ['src/app/en/hemun/Client.tsx', /loading \?[^:]{0,100}usually under 30 seconds/i],
+  },
+  geo: {
+    zh: ['src/app/(zh)/geo/page.tsx', /loading \?[^:]{0,80}通常 30 秒内/],
+    tw: ['src/app/tw/geo/Client.tsx', /loading \?[^:]{0,100}通常 30 秒內/],
+    en: ['src/app/en/geo/Client.tsx', /loading \?[^:]{0,100}usually under 30 seconds/i],
+  },
+  annual: {
+    zh: ['src/app/(zh)/liunian/page.tsx', /loading \?[^:]{0,80}通常 30 秒内/],
+    tw: ['src/app/tw/liunian/Client.tsx', /loading \?[^:]{0,100}通常 30 秒內/],
+    en: ['src/app/en/liunian/Client.tsx', /loading \?[^:]{0,100}usually under 30 seconds/i],
+  },
+}
+for (const [mod, byLang] of Object.entries(WAIT_FILES)) {
+  for (const [lang, [file, re]] of Object.entries(byLang)) {
+    check(lang, file, re, `${mod} 等待时长分档文案`)
+    // 分档校验：紫微不许退化成「30 秒」，其余三项不许写「1–2 分钟」
+    const wrong = mod === 'ziwei' ? /通常 30 秒|under 30 seconds/ : /1–2 分钟|1–2 minutes/
+    if (wrong.test(read(file))) {
+      failures++
+      rows.push([lang, false, `${mod} 等待时长未按实测分档`, file])
+    }
+  }
+}
+
 // ── 输出矩阵 ──
 const groups = [
   ['追问入口', /追问入口/],
@@ -210,9 +257,11 @@ const groups = [
   ['合婚免费分层', /合婚/],
   ['首页区块对等', /首页/],
   ['生肖页收敛', /生肖/],
+  ['生肖流年页', /流年页/],
   ['每日日签与五行配色', /日签|五行/],
   ['报告宽度与配色', /底色|行宽|layout/],
   ['报告操作按钮组', /操作按钮组/],
+  ['生成等待时长文案', /等待时长/],
 ]
 console.log('\n三语覆盖矩阵（✓=三语齐备，✗=缺实现）：\n')
 for (const [name, re] of groups) {
