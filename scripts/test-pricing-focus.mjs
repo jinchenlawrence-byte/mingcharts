@@ -181,6 +181,9 @@ console.log('—— ⑦ 非法/缺失 sku 安静回退 ——')
   assert(src.includes('window.location.search') && !src.includes('useSearchParams'),
     '用 location.search 读取，避开静态页 useSearchParams bailout',
     'PricingFocus 读取方式不符合静态导出要求')
+  assert(src.includes('setTimeout(jump, 500)') && src.includes('requestAnimationFrame(jump)'),
+    '滚动有 rAF + 500ms 兜底（防 Next 水合把滚动重置回顶部）',
+    'PricingFocus 缺少防重置的兜底滚动')
   for (const bad of ['', 'bogus', 'partner_credits_10']) {
     assert(!isFocusSku(bad), `回退判据覆盖：${JSON.stringify(bad)} 不定位`)
   }
