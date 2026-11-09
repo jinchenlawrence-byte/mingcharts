@@ -11,7 +11,7 @@ import type { ZiweiResultData } from '@/components/reports/ZiweiResultView'
 import { ziweiEn } from '@/lib/enRule'
 import { getAuthToken } from '@/lib/authToken'
 
-export default function EnZiweiClient() {
+export default function EnZiweiClient({ children }: { children?: import('react').ReactNode }) {
   const [formData, setFormData] = useState({
     year: '', month: '', day: '', hour: '', minute: '', gender: 1 as 1 | 0,
   })
@@ -151,6 +151,7 @@ export default function EnZiweiClient() {
             />
           </div>
         )}
+        {children}
       </main>
     </div>
   )

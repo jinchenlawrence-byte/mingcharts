@@ -58,10 +58,10 @@ for (const f of SHARED) {
 
 console.log('—— ②b 简体/繁体模块页不得再有无条件的重新生成块 ——')
 const MODULE_PAGES = [
-  'src/app/(zh)/ziwei/page.tsx',
+  'src/app/(zh)/ziwei/Client.tsx',
   'src/app/(zh)/hemun/page.tsx',
-  'src/app/(zh)/geo/page.tsx',
-  'src/app/(zh)/liunian/page.tsx',
+  'src/app/(zh)/geo/Client.tsx',
+  'src/app/(zh)/liunian/Client.tsx',
   'src/app/tw/ziwei/Client.tsx',
   'src/app/tw/hemun/Client.tsx',
   'src/app/tw/geo/Client.tsx',
@@ -173,13 +173,13 @@ console.log('—— ④ 接口层同样校验：未付费声明 regen → 402 �
 console.log('—— ④b 三语客户端重新生成都带 regen=1 ——')
 {
   const CLIENTS = [
-    'src/app/(zh)/ziwei/page.tsx',
+    'src/app/(zh)/ziwei/Client.tsx',
     'src/app/tw/ziwei/Client.tsx',
     'src/app/en/ziwei/Client.tsx',
     'src/app/(zh)/hemun/page.tsx',
     'src/app/tw/hemun/Client.tsx',
     'src/app/en/hemun/Client.tsx',
-    'src/app/(zh)/geo/page.tsx',
+    'src/app/(zh)/geo/Client.tsx',
     'src/app/tw/geo/Client.tsx',
     'src/app/en/geo/Client.tsx',
   ]

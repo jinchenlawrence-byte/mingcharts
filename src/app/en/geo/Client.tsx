@@ -108,7 +108,7 @@ function AiSections({ data }: { data: GeoResultData }) {
   )
 }
 
-export default function EnGeoClient() {
+export default function EnGeoClient({ children }: { children?: import('react').ReactNode }) {
   const [formData, setFormData] = useState({
     year: '', month: '', day: '', hour: '', minute: '', gender: 1 as 1 | 0,
     currentCityId: '',
@@ -259,6 +259,7 @@ export default function EnGeoClient() {
             />
           </div>
         )}
+        {children}
       </main>
     </div>
   )

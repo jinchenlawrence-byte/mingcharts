@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { articles, ARTICLE_CATEGORIES } from '@/lib/articles'
+import { CATEGORY_INTRO } from '@/lib/articleCategoryIntro'
 import { hantAlternates } from '@/lib/hant-seo'
 import { toHant } from '@/lib/hant'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
@@ -57,6 +58,11 @@ export default async function HantArticlePage({ params }: { params: Promise<{ sl
           </nav>
           <h1 className="hw-c-h1">{toHant(category.name)}</h1>
           <p className="hw-lede">共 {list.length} 篇文章</p>
+          {CATEGORY_INTRO[category.slug] && (
+            <div className="hw-c-box mb-6 mt-4">
+              <p className="hw-c-body">{toHant(CATEGORY_INTRO[category.slug])}</p>
+            </div>
+          )}
           <div className="space-y-4">
             {list.map((a) => (
               <Link

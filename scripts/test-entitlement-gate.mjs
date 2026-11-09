@@ -111,10 +111,10 @@ console.log('—— ③ 前端消费 locked（5 个页面：剥注释后匹配 .
 //   类型声明 locked?: 与解构声明 { …, locked } = data 均不匹配（后随 ?: 或 }，非 ?. / &&）
 const LOCKED_CONSUME_RE = /(\.|(?<![.\w?]))locked\s*(\?\.|&&)/
 const FRONTEND_PAGES = [
-  ['src/app/(zh)/geo/page.tsx', 'src/components/reports/GeoResultView.tsx'],
-  ['src/app/(zh)/ziwei/page.tsx', 'src/components/reports/ZiweiResultView.tsx'],
+  ['src/app/(zh)/geo/Client.tsx', 'src/components/reports/GeoResultView.tsx'],
+  ['src/app/(zh)/ziwei/Client.tsx', 'src/components/reports/ZiweiResultView.tsx'],
   ['src/app/(zh)/hemun/page.tsx', 'src/components/reports/HemunResultView.tsx'],
-  ['src/app/(zh)/liunian/page.tsx', 'src/components/reports/LiunianResultView.tsx'],
+  ['src/app/(zh)/liunian/Client.tsx', 'src/components/reports/LiunianResultView.tsx'],
   ['src/app/(zh)/chart/page.tsx'],
 ]
 let feFail = 0

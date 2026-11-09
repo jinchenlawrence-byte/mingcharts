@@ -78,7 +78,7 @@ function CurrentCitySelect({ value, onChange }: {
   )
 }
 
-export default function HantGeoClient() {
+export default function HantGeoClient({ children }: { children?: import('react').ReactNode }) {
   const [formData, setFormData] = useState({
     year: '', month: '', day: '', hour: '', minute: '', gender: 1 as 1 | 0,
     currentCityId: ''
@@ -238,6 +238,7 @@ export default function HantGeoClient() {
             />
           </div>
         )}
+        {children}
       </main>
     </div>
   )

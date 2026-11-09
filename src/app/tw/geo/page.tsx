@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import HantGeoClient from './Client'
+import GeoIntro from '@/components/tools/GeoIntro'
 import { triAlternates } from '@/lib/lang'
 
 // 方位地理（繁體）—— metadata 由伺服器頁提供。
@@ -12,5 +13,9 @@ export const metadata: Metadata = {
 }
 
 export default function HantGeoPage() {
-  return <HantGeoClient />
+  return (
+    <HantGeoClient>
+      <GeoIntro locale="zh-Hant" />
+    </HantGeoClient>
+  )
 }

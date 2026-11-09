@@ -13,6 +13,7 @@ import LangPromptBar from '@/components/LangPromptBar'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import { ExampleChart, TrustBar, FatebookSample, MoreQueries, FeatureBento } from '@/components/home/HomeSections'
+import Shengxiao2027Links from '@/components/shengxiao/Shengxiao2027Links'
 import { track } from '@/lib/track'
 
 const YEARS = Array.from({ length: 2026 - 1930 + 1 }, (_, i) => 1930 + i)
@@ -236,6 +237,9 @@ export default function Home() {
 
         {/* 样例命书节选 */}
         <FatebookSample locale="zh-Hans" />
+
+        {/* 2027 生肖页内链（年底「来年运势」窗口） */}
+        <Shengxiao2027Links locale="zh-Hans" />
 
         {/* 更多查询 */}
         <MoreQueries locale="zh-Hans" />

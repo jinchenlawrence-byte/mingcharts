@@ -1,6 +1,8 @@
 import type { Metadata } from 'next'
 import { triAlternates } from '@/lib/lang'
 import EnLiunianClient from './Client'
+import LiunianIntro from '@/components/tools/LiunianIntro'
+import Shengxiao2027Links from '@/components/shengxiao/Shengxiao2027Links'
 
 // English Annual Report page: full form and English AI sections.
 export const metadata: Metadata = {
@@ -11,5 +13,10 @@ export const metadata: Metadata = {
 }
 
 export default function EnLiunianPage() {
-  return <EnLiunianClient />
+  return (
+    <EnLiunianClient>
+      <LiunianIntro locale="en" />
+      <Shengxiao2027Links locale="en" className="mt-10" />
+    </EnLiunianClient>
+  )
 }

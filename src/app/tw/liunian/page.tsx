@@ -3,6 +3,7 @@ import Link from 'next/link'
 import { triAlternates } from '@/lib/lang'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import HantLiunianClient from './Client'
+import LiunianIntro from '@/components/tools/LiunianIntro'
 
 // 繁體年運報告入口頁（2026-10-23 第 33 輪）
 //
@@ -72,6 +73,8 @@ export default function HantLiunianEntry() {
           完整的四柱與大運，才看得出這一年對你意味著什麼。
         </p>
       </section>
+
+      <LiunianIntro locale="zh-Hant" />
 
       <p className="text-center text-xs text-ink-light mt-6">
         本文為傳統命理民俗內容，僅供參考娛樂，不構成任何決策建議。

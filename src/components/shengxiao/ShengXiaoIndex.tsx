@@ -5,6 +5,7 @@ import { SHENGXIAO_EN, elementClass } from '@/lib/shengxiaoEn'
 import { BRANCH_ELEMENT, branchEn, zodiacEn } from '@/lib/enTerms'
 import { pathForLang, type SiteLang } from '@/lib/lang'
 import { toHant } from '@/lib/hant'
+import Shengxiao2027Links from '@/components/shengxiao/Shengxiao2027Links'
 
 // 十二生肖索引页（简/繁/英共用，2026-11-09 收敛）
 // 此前繁体是早期独立实现（两列卡片 + 灰色流年小标签），与简/英的圆徽卡片墙完全不同。
@@ -175,6 +176,10 @@ export function ShengXiaoIndex({ locale }: { locale: SiteLang }) {
           ))}
         </div>
       </div>
+
+      {/* 英文 hub 的年份 chip 默认落属相页，这里补一组 2027 年份页直链；
+          简繁 hub 的 chip 已经直指 /shengxiao/<属相>/2027，不重复渲染。 */}
+      {locale === 'en' && <Shengxiao2027Links locale="en" />}
 
       <div className="hw-c-two" data-section="zodiac-explain">
         <div className="hw-c-box">

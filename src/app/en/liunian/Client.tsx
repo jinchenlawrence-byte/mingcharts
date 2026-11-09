@@ -64,7 +64,7 @@ function AiSections({ data }: { data: LiunianResultData }) {
   )
 }
 
-export default function EnLiunianClient() {
+export default function EnLiunianClient({ children }: { children?: import('react').ReactNode }) {
   const options = yearOptions()
   const [formData, setFormData] = useState({
     year: '', month: '', day: '', hour: '', minute: '', gender: 1 as 1 | 0,
@@ -229,6 +229,7 @@ export default function EnLiunianClient() {
             />
           </div>
         )}
+        {children}
       </main>
     </div>
   )

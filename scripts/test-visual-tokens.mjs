@@ -401,16 +401,16 @@ const RESULT_DIR = 'src/components/reports'
 //   的 AI 区实测 1240px、无 .hw-c-read」没被任何断言拦住。
 //   现在改为路由维度：先定位该路由的文件，再枚举它实际用到的 AI 容器实现。
 const AI_ROUTES = {
-  '/ziwei': 'src/app/(zh)/ziwei/page.tsx',
+  '/ziwei': 'src/app/(zh)/ziwei/Client.tsx',
   '/tw/ziwei': 'src/app/tw/ziwei/Client.tsx',
   '/en/ziwei': 'src/app/en/ziwei/Client.tsx',
   '/hemun': 'src/app/(zh)/hemun/page.tsx',
   '/tw/hemun': 'src/app/tw/hemun/Client.tsx',
   '/en/hemun': 'src/app/en/hemun/Client.tsx',
-  '/geo': 'src/app/(zh)/geo/page.tsx',
+  '/geo': 'src/app/(zh)/geo/Client.tsx',
   '/tw/geo': 'src/app/tw/geo/Client.tsx',
   '/en/geo': 'src/app/en/geo/Client.tsx',
-  '/liunian': 'src/app/(zh)/liunian/page.tsx',
+  '/liunian': 'src/app/(zh)/liunian/Client.tsx',
   '/tw/liunian': 'src/app/tw/liunian/page.tsx',
   '/en/liunian': 'src/app/en/liunian/Client.tsx',
 }

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import HantZiweiClient from './Client'
+import ZiweiIntro from '@/components/tools/ZiweiIntro'
 import { triAlternates } from '@/lib/lang'
 
 // 紫微斗數（繁體）—— metadata 由伺服器頁提供。
@@ -12,5 +13,9 @@ export const metadata: Metadata = {
 }
 
 export default function HantZiweiPage() {
-  return <HantZiweiClient />
+  return (
+    <HantZiweiClient>
+      <ZiweiIntro locale="zh-Hant" />
+    </HantZiweiClient>
+  )
 }

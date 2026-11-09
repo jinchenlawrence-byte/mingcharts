@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
 import { SHENGXIAO } from '@/lib/shengxiaoData'
+import Shengxiao2027Links from '@/components/shengxiao/Shengxiao2027Links'
 import { toHant } from '@/lib/hant'
 import { categoriesWithCount, pickBySlug } from '@/lib/relatedArticles'
 import { ExampleChart, TrustBar, FatebookSample, MoreQueries, FeatureBento } from '@/components/home/HomeSections'
@@ -209,6 +210,9 @@ export default function HantHome() {
           ))}
         </div>
       </section>
+
+      {/* 2027 生肖頁內鏈（年底「來年運勢」窗口） */}
+      <Shengxiao2027Links locale="zh-Hant" />
 
       <section className="hw-section">
         <h2 className="hw-h2">{H('命理知識')}（{categories.length} {H('個分類')}）</h2>

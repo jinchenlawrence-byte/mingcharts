@@ -2,6 +2,7 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 import { notFound } from 'next/navigation'
 import { articles, ARTICLE_CATEGORIES } from '@/lib/articles'
+import { CATEGORY_INTRO } from '@/lib/articleCategoryIntro'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import { hantAlternates } from '@/lib/hant-seo'
 
@@ -57,6 +58,12 @@ export default async function ArticleOrCategoryPage({ params }: { params: Promis
 
             <h1 className="hw-c-h1">{category.name}</h1>
             <p className="hw-lede">共 {list.length} 篇文章</p>
+
+            {CATEGORY_INTRO[category.slug] && (
+              <div className="hw-c-box mb-6 mt-4">
+                <p className="hw-c-body">{CATEGORY_INTRO[category.slug]}</p>
+              </div>
+            )}
 
             <div className="space-y-4">
               {list.map(a => (

@@ -82,9 +82,9 @@ console.log(routeFail === 0
 console.log('—— ④ 页面 token 接线 ——')
 const PAGES = [
   ['合婚', '../src/app/(zh)/hemun/page.tsx'],
-  ['紫微', '../src/app/(zh)/ziwei/page.tsx'],
-  ['地理', '../src/app/(zh)/geo/page.tsx'],
-  ['年运', '../src/app/(zh)/liunian/page.tsx'],
+  ['紫微', '../src/app/(zh)/ziwei/Client.tsx'],
+  ['地理', '../src/app/(zh)/geo/Client.tsx'],
+  ['年运', '../src/app/(zh)/liunian/Client.tsx'],
 ]
 let pageFail = 0
 for (const [name, path] of PAGES) {

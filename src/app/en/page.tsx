@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import Link from 'next/link'
 import { triAlternates } from '@/lib/lang'
 import { SHENGXIAO } from '@/lib/shengxiaoData'
+import Shengxiao2027Links from '@/components/shengxiao/Shengxiao2027Links'
 import { branchEn, elementEn } from '@/lib/enTerms'
 import { ExampleChart, TrustBar, FatebookSample, MoreQueries, FeatureBento } from '@/components/home/HomeSections'
 import EnHomeForm from './EnHomeForm'
@@ -106,6 +107,9 @@ export default function EnHome() {
           ))}
         </div>
       </section>
+
+      {/* 2027 zodiac pages: direct links for the year-end "next year" search window. */}
+      <Shengxiao2027Links locale="en" />
 
       {/* Batch 2 parity: Fate Book excerpts (missing on the English home page). */}
       <FatebookSample locale="en" />

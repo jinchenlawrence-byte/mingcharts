@@ -65,10 +65,10 @@ check('en', 'src/app/en/geo/Client.tsx', /AskPanel/, '英文方位页含追问�
 
 // ── 2. 重新生成规则（付费规则版不限次数；免费不出现） ──
 const REGEN_CLIENTS = {
-  ziwei: ['src/app/(zh)/ziwei/page.tsx', 'src/app/tw/ziwei/Client.tsx', 'src/app/en/ziwei/Client.tsx'],
+  ziwei: ['src/app/(zh)/ziwei/Client.tsx', 'src/app/tw/ziwei/Client.tsx', 'src/app/en/ziwei/Client.tsx'],
   hemun: ['src/app/(zh)/hemun/page.tsx', 'src/app/tw/hemun/Client.tsx', 'src/app/en/hemun/Client.tsx'],
-  geo: ['src/app/(zh)/geo/page.tsx', 'src/app/tw/geo/Client.tsx', 'src/app/en/geo/Client.tsx'],
-  annual: ['src/app/(zh)/liunian/page.tsx', 'src/app/tw/liunian/Client.tsx', 'src/app/en/liunian/Client.tsx'],
+  geo: ['src/app/(zh)/geo/Client.tsx', 'src/app/tw/geo/Client.tsx', 'src/app/en/geo/Client.tsx'],
+  annual: ['src/app/(zh)/liunian/Client.tsx', 'src/app/tw/liunian/Client.tsx', 'src/app/en/liunian/Client.tsx'],
 }
 for (const [mod, files] of Object.entries(REGEN_CLIENTS)) {
   const langs = ['zh', 'tw', 'en']
@@ -89,7 +89,7 @@ check('zh', 'src/app/api/liunian/route.ts', /code: 'REGEN_REQUIRES_PAID'[\s\S]{0
 
 // ── 3. 紫微免费分层：in-depth reading 前两个模块 ──
 for (const [lang, f] of Object.entries({
-  zh: 'src/app/(zh)/ziwei/page.tsx',
+  zh: 'src/app/(zh)/ziwei/Client.tsx',
   tw: 'src/app/tw/ziwei/Client.tsx',
   en: 'src/app/en/ziwei/Client.tsx',
 })) {
@@ -103,7 +103,7 @@ check('tw', 'src/app/api/ziwei/route.ts', /pickPreviewSections/, '紫微未购�
 
 // ── 4. 年运免费分层：当年/当月锁定，过去开放 ──
 for (const [lang, f] of Object.entries({
-  zh: 'src/app/(zh)/liunian/page.tsx',
+  zh: 'src/app/(zh)/liunian/Client.tsx',
   tw: 'src/app/tw/liunian/Client.tsx',
   en: 'src/app/en/liunian/Client.tsx',
 })) {
@@ -119,7 +119,7 @@ check('zh', 'src/app/api/liunian/route.ts', /zonedNow\(null\)\.year/, '接口层
 
 // ── 5. 方位免费分层：1 类开放 + 4 类锁定 ──
 for (const [lang, f] of Object.entries({
-  zh: 'src/app/(zh)/geo/page.tsx',
+  zh: 'src/app/(zh)/geo/Client.tsx',
   tw: 'src/app/tw/geo/Client.tsx',
   en: 'src/app/en/geo/Client.tsx',
 })) {
@@ -215,7 +215,7 @@ for (const [lang, f] of Object.entries({
 // 紫微约 1–2 分钟；合婚、方位、年运通常 30 秒内。不许四类统一写同一句。
 const WAIT_FILES = {
   ziwei: {
-    zh: ['src/app/(zh)/ziwei/page.tsx', /loading \?[^:]{0,80}约 1–2 分钟/],
+    zh: ['src/app/(zh)/ziwei/Client.tsx', /loading \?[^:]{0,80}约 1–2 分钟/],
     tw: ['src/app/tw/ziwei/Client.tsx', /loading \?[^:]{0,100}約 1–2 分鐘/],
     en: ['src/app/en/ziwei/Client.tsx', /loading \?[^:]{0,100}about 1–2 minutes/i],
   },
@@ -225,12 +225,12 @@ const WAIT_FILES = {
     en: ['src/app/en/hemun/Client.tsx', /loading \?[^:]{0,100}usually under 30 seconds/i],
   },
   geo: {
-    zh: ['src/app/(zh)/geo/page.tsx', /loading \?[^:]{0,80}通常 30 秒内/],
+    zh: ['src/app/(zh)/geo/Client.tsx', /loading \?[^:]{0,80}通常 30 秒内/],
     tw: ['src/app/tw/geo/Client.tsx', /loading \?[^:]{0,100}通常 30 秒內/],
     en: ['src/app/en/geo/Client.tsx', /loading \?[^:]{0,100}usually under 30 seconds/i],
   },
   annual: {
-    zh: ['src/app/(zh)/liunian/page.tsx', /loading \?[^:]{0,80}通常 30 秒内/],
+    zh: ['src/app/(zh)/liunian/Client.tsx', /loading \?[^:]{0,80}通常 30 秒内/],
     tw: ['src/app/tw/liunian/Client.tsx', /loading \?[^:]{0,100}通常 30 秒內/],
     en: ['src/app/en/liunian/Client.tsx', /loading \?[^:]{0,100}usually under 30 seconds/i],
   },

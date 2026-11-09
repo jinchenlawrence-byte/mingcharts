@@ -14,7 +14,7 @@ import { toHant } from '@/lib/hant'
 // ★ 導航由 /tw 佈局提供。
 const H = (s: string) => toHant(s)
 
-export default function HantZiweiClient() {
+export default function HantZiweiClient({ children }: { children?: import('react').ReactNode }) {
   const [formData, setFormData] = useState({
     year: '', month: '', day: '', hour: '', minute: '', gender: 1 as 1 | 0
   })
@@ -163,6 +163,7 @@ export default function HantZiweiClient() {
             />
           </div>
         )}
+        {children}
       </main>
     </div>
   )

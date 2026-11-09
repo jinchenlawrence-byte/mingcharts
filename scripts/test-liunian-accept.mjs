@@ -141,7 +141,9 @@ console.log('—— ④ /liunian 页面 ——')
 let pFail = 0
 if (!existsSync(new URL('../src/app/(zh)/liunian/page.tsx', import.meta.url))) { pFail++; fail('/liunian/page.tsx 不存在') }
 else {
-  const pageSrc = read('../src/app/(zh)/liunian/page.tsx')
+  // 2026-11-09：/liunian 拆成服务端 page.tsx（渲染说明正文）+ 客户端 Client.tsx（表单与结果）。
+  // 这里合并两文件做断言，保证原有交互判据不因拆分而失效。
+  const pageSrc = read('../src/app/(zh)/liunian/page.tsx') + '\n' + read('../src/app/(zh)/liunian/Client.tsx')
   if (!pageSrc.includes("'use client'")) { pFail++; fail('/liunian 页缺 use client') }
   for (const w of ['今年', '明年', '后年']) {
     if (!pageSrc.includes(w)) { pFail++; fail(`/liunian 年份选项缺「${w}」`) }
