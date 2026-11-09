@@ -46,7 +46,7 @@ export default function MembershipButton({
   const termsPath = en ? '/en/terms' : hant ? '/tw/terms' : '/terms'
   const memberPath = en ? '/en/member' : hant ? '/tw/member' : '/member'
   const p = SKUS[PLAN_SKU[plan]]
-  const available = waffoProductId(PLAN_SKU[plan]) !== null
+  const available = waffoProductId(PLAN_SKU[plan], locale) !== null
   // ★ 默认不勾选：不得预勾（合规硬要求）
   const [agreed, setAgreed] = useState(false)
   const [loading, setLoading] = useState(false)

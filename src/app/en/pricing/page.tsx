@@ -168,7 +168,7 @@ export default function EnPricingPage() {
                 <li key={f} className="flex gap-2"><span className="text-hw-water shrink-0">✓</span><span>{f}</span></li>
               ))}
             </ul>
-            <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} highlight authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
+            <CheckoutButton sku="fatebook" available={waffoProductId('fatebook', 'en') !== null} highlight authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
               Buy the Fate Book
             </CheckoutButton>
             <Link href="/en/mingshu" className="block text-center text-sm text-ink/70 hover:text-ink mt-2">
@@ -227,7 +227,7 @@ export default function EnPricingPage() {
                 <p className="hw-alert hw-alert--info text-xs">
                   Includes {ASK_PER_REPORT} AI follow-up questions (lifetime, never resets)
                 </p>
-                <CheckoutButton sku={s.id} available={waffoProductId(s.id) !== null} requireChart={false} authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
+                <CheckoutButton sku={s.id} available={waffoProductId(s.id, 'en') !== null} requireChart={false} authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
                   Buy now
                 </CheckoutButton>
               </div>
@@ -257,7 +257,7 @@ export default function EnPricingPage() {
                 <div className="text-xs text-ink-light mt-1">/ {ASK_PACK_SIZE}</div>
               </div>
             </div>
-            <CheckoutButton sku="ask_pack" available={waffoProductId('ask_pack') !== null} requireChart={false} authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
+            <CheckoutButton sku="ask_pack" available={waffoProductId('ask_pack', 'en') !== null} requireChart={false} authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
               Buy the pack
             </CheckoutButton>
           </div>

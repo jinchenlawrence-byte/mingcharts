@@ -35,6 +35,8 @@ import {
 } from '../src/lib/waffo-events.ts'
 import { buildCheckoutParams, WAFFO_WEBHOOK_TOLERANCE_MS } from '../src/lib/waffo.ts'
 import { waffoProductId, WAFFO_PORTAL_URL } from '../src/lib/waffo-products.ts'
+import { SKUS } from '../src/lib/pricing.ts'
+import { EN_PRODUCT_SKUS } from '../src/lib/pricingEn.ts'
 import { entitlementsFromRows } from '../src/lib/entitlement.ts'
 
 let allPass = true
@@ -664,6 +666,71 @@ console.log('—— ⑥ 单号规则 / buildCheckoutParams / SKU 映射 ——')
       `${sku} 登记一致性：未登记→null / 已登记→PROD_ 前缀（当前 ${id === null ? '未登记' : '已登记'}）`,
     )
   }
+}
+
+// ════════════════ ⑥b 英文商品映射（2026-11-09）════════════════
+console.log('—— ⑥b 英文商品：9 个 ID / 与中文不同 / 缺 ID 不回退 ——')
+{
+  assert(EN_PRODUCT_SKUS.length === 9, `英文商品清单恰为 9 个（实际 ${EN_PRODUCT_SKUS.length}）`)
+  for (const sku of EN_PRODUCT_SKUS) {
+    const enId = waffoProductId(sku, 'en')
+    const zhId = waffoProductId(sku, 'zh-Hans')
+    assert(typeof enId === 'string' && enId.startsWith('PROD_'), `${sku} 英文 productId 已登记`)
+    assert(enId !== zhId, `${sku} 英文 ID 与中文 ID 不同（两套独立商品）`)
+    assert(SKUS[sku] && SKUS[sku].priceUSD > 0, `${sku} 价格仍取自 SKUS（${SKUS[sku]?.priceUSD} USD）`)
+  }
+  // 缺英文 ID 时必须返回 null —— 绝不回退中文商品（英文收银台不能出现中文商品名）
+  assert(waffoProductId('partner_credits_10', 'en') === null, '英文表缺 ID → null（不回退中文商品）')
+  assert(waffoProductId('partner_credits_10', 'zh-Hans') !== null, '同一 SKU 中文表仍可查（对照）')
+  assert(
+    waffoProductId('fatebook', 'zh-Hant') === waffoProductId('fatebook', 'zh-Hans'),
+    '繁体沿用中文商品表（只有 en 走英文表）',
+  )
+
+  // 建品脚本：金额必须来自 SKUS，不得写死字面量
+  const createEnSrc = stripComments(read('../scripts/create-en-products.mjs'))
+  assert(createEnSrc.includes('def.priceUSD'), '建品脚本金额取自 SKUS[sku].priceUSD（无字面量）')
+  assert(
+    !/\b(29\.99|19\.99|24\.99|59\.99|4\.99|9\.9|49)\b/.test(createEnSrc),
+    '建品脚本无硬编码金额字面量',
+  )
+
+  // API 按 locale 选表；metadata.sku 保持原值（权益判定仍按 SKU，不按商品 ID）
+  const checkoutSrc = stripComments(read('../src/app/api/checkout/route.ts'))
+  assert(checkoutSrc.includes('waffoProductId(sku, locale)'), 'checkout 按 locale 取 productId')
+  assert(/createCheckoutSession\(\{[\s\S]*?\bsku,/.test(checkoutSrc), 'metadata.sku 仍传原 SKU（不随 locale 改）')
+  assert(
+    stripComments(read('../src/lib/checkout.ts')).includes('sku: input.sku'),
+    'buildCheckoutParams 的 sku 来自原 SKU，商品 ID 只影响收银台商品',
+  )
+  assert(
+    checkoutSrc.includes('This product is not available for purchase yet') &&
+      /code: 'SKU_UNAVAILABLE'[\s\S]{0,80}status: 400|status: 400[\s\S]{0,200}SKU_UNAVAILABLE/.test(checkoutSrc),
+    '英文缺 ID 时 API 返回 400 + 英文提示（SKU_UNAVAILABLE）',
+  )
+  const membershipSrc = stripComments(read('../src/app/api/membership/route.ts'))
+  assert(membershipSrc.includes('waffoProductId(sku, entryLocale)'), 'membership 按 entryLocale 取 productId')
+
+  // 英文树所有直接调用必须显式传 'en'；缺 ID 时按钮由 null 判定为 Coming soon
+  {
+    let checked = 0
+    const walk = (dirUrl, rel) => {
+      for (const e of readdirSync(new URL(dirUrl, import.meta.url), { withFileTypes: true })) {
+        if (e.isDirectory()) { walk(dirUrl + e.name + '/', rel + e.name + '/'); continue }
+        if (!e.isFile() || !/\.(ts|tsx)$/.test(e.name)) continue
+        const src = stripComments(read('../src/app/en/' + rel + e.name))
+        for (const m of src.matchAll(/waffoProductId\([^)]*\)/g)) {
+          checked++
+          if (!m[0].includes("'en'")) fail(`英文树 ${rel}${e.name} 的调用未传 'en'：${m[0]}`)
+        }
+      }
+    }
+    walk('../src/app/en/', '')
+    assert(checked >= 5, `英文树 waffoProductId 调用全部显式传 'en'（检查 ${checked} 处）`)
+  }
+  const memberBtn = stripComments(read('../src/components/MembershipButton.tsx'))
+  assert(memberBtn.includes('waffoProductId(PLAN_SKU[plan], locale)'), '会员按钮按 locale 判断可用性')
+  assert(memberBtn.includes("'Coming soon'"), '缺 ID 时英文按钮显示 Coming soon')
 }
 
 // ════════════════ 收尾 ════════════════

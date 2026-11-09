@@ -300,7 +300,7 @@ export default function EnChartClient() {
           <div className="hw-c-cta">
             {chart.locked?.preview && <p className="hw-c-dx">{chart.locked.preview}</p>}
             <div style={{ maxWidth: 380, margin: '0 auto' }}>
-              <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} chartId={chartId ?? undefined} authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
+              <CheckoutButton sku="fatebook" available={waffoProductId('fatebook', 'en') !== null} chartId={chartId ?? undefined} authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
                 Unlock the full Fate Book · {FATEBOOK_PRICE}
               </CheckoutButton>
             </div>

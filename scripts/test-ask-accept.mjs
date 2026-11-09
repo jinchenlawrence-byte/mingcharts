@@ -260,7 +260,7 @@ const strip = (s) => s.replace(/\/\/.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
   // 购买入口本身：ask_pack + 已登记商品才可点
   if (!/<CheckoutButton[\s\S]{0,200}sku="ask_pack"/.test(panel)) { f++; fail('缺少 ask_pack 购买按钮') }
   if (!/requireChart=\{false\}/.test(panel)) { f++; fail('追问包与命盘无关，应 requireChart=false') }
-  if (!panel.includes("waffoProductId('ask_pack')")) { f++; fail('购买按钮未按商品登记状态决定可用') }
+  if (!/waffoProductId\('ask_pack'(?:\s*,\s*locale)?\)/.test(panel)) { f++; fail('购买按钮未按商品登记状态决定可用') }
 
   // 额满时输入区禁用，避免每次点击都白跑 402
   if (!/disabled=\{inputLocked\}/.test(panel)) { f++; fail('额满时输入框未禁用') }

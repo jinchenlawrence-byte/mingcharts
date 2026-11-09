@@ -119,7 +119,7 @@ export async function POST(req: NextRequest) {
     }
 
     const sku = PLAN_SKU[plan.id]
-    const productId = waffoProductId(sku)
+    const productId = waffoProductId(sku, entryLocale)
 
     // ★ ② 未登记：还没接上真实商品
     if (!productId) {

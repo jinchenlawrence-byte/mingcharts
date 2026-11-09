@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
     }
 
     // SKU → Waffo productId 未登记 → 明确的业务错误（不是 500，前端显示「即将推出」）
-    const productId = waffoProductId(sku)
+    const productId = waffoProductId(sku, locale)
     if (!productId) {
       return NextResponse.json(
         { error: t('该商品尚未开放购买', 'This product is not available for purchase yet'), code: 'SKU_UNAVAILABLE' },

@@ -1,4 +1,5 @@
 import type { SkuId } from './pricing'
+import type { OutputLocale } from './locale'
 
 // 客户付款门户（改卡 / 查账单 / 取消订阅）。
 // ★ 这是【公开链接、非密钥】，故放在本同构模块中，客户端组件可直接引用。
@@ -46,8 +47,28 @@ export const WAFFO_PRODUCTS: Partial<Record<SkuId, string>> = {
   partner_credits_200: 'PROD_1aL4vcm2o1T7HonzdgSPIY',  // 命理报告包 · 200 份 1800 USD
 }
 
-// 返回某 SKU 对应的 Waffo productId；未登记则返回 null（购买入口据此显示「即将推出」）
-export function waffoProductId(sku: SkuId): string | null {
-  const id = WAFFO_PRODUCTS[sku]
+// ─────────────────────────────────────────────────────────────
+// 英文渠道商品（2026-11-09 由 scripts/create-en-products.mjs 用生产凭证创建，
+//   创建后 status=active；商品名/描述取 src/lib/pricingEn.ts，金额取 SKUS[sku].priceUSD）。
+// ★ 英文严格只查本表：缺 ID 返回 null（入口显示 Coming soon），绝不回退中文商品。
+//   原因：中英文是两套独立商品，回退会让英文用户看到中文商品名，且金额/税类可能漂移。
+// ─────────────────────────────────────────────────────────────
+export const WAFFO_PRODUCTS_EN: Partial<Record<SkuId, string>> = {
+  fatebook: 'PROD_46MI5YaIavggEwziOZ20Un',        // Fate Book 29.99
+  annual_report: 'PROD_6hGQg9S5iwMtQEj8xWEzBn',   // Annual report 19.99
+  hemun: 'PROD_6qJOxyOGBFupvJ0IDmbSEr',           // Bazi synastry 29.99
+  ziwei_deep: 'PROD_3tbHy1UgSz2XPcY4QsLebr',      // Zi Wei Dou Shu in depth 24.99
+  geo: 'PROD_7QinCvRsxqdH0K7qm2R1Qn',             // Location & Direction · Cities of wealth 19.99
+  bundle3: 'PROD_1M7iLiWQhyTFzcg4NUrfF4',         // Fate Book bundle 59.99
+  ask_pack: 'PROD_38W6XWUtv8odVmNSB7jm3V',        // Question pack 4.99
+  member_monthly: 'PROD_5x27LEbXvrrjaiOjhmPBnV',  // Monthly membership 9.90 / monthly
+  member_yearly: 'PROD_0VCJFjEToJqzdv06UGmzPk',   // Annual membership 49.00 / yearly
+}
+
+// 返回某 SKU 对应的 Waffo productId；未登记则返回 null（购买入口据此显示「即将推出」）。
+// ★ locale='en' 只查英文表，缺 ID 直接 null，绝不回退中文商品。
+export function waffoProductId(sku: SkuId, locale: OutputLocale = 'zh-Hans'): string | null {
+  const table = locale === 'en' ? WAFFO_PRODUCTS_EN : WAFFO_PRODUCTS
+  const id = table[sku]
   return typeof id === 'string' && id.length > 0 ? id : null
 }

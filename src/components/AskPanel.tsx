@@ -281,7 +281,7 @@ export default function AskPanel({
             <div className="mt-3 max-w-xs">
               <CheckoutButton
                 sku={unlockSku}
-                available={waffoProductId(unlockSku) !== null}
+                available={waffoProductId(unlockSku, locale) !== null}
                 requireChart={false}
                 authPath={authPath}
                 locale={locale}
@@ -381,7 +381,7 @@ export default function AskPanel({
               </p>
               <CheckoutButton
                 sku="ask_pack"
-                available={waffoProductId('ask_pack') !== null}
+                available={waffoProductId('ask_pack', locale) !== null}
                 requireChart={false}
                 authPath={authPath}
                 locale={locale}
