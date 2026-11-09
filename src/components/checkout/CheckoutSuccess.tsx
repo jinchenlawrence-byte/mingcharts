@@ -266,7 +266,7 @@ export default function CheckoutSuccess({ locale = 'zh-Hans' }: { locale?: SiteL
     <Suspense
       fallback={
         <main className="hw-page flex items-center justify-center">
-          <p className="text-ink/60">{locale === 'zh-Hant' ? '載入中…' : '加载中…'}</p>
+          <p className="text-ink/70">{locale === 'zh-Hant' ? '載入中…' : '加载中…'}</p>
         </main>
       }
     >

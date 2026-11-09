@@ -210,7 +210,7 @@ export default function EnReportDetailPage() {
           <h1 className="flex flex-wrap items-center gap-2 hw-c-h1">
             {kindLabelEn(row.kind)}
             {legacyChinese && (
-              <span className="rounded-full border border-gold/30 px-2 py-0.5 text-[11px] font-normal text-ink/60">
+              <span className="rounded-full border border-gold/30 px-2 py-0.5 text-[11px] font-normal text-ink/70">
                 {LEGACY_BADGE_EN}
               </span>
             )}

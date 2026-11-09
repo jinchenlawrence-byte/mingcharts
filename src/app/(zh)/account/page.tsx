@@ -79,7 +79,7 @@ export default function AccountPage() {
           <div className="hw-c-box">
             <h1 className="hw-c-secTitle hw-c-h2C">账号设置</h1>
 
-            {!checked && <p className="text-center text-ink/60">正在加载…</p>}
+            {!checked && <p className="text-center text-ink/70">正在加载…</p>}
 
             {checked && !email && (
               <div className="text-center">
@@ -153,7 +153,7 @@ export default function AccountPage() {
                   >
                     {loggingOut ? '正在退出…' : '退出登录'}
                   </button>
-                  <p className="mt-3 text-center text-xs text-ink/45">
+                  <p className="mt-3 text-center text-xs text-ink/70">
                     退出后需重新登录，才能查看「我的命盘」「我的报告」与已购内容。
                   </p>
                 </div>

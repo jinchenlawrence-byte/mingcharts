@@ -65,12 +65,14 @@ console.log('—— ② CTA 指向 /tw ——')
   // /tw 自身就是排盘首页（表单即入口），不要求它再链回自己
   // 生肖简/繁/英已收敛到共享组件（2026-11-09）：页面本身不再写死 href="/tw"，
   // CTA 由共享组件用 pathForLang('/', locale) 生成 —— 按真实组件校验，别按字面量校验。
-  const sharedShengXiao = read('src/components/shengxiao/ShengXiaoIndex.tsx') + read('src/components/shengxiao/ShengXiaoDetail.tsx')
+  const sharedShengXiao = read('src/components/shengxiao/ShengXiaoIndex.tsx') +
+    read('src/components/shengxiao/ShengXiaoDetail.tsx') +
+    read('src/components/shengxiao/ShengXiaoYearView.tsx')
   const sharedCtaOk = /pathForLang\('\/', locale\)/.test(sharedShengXiao)
   const missing = mustCta.filter((f) => {
     const src = read(f)
     if (f === 'src/app/tw/page.tsx') return !/action=""|onSubmit=\{handleSubmit\}/.test(src)
-    if (/src\/app\/tw\/shengxiao\//.test(f) && /<ShengXiao(Index|Detail)/.test(src)) {
+    if (/src\/app\/tw\/shengxiao\//.test(f) && /<ShengXiao(Index|Detail|YearView)/.test(src)) {
       return !(/locale="zh-Hant"/.test(src) && sharedCtaOk)
     }
     return !/href="\/tw"/.test(src)
@@ -86,7 +88,11 @@ console.log('—— ② CTA 指向 /tw ——')
 console.log('—— ③ $19.99 年运报告是链接 ——')
 {
   const src = read('src/app/tw/shengxiao/[animal]/[year]/page.tsx')
-  if (!/href="\/tw\/liunian"/.test(src)) fail('繁体流年页的「年運報告」没有链接到 /tw/liunian')
+  // 2026-11-09：年份页收敛到共享视图，CTA 由 pathForLang('/liunian', locale) 生成
+  const view = read('src/components/shengxiao/ShengXiaoYearView.tsx')
+  const linked = /href="\/tw\/liunian"/.test(src) ||
+    (/pathForLang\('\/liunian'/.test(view) && /annualHref/.test(view) && /href=\{copy\.annualHref\}/.test(view))
+  if (!linked) fail('繁体流年页的「年運報告」没有链接到 /tw/liunian')
   else ok('繁体流年页已链接到 /tw/liunian')
   // 防退化：不允许出现「或直接生成 … 年運報告」的纯文本段（没有 <Link 在同一行附近）
   const plain = /<p[^>]*>\s*或直接生成[^<]*年運報告/.test(src)

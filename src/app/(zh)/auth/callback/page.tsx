@@ -93,7 +93,7 @@ function CallbackInner() {
   }
   return (
     <div className="paper-card rounded-xl p-8 max-w-md w-full mx-4">
-      <p className="text-center text-ink/60">正在验证，请稍候…</p>
+      <p className="text-center text-ink/70">正在验证，请稍候…</p>
     </div>
   )
 }
@@ -104,7 +104,7 @@ export default function AuthCallbackPage() {
     <main className="min-h-screen flex items-center justify-center">
       <Suspense fallback={
         <div className="paper-card rounded-xl p-8 max-w-md w-full mx-4">
-          <p className="text-center text-ink/60">正在验证，请稍候…</p>
+          <p className="text-center text-ink/70">正在验证，请稍候…</p>
         </div>
       }>
         <CallbackInner />

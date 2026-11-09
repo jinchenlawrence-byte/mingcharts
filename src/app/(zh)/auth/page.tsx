@@ -229,7 +229,7 @@ export default function AuthPage() {
                   </p>
                 )}
 
-                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={(f) => setTsError(f)} />
+                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={(f) => setTsError(f)} locale="zh-Hans" ariaLabel="人机验证" />
                 {tsPending && (
                   <p className="text-xs text-ink-light text-center">正在加载人机验证…</p>
                 )}
@@ -318,7 +318,7 @@ export default function AuthPage() {
                   </p>
                 )}
 
-                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={(f) => setTsError(f)} />
+                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={(f) => setTsError(f)} locale="zh-Hans" ariaLabel="人机验证" />
                 {tsPending && (
                   <p className="text-xs text-ink-light text-center">正在加载人机验证…</p>
                 )}

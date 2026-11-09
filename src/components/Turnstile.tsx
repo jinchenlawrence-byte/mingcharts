@@ -56,17 +56,34 @@ function loadTurnstile(): Promise<void> {
   return scriptLoading
 }
 
+// ★ 2026-11-09：控件语言此前写死 zh-cn，英文/繁体页的验证码也显示中文。
+//   语言与读屏标签都跟随入口 locale；缺省仍为简体（零回归）。
+const WIDGET_LANGUAGE: Record<'zh-Hans' | 'zh-Hant' | 'en', string> = {
+  'zh-Hans': 'zh-cn',
+  'zh-Hant': 'zh-tw',
+  en: 'en',
+}
+const WIDGET_LABEL: Record<'zh-Hans' | 'zh-Hant' | 'en', string> = {
+  'zh-Hans': '人机验证',
+  'zh-Hant': '人機驗證',
+  en: 'Human verification',
+}
+
 export default function Turnstile({
   onToken,
   resetKey,
   onError,
-  ariaLabel = '人机验证',
+  locale = 'zh-Hans',
+  ariaLabel,
 }: {
   onToken: (t: string | null) => void
   resetKey: number
   onError?: (failure: TurnstileFailure) => void
+  /** 入口语言：决定验证码控件语言与默认读屏标签 */
+  locale?: 'zh-Hans' | 'zh-Hant' | 'en'
   ariaLabel?: string
 }) {
+  const widgetLabel = ariaLabel ?? WIDGET_LABEL[locale]
   const holderRef = useRef<HTMLDivElement | null>(null)
   const widgetIdRef = useRef<string | null>(null)
   const onTokenRef = useRef(onToken)
@@ -124,7 +141,7 @@ export default function Turnstile({
         try {
           widgetIdRef.current = window.turnstile.render(holderRef.current, {
             sitekey: SITE_KEY,
-            language: 'zh-cn',
+            language: WIDGET_LANGUAGE[locale],
             callback: (token: string) => {
               if (cancelled) return
               clearTimer()
@@ -164,8 +181,8 @@ export default function Turnstile({
       clearTimer()
       detach()
     }
-  }, [resetKey])
+  }, [resetKey, locale])
 
   if (!SITE_KEY) return null
-  return <div ref={holderRef} className="flex justify-center" aria-label={ariaLabel} />
+  return <div ref={holderRef} className="flex justify-center" aria-label={widgetLabel} />
 }

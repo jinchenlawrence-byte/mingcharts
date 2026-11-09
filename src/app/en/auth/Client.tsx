@@ -213,7 +213,7 @@ export default function AuthPage() {
                     {H(message)}
                   </p>)}
 
-                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={(f) => setTsError(f)}/>
+                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={(f) => setTsError(f)} locale="en" ariaLabel="Human verification"/>
                 {tsPending && (<p className="text-xs text-ink-light text-center">{H("正在加载人机验证…")}</p>)}
                 <TurnstileNotice error={tsError} onRetry={retryTurnstile} locale="en" />
 
@@ -256,7 +256,7 @@ export default function AuthPage() {
                     {H(message)}
                   </p>)}
 
-                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={(f) => setTsError(f)}/>
+                <Turnstile onToken={handleTsToken} resetKey={tsResetKey} onError={(f) => setTsError(f)} locale="en" ariaLabel="Human verification"/>
                 {tsPending && (<p className="text-xs text-ink-light text-center">{H("正在加载人机验证…")}</p>)}
                 <TurnstileNotice error={tsError} onRetry={retryTurnstile} locale="en" />
 

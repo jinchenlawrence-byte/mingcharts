@@ -33,7 +33,7 @@ export default function MonthDays({
           type="button"
           onClick={() => setOpen((v) => !v)}
           aria-expanded={open}
-          className="text-sm text-ink/60 underline-offset-4 hover:text-ink hover:underline"
+          className="text-sm text-ink/70 underline-offset-4 hover:text-ink hover:underline"
         >
           {open ? '收起整月' : `展开整月（${days.length} 天）`}
         </button>

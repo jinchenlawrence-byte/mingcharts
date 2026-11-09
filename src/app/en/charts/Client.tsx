@@ -112,7 +112,7 @@ export default function EnChartsClient() {
   if (loading) {
     return (
       <div className="hw-wrap hw-c-pg flex items-center justify-center">
-        <p className="text-ink/60">Loading...</p>
+        <p className="text-ink/70">Loading...</p>
       </div>
     )
   }

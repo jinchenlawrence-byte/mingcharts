@@ -307,6 +307,59 @@ for (const file of sourceFiles) {
   }
 }
 
+// ── 3b. text-ink/<opacity>：按实际底色复算，任一面 <4.5 即失败 ──
+// ★ 2026-11-09：此前只扫 text-ink-light/<opacity>，text-ink/40–60 这类写法
+//   （181 处分档、其中 42 处低于 4.5:1）长期无人拦。这里从源码枚举**实际出现的所有档位**，
+//   逐个按 :root / 暗色令牌的页面底与卡片面计算，不写死白名单——新增档位自动纳入。
+{
+  const darkMerged = { ...light, ...(darkTokens || {}) }
+  const inkLight = resolveColor('color-ink', light)
+  const inkDark = resolveColor('color-ink', darkMerged)
+  const SURFACES = [
+    ['亮色页面底', inkLight, resolveColor('hw-bg', light)],
+    ['亮色卡片面', inkLight, resolveColor('hw-surface', light)],
+    ['亮色宣纸底', inkLight, resolveColor('color-paper', light)],
+    ['暗色页面底', inkDark, resolveColor('hw-bg', darkMerged)],
+    ['暗色卡片面', inkDark, resolveColor('hw-surface', darkMerged)],
+  ].filter(([, fg, bg]) => fg && bg)
+
+  const tiers = new Map()
+  for (const file of sourceFiles) {
+    const rel = path.relative(ROOT, file).replaceAll('\\', '/')
+    fs.readFileSync(file, 'utf8')
+      .split(/\r?\n/)
+      .forEach((line, i) => {
+        for (const m of line.matchAll(/text-ink\/(\d{1,3})(?![\d])/g)) {
+          const n = Number(m[1])
+          if (!tiers.has(n)) tiers.set(n, [])
+          tiers.get(n).push(`${rel}:${i + 1}`)
+        }
+      })
+  }
+
+  let tierHits = 0
+  for (const [n, hits] of [...tiers].sort((a, b) => a[0] - b[0])) {
+    tierHits += hits.length
+    if (n <= 0 || n > 100) {
+      failures.push(`text-ink/${n}: 非法透明度档位（${hits.slice(0, 3).join(', ')}）`)
+      continue
+    }
+    let worst = null
+    for (const [name, fg, bg] of SURFACES) {
+      const ratio = contrast(blend(fg, bg, n / 100), bg)
+      if (!worst || ratio < worst.ratio) worst = { name, ratio }
+    }
+    const ok = worst.ratio >= 4.5
+    console.log(`[text-ink/${n}] 最低 ${worst.ratio.toFixed(2)}:1 @ ${worst.name}  ${ok ? 'PASS' : 'FAIL'}（${hits.length} 处；need 4.5:1）`)
+    if (!ok) {
+      failures.push(
+        `text-ink/${n}: 最低 ${worst.ratio.toFixed(2)}:1 @ ${worst.name} < 4.5:1（${hits.length} 处，如 ${hits.slice(0, 3).join(', ')}）`,
+      )
+    }
+  }
+  console.log(`text-ink opacity tiers: ${tiers.size} 档 / ${tierHits} 处`)
+}
+
 // ── 4. 英文树正文行宽：max-w-3xl 只允许出现在多列网格行 ──
 const enFiles = sourceFiles.filter((f) => f.replaceAll('\\', '/').includes('/src/app/en/'))
 for (const file of enFiles) {

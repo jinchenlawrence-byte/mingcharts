@@ -53,7 +53,7 @@ for (const [rel, want] of [['值', '值'], ['害', '害'], ['刑', '刑'], ['合
 }
 // 静态：繁体页不得再对单字调 toHant(ln.relation)（会把「衝太歲」放出去）
 // 2026-11-09 生肖详情收敛到共享组件后，判据跟到 components/shengxiao/ShengXiaoDetail.tsx
-for (const f of ['app/tw/shengxiao/[animal]/[year]/page.tsx', 'components/shengxiao/ShengXiaoDetail.tsx']) {
+for (const f of ['components/shengxiao/ShengXiaoYearView.tsx', 'components/shengxiao/ShengXiaoDetail.tsx']) {
   const src = readFileSync(near(f), 'utf8')
   if (src.includes('toHant(ln.relation)')) { convFail++; fail(`${f} 仍对单字用 toHant（会产出「衝太歲」），应改 hantTaiSui`) }
   if (!src.includes('hantTaiSui(ln.relation)')) { convFail++; fail(`${f} 未使用 hantTaiSui 处理太岁关系`) }
@@ -151,7 +151,13 @@ const alt3 = triAlternates('/shengxiao/shu')
 if (alt3.en !== '/en/shengxiao/shu') { seoFail++; fail(`英文 hreflang = ${alt3.en}，应为 /en/shengxiao/shu`) }
 if (Object.keys(alt3).length !== 7) { seoFail++; fail(`三语 alternates 应为 7 键，实际 ${Object.keys(alt3).length}`) }
 // 两边都必须从同一函数生成（防一边手写、一边不写 → hreflang 单向失效）
-const TRI_PAGES = new Set(['app/(zh)/shengxiao/[animal]/page.tsx', 'app/tw/shengxiao/[animal]/page.tsx'])
+const TRI_PAGES = new Set([
+  'app/(zh)/shengxiao/[animal]/page.tsx',
+  'app/tw/shengxiao/[animal]/page.tsx',
+  // 2026-11-09：年份页升级为三语（含 en），与属相页同源
+  'app/(zh)/shengxiao/[animal]/[year]/page.tsx',
+  'app/tw/shengxiao/[animal]/[year]/page.tsx',
+])
 for (const f of ['app/(zh)/shengxiao/[animal]/page.tsx', 'app/tw/shengxiao/[animal]/page.tsx',
   'app/(zh)/shengxiao/[animal]/[year]/page.tsx', 'app/tw/shengxiao/[animal]/[year]/page.tsx',
   'app/(zh)/article/page.tsx', 'app/tw/article/page.tsx',
@@ -316,7 +322,7 @@ const { relatedHantArticles, pickBySlug, categoriesWithCount, SHENGXIAO_ARTICLE_
     'app/tw/page.tsx': ['categoriesWithCount', '/tw/article/'],
     'app/tw/article/[slug]/page.tsx': ['relatedHantArticles', '/tw/article/'],
     'components/shengxiao/ShengXiaoDetail.tsx': ['SHENGXIAO_ARTICLE_SLUGS', 'pathForLang(`/article/'],
-    'app/tw/shengxiao/[animal]/[year]/page.tsx': ['LIUNIAN_ARTICLE_SLUGS', '/tw/article/'],
+    'components/shengxiao/ShengXiaoYearView.tsx': ['LIUNIAN_ARTICLE_SLUGS', '/tw/article/'],
   }
   for (const [f, needles] of Object.entries(pages)) {
     const src = readFileSync(near(f), 'utf8')

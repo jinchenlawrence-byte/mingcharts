@@ -87,7 +87,7 @@ export default function SiteHeader({ locale = 'zh-Hans' }: { locale?: SiteLang }
       <div className="flex min-w-0 flex-1 items-center justify-start gap-2 sm:gap-3">
         <SiteNav locale={locale} />
         {/* 语言切换固定在工具行之外，移动端横向滚动时仍始终可见 */}
-        <LangSwitcher locale={locale} className="shrink-0 whitespace-nowrap text-ink/40 transition-colors hover:text-ink" />
+        <LangSwitcher locale={locale} className="shrink-0 whitespace-nowrap text-ink/70 transition-colors hover:text-ink" />
         {email ? (
           <div ref={menuRef} className="relative shrink-0">
             <button
@@ -114,7 +114,7 @@ export default function SiteHeader({ locale = 'zh-Hans' }: { locale?: SiteLang }
                   : 'hidden'
               }
             >
-              <p className="truncate border-b border-ink/10 px-3.5 pb-2.5 text-[12px] text-ink/40">
+              <p className="truncate border-b border-ink/10 px-3.5 pb-2.5 text-[12px] text-ink/70">
                 {email}
               </p>
               {accountItems.map((item) => (
@@ -131,7 +131,7 @@ export default function SiteHeader({ locale = 'zh-Hans' }: { locale?: SiteLang }
               <button
                 type="button"
                 onClick={handleLogout}
-                className="block w-full px-3.5 py-2 text-left text-[14px] text-ink/50 transition-colors hover:bg-ink/5 hover:text-ink"
+                className="block w-full px-3.5 py-2 text-left text-[14px] text-ink/70 transition-colors hover:bg-ink/5 hover:text-ink"
               >
                 {SIGN_OUT_LABEL[locale]}
               </button>

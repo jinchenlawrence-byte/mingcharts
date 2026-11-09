@@ -273,7 +273,7 @@ export default function PartnerWorkspace({ locale }: { locale: OutputLocale }) {
       <div className="hw-page">
         {nav}
         <main className="hw-wrap hw-c-pg">
-          <p className="text-ink/60">{L('加载中...')}</p>
+          <p className="text-ink/70">{L('加载中...')}</p>
         </main>
       </div>
     )

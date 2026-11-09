@@ -251,7 +251,8 @@ console.log('—— ⑤ Turnstile 人机验证接线 ——')
   // 加载失败可感知并【按原因区分】（2026-11-05 线上成功/失败同屏 + 误报广告拦截修复）
   assert(ts.includes('scriptLoading = null') && ts.includes('onError'),
     'Turnstile 脚本加载失败回调 onError 并清除失败缓存（重试可重新加载）')
-  assert(ts.includes('[resetKey]'),
+  // locale 决定控件语言；加入依赖后仍是 resetKey 变化即重建
+  assert(/\[resetKey(?:, locale)?\]/.test(ts),
     'Turnstile 以 resetKey 重建 widget（重试不只是 reset 旧实例，含脚本重载）')
   assert(ts.includes("'error-callback': (code") && ts.includes("kind: 'challenge'"),
     'error-callback 接收 Cloudflare 错误码并上报 challenge 失败（不再一律当脚本被拦）')

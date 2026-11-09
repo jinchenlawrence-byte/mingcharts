@@ -45,7 +45,7 @@ export default function SiteNav({ locale }: { locale: SiteLang }) {
           <Link
             key={item.path}
             href={hrefFor(item, locale)}
-            className="whitespace-nowrap text-ink/60 transition-colors hover:text-ink"
+            className="whitespace-nowrap text-ink/70 transition-colors hover:text-ink"
           >
             {item.label[locale]}
           </Link>
@@ -59,7 +59,7 @@ export default function SiteNav({ locale }: { locale: SiteLang }) {
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-haspopup="menu"
-            className="shrink-0 whitespace-nowrap text-[13px] text-ink/45 transition-colors hover:text-ink sm:text-[15px]"
+            className="shrink-0 whitespace-nowrap text-[13px] text-ink/70 transition-colors hover:text-ink sm:text-[15px]"
           >
             {MORE_LABEL[locale]}
             <span

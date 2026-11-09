@@ -208,12 +208,12 @@ export default async function YearPage({ params }: { params: Promise<{ year: str
             ← 返回八字算命索引（1950–2010 年）
           </Link>
           {yearNum > 1950 && (
-            <Link href={`/bazi/${yearNum - 1}`} className="text-ink/60 hover:text-ink">
+            <Link href={`/bazi/${yearNum - 1}`} className="text-ink/70 hover:text-ink">
               ← {yearNum - 1}年
             </Link>
           )}
           {yearNum < 2010 && (
-            <Link href={`/bazi/${yearNum + 1}`} className="text-ink/60 hover:text-ink">
+            <Link href={`/bazi/${yearNum + 1}`} className="text-ink/70 hover:text-ink">
               {yearNum + 1}年 →
             </Link>
           )}

@@ -138,7 +138,7 @@ export default function EnReportsPage() {
                   <p className="flex flex-wrap items-center gap-2 font-semibold text-ink">
                     {kindLabelEn(r.kind)}
                     {legacy && (
-                      <span className="rounded-full border border-gold/30 px-2 py-0.5 text-[11px] font-normal text-ink/60">
+                      <span className="rounded-full border border-gold/30 px-2 py-0.5 text-[11px] font-normal text-ink/70">
                         {LEGACY_BADGE_EN}
                       </span>
                     )}
@@ -154,7 +154,7 @@ export default function EnReportsPage() {
                   <Link href={`/en/reports/${r.id}`} className="hw-c-link">Open report →</Link>
                     <button
                       type="button"
-                      className="hw-c-link text-ink/45 hover:text-red-600"
+                      className="hw-c-link text-ink/70 hover:text-red-600"
                       onClick={() => handleDelete(r.id)}
                     >
                       Delete

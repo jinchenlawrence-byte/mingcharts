@@ -56,7 +56,7 @@ export default function ResetPasswordPage() {
         <div className="hw-auth">
           <div className="hw-c-box">
             {phase === 'checking' && (
-              <p className="text-center text-ink/60">正在验证链接…</p>
+              <p className="text-center text-ink/70">正在验证链接…</p>
             )}
 
             {phase === 'form' && (

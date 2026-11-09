@@ -68,6 +68,10 @@ const synth = d => [
   d.summary, d.ganTrait, d.zhiTrait, d.naYinTrait, d.relationTrait,
   ...d.jieqi.map(j => `${j.name} ${j.dateLabel} ${j.type} ${j.monthZhi ? j.monthZhi + '月' : '不换月令'}`),
   ...d.months.map(m => m.description),
+  // ★ 2026-11-09：页面渲染的是「{year}年{month}月出生查询 →」内链文案，
+  //   合成文本也必须带上同一文案，否则源码改动后构建产物过期、回退到合成文本时，
+  //   下面「12 个月份内链文案」的断言会整批误红（61×12=732 项）。
+  ...d.months.map(m => `${d.year}年${m.month}月出生查询`),
   ...d.faqs.flatMap(q => [q.q, q.a]),
   `${d.year}年出生的人生肖属${d.zodiacName}，五行属${d.zhiElement}，纳音为${d.naYin}。`,
 ].join('\n')

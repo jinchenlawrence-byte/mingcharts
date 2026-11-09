@@ -107,7 +107,7 @@ export default function EnAccountPage() {
               >
                 {loggingOut ? 'Signing out…' : 'Sign out'}
               </button>
-              <p className="mt-3 text-xs text-ink/45">
+              <p className="mt-3 text-xs text-ink/70">
                 After signing out you must sign in again to open My chart, My reports and purchased content.
               </p>
             </div>

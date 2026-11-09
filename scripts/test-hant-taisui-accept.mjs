@@ -128,12 +128,19 @@ console.log('—— ④ 12 属相 ⇄ 落地页 ——')
   else ok('繁体落地页链到 /tw 下的 12 个属相页')
 
   // 反向：属相年页要有回落地页的入口
+  // ★ 2026-11-09：年份页收敛到共享视图 ShengXiaoYearView，回链写在视图的 related 里，
+  //   页面本身只剩 <ShengXiaoYearView locale=… />；按「页面用共享视图 + 视图含对应回链」判。
   const yPage = read('src/app/(zh)/shengxiao/[animal]/[year]/page.tsx')
   const twYPage = read('src/app/tw/shengxiao/[animal]/[year]/page.tsx')
-  if (!yPage.includes('href="/liunian/2027"')) fail('简体属相年页缺回落地页链接')
-  else ok('简体属相年页有回链')
-  if (!twYPage.includes('href="/tw/liunian/2027"')) fail('繁体属相年页缺回落地页链接')
-  else ok('繁体属相年页有回链')
+  const yearView = read('src/components/shengxiao/ShengXiaoYearView.tsx')
+  const sharedBackLink = (page, href) =>
+    /<ShengXiaoYearView/.test(page) && yearView.includes(href)
+  if (!yPage.includes('href="/liunian/2027"') && !sharedBackLink(yPage, "'/liunian/2027'")) {
+    fail('简体属相年页缺回落地页链接')
+  } else ok('简体属相年页有回链')
+  if (!twYPage.includes('href="/tw/liunian/2027"') && !sharedBackLink(twYPage, "'/tw/liunian/2027'")) {
+    fail('繁体属相年页缺回落地页链接')
+  } else ok('繁体属相年页有回链')
 }
 
 // ---------- ⑤ 文章 ⇄ 落地页 ----------

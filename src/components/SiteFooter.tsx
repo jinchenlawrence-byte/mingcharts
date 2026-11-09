@@ -22,25 +22,25 @@ export default function SiteFooter({ locale }: { locale?: SiteLang }) {
 
   if (en) {
     return (
-      <footer className="mt-auto border-t border-gold/20 py-4 text-center text-[11px] text-ink/40">
+      <footer className="mt-auto border-t border-gold/20 py-4 text-center text-[11px] text-ink/70">
         <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-          <Link href="/en" className="underline hover:text-ink/60">Home</Link>
+          <Link href="/en" className="underline hover:text-ink/70">Home</Link>
           <span aria-hidden="true">·</span>
-          <Link href="/en/pricing" className="underline hover:text-ink/60">Pricing</Link>
+          <Link href="/en/pricing" className="underline hover:text-ink/70">Pricing</Link>
           <span aria-hidden="true">·</span>
-          <Link href="/en/terms" className="underline hover:text-ink/60">Terms of Service</Link>
+          <Link href="/en/terms" className="underline hover:text-ink/70">Terms of Service</Link>
           <span aria-hidden="true">·</span>
-          <Link href="/en/privacy" className="underline hover:text-ink/60">Privacy Policy</Link>
+          <Link href="/en/privacy" className="underline hover:text-ink/70">Privacy Policy</Link>
           <span aria-hidden="true">·</span>
-          <a href="mailto:hello@mingcharts.com" className="underline hover:text-ink/60">hello@mingcharts.com</a>
+          <a href="mailto:hello@mingcharts.com" className="underline hover:text-ink/70">hello@mingcharts.com</a>
           <span aria-hidden="true">·</span>
-          <Link href="/" className="underline hover:text-ink/60">简体中文</Link>
+          <Link href="/" className="underline hover:text-ink/70">简体中文</Link>
           <span aria-hidden="true">·</span>
-          <Link href="/tw" className="underline hover:text-ink/60">繁體中文</Link>
+          <Link href="/tw" className="underline hover:text-ink/70">繁體中文</Link>
           <span aria-hidden="true">·</span>
           <span>
             City data ©{' '}
-            <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink/60">
+            <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink/70">
               GeoNames
             </a>{' '}
             (CC BY 4.0)
@@ -54,22 +54,22 @@ export default function SiteFooter({ locale }: { locale?: SiteLang }) {
   }
 
   return (
-    <footer className="mt-auto border-t border-gold/20 py-4 text-center text-[11px] text-ink/40">
+    <footer className="mt-auto border-t border-gold/20 py-4 text-center text-[11px] text-ink/70">
       <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1">
-        <Link href={hant ? '/tw/terms' : '/terms'} className="underline hover:text-ink/60">Terms of Service</Link>
+        <Link href={hant ? '/tw/terms' : '/terms'} className="underline hover:text-ink/70">Terms of Service</Link>
         <span aria-hidden="true">·</span>
-        <Link href={hant ? '/tw/privacy' : '/privacy'} className="underline hover:text-ink/60">Privacy Policy</Link>
+        <Link href={hant ? '/tw/privacy' : '/privacy'} className="underline hover:text-ink/70">Privacy Policy</Link>
         <span aria-hidden="true">·</span>
-        <a href="mailto:hello@mingcharts.com" className="underline hover:text-ink/60">hello@mingcharts.com</a>
+        <a href="mailto:hello@mingcharts.com" className="underline hover:text-ink/70">hello@mingcharts.com</a>
         <span aria-hidden="true">·</span>
-        <Link href={hant ? '/tw/partners' : '/partners'} className="underline hover:text-ink/60">{L('命理师合作')}</Link>
+        <Link href={hant ? '/tw/partners' : '/partners'} className="underline hover:text-ink/70">{L('命理师合作')}</Link>
         <span aria-hidden="true">·</span>
         {/* 页脚也给一个语言入口：报告页/分享页没有 Nav */}
-        <LangSwitcher locale={lang} className="underline hover:text-ink/60" />
+        <LangSwitcher locale={lang} className="underline hover:text-ink/70" />
         <span aria-hidden="true">·</span>
         <span>
           {L('城市数据')} ©{' '}
-          <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink/60">
+          <a href="https://www.geonames.org/" target="_blank" rel="noopener noreferrer" className="underline hover:text-ink/70">
             GeoNames
           </a>{' '}
           {L('（CC BY 4.0）')}

@@ -109,7 +109,7 @@ export default function MyCharts() {
   if (loading) {
     return (
       <main className="hw-page flex items-center justify-center">
-        <p className="text-ink/60">加载中...</p>
+        <p className="text-ink/70">加载中...</p>
       </main>
     )
   }
