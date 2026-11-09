@@ -204,6 +204,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: 0.7
       }))
     ),
+    // 英文节气（25 页）与节日（11 页）：2026-11-09 补齐，与 /jieqi、/tw/jieqi、/jieri、/tw/jieri 一一对应
+    { url: `${BASE_URL}/en/jieqi`, changeFrequency: 'yearly', priority: 0.7 },
+    ...JIEQI.map(j => ({
+      url: `${BASE_URL}/en/jieqi/${j.slug}`,
+      changeFrequency: 'yearly' as const,
+      priority: 0.6
+    })),
+    { url: `${BASE_URL}/en/jieri`, changeFrequency: 'yearly', priority: 0.7 },
+    ...JIERI.map(j => ({
+      url: `${BASE_URL}/en/jieri/${j.slug}`,
+      changeFrequency: 'yearly' as const,
+      priority: 0.6
+    })),
     // 我的命盘（英文）：需登录，低优先级提交；与 /charts、/tw/charts 互指
     { url: `${BASE_URL}/en/charts`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE_URL}/en/pricing`, changeFrequency: 'monthly', priority: 0.8 },

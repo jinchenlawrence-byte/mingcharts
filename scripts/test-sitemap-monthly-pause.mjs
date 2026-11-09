@@ -39,8 +39,15 @@ else ok('sitemap 不再包含任何 /bazi/{year}/{MM} 月页')
 if (yearPages.length !== 61) fail(`sitemap 年页数 ${yearPages.length}，期望 61`)
 else ok('sitemap 仍保留 61 个年页')
 if (!paths.includes('/bazi')) fail('sitemap 缺少 /bazi 索引页')
-if (entries.length !== 712) fail(`sitemap 总数 ${entries.length}，期望 712`)
-else ok('sitemap 总数 712（616 + 96 条英文生肖流年页）')
+// 总数断言：只设下限，不锁死具体条数——新增内容页（如 /en/jieqi、/en/jieri）
+// 会让总数增长；硬编码数字会在每次加页时误报。这里额外校验 URL 不重复，
+// 防止用「删旧页换新页」把总数凑回下限。
+const MIN_TOTAL = 712
+const uniqueCount = new Set(paths).size
+if (uniqueCount !== paths.length) fail(`sitemap 存在重复 URL：${paths.length - uniqueCount} 条`)
+else ok('sitemap URL 无重复')
+if (entries.length < MIN_TOTAL) fail(`sitemap 总数 ${entries.length}，低于下限 ${MIN_TOTAL}`)
+else ok(`sitemap 总数 ${entries.length}（下限 ${MIN_TOTAL}，允许新增页面）`)
 
 const hant = paths.filter(p => p.startsWith('/tw')).length
 const en = paths.filter(p => p.startsWith('/en')).length
