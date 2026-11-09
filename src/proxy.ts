@@ -15,6 +15,9 @@ import { decideRootLang, homeForLang, LANG_COOKIE, LANG_ASKED_COOKIE } from '@/l
 //
 // 部署环境说明：Vercel 提供 x-vercel-ip-country；Cloudflare 提供 cf-ipcountry（一并兼容）。
 
+// 410 响应体：不引用站点样式（越界日页不该走渲染管线），只给一句人话 + 回程链接。
+const GONE_HTML = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>日期已超出可查询范围</title><meta name="robots" content="noindex"></head><body><h1>日期已超出可查询范围</h1><p>本页仅支持 1950-01-01 至 2010-12-31 的出生日期排盘，该日期已不再提供内容（410 Gone）。</p><p>This date is outside the supported range (1950-01-01 to 2010-12-31); the page has been permanently removed.</p><p><a href="/bazi">返回八字算命</a></p></body></html>`
+
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
 
@@ -33,6 +36,26 @@ export function proxy(request: NextRequest) {
         url.pathname = `/bazi/${year}/${paddedMonth}${paddedDay ? `/${paddedDay}` : ''}`
         return NextResponse.redirect(url, 308)
       }
+    }
+  }
+
+  // ★ 2026-11-09：日页只覆盖 1950-01-01 ～ 2010-12-31（边界日正常 200）。
+  //   范围外返回 410 Gone，而不是 404（不存在）或 200（正常排盘页）：
+  //   日页本身 noindex，410 才是给搜索引擎的「已删除」信号 —— 否则越界日期会被当成
+  //   有效薄内容反复抓取，正是这次要消掉的浪费。响应体给一段明确说明 + 回 /bazi 的链接。
+  const dayGone = pathname.match(/^\/bazi\/(\d{1,4})\/(\d{2})\/(\d{2})\/?$/)
+  if (dayGone) {
+    const yearNum = Number(dayGone[1])
+    if (yearNum < 1950 || yearNum > 2010) {
+      return new NextResponse(GONE_HTML, {
+        status: 410,
+        headers: {
+          'content-type': 'text/html; charset=utf-8',
+          // 410 已是删除信号；再叠一层 noindex，防止抓到就不放的爬虫行为
+          'x-robots-tag': 'noindex',
+          'cache-control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+        },
+      })
     }
   }
 
@@ -69,6 +92,9 @@ export const config = {
   //   /bazi、/bazi/1990、/bazi/1990/03、/bazi/1990/03/15 等规范路径不再经过 middleware。
   matcher: [
     '/',
+    // ★ 2026-11-09：日页 410 判定必须在边缘层完成（页面组件无法自行返回 410）。
+    //   已补零的在范围内日期会立刻 next()，不产生响应差异；只为能判出越界年份多一次边缘调用。
+    '/bazi/:year(\\d{1,4})/:month(\\d{2})/:day(\\d{2})',
     '/bazi/:year(\\d{4})/:month(\\d)',
     '/bazi/:year(\\d{4})/:month(\\d)/:day(\\d{1,2})',
     '/bazi/:year(\\d{4})/:month(\\d{2})/:day(\\d)',

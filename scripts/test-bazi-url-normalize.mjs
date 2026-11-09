@@ -8,9 +8,11 @@ assert(src.includes("match(/^\\/bazi\\/(\\d{4})"), 'proxy 未匹配 /bazi 年份
 assert(src.includes("padStart(2, '0')"), 'proxy 未对月/日补零')
 assert(src.includes('NextResponse.redirect(url, 308)'), 'proxy 未使用 308 永久重定向')
 // ★ 2026-11-06 收窄：不能再是 '/bazi/:path*'（否则约 7.3 万日页每个请求都进 middleware）；
-//   必须恰好三条 /bazi 规则，分别覆盖「月 1 位」「月 1 位 + 任意日」「月 2 位 + 日 1 位」。
+//   必须恰好四条 /bazi 规则：三条覆盖「月 1 位」「月 1 位 + 任意日」「月 2 位 + 日 1 位」的补零，
+//   第四条是已补零的规范日页（/bazi/YYYY/MM/DD）—— 2026-11-09 起日页越界年份要由边缘层返回 410，
+//   不匹配规范日页就判不到（页面组件自身只能 200 或 notFound() 的 404）。
 assert(!src.includes("'/bazi/:path*'"), "proxy matcher 仍全量匹配 '/bazi/:path*'（未收窄）")
-assert((src.match(/\/bazi\/:year\(/g) || []).length === 3, 'proxy matcher 应为 3 条 /bazi 规则（收窄后）')
+assert((src.match(/\/bazi\/:year\(/g) || []).length === 4, 'proxy matcher 应为 4 条 /bazi 规则（补零 3 条 + 日页 410 判定 1 条）')
 assert(src.includes('/:month(') && src.includes('/:day('), 'proxy matcher 未按月/日位数收窄')
 console.log('静态检查通过：proxy 对 /bazi 的非补零月/日做 308 归一，且 matcher 已收窄')
 
