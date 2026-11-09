@@ -61,7 +61,7 @@ let aiFail = 0
 const WIRING = [
   ['withComplianceRetry(', '重试编排未接线'],
   ['unknownGanzhi(text, facts)', '干支溯源未接线'],
-  ['findForbidden(text).hits.length', '禁用词检查未接线（默认口径）'],
+  ['findForbidden(text).hits', '禁用词检查未接线（默认口径）'],
   ["replaceAll('不必', '无须')", '「不必→无须」安全替换缺失'],
   ['chart.taiYuan, chart.mingGong', 'facts 事实集缺胎元/命宫（须与 prompt 逐字对齐）'],
   ['includeMonthFlow ? [...SECTION_SPECS_BASE, MONTHFLOW_SPEC] : SECTION_SPECS_BASE', '板块结构未按当年/非当年条件化'],

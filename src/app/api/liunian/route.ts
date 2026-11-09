@@ -18,6 +18,8 @@ import {
 } from '@/lib/reportCache'
 import { localeFromRequest } from '@/lib/locale'
 import { annualLockedPreviewOf, zonedNow } from '@/lib/liunianFree'
+import { aiSourceCode, type AiFailure } from '@/lib/aiReason'
+import { logAiRun } from '@/lib/aiRuns'
 
 export async function POST(request: NextRequest) {
   try {
@@ -223,14 +225,18 @@ export async function POST(request: NextRequest) {
     // ★ 成本护栏叠加（token 防盗用第一档）：再要求【登录】—— ENFORCE=false 下 unlocked 恒 true，
     //   仅 unlocked 挡不住匿名；匿名又命中不了缓存（缓存读需 userId），最容易被脚本刷。
     // ★ 预算熔断叠加（第三档）：!aiBlocked。牙口注入点：去掉 unlocked(&& userId) 守卫 → 断言⑨结构断言翻红。
-    const aiReport = unlocked && userId && !aiBlocked ? await generateAILiunian(analyzable, luck, targetYear, { locale }) : null
+    const aiAttempted = !!unlocked && !!userId && !aiBlocked
+    const aiStartedAt = Date.now()
+    // ★ 用对象承载失败原因：回调内赋值，避免 TS 把 let 变量窄化成 null
+    const aiRun: { failure: AiFailure | null } = { failure: null }
+    const aiReport = unlocked && userId && !aiBlocked ? await generateAILiunian(analyzable, luck, targetYear, { locale, onFailure: (f) => { aiRun.failure = f } }) : null
 
     // ★ free 层保留结构化岁运事实（试吃本意）；ai 在未解锁时为 null
     const ai = unlocked ? (aiReport || fallbackLiunianText(targetYear, target, liuYue, favorSets)) : null
     const aiSource = !unlocked ? '未解锁'
       : aiBlocked ? '规则版（当日 AI 额度已用尽，次日恢复）'
       : aiReport ? 'AI 深度解读'
-      : userId ? '规则版（AI结果未过合规校验）'
+      : userId ? aiSourceCode(aiRun.failure)
       : '规则版（登录后可见 AI 深度解读）'
 
     const curDaYun = luck.daYun.find(d => d.current) || null
@@ -254,6 +260,10 @@ export async function POST(request: NextRequest) {
       liuYue,
       ai,
       aiSource,
+      // ★ 2026-11-09 失败原因可见化：reason 与命中词随报告入库，展示层按 locale 出三语文案
+      aiReason: unlocked && !aiReport ? aiRun.failure?.code ?? null : null,
+      aiReasonDetail: unlocked && !aiReport ? aiRun.failure?.detail ?? null : null,
+      aiHits: unlocked && !aiReport ? aiRun.failure?.hits ?? [] : [],
       dstNotice: dstNotice?.message || null,
       // ★ free 层保留结构化岁运事实（试吃本意）；locked 在已解锁时为 null
       free: { targetYear, liuNian: luck.liuNian, liuYue },
@@ -274,6 +284,20 @@ export async function POST(request: NextRequest) {
       result: stripEntitlementState(data),
       cacheKey
     })
+
+    // ★ ai_runs 观测：成功与失败都落一条（失败路径的 usage 不再丢弃）
+    if (aiAttempted) {
+      await logAiRun(admin, {
+        module: 'liunian',
+        locale,
+        outcome: aiReport ? 'success' : 'failure',
+        reason: aiReport ? null : aiRun.failure?.code ?? 'unknown',
+        hits: aiReport ? [] : aiRun.failure?.hits ?? [],
+        usage: aiReport?._usage ?? aiRun.failure?.usage ?? null,
+        durationMs: aiReport ? Date.now() - aiStartedAt : aiRun.failure?.durationMs ?? Date.now() - aiStartedAt,
+        requestId: reportId
+      })
+    }
 
     return NextResponse.json({ success: true, data, reportId, cached: false })
   } catch (error) {

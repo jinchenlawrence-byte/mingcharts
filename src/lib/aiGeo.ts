@@ -7,6 +7,7 @@ import {
 } from './ai-check'
 import { localeDirective, type OutputLocale } from './locale'
 import { aiConcurrency, addUsage, logAiStats, mapWithConcurrency, newStats, parseJsonObject, requestCompletion, sectionMaxTokens } from './aiCall'
+import type { AiFailure } from './aiReason'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -157,11 +158,21 @@ interface ChatCompletionResponse {
 //   与紫微模块同法——把退回原因追加为一条 user 消息，不改 buildUserPrompt，保证首次请求逐字一致。
 const GEO_SHAPE = '完整 JSON（八个板块：方位总论、现居城市影响、财富之城、事业之城、贵人之城、安居之城、才华之城、迁居开运建议）'
 
-export async function generateAIGeo(a: GeoAnalysis, opts?: { locale?: OutputLocale }): Promise<(GeoAIReport & { _usage?: AIUsage }) | null> {
+export async function generateAIGeo(
+  a: GeoAnalysis,
+  opts?: { locale?: OutputLocale } & { onFailure?: (f: AiFailure) => void }
+): Promise<(GeoAIReport & { _usage?: AIUsage }) | null> {
+  const stats = newStats('geo')
+  // 失败统一出口：带上已消耗 usage 与耗时（失败路径不得丢 token）
+  const emit = (f: AiFailure): null => {
+    opts?.onFailure?.({ ...f, usage: stats.usage, durationMs: Date.now() - stats.startedAt })
+    return null
+  }
+
   if (!AI_API_KEY) {
     // ★ 回退必须可见（任务书 §四）：静默降级让「AI 没跑」这件事不可见
     console.warn('[aiGeo] 未配置 AI_API_KEY，本次回退规则版文案')
-    return null
+    return emit({ code: 'no_key' })
   }
 
   const isEn = opts?.locale === 'en'
@@ -169,9 +180,6 @@ export async function generateAIGeo(a: GeoAnalysis, opts?: { locale?: OutputLoca
   const GEO_DISCLAIMER = isEn
     ? 'These directional reflections are for reference only. They are non-deterministic and are not a basis for relocation decisions; personal effort matters most.'
     : '以上方位分析仅供参考，非确定性结论，不构成迁居决策依据；福地福人居，个人努力为本。'
-
-  // 单次 API 调用，失败返回 null
-  const stats = newStats('geo')
 
   const attempt = async (feedback?: string): Promise<(GeoAIReport & { _usage?: AIUsage }) | null> => {
     try {
@@ -201,16 +209,24 @@ export async function generateAIGeo(a: GeoAnalysis, opts?: { locale?: OutputLoca
       addUsage(stats, outcome.usage)
       if (!outcome.ok || !outcome.content) {
         console.warn(`[aiGeo] API 失败（${outcome.error || outcome.status}）`)
-        return null
+        return outcome.error === 'timeout'
+          ? emit({ code: 'timeout' })
+          : emit({ code: 'http_error', status: outcome.status, detail: outcome.status ? String(outcome.status) : outcome.error })
       }
       if (outcome.truncated) {
         console.warn('[aiGeo] 输出被 max_tokens 截断，放弃本次结果')
-        return null
+        return emit({ code: 'truncated' })
       }
       const content = outcome.content
 
       const jsonText = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
-      const parsed = JSON.parse(jsonText) as Record<string, unknown>
+      let parsed: Record<string, unknown>
+      try {
+        parsed = JSON.parse(jsonText) as Record<string, unknown>
+      } catch (err) {
+        console.error('[aiGeo] JSON 解析失败:', err instanceof Error ? err.message : err)
+        return emit({ code: 'json_invalid' })
+      }
 
       const result = {} as Record<keyof GeoAIReport, string>
       const specs = SECTION_SPECS.filter((s) => s.key !== 'currentCity' || a.currentCity)
@@ -218,14 +234,14 @@ export async function generateAIGeo(a: GeoAnalysis, opts?: { locale?: OutputLoca
         const v = parsed[spec.key]
         if (typeof v !== 'string' || v.trim().length < 50) {
           console.error(`[aiGeo] 板块 ${spec.key} 缺失或过短，放弃 AI 结果`)
-          return null
+          return emit({ code: 'section_short', detail: isEn ? spec.key : spec.name })
         }
         result[spec.key] = v.trim()
       }
       return { ...result, _usage: stats.usage } as unknown as GeoAIReport & { _usage?: AIUsage }
     } catch (err) {
       console.error('[aiGeo] AI 解读失败:', err instanceof Error ? err.message : err)
-      return null
+      return emit({ code: 'unknown', detail: err instanceof Error ? err.message : String(err) })
     }
   }
 
@@ -236,18 +252,25 @@ export async function generateAIGeo(a: GeoAnalysis, opts?: { locale?: OutputLoca
     (s) => {
       const t = Object.values(s).join('')
       if (isEn) {
-        if (containsCJK(t)) return `检出中文字符：${findCJK(t).join('、')}`
+        if (containsCJK(t)) return { detail: `检出中文字符：${findCJK(t).join('、')}` }
         const hits = findForbidden(t).hits
-        if (hits.length) return `检出禁用词：${hits.map(h => h.w).join('、')}（首句：${hits[0].s.slice(0, 40)}…）`
+        if (hits.length) return { detail: `检出禁用词：${hits.map(h => h.w).join('、')}（首句：${hits[0].s.slice(0, 40)}…）`, hits: [...new Set(hits.map(h => h.w))] }
         return null
       }
-      if (!t.includes('民俗') || !t.includes('产品设定')) return '依据分级字样缺失'
+      if (!t.includes('民俗') || !t.includes('产品设定')) return { detail: '依据分级字样缺失（民俗/产品设定）' }
       const hits = findForbidden(t).hits
       // 命中词进日志，便于诊断模型高频违规点（w=禁用词，s=命中句）
-      if (hits.length) return `检出禁用词：${hits.map(h => h.w).join('、')}（首句：${hits[0].s.slice(0, 40)}…）`
+      if (hits.length) return { detail: `检出禁用词：${hits.map(h => h.w).join('、')}（首句：${hits[0].s.slice(0, 40)}…）`, hits: [...new Set(hits.map(h => h.w))] }
       return null
     },
-    'aiGeo'
+    'aiGeo',
+    (info) => opts?.onFailure?.({
+      code: 'compliance',
+      detail: info.detail,
+      hits: info.hits,
+      usage: stats.usage,
+      durationMs: Date.now() - stats.startedAt,
+    })
   )
 
   // 免责兜底（prompt 早已要求原文照写，此处仅防非确定性遗漏）：overview 缺固定短语则追加

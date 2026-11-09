@@ -201,10 +201,10 @@ let routeFail = 0
 const ROUTES = {
   'unlock/route.ts': 'generateAIAnalysis(analyzable, { locale })',
   'ask/route.ts': 'generateAskAnswer(chart as AnalyzableChart, q, { locale, context })',
-  'liunian/route.ts': 'generateAILiunian(analyzable, luck, targetYear, { locale })',
-  'ziwei/route.ts': 'generateAIZiwei(chart, analysis, { locale })',
-  'geo/route.ts': 'generateAIGeo(analysis, { locale })',
-  'hemun/route.ts': 'generateAIHemun(male, female, result, { locale })',
+  'liunian/route.ts': 'generateAILiunian(analyzable, luck, targetYear, { locale, onFailure',
+  'ziwei/route.ts': 'generateAIZiwei(chart, analysis, { locale, onFailure',
+  'geo/route.ts': 'generateAIGeo(analysis, { locale, onFailure',
+  'hemun/route.ts': 'generateAIHemun(male, female, result, { locale, onFailure',
   'checkout/route.ts': 'localeFromRequest(body)',
   'membership/route.ts': 'localeFromRequest(body)',
 }

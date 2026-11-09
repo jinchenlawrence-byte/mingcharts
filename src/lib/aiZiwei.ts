@@ -9,6 +9,7 @@ import { aiConcurrency, addUsage, logAiStats, mapWithConcurrency, newStats, pars
 import { localeDirective, type OutputLocale } from './locale'
 import { ziweiEn } from './enRule'
 import { branchEn } from './enTerms'
+import type { AiFailure } from './aiReason'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -336,10 +337,21 @@ export function fallbackZiweiText(chart: ZwChart, a: ZiweiAnalysis): ZiweiAIRepo
 //   采用「追加一条 user 消息」而非改写 buildUserPrompt：保证首次请求与既有形态逐字一致。
 const ZIWEI_SHAPE = '完整 JSON（十二板块，字段见系统提示）'
 
-export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis, opts?: { locale?: OutputLocale }): Promise<(ZiweiAIReport & { _usage?: AIUsage }) | null> {
+export async function generateAIZiwei(
+  chart: ZwChart,
+  analysis: ZiweiAnalysis,
+  opts?: { locale?: OutputLocale } & { onFailure?: (f: AiFailure) => void }
+): Promise<(ZiweiAIReport & {
+  _usage?: AIUsage
+  _degraded?: number
+  _sections?: number
+  _failures?: AiFailure[]
+}) | null> {
+  const stats = newStats('ziwei')
   if (!AI_API_KEY) {
     // ★ 回退必须可见（任务书 §四）：静默降级让「AI 没跑」这件事不可见
     console.warn('[aiZiwei] 未配置 AI_API_KEY，本次回退规则版文案')
+    opts?.onFailure?.({ code: 'no_key', durationMs: 0 })
     return null
   }
 
@@ -352,21 +364,26 @@ export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis, o
   // ★ 规则版兜底（降级时按卷回退，不整份 null）
   // ★ 英文报告不得落回中文兜底（线上实测中英混排）
     const ruleReport = isEn ? englishFallbackText(chart, analysis) : fallbackZiweiText(chart, analysis)
-  const stats = newStats('ziwei')
 
-  // 逐板块校验：命中项点名板块与具体词，日志可直接定位
-  const validateOne = (key: keyof ZiweiAIReport, text: string): string | null => {
-    if (isEn && containsCJK(text)) return `检出中文字符 ${findCJK(text).join('、')}`
+  // 逐板块校验：命中项点名具体词，失败原因随降级板块一起回传路由
+  const validateOne = (text: string): { detail: string; hits: string[] } | null => {
+    if (isEn && containsCJK(text)) return { detail: `检出中文字符 ${findCJK(text).join('、')}`, hits: [] }
     const hits = findForbidden(text).hits
-    if (hits.length) return `检出禁用词 ${[...new Set(hits.map(h => h.w))].join('、')}`
+    const words = [...new Set(hits.map(h => h.w))]
+    if (words.length) return { detail: `检出禁用词 ${words.join('、')}`, hits: words }
     return null
   }
+
+  // 板块级失败原因（用于 ai_runs 与降级标注）
+  const failures: AiFailure[] = []
+
+  type SectionOutcome = { ok: true; text: string } | { ok: false; failure: AiFailure }
 
   const callSection = async (
     spec: { key: keyof ZiweiAIReport; name: string; requirement: string },
     escalated: boolean,
     feedback?: string
-  ): Promise<string | null> => {
+  ): Promise<SectionOutcome> => {
     const messages: Array<{ role: string; content: string }> = [
       { role: 'system', content: SYSTEM_PROMPT + localeDirective(opts?.locale) },
       { role: 'user', content: buildUserPrompt(chart, analysis, [spec]) }
@@ -393,42 +410,66 @@ export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis, o
     addUsage(stats, outcome.usage)
     if (!outcome.ok || !outcome.content) {
       console.warn(`[aiZiwei] 板块 ${spec.key} 请求失败（${outcome.error || outcome.status}）`)
-      return null
+      return {
+        ok: false,
+        failure: outcome.error === 'timeout'
+          ? { code: 'timeout' }
+          : { code: 'http_error', status: outcome.status, detail: outcome.status ? String(outcome.status) : outcome.error },
+      }
     }
     if (outcome.truncated) {
       console.warn(`[aiZiwei] 板块 ${spec.key} 被 max_tokens 截断，将提高预算重试`)
-      return null
+      return { ok: false, failure: { code: 'truncated' } }
     }
     const parsed = parseJsonObject(outcome.content)
-    if (!parsed) return null
+    if (!parsed) return { ok: false, failure: { code: 'json_invalid' } }
     const v = parsed[spec.key]
-    if (typeof v !== 'string' || v.trim().length < 50) return null
-    return v.trim()
+    if (typeof v !== 'string' || v.trim().length < 50) {
+      return { ok: false, failure: { code: 'section_short', detail: isEn ? spec.key : spec.name } }
+    }
+    return { ok: true, text: v.trim() }
   }
 
   // ★ 单板块重试 + 降级（用户拍板 2026-11-03 第3条）：
   //   截断/不合规只重写该板块（预算放大一次）；仍失败则该卷回退规则版，其余板块照常保留。
   const runSection = async (spec: { key: keyof ZiweiAIReport; name: string; requirement: string }): Promise<string> => {
     const first = await callSection(spec, false)
-    if (first && !validateOne(spec.key, first)) return first
-
-    const reason = first ? validateOne(spec.key, first) : '请求失败或截断'
-    if (first) {
+    if (first.ok) {
+      const reject = validateOne(first.text)
+      if (!reject) return first.text
+      failures.push({ code: 'compliance', detail: reject.detail, hits: reject.hits })
       stats.sectionRetries++
-      const retry = await callSection(spec, true, reason || undefined)
-      if (retry && !validateOne(spec.key, retry)) return retry
+      const retry = await callSection(spec, true, reject.detail)
+      if (retry.ok) {
+        const reject2 = validateOne(retry.text)
+        if (!reject2) return retry.text
+        failures.push({ code: 'compliance', detail: reject2.detail, hits: reject2.hits })
+      } else {
+        failures.push(retry.failure)
+      }
     } else {
+      failures.push(first.failure)
       const retry = await callSection(spec, true)
-      if (retry) {
-        const err2 = validateOne(spec.key, retry)
-        if (!err2) return retry
+      if (retry.ok) {
+        const reject2 = validateOne(retry.text)
+        if (!reject2) return retry.text
+        failures.push({ code: 'compliance', detail: reject2.detail, hits: reject2.hits })
         stats.sectionRetries++
-        const third = await callSection(spec, true, err2)
-        if (third && !validateOne(spec.key, third)) return third
+        const third = await callSection(spec, true, reject2.detail)
+        if (third.ok) {
+          const reject3 = validateOne(third.text)
+          if (!reject3) return third.text
+          failures.push({ code: 'compliance', detail: reject3.detail, hits: reject3.hits })
+        } else {
+          failures.push(third.failure)
+        }
+      } else {
+        failures.push(retry.failure)
       }
     }
     stats.degraded.push(spec.key)
-    console.warn(`[aiZiwei] 板块 ${spec.key} 连续失败（${reason}），降级为规则版该卷`)
+    const last = failures[failures.length - 1]
+    console.warn(`[aiZiwei] 板块 ${spec.key} 连续失败（${last?.code}${last?.detail ? '：' + last.detail : ''}），降级为规则版该卷`)
     return ruleReport[spec.key]
   }
 
@@ -436,7 +477,18 @@ export async function generateAIZiwei(chart: ZwChart, analysis: ZiweiAnalysis, o
   const texts = await mapWithConcurrency(specsAll, aiConcurrency(), (spec) => runSection(spec))
   const merged = {} as Record<string, string>
   specsAll.forEach((spec, i) => { merged[spec.key] = texts[i] })
-  const out = { ...merged, _usage: stats.usage } as unknown as ZiweiAIReport & { _usage?: AIUsage }
+  const out = {
+    ...merged,
+    _usage: stats.usage,
+    _degraded: stats.degraded.length,
+    _sections: specsAll.length,
+    _failures: failures,
+  } as unknown as ZiweiAIReport & {
+    _usage?: AIUsage
+    _degraded?: number
+    _sections?: number
+    _failures?: AiFailure[]
+  }
   logAiStats(stats, { locale: opts?.locale, total: specsAll.length })
 
   // 免责兜底（prompt 早已要求 overview 原文照写，此处仅防非确定性遗漏）：缺固定短语则追加

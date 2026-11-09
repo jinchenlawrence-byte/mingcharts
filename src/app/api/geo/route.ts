@@ -18,6 +18,8 @@ import { stripEntitlementState, reportCacheKey, readReportCache, resolveModuleCa
 import { localeFromRequest } from '@/lib/locale'
 import { isRegenRequest, regenGate } from '@/lib/regenPolicy'
 import { toHant } from '@/lib/hant'
+import { aiSourceCode, type AiFailure } from '@/lib/aiReason'
+import { logAiRun } from '@/lib/aiRuns'
 import type { WX } from '@/lib/geo'
 
 /** 未解锁时的 preview（入库剥离、命中重算时共用，避免两处文案漂移） */
@@ -175,14 +177,20 @@ export async function POST(request: NextRequest) {
     //   匿名（含外部脚本）不再触发本端点的 AI 调用（无账号、命中不了缓存，是最大敞口）；
     //   登录用户照常全量生成并入库全文，回看者必然已登录 ⇒ 不触「回看读到锁定版」事故。
     // ★ 未解锁（试读）不调 AI：8 节全文不下发，未购用户不再产生成本。
-    const aiReport = userId && unlocked && !aiBlocked ? await generateAIGeo(analysis, { locale }) : null
+    const aiAttempted = !!userId && unlocked && !aiBlocked
+    const aiStartedAt = Date.now()
+    // ★ 用对象承载失败原因：回调内赋值，避免 TS 把 let 变量窄化成 null
+    const aiRun: { failure: AiFailure | null } = { failure: null }
+    const aiReport = aiAttempted
+      ? await generateAIGeo(analysis, { locale, onFailure: (f) => { aiRun.failure = f } })
+      : null
 
     // ★ 入库只存【内容】（locked 剥掉、ai 存全量全文）；门禁只作用于【响应】——
     //   读取侧按当前权益重算（详情页 reportGate），试吃→付费即刻生效。
     const rawAi = aiReport || fallbackGeoText(analysis)
     const rawAiSource = aiReport ? 'AI 深度解读'
       : aiBlocked ? '规则版（当日 AI 额度已用尽，次日恢复）'
-      : userId ? '规则版（AI结果未过合规校验）'
+      : userId ? aiSourceCode(aiRun.failure)
       : '规则版（登录后可见 AI 深度解读）'
     // ★ free 层保留结构化城市推荐与指数（试吃本意）；ai 在未解锁时为 null
     const ai = unlocked ? rawAi : null
@@ -212,7 +220,11 @@ export async function POST(request: NextRequest) {
           }
         : null,
       ai,
-      aiSource
+      aiSource,
+      // ★ 2026-11-09 失败原因可见化：reason 与命中词随报告入库，展示层按 locale 出三语文案
+      aiReason: unlocked && !aiReport ? aiRun.failure?.code ?? null : null,
+      aiReasonDetail: unlocked && !aiReport ? aiRun.failure?.detail ?? null : null,
+      aiHits: unlocked && !aiReport ? aiRun.failure?.hits ?? [] : []
     }
 
     // 登录用户：报告作为账户资产自动保存（静默降级，不阻断主流程）
@@ -226,6 +238,20 @@ export async function POST(request: NextRequest) {
       result: { ...stripEntitlementState(data), ai: rawAi, aiSource: rawAiSource } as never,
       cacheKey
     })
+
+    // ★ ai_runs 观测：成功与失败都落一条（失败路径的 usage 不再丢弃）
+    if (aiAttempted) {
+      await logAiRun(admin, {
+        module: 'geo',
+        locale,
+        outcome: aiReport ? 'success' : 'failure',
+        reason: aiReport ? null : aiRun.failure?.code ?? 'unknown',
+        hits: aiReport ? [] : aiRun.failure?.hits ?? [],
+        usage: aiReport?._usage ?? aiRun.failure?.usage ?? null,
+        durationMs: aiReport ? Date.now() - aiStartedAt : aiRun.failure?.durationMs ?? Date.now() - aiStartedAt,
+        requestId: reportId
+      })
+    }
 
     return NextResponse.json({ success: true, data, reportId })
   } catch (error) {

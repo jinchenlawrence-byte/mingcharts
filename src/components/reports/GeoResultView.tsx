@@ -17,6 +17,7 @@ import AskPanel from '@/components/AskPanel'
 import type { AnalyzableChart } from '@/lib/analysis'
 import { geoAskChart } from '@/lib/askChart'
 import { localize } from '@/lib/hant'
+import { aiSourceLabel } from '@/lib/aiSourceLabel'
 import { pathForLang, type SiteLang } from '@/lib/lang'
 import { GEO_PALETTE } from '@/lib/visual-tokens'
 
@@ -27,6 +28,10 @@ export interface GeoResultData {
   } | null
   ai: GeoAIReport | null
   aiSource: string
+  /** ★ 2026-11-09 失败原因（reason code / 细节 / 命中词），展示层按 locale 出三语文案 */
+  aiReason?: string | null
+  aiReasonDetail?: string | null
+  aiHits?: string[] | null
   /** ★ 追问用完整命盘（含 geJu）；旧缓存缺字段时不渲染入口 */
   chart?: AnalyzableChart
   // ★ 门禁（§8.5.1）：未解锁时给 preview 与 skus，已解锁为 null
@@ -422,7 +427,7 @@ export default function GeoResultView({ data, onRegen, regenBusy, locale = 'zh-H
 
       {ai && (
         <div className="space-y-4 hw-c-read">
-          <h2 className="hw-c-h1">{L('深度解读 ·')} {L(aiSource)}</h2>
+          <h2 className="hw-c-h1">{L('深度解读 ·')} {aiSourceLabel(data, locale)}</h2>
           {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
           {ruleVersion && paid && onRegen && (
             <div className="flex flex-wrap items-center gap-3">

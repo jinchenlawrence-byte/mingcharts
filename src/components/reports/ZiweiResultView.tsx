@@ -18,6 +18,7 @@ import AskPanel from '@/components/AskPanel'
 import type { AnalyzableChart } from '@/lib/analysis'
 import { ziweiAskContext, askBaziSourceFrom, fetchAskBaziChart } from '@/lib/askChart'
 import { localize } from '@/lib/hant'
+import { aiSourceLabel } from '@/lib/aiSourceLabel'
 import { pathForLang, type SiteLang } from '@/lib/lang'
 import type { ZiweiRuleEn } from '@/lib/enRule'
 import { ZIWEI_UI_EN, ZIWEI_AI_TITLES_EN, LEVEL_STYLE_EN, mutagenStyleEn } from '@/lib/ziweiUiEn'
@@ -27,6 +28,12 @@ export interface ZiweiResultData {
   analysis: ZiweiAnalysis
   ai: ZiweiAIReport | null
   aiSource: string
+  /** ★ 2026-11-09 失败/降级可见化：reason code、细节、命中词与降级板块数 */
+  aiReason?: string | null
+  aiReasonDetail?: string | null
+  aiHits?: string[] | null
+  aiDegraded?: number | null
+  aiSections?: number | null
   // ★ 门禁（§8.5.1）：未解锁时给 preview 与 skus，已解锁为 null
   locked?: { skus: string[]; preview: string } | null
   /** ★ 试读标记（route 下发；详情页无此字段时按 locked 推断） */
@@ -443,9 +450,9 @@ export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh
         if (shown.length === 0 && lockedSections.length === 0) return null
         return (
           <div className="space-y-4 hw-c-read">
-            {/* ★ 英文 aiSource 为中文（规则版标记），英文树不渲染它，只给统一标题 */}
+            {/* ★ 2026-11-09：英文也走三语标签；紫微部分降级时附「12 个板块中 X 个为规则版」 */}
             <h2 className="hw-c-h1">
-              {isEn ? EN.inDepth : `${L('深度解读')} · ${previewMode ? L('试读') : L(aiSource)}`}
+              {isEn ? aiSourceLabel(data, locale) : `${L('深度解读')} · ${previewMode ? L('试读') : aiSourceLabel(data, locale)}`}
             </h2>
             {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费。
                 ★ 免费试读不显示（paid=false），这条与其它报告一致。 */}

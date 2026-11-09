@@ -10,6 +10,7 @@ import { LockedCard, UnlockCta } from '@/components/reports/PreviewLock'
 import AskPanel from '@/components/AskPanel'
 import { liunianAskChart } from '@/lib/askChart'
 import { localize } from '@/lib/hant'
+import { aiSourceLabel } from '@/lib/aiSourceLabel'
 import { pathForLang, type SiteLang } from '@/lib/lang'
 import { annualFreeVisible, zonedNow } from '@/lib/liunianFree'
 
@@ -31,6 +32,10 @@ export interface LiunianResultData {
   liuYue: LuckLiuYueItem[] | null
   ai: AILiunianSections | null
   aiSource: string
+  /** ★ 2026-11-09 失败原因（reason code / 细节 / 命中词），展示层按 locale 出三语文案 */
+  aiReason?: string | null
+  aiReasonDetail?: string | null
+  aiHits?: string[] | null
   // ★ 门禁（§8.5.1）：未解锁时给 preview 与 skus，已解锁为 null
   locked?: { skus: string[]; preview: string } | null
   /** ★ 试读标记（route 下发；详情页无此字段时按 locked 推断） */
@@ -120,7 +125,7 @@ export default function LiunianResultView({ data, onRegen, regenBusy, locale = '
               {L(target.tag)}
             </span>
           )}
-          <span className="text-xs text-ink-light ml-auto">{L(data.aiSource)}</span>
+          <span className="text-xs text-ink-light ml-auto">{aiSourceLabel(data, locale)}</span>
         </div>
         {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
         {ruleVersion && paid && onRegen && (

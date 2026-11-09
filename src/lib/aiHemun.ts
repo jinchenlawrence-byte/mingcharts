@@ -9,6 +9,7 @@ import {
 } from './ai-check'
 import { localeDirective, type OutputLocale } from './locale'
 import { aiConcurrency, addUsage, logAiStats, mapWithConcurrency, newStats, parseJsonObject, requestCompletion, sectionMaxTokens } from './aiCall'
+import type { AiFailure } from './aiReason'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -96,12 +97,19 @@ export async function generateAIHemun(
   male: AnalyzableChart,
   female: AnalyzableChart,
   result: HemunResult,
-  opts?: { locale?: OutputLocale }
+  opts?: { locale?: OutputLocale } & { onFailure?: (f: AiFailure) => void }
 ): Promise<(AIHemunSections & { _usage?: AIUsage }) | null> {
+  const stats = newStats('hemun')
+  // 失败统一出口：带上已消耗 usage 与耗时（失败路径不得丢 token）
+  const emit = (f: AiFailure): null => {
+    opts?.onFailure?.({ ...f, usage: stats.usage, durationMs: Date.now() - stats.startedAt })
+    return null
+  }
+
   if (!AI_API_KEY) {
     // ★ 回退必须可见（任务书 §四）：静默降级让「AI 没跑」这件事不可见
     console.warn('[ai-hemun] 未配置 AI_API_KEY，本次回退规则版文案')
-    return null
+    return emit({ code: 'no_key' })
   }
 
   const isEn = opts?.locale === 'en'
@@ -109,9 +117,6 @@ export async function generateAIHemun(
   const HEMUN_DISCLAIMER = isEn
     ? 'These are tendency-based reflections, for reference only. They are non-deterministic and are not a basis for marriage decisions; relationships are shaped by the people involved.'
     : '以上为倾向性分析，仅供参考，非确定性结论，不构成婚姻决策依据；感情经营在人。'
-
-  // 单次 API 调用，失败返回 null
-  const stats = newStats('hemun')
 
   const attempt = async (feedback?: string): Promise<(AIHemunSections & { _usage?: AIUsage }) | null> => {
     const controller = new AbortController()
@@ -140,28 +145,36 @@ export async function generateAIHemun(
       addUsage(stats, outcome.usage)
       if (!outcome.ok || !outcome.content) {
         console.warn(`[ai-hemun] API 失败（${outcome.error || outcome.status}）`)
-        return null
+        return outcome.error === 'timeout'
+          ? emit({ code: 'timeout' })
+          : emit({ code: 'http_error', status: outcome.status, detail: outcome.status ? String(outcome.status) : outcome.error })
       }
       if (outcome.truncated) {
         console.warn('[ai-hemun] 输出被 max_tokens 截断，放弃本次结果')
-        return null
+        return emit({ code: 'truncated' })
       }
       const content = outcome.content
       const jsonText = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
-      const parsed = JSON.parse(jsonText) as Record<string, unknown>
+      let parsed: Record<string, unknown>
+      try {
+        parsed = JSON.parse(jsonText) as Record<string, unknown>
+      } catch (err) {
+        console.error('[ai-hemun] JSON 解析失败:', err instanceof Error ? err.message : err)
+        return emit({ code: 'json_invalid' })
+      }
       const out = {} as AIHemunSections
       for (const spec of SECTION_SPECS) {
         const v = parsed[spec.key]
         if (typeof v !== 'string' || v.trim().length < 50) {
           console.error(`[ai-hemun] 板块 ${spec.key} 缺失或过短，放弃 AI 结果`)
-          return null
+          return emit({ code: 'section_short', detail: isEn ? spec.key : spec.name })
         }
         out[spec.key] = v.trim()
       }
       return { ...out, _usage: stats.usage }
     } catch (err) {
       console.error('[ai-hemun] AI 合婚解读失败:', err instanceof Error ? err.message : err)
-      return null
+      return emit({ code: 'unknown', detail: err instanceof Error ? err.message : String(err) })
     } finally {
       clearTimeout(timer)
     }
@@ -177,9 +190,6 @@ export async function generateAIHemun(
     }
     return n
   }
-  const hasBi = (s: AIHemunSections) =>
-    findForbidden(Object.values(s).join(''), true).hits.length > 0
-
   // 合婚口径物理禁「必」字（含不必/未必，SYSTEM_PROMPT 第9条）。
   // 每次拿到结果先做安全等价替换（不必→无须，语义不变），其余「必」字由重试编排处理：
   // 仍含则放弃 AI 结果，由调用方回退规则版
@@ -196,12 +206,25 @@ export async function generateAIHemun(
     (r) => {
       const text = Object.values(r).filter((v) => typeof v === 'string').join('')
       if (isEn) {
-        if (containsCJK(text)) return `检出中文字符：${findCJK(text).join('、')}`
-        return findForbidden(text).hits.length ? '检出禁用词' : null
+        if (containsCJK(text)) return { detail: `检出中文字符：${findCJK(text).join('、')}` }
+        const hits = findForbidden(text).hits
+        return hits.length
+          ? { detail: `检出禁用词：${hits.map(h => h.w).join('、')}`, hits: [...new Set(hits.map(h => h.w))] }
+          : null
       }
-      return hasBi(r) ? '检出物理禁用字「必」' : null
+      const hits = findForbidden(text, true).hits
+      return hits.length
+        ? { detail: '检出物理禁用字「必」', hits: [...new Set(hits.map(h => h.w))] }
+        : null
     },
-    'ai-hemun'
+    'ai-hemun',
+    (info) => opts?.onFailure?.({
+      code: 'compliance',
+      detail: info.detail,
+      hits: info.hits,
+      usage: stats.usage,
+      durationMs: Date.now() - stats.startedAt,
+    })
   )
 
   // 免责兜底（prompt 早已要求原文照写，此处仅防非确定性遗漏）：overview 缺固定短语则追加

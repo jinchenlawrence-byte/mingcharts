@@ -12,12 +12,17 @@ import { LockedCard, UnlockCta } from '@/components/reports/PreviewLock'
 import AskPanel from '@/components/AskPanel'
 import type { AnalyzableChart } from '@/lib/analysis'
 import { localize } from '@/lib/hant'
+import { aiSourceLabel } from '@/lib/aiSourceLabel'
 import { pathForLang, type SiteLang } from '@/lib/lang'
 
 export interface HemunData {
   result: HemunResult
   ai: AIHemunSections | null
   aiSource: string
+  /** ★ 2026-11-09 失败原因（reason code / 细节 / 命中词），展示层按 locale 出三语文案 */
+  aiReason?: string | null
+  aiReasonDetail?: string | null
+  aiHits?: string[] | null
   dstNotices: { male: string | null; female: string | null }
   /** ★ 追问用完整命盘（男方/女方，均含 analysis）；旧缓存可能缺，缺则不渲染入口 */
   male?: AnalyzableChart
@@ -253,7 +258,7 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
       <div className="space-y-3 hw-c-read">
         <div className="flex items-center justify-between">
           <h2 className="hw-c-h3">{L('合婚深度解读')}</h2>
-          <span className="text-xs text-ink-light">{L('文字来源：')}{L(data.aiSource)}</span>
+          <span className="text-xs text-ink-light">{L('文字来源：')}{aiSourceLabel(data, locale)}</span>
         </div>
         {/* ★ 规则版兜底出口（2026-10-18 退款事故）：AI 重写全文、覆盖原报告，不额外收费 */}
         {ruleVersion && paid && onRegen && (

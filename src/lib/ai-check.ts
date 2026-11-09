@@ -280,6 +280,14 @@ export function unknownGanzhi(text: string, facts: Set<string>): string[] {
   return [...new Set(text.match(GANZHI_RE) || [])].filter(g => !facts.has(g))
 }
 
+/** 校验退回：字符串（兼容既有调用）或带命中词的结构化对象 */
+export type ComplianceReject = string | { detail: string; hits?: string[] }
+
+function normalizeReject(r: ComplianceReject): { detail: string; hits: string[] } {
+  if (typeof r === 'string') return { detail: r, hits: [] }
+  return { detail: r.detail, hits: [...new Set((r.hits ?? []).filter(Boolean))] }
+}
+
 // 通用「调用 → 校验 → 重试一次」编排：
 //   validate 返回 null 为通过；返回错误描述则打印并重试；重试仍不通过 → null（调用方回退规则版）
 // ★ 2026-10-18 加固（付费模块回退规则版事故）：
@@ -290,20 +298,25 @@ export function unknownGanzhi(text: string, facts: Set<string>): string[] {
 //   attempt 的 feedback 参数可选：既有调用方（不接收参数的闭包）无需改动即兼容。
 export async function withComplianceRetry<T>(
   attempt: (feedback?: string) => Promise<T | null>,
-  validate: (r: T) => string | null,
-  label: string
+  validate: (r: T) => ComplianceReject | null,
+  label: string,
+  onReject?: (info: { detail: string; hits: string[] }) => void
 ): Promise<T | null> {
   const first = await attempt()
   if (!first) return null
-  const err = validate(first)
-  if (!err) return first
-  console.warn(`[${label}] 首次输出不合规（${err}），带反馈重试一次`)
-  const second = await attempt(err)
+  const firstReject = validate(first)
+  if (!firstReject) return first
+  const firstInfo = normalizeReject(firstReject)
+  console.warn(`[${label}] 首次输出不合规（${firstInfo.detail}），带反馈重试一次`)
+  const second = await attempt(firstInfo.detail)
   if (!second) return null
-  const err2 = validate(second)
-  if (err2) {
+  const secondReject = validate(second)
+  if (secondReject) {
     // ★ 回退必须可见（任务书 §四）：重试后放弃 AI 结果不得静默
-    console.warn(`[${label}] 重试后仍不合规（${err2}），放弃 AI 结果，回退规则版`)
+    const info = normalizeReject(secondReject)
+    console.warn(`[${label}] 重试后仍不合规（${info.detail}），放弃 AI 结果，回退规则版`)
+    // ★ 把「真合规命中 + 命中词」带回调用方，路由据此生成具体文案（不再是笼统的合规标签）
+    onReject?.(info)
     return null
   }
   return second

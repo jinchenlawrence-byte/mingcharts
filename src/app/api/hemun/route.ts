@@ -14,6 +14,8 @@ import { RATE_LIMIT_ENFORCE, checkRateLimit, clientKey, rateLimitedBody, USER_RU
 import { checkAiBudget } from '@/lib/aiBudget'
 import { saveReport, deriveReportTitle } from '@/lib/reportSave'
 import { stripEntitlementState, reportCacheKey, readReportCache, resolveModuleCachedHit, HEMUN_CACHE_VERSION } from '@/lib/reportCache'
+import { aiSourceCode, type AiFailure } from '@/lib/aiReason'
+import { logAiRun } from '@/lib/aiRuns'
 import { localeFromRequest } from '@/lib/locale'
 import { isRegenRequest, regenGate } from '@/lib/regenPolicy'
 import { toHant } from '@/lib/hant'
@@ -165,20 +167,30 @@ export async function POST(request: NextRequest) {
     // ★★ 成本护栏（token 防盗用第一档）：仅【登录用户】才生成 AI ——
     //   匿名（含外部脚本）不再触发；登录用户照常全量生成并入库，回看者必然已登录 ⇒ 不触回看事故。
     // ★ 未解锁（试读）不调 AI：报告全文不下发，调了也丢弃且成本最高。
-    const aiReport = userId && unlocked && !aiBlocked ? await generateAIHemun(male, female, result, { locale }) : null
+    const aiAttempted = !!userId && unlocked && !aiBlocked
+    const aiStartedAt = Date.now()
+    // ★ 用对象承载失败原因：回调内赋值，避免 TS 把 let 变量窄化成 null
+    const aiRun: { failure: AiFailure | null } = { failure: null }
+    const aiReport = aiAttempted
+      ? await generateAIHemun(male, female, result, { locale, onFailure: (f) => { aiRun.failure = f } })
+      : null
 
     // ★ 入库只存【内容】（locked 剥掉、ai 存全量全文）；门禁只作用于【响应】——
     //   读取侧按当前权益重算（详情页 reportGate），试吃→付费即刻生效。
     const rawAi = aiReport || fallbackHemunText(result)
     const rawAiSource = aiReport ? 'AI 深度解读'
       : aiBlocked ? '规则版（当日 AI 额度已用尽，次日恢复）'
-      : userId ? '规则版（AI结果未过合规校验）'
+      : userId ? aiSourceCode(aiRun.failure)
       : '规则版（登录后可见 AI 深度解读）'
     const ai = unlocked ? rawAi : null
     const aiSource = !unlocked ? '未解锁' : rawAiSource
 
     const data = {
       male, female, result, ai, aiSource, dstNotices,
+      // ★ 2026-11-09 失败原因可见化：reason 与命中词随报告入库，展示层按 locale 出三语文案
+      aiReason: unlocked && !aiReport ? aiRun.failure?.code ?? null : null,
+      aiReasonDetail: unlocked && !aiReport ? aiRun.failure?.detail ?? null : null,
+      aiHits: unlocked && !aiReport ? aiRun.failure?.hits ?? [] : [],
       // ★ free 层保留结构化干支事实与评分；ai 在未解锁时为 null
       free: { male, female, result },
       locked: unlocked ? null : {
@@ -199,6 +211,20 @@ export async function POST(request: NextRequest) {
       result: { ...stripEntitlementState(data), ai: rawAi, aiSource: rawAiSource } as never,
       cacheKey
     })
+
+    // ★ ai_runs 观测：成功与失败都落一条（失败路径的 usage 不再丢弃）
+    if (aiAttempted) {
+      await logAiRun(admin, {
+        module: 'hemun',
+        locale,
+        outcome: aiReport ? 'success' : 'failure',
+        reason: aiReport ? null : aiRun.failure?.code ?? 'unknown',
+        hits: aiReport ? [] : aiRun.failure?.hits ?? [],
+        usage: aiReport?._usage ?? aiRun.failure?.usage ?? null,
+        durationMs: aiReport ? Date.now() - aiStartedAt : aiRun.failure?.durationMs ?? Date.now() - aiStartedAt,
+        requestId: reportId
+      })
+    }
 
     return NextResponse.json({ success: true, data, reportId })
   } catch (error) {

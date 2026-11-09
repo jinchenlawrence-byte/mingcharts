@@ -15,6 +15,8 @@ import { stripEntitlementState, reportCacheKey, readReportCache, resolveModuleCa
 import { localeFromRequest } from '@/lib/locale'
 import { isRegenRequest, regenGate } from '@/lib/regenPolicy'
 import { toHant } from '@/lib/hant'
+import { aiSourceCode, dominantFailure, type AiFailure } from '@/lib/aiReason'
+import { logAiRun } from '@/lib/aiRuns'
 
 /** 未解锁时的 preview（入库剥离、命中重算时共用，避免两处文案漂移） */
 // ★ 2026-11-09 免费分层：文案集中在 reportPreview（route 与详情页同源），
@@ -154,15 +156,29 @@ export async function POST(request: NextRequest) {
     // ★★ 成本护栏（token 防盗用第一档）：仅【登录用户】才生成 AI（本模块每盘 12 次调用）——
     //   匿名（含外部脚本）不再触发；登录用户照常全量生成并入库，回看者必然已登录 ⇒ 不触回看事故。
     // ★ 未解锁（试读）不调 AI：本模块每盘 12 次调用，未购用户不再产生成本。
-    const aiReport = userId && unlocked && !aiBlocked ? await generateAIZiwei(chart, analysis, { locale }) : null
+    const aiAttempted = !!userId && unlocked && !aiBlocked
+    const aiStartedAt = Date.now()
+    // ★ 用对象承载失败原因：回调内赋值，避免 TS 把 let 变量窄化成 null
+    const aiRun: { failure: AiFailure | null } = { failure: null }
+    const aiReport = aiAttempted
+      ? await generateAIZiwei(chart, analysis, { locale, onFailure: (f) => { aiRun.failure = f } })
+      : null
+
+    // ★ 12 板块逐卷降级必须可见（2026-11-09）：degraded>0 时展示「12 个板块中 X 个为规则版」
+    const ziweiSections = aiReport?._sections ?? 12
+    const ziweiDegraded = aiReport?._degraded ?? 0
+    const ziweiDominant = dominantFailure(aiReport?._failures ?? [])
+    const allDegraded = !!aiReport && ziweiDegraded >= ziweiSections
+    // ★ 仅「部分降级/全部降级/整份失败」才需要 reason；成功（含重试后自愈）不记失败原因
+    const ziweiReason = !aiReport ? aiRun.failure : ziweiDegraded > 0 ? ziweiDominant : null
 
     // ★ 入库只存【内容】（locked 剥掉、ai 存全量全文）；门禁只作用于【响应】——
     //   读取侧按当前权益重算（详情页 reportGate），试吃→付费即刻生效。
     // ★ 英文站不得落回中文规则版（2026-11-09 免费分层后暴露：前两模块英文用户看到整段中文）
     const rawAi = aiReport || (locale === 'en' ? englishRuleZiweiText(chart, analysis) : fallbackZiweiText(chart, analysis))
-    const rawAiSource = aiReport ? 'AI 深度解读'
+    const rawAiSource = aiReport && !allDegraded ? 'AI 深度解读'
       : aiBlocked ? '规则版（当日 AI 额度已用尽，次日恢复）'
-      : userId ? '规则版（AI结果未过合规校验）'
+      : userId ? aiSourceCode(allDegraded ? ziweiDominant : aiRun.failure)
       : '规则版（登录后可见 AI 深度解读）'
     // ★ 免费分层（2026-11-09 用户口径更正）：未购用户不是零内容，而是深度解读列表的
     //   前两个模块（命格总论、性格底色）的【规则版】；付费墙从第三个模块（十二宫导读）起。
@@ -187,6 +203,12 @@ export async function POST(request: NextRequest) {
       preview: previewPayload('ziwei_deep', unlocked),
       ai,
       aiSource,
+      // ★ 2026-11-09 失败/降级可见化：reason、命中词、降级板块数随报告入库，展示层按 locale 出三语文案
+      aiReason: unlocked ? ziweiReason?.code ?? null : null,
+      aiReasonDetail: unlocked ? ziweiReason?.detail ?? null : null,
+      aiHits: unlocked ? ziweiReason?.hits ?? [] : [],
+      aiDegraded: unlocked && aiReport ? ziweiDegraded : 0,
+      aiSections: aiReport ? ziweiSections : 12,
       trueSolar: ref
         ? {
             birthplace: city?.name || null,
@@ -210,6 +232,23 @@ export async function POST(request: NextRequest) {
       result: { ...stripEntitlementState(data), ai: rawAi, aiSource: rawAiSource } as never,
       cacheKey
     })
+
+    // ★ ai_runs 观测：成功 / 部分降级 / 失败都落一条（失败路径的 usage 不再丢弃）
+    if (aiAttempted) {
+      const outcome = !aiReport ? 'failure' : allDegraded ? 'failure' : ziweiDegraded > 0 ? 'partial' : 'success'
+      await logAiRun(admin, {
+        module: 'ziwei',
+        locale,
+        outcome,
+        reason: ziweiReason?.code ?? null,
+        hits: ziweiReason?.hits ?? [],
+        degraded: ziweiDegraded,
+        sections: aiReport ? ziweiSections : 12,
+        usage: aiReport?._usage ?? aiRun.failure?.usage ?? null,
+        durationMs: aiReport ? Date.now() - aiStartedAt : aiRun.failure?.durationMs ?? Date.now() - aiStartedAt,
+        requestId: reportId
+      })
+    }
 
     return NextResponse.json({ success: true, data, reportId })
   } catch (error) {

@@ -8,10 +8,11 @@ import { getFavorSets, TIAO_HOU } from './analysis'
 import type { AIUsage } from './ai-types'
 import {
   unknownGanzhi, withComplianceRetry, findForbidden, FORBIDDEN_WORDS_PROMPT,
-  complianceRetryHint, complianceRetryHintEn, containsCJK, findCJK,
+  complianceRetryHint, complianceRetryHintEn, containsCJK, findCJK, type ComplianceReject,
 } from './ai-check'
 import { localeDirective, type OutputLocale } from './locale'
 import { aiConcurrency, addUsage, logAiStats, mapWithConcurrency, newStats, parseJsonObject, requestCompletion, sectionMaxTokens } from './aiCall'
+import type { AiFailure } from './aiReason'
 
 const AI_API_KEY = process.env.AI_API_KEY || ''
 const AI_BASE_URL = (process.env.AI_BASE_URL || 'https://api.deepseek.com').replace(/\/$/, '')
@@ -166,12 +167,19 @@ export async function generateAILiunian(
   chart: AnalyzableChart,
   luck: LuckCycles,
   targetYear: number,
-  opts?: { locale?: OutputLocale }
+  opts?: { locale?: OutputLocale } & { onFailure?: (f: AiFailure) => void }
 ): Promise<(AILiunianSections & { _usage?: AIUsage }) | null> {
+  const stats = newStats('liunian')
+  // 失败统一出口：带上已消耗 usage 与耗时（失败路径不得丢 token）
+  const emit = (f: AiFailure): null => {
+    opts?.onFailure?.({ ...f, usage: stats.usage, durationMs: Date.now() - stats.startedAt })
+    return null
+  }
+
   if (!AI_API_KEY) {
     // ★ 回退必须可见（任务书 §四）：静默降级让「AI 没跑」这件事不可见
     console.warn('[ai-liunian] 未配置 AI_API_KEY，本次回退规则版文案')
-    return null
+    return emit({ code: 'no_key' })
   }
 
   const months = liuYueFor(targetYear, luck)
@@ -197,20 +205,22 @@ export async function generateAILiunian(
   // 合规校验（与 aiAnalysis/aiHemun 对称接线，共享判据 ai-check.ts）：
   //   ① 干支溯源 ② 禁用词。findForbidden 用默认口径（否定式豁免）：
   //   「未必/不可避免」正确放行；「不必」已在 wrappedAttempt 中替换为「无须」到不了这里
-  const validate = <T extends object>(r: T): string | null => {
+  const validate = <T extends object>(r: T): ComplianceReject | null => {
     const text = Object.values(r).filter(v => typeof v === 'string').join('')
     if (isEn) {
-      if (containsCJK(text)) return `检出中文字符：${findCJK(text).join('、')}`
-      if (findForbidden(text).hits.length) return '检出禁用词'
-      return null
+      if (containsCJK(text)) return { detail: `检出中文字符：${findCJK(text).join('、')}` }
+      const hits = findForbidden(text).hits
+      return hits.length
+        ? { detail: `检出禁用词：${hits.map(h => h.w).join('、')}`, hits: [...new Set(hits.map(h => h.w))] }
+        : null
     }
-    if (unknownGanzhi(text, facts).length) return '检出未溯源干支'
-    if (findForbidden(text).hits.length) return '检出禁用词'
-    return null
+    const unknown = unknownGanzhi(text, facts)
+    if (unknown.length) return { detail: `检出未溯源干支：${unknown.join('、')}`, hits: unknown }
+    const hits = findForbidden(text).hits
+    return hits.length
+      ? { detail: `检出禁用词：${hits.map(h => h.w).join('、')}`, hits: [...new Set(hits.map(h => h.w))] }
+      : null
   }
-
-  // 单次 API 调用，失败返回 null
-  const stats = newStats('liunian')
 
   const attempt = async (feedback?: string): Promise<(AILiunianSections & { _usage?: AIUsage }) | null> => {
     try {
@@ -237,28 +247,36 @@ export async function generateAILiunian(
       addUsage(stats, outcome.usage)
       if (!outcome.ok || !outcome.content) {
         console.warn(`[ai-liunian] API 失败（${outcome.error || outcome.status}）`)
-        return null
+        return outcome.error === 'timeout'
+          ? emit({ code: 'timeout' })
+          : emit({ code: 'http_error', status: outcome.status, detail: outcome.status ? String(outcome.status) : outcome.error })
       }
       if (outcome.truncated) {
         console.warn('[ai-liunian] 输出被 max_tokens 截断，放弃本次结果')
-        return null
+        return emit({ code: 'truncated' })
       }
       const content = outcome.content
       const jsonText = content.replace(/^```(?:json)?\s*/i, '').replace(/\s*```$/i, '').trim()
-      const parsed = JSON.parse(jsonText) as Record<string, unknown>
+      let parsed: Record<string, unknown>
+      try {
+        parsed = JSON.parse(jsonText) as Record<string, unknown>
+      } catch (err) {
+        console.error('[ai-liunian] JSON 解析失败:', err instanceof Error ? err.message : err)
+        return emit({ code: 'json_invalid' })
+      }
       const out = {} as AILiunianSections
       for (const spec of specs) {
         const v = parsed[spec.key]
         if (typeof v !== 'string' || v.trim().length < 50) {
           console.error(`[ai-liunian] 板块 ${spec.key} 缺失或过短，放弃 AI 结果`)
-          return null
+          return emit({ code: 'section_short', detail: isEn ? spec.key : spec.name })
         }
         out[spec.key] = v.trim()
       }
       return { ...out, _usage: stats.usage }
     } catch (err) {
       console.error('[ai-liunian] AI 年运解读失败:', err instanceof Error ? err.message : err)
-      return null
+      return emit({ code: 'unknown', detail: err instanceof Error ? err.message : String(err) })
     }
   }
 
@@ -275,7 +293,15 @@ export async function generateAILiunian(
     return r
   }
 
-  const out = await withComplianceRetry(wrappedAttempt, validate, 'ai-liunian')
+  const out = await withComplianceRetry(wrappedAttempt, validate, 'ai-liunian', (info) =>
+    opts?.onFailure?.({
+      code: 'compliance',
+      detail: info.detail,
+      hits: info.hits,
+      usage: stats.usage,
+      durationMs: Date.now() - stats.startedAt,
+    })
+  )
 
   // 免责兜底（prompt 早已要求原文照写，此处仅防非确定性遗漏）
   if (out && !(isEn
