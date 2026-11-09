@@ -133,6 +133,60 @@ console.log('—— ⑥ 英文术语与拼音干支溯源 ——')
   assert(aiSrc.includes('EN_REQUIRED_TERMS'), '出口术语检查已接线（EN_REQUIRED_TERMS）')
 }
 
+// ---------- ⑦ 支付链路（英文）----------
+// 用户追问「英文支付链路还有没有中文残留」后补的守门（2026-11-09）。
+// 覆盖：下单 / 会员订阅的报错串、收银台语言、英文成功页与各购买入口的回跳。
+console.log('—— ⑦ 英文支付链路零中文 ——')
+{
+  // a) 收银台语言：英文入口必须把 Waffo 托管页设成 en，不能掉回简体
+  const { checkoutLanguage } = await import('../src/lib/locale.ts')
+  assert(checkoutLanguage('en') === 'en', '收银台语言：locale=en → Waffo language=en')
+  assert(checkoutLanguage('zh-Hans') === 'zh-Hans' && checkoutLanguage('zh-Hant') === 'zh-Hant-TW', '收银台语言：简/繁映射不变')
+  const { buildCheckoutParams } = await import('../src/lib/waffo.ts')
+  const base = {
+    productId: 'PROD_test', orderMerchantExternalId: 'MC_test', buyerEmail: 'a@b.com',
+    userId: 'u1', sku: 'fatebook', appUrl: 'https://www.mingcharts.com', storeId: 'STO_test',
+  }
+  assert(buildCheckoutParams({ ...base, locale: 'en' }).language === 'en', 'createSession 入参 language=en（英文入口）')
+  assert(buildCheckoutParams({ ...base }).language === 'zh-Hans', '缺省 locale 仍为 zh-Hans（零回归）')
+
+  // b) 下单接口：英文入口的报错串必须英文（CheckoutButton 会原样显示 error）
+  const call = async (handler, body) => {
+    const res = await handler(new Request('http://localhost/api', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body),
+    }))
+    return { status: res.status, json: await res.json() }
+  }
+  const { POST: checkoutPost } = await import('../src/app/api/checkout/route.ts')
+  const en400 = await call(checkoutPost, { token: '', sku: '', locale: 'en' })
+  assert(en400.status === 400 && en400.json.error === 'Missing or invalid parameters', `/api/checkout 参数缺失（en）→ 英文：${en400.json.error}`)
+  assert(findCJK(en400.json.error).length === 0, '/api/checkout 英文报错串零 CJK')
+  const zh400 = await call(checkoutPost, { token: '', sku: '' })
+  assert(zh400.json.error === '参数缺失或格式错误', `/api/checkout 缺省 locale 仍为中文（零回归）：${zh400.json.error}`)
+  const enSku = await call(checkoutPost, { token: 'x', sku: 'nope', locale: 'en' })
+  assert(/^[A-Za-z0-9 ,.'!-]+$/.test(enSku.json.error || ''), `/api/checkout 未开放商品（en）→ 英文：${enSku.json.error}`)
+
+  // c) 会员订阅接口：同意校验等业务报错同样按 locale
+  const { POST: memberPost } = await import('../src/app/api/membership/route.ts')
+  const mMissing = await call(memberPost, { token: '', plan: '', locale: 'en' })
+  assert(mMissing.json.error === 'Missing parameters', `/api/membership 参数缺失（en）→ 英文：${mMissing.json.error}`)
+  const mConsent = await call(memberPost, { token: 'x', plan: 'monthly', agreeAutoRenew: false, locale: 'en' })
+  assert(mConsent.json.code === 'CONSENT_REQUIRED' && findCJK(mConsent.json.error).length === 0, `/api/membership 未勾选同意（en）→ 英文零 CJK：${mConsent.json.error}`)
+
+  // d) 英文购买入口：按钮语言、登录页与成功回跳都在 /en
+  for (const [file, marker] of [
+    ['src/app/en/pricing/page.tsx', 'returnTo="/en/checkout/success"'],
+    ['src/app/en/chart/Client.tsx', 'returnTo="/en/checkout/success"'],
+    ['src/app/en/mingshu/page.tsx', 'returnTo="/en/checkout/success"'],
+  ]) {
+    const src = read(file)
+    assert(src.includes('locale="en"') && src.includes('authPath="/en/auth"'), `${file} 购买按钮 locale=en 且登录落 /en/auth`)
+    assert(src.includes(marker), `${file} 支付成功回跳英文成功页`)
+  }
+  assert(read('src/app/en/pricing/page.tsx').includes('<MembershipButton'), '英文定价页会员按钮来自共享组件')
+  assert(read('src/components/MembershipButton.tsx').includes('en ?'), '会员按钮错误/文案有英文分支')
+}
+
 // ---------- ④ 牙口：注入中文必须翻红 ----------
 console.log('—— ④ 零 CJK 断言牙口 ——')
 {

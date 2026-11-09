@@ -15,6 +15,11 @@ import { localeFromRequest } from '@/lib/locale'
 //   此处不校验归属（webhook 落账前统一校验 §3.2）；本 route 也【不做】无命盘拦截（§2.4）。
 // ★ returnTo（2026-10-18）：成功后回跳的站内路径，透传进 successUrl（waffo.ts 内白名单校验）。
 export async function POST(request: NextRequest) {
+  // ★ 错误串必须跟着入口语言走（2026-11-09）：CheckoutButton 会把 error 原文直接显示，
+  //   英文树拿到中文错误串就是中文残留。默认简体，逐字不变。
+  //   en 在 try 内按 body.locale 赋值；catch 分支也要用，故提到 try 外。
+  let en = false
+  const t = (zh: string, eng: string) => (en ? eng : zh)
   try {
     const body = await request.json().catch(() => null)
     const token = typeof body?.token === 'string' ? body.token.trim() : ''
@@ -23,15 +28,16 @@ export async function POST(request: NextRequest) {
     const returnTo = typeof body?.returnTo === 'string' ? body.returnTo.trim() : ''
     // 收银台语言：body.locale ＞ cookie ＞ 默认简体（繁体入口传 zh-Hant → 收银台 zh-Hant-TW）
     const locale = localeFromRequest(body)
+    en = locale === 'en'
     if (!token || !sku) {
-      return NextResponse.json({ error: '参数缺失或格式错误' }, { status: 400 })
+      return NextResponse.json({ error: t('参数缺失或格式错误', 'Missing or invalid parameters') }, { status: 400 })
     }
 
     // SKU → Waffo productId 未登记 → 明确的业务错误（不是 500，前端显示「即将推出」）
     const productId = waffoProductId(sku)
     if (!productId) {
       return NextResponse.json(
-        { error: '该商品尚未开放购买', code: 'SKU_UNAVAILABLE' },
+        { error: t('该商品尚未开放购买', 'This product is not available for purchase yet'), code: 'SKU_UNAVAILABLE' },
         { status: 400 },
       )
     }
@@ -41,7 +47,13 @@ export async function POST(request: NextRequest) {
     //   翻闸条件：partner_credits 账本 + webhook 入账 + 余额查询 三者齐备。
     if (isPartnerPack(sku) && !PARTNER_PACK_PURCHASABLE) {
       return NextResponse.json(
-        { error: '伙伴报告包暂未开放自助购买，请联系 hello@mingcharts.com', code: 'PARTNER_PACK_CLOSED' },
+        {
+          error: t(
+            '伙伴报告包暂未开放自助购买，请联系 hello@mingcharts.com',
+            'Partner report packs are not open for self-service purchase yet. Please contact hello@mingcharts.com',
+          ),
+          code: 'PARTNER_PACK_CLOSED',
+        },
         { status: 400 },
       )
     }
@@ -52,12 +64,20 @@ export async function POST(request: NextRequest) {
       error: authError,
     } = await admin.auth.getUser(token)
     if (authError || !user) {
-      return NextResponse.json({ error: '登录无效，请重新登录' }, { status: 401 })
+      return NextResponse.json(
+        { error: t('登录无效，请重新登录', 'Your session has expired. Please sign in again.') },
+        { status: 401 },
+      )
     }
     const buyerEmail = (user.email ?? '').trim()
     if (!buyerEmail) {
       return NextResponse.json(
-        { error: '当前账号缺少邮箱，无法发起支付，请先在账号设置中绑定邮箱' },
+        {
+          error: t(
+            '当前账号缺少邮箱，无法发起支付，请先在账号设置中绑定邮箱',
+            'This account has no email address. Add one in your account settings before paying.',
+          ),
+        },
         { status: 400 },
       )
     }
@@ -85,7 +105,7 @@ export async function POST(request: NextRequest) {
     if (msg.includes('Waffo 支付未配置') || msg.includes('必须是 https')) {
       console.error('[checkout] Waffo 未就绪:', msg)
       return NextResponse.json(
-        { error: '支付服务尚未开放，请稍后再试', code: 'WAFFO_UNCONFIGURED' },
+        { error: t('支付服务尚未开放，请稍后再试', 'Payments are not open yet. Please try again later.'), code: 'WAFFO_UNCONFIGURED' },
         { status: 503 },
       )
     }
@@ -94,11 +114,18 @@ export async function POST(request: NextRequest) {
       const status = error.status >= 500 ? 502 : 400
       console.error(`[checkout] Waffo 渠道错误 ${error.status}:`, error.errors)
       return NextResponse.json(
-        { error: `支付渠道错误：${error.errors?.[0]?.message ?? '未知错误'}` },
+        {
+          error:
+            t('支付渠道错误：', 'Payment provider error: ') +
+            (error.errors?.[0]?.message ?? t('未知错误', 'unknown error')),
+        },
         { status },
       )
     }
     console.error('[checkout] 创建支付会话失败:', error)
-    return NextResponse.json({ error: `创建支付会话失败：${msg}` }, { status: 500 })
+    return NextResponse.json(
+      { error: t('创建支付会话失败：', 'Could not create the checkout session: ') + msg },
+      { status: 500 },
+    )
   }
 }

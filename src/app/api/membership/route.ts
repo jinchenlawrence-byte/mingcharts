@@ -72,6 +72,9 @@ export async function GET(req: NextRequest) {
  *      不得默认勾选；托管收银台不可改文案，故同意放在按钮旁）。
  */
 export async function POST(req: NextRequest) {
+  // ★ 错误串跟着入口语言走（2026-11-09）：MembershipButton 会把 error 原文直接显示。
+  let en = false
+  const t = (zh: string, eng: string) => (en ? eng : zh)
   try {
     const body = await req.json()
     const { token, plan: planId, agreeAutoRenew } = body as {
@@ -81,13 +84,14 @@ export async function POST(req: NextRequest) {
       locale?: string
     }
     const entryLocale = localeFromRequest(body)
+    en = entryLocale === 'en'
 
     if (!token || !planId) {
-      return NextResponse.json({ error: '参数缺失' }, { status: 400 })
+      return NextResponse.json({ error: t('参数缺失', 'Missing parameters') }, { status: 400 })
     }
     const plan = PLANS[planId as PlanId]
     if (!plan) {
-      return NextResponse.json({ error: '未知套餐' }, { status: 400 })
+      return NextResponse.json({ error: t('未知套餐', 'Unknown plan') }, { status: 400 })
     }
 
     // ★ ③ 自动续费同意校验（先于一切 IO）
@@ -95,7 +99,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json(
         {
           success: false,
-          error: '请先勾选「同意自动续费」后再开通（订阅将按期自动扣费，可随时在会员中心取消）',
+          error: t(
+            '请先勾选「同意自动续费」后再开通（订阅将按期自动扣费，可随时在会员中心取消）',
+            'Please tick "I agree to auto-renewal" before subscribing. The subscription renews automatically and can be cancelled at any time in the member centre.',
+          ),
           code: 'CONSENT_REQUIRED',
         },
         { status: 400 },
@@ -105,7 +112,10 @@ export async function POST(req: NextRequest) {
     const admin = createServerSupabase()
     const { data: { user }, error: authError } = await admin.auth.getUser(token)
     if (authError || !user) {
-      return NextResponse.json({ error: '登录无效，请重新登录' }, { status: 401 })
+      return NextResponse.json(
+        { error: t('登录无效，请重新登录', 'Your session has expired. Please sign in again.') },
+        { status: 401 },
+      )
     }
 
     const sku = PLAN_SKU[plan.id]
@@ -116,7 +126,7 @@ export async function POST(req: NextRequest) {
       if (ENTITLEMENT_ENFORCE) {
         // 门禁已开但商品未上架 → 既不能免费放行，也不能伪造开通
         return NextResponse.json(
-          { success: false, error: '支付通道尚未开放', code: 'PAYMENT_NOT_READY' },
+          { success: false, error: t('支付通道尚未开放', 'Payment is not open yet'), code: 'PAYMENT_NOT_READY' },
           { status: 501 },
         )
       }
@@ -127,7 +137,10 @@ export async function POST(req: NextRequest) {
           active: true,
           trial: true,
           plan: plan.id,
-          message: '内测期免费开放，未产生任何扣费，也未开通正式订阅',
+          message: t(
+            '内测期免费开放，未产生任何扣费，也未开通正式订阅',
+            'Membership is free during the beta; no charge was made and no paid subscription was opened.',
+          ),
         },
       })
     }
@@ -135,7 +148,12 @@ export async function POST(req: NextRequest) {
     const buyerEmail = (user.email ?? '').trim()
     if (!buyerEmail) {
       return NextResponse.json(
-        { error: '当前账号缺少邮箱，无法发起支付，请先在账号设置中绑定邮箱' },
+        {
+          error: t(
+            '当前账号缺少邮箱，无法发起支付，请先在账号设置中绑定邮箱',
+            'This account has no email address. Add one in your account settings before paying.',
+          ),
+        },
         { status: 400 },
       )
     }
@@ -166,7 +184,7 @@ export async function POST(req: NextRequest) {
     if (msg.includes('Waffo 支付未配置') || msg.includes('必须是 https')) {
       console.error('[membership] Waffo 未就绪:', msg)
       return NextResponse.json(
-        { error: '支付服务尚未开放，请稍后再试', code: 'WAFFO_UNCONFIGURED' },
+        { error: t('支付服务尚未开放，请稍后再试', 'Payments are not open yet. Please try again later.'), code: 'WAFFO_UNCONFIGURED' },
         { status: 503 },
       )
     }
@@ -174,11 +192,18 @@ export async function POST(req: NextRequest) {
       const status = error.status >= 500 ? 502 : 400
       console.error(`[membership] Waffo 渠道错误 ${error.status}:`, error.errors)
       return NextResponse.json(
-        { error: `支付渠道错误：${error.errors?.[0]?.message ?? '未知错误'}` },
+        {
+          error:
+            t('支付渠道错误：', 'Payment provider error: ') +
+            (error.errors?.[0]?.message ?? t('未知错误', 'unknown error')),
+        },
         { status },
       )
     }
     console.error('开通会员错误:', error)
-    return NextResponse.json({ error: `开通失败：${msg}` }, { status: 500 })
+    return NextResponse.json(
+      { error: t('开通失败：', 'Could not start the subscription: ') + msg },
+      { status: 500 },
+    )
   }
 }
