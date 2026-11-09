@@ -1,11 +1,11 @@
 'use client'
 
 // 定价页 SKU 定位：读取 ?sku=，在页面顶部给出「你要解锁的是：…」，
-// 并把目标商品卡持久高亮 + 滚动到位。
+// 并给目标商品卡打上持久高亮（滚动交给链接自带的 #sku-<id> 锚点）。
 // ★ 不用 next/navigation 的 search-params hook：静态页会在构建期触发 Suspense bailout；直接读 location.search。
+// ★ 滚动交给浏览器原生锚点（链接自带 #sku-<id>，配合 CSS scroll-margin-top 避开吸顶条）：
+//   Next 水合期间用 JS scrollTo 会被重置/抢滚动，反而落到页面底部；这里只负责高亮。
 // ★ 非法/缺失参数一律安静回退默认版面（不报错、不改 DOM）。
-// ★ 滚动做两次（rAF + 500ms 兜底）：Next 水合/字体加载可能把滚动位置重置回顶部；
-//   用户一旦自己滚动/按键/触摸就取消兜底，避免抢滚动。
 import { useEffect, useState } from 'react'
 import type { SiteLang } from '@/lib/lang'
 import { isFocusSku, skuAnchorId, skuFocusName, skuFocusPrice, type FocusSku } from '@/lib/pricingFocus'
@@ -25,35 +25,21 @@ export default function PricingFocus({ locale }: { locale: SiteLang }) {
     setSku(raw)
 
     let cancelled = false
-    const onUserMove = () => { cancelled = true }
-    const opts = { passive: true, once: true } as const
-    window.addEventListener('wheel', onUserMove, opts)
-    window.addEventListener('touchstart', onUserMove, opts)
-    window.addEventListener('keydown', onUserMove, { once: true })
-
-    const jump = () => {
+    const mark = () => {
       if (cancelled) return
       const el = document.getElementById(skuAnchorId(raw))
       if (!el) return
       el.classList.add('hw-sku-focus')
       el.closest('.hw-c-plan')?.classList.add('hw-sku-focus-card')
-      const bar = document.querySelector('.hw-skuFocusBar') as HTMLElement | null
-      const offset = (bar?.getBoundingClientRect().height ?? 0) + 24
-      window.scrollTo({
-        top: el.getBoundingClientRect().top + window.scrollY - offset,
-        behavior: 'smooth',
-      })
     }
 
-    const raf = window.requestAnimationFrame(jump)
-    const retry = window.setTimeout(jump, 500)
+    // 确认语条是在 effect 里挂上去的，会让目标下移一点点；再补一次标记（幂等）。
+    const raf = window.requestAnimationFrame(mark)
+    const retry = window.setTimeout(mark, 500)
     return () => {
       cancelled = true
       window.cancelAnimationFrame(raf)
       window.clearTimeout(retry)
-      window.removeEventListener('wheel', onUserMove)
-      window.removeEventListener('touchstart', onUserMove)
-      window.removeEventListener('keydown', onUserMove)
     }
   }, [])
 

@@ -1697,6 +1697,10 @@ h1, h2, h3, .font-serif-sc {
   color: var(--hw-ink);
   font-weight: 700;
 }
+/* 锚点统一留出吸顶确认条的高度：原生 #sku-<id> 跳转时不能把卡片标题压在条下面 */
+[id^="sku-"] {
+  scroll-margin-top: 96px;
+}
 .hw-sku-focus,
 .hw-sku-focus-card {
   scroll-margin-top: 96px;
