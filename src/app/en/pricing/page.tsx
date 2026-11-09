@@ -10,6 +10,8 @@ import {
 import { waffoProductId } from '@/lib/waffo-products'
 import { SKU_EN } from '@/lib/pricingEn'
 import { triAlternates } from '@/lib/lang'
+import { skuAnchorId } from '@/lib/pricingFocus'
+import PricingFocus from '@/components/PricingFocus'
 
 // English pricing page: all prices and grants derive from pricing.ts (single source of truth).
 // Checkout and membership continue to use the existing buttons; only display copy is localised.
@@ -126,6 +128,9 @@ export default function EnPricingPage() {
           </p>
         </header>
 
+        {/* Landing from an unlock CTA with ?sku=: confirmation line + persistent highlight. */}
+        <PricingFocus locale="en" />
+
         <div className="grid md:grid-cols-3 gap-6 items-start">
           <div className="hw-c-plan">
             <h2 className="text-lg font-bold">Free chart</h2>
@@ -147,7 +152,7 @@ export default function EnPricingPage() {
             <p className="text-xs text-ink-light mt-2">English chart and English AI-written reports.</p>
           </div>
 
-          <div className="hw-c-plan hw-c-planHot">
+          <div id={skuAnchorId('fatebook')} className="hw-c-plan hw-c-planHot">
             <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-hw-water text-white text-xs font-semibold px-3 py-1 rounded-full">
               Most popular
             </span>
@@ -193,8 +198,10 @@ export default function EnPricingPage() {
             </ul>
             <div className="space-y-3">
               {MEMBER_SKUS.map((s) => (
-                <MembershipButton
-              className="w-full border border-ink/25 bg-white text-ink py-2.5 rounded-full font-semibold hover:bg-ink/5 transition disabled:opacity-60 disabled:cursor-not-allowed" key={s.id} plan={s.id === 'member_monthly' ? 'monthly' : 'yearly'} locale="en" />
+                <div key={s.id} id={skuAnchorId(s.id)}>
+                  <MembershipButton
+              className="w-full border border-ink/25 bg-white text-ink py-2.5 rounded-full font-semibold hover:bg-ink/5 transition disabled:opacity-60 disabled:cursor-not-allowed" plan={s.id === 'member_monthly' ? 'monthly' : 'yearly'} locale="en" />
+                </div>
               ))}
             </div>
           </div>
@@ -207,7 +214,7 @@ export default function EnPricingPage() {
           </p>
           <div className="grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
             {ONE_TIME_SKUS.filter((s) => s.id !== 'fatebook').map((s) => (
-              <div key={s.id} className="hw-c-box flex flex-col gap-4">
+              <div key={s.id} id={skuAnchorId(s.id)} className="hw-c-box flex flex-col gap-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h3 className="font-bold text-ink">{SKU_EN[s.id].name}</h3>
@@ -242,7 +249,7 @@ export default function EnPricingPage() {
             Each report includes {ASK_PER_REPORT} questions, each referral grants {ASK_PER_INVITE},
             and membership includes {MEMBER_ASK_PER_MONTH} per month.
           </p>
-          <div className="hw-c-box flex flex-col gap-4 max-w-[45ch] mx-auto">
+          <div id={skuAnchorId('ask_pack')} className="hw-c-box flex flex-col gap-4 max-w-[45ch] mx-auto">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="font-bold text-ink">{SKU_EN.ask_pack.name}</h3>

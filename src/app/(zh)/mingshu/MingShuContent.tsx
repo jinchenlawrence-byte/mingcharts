@@ -4,6 +4,7 @@ import Link from 'next/link'
 import Nav from '@/components/Nav'
 import BirthForm from '@/components/BirthForm'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
+import { pricingFocusHref } from '@/lib/pricingFocus'
 
 // 价格一律取自 SKUS（单一事实源），本文件不得硬编码价格
 const FATEBOOK_PRICE = formatPriceUSD(SKUS.fatebook.priceUSD)
@@ -176,7 +177,7 @@ export default function MingShuContent() {
             </div>
           </div>
           <p className="text-center text-sm text-ink-light mt-4">
-            高频用户可选 <Link href="/pricing" className="hw-c-link">会员订阅 {MEMBER_MONTHLY_PRICE}/月</Link>（订阅权益见价目页）
+            高频用户可选 <Link href={pricingFocusHref('zh-Hans', 'member_monthly')} className="hw-c-link">会员订阅 {MEMBER_MONTHLY_PRICE}/月</Link>（订阅权益见价目页）
           </p>
         </div>
       </section>
@@ -205,7 +206,7 @@ export default function MingShuContent() {
           本站内容基于传统命理文化整理，仅供学习参考与娱乐，不构成任何人生、医疗、法律、财务决策建议。
         </p>
         <p className="text-xs text-ink-light mt-2">
-          <Link href="/pricing" className="hover:text-ink/70">价格方案</Link>
+          <Link href={pricingFocusHref('zh-Hans', 'fatebook')} className="hover:text-ink/70">价格方案</Link>
           <span className="mx-2">·</span>
           <Link href="/article" className="hover:text-ink/70">命理知识</Link>
         </p>

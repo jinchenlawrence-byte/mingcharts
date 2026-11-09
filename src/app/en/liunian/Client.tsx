@@ -11,6 +11,7 @@ import { EnLiunianRules } from '@/components/en/EnRuleTables'
 import AskPanel from '@/components/AskPanel'
 import { liunianAskChart } from '@/lib/askChart'
 import { getAuthToken } from '@/lib/authToken'
+import { pricingFocusHref } from '@/lib/pricingFocus'
 
 const TITLES: Record<string, string> = {
   annualOverview: 'Annual overview',
@@ -48,7 +49,7 @@ function AiSections({ data }: { data: LiunianResultData }) {
     return (
       <div className="hw-c-box text-center">
         <p className="hw-c-body">{data.locked.preview}</p>
-        <Link href="/en/pricing" className="hw-c-btnBig inline-block mt-4">
+        <Link href={pricingFocusHref('en', 'annual_report')} className="hw-c-btnBig inline-block mt-4">
           Unlock the full English annual report
         </Link>
       </div>

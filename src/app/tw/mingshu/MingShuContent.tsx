@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import BirthForm from '@/components/BirthForm'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
+import { pricingFocusHref } from '@/lib/pricingFocus'
 import { toHant } from '@/lib/hant'
 
 // 命書報告（繁體）：與 /mingshu 的 MingShuContent 同構、同資訊量。
@@ -175,7 +176,7 @@ export default function HantMingShuContent() {
             </div>
           </div>
           <p className="text-center text-sm text-ink-light mt-4">
-            {H('高頻用戶可選')} <Link href="/tw/pricing" className="hw-c-link">{H('會員訂閱')} {MEMBER_MONTHLY_PRICE}/{H('月')}</Link>{H('（訂閱權益見價目頁）')}
+            {H('高頻用戶可選')} <Link href={pricingFocusHref('zh-Hant', 'member_monthly')} className="hw-c-link">{H('會員訂閱')} {MEMBER_MONTHLY_PRICE}/{H('月')}</Link>{H('（訂閱權益見價目頁）')}
           </p>
         </div>
       </section>
@@ -204,7 +205,7 @@ export default function HantMingShuContent() {
           {H('本站內容基於傳統命理文化整理，僅供學習參考與娛樂，不構成任何人生、醫療、法律、財務決策建議。')}
         </p>
         <p className="text-xs text-ink-light mt-2">
-          <Link href="/tw/pricing" className="hover:text-ink/70">{H('價格方案')}</Link>
+          <Link href={pricingFocusHref('zh-Hant', 'fatebook')} className="hover:text-ink/70">{H('價格方案')}</Link>
           <span className="mx-2">·</span>
           <Link href="/tw/article" className="hover:text-ink/70">{H('命理知識')}</Link>
         </p>

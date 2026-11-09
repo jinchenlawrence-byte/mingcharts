@@ -19,6 +19,8 @@ import { waffoProductId } from '@/lib/waffo-products'
 import { GRANT_LABELS } from '@/lib/grantLabels'
 import { toHant } from '@/lib/hant'
 import { triAlternates } from '@/lib/lang'
+import { skuAnchorId } from '@/lib/pricingFocus'
+import PricingFocus from '@/components/PricingFocus'
 import type { Metadata } from 'next'
 
 // 價格方案（繁體）：與 /pricing 同構、同資訊量；價格一律取自 SKUS（單一事實源）。
@@ -201,10 +203,13 @@ export default function HantPricingPage() {
           </p>
         </header>
 
+        {/* 從免費報告「解鎖」帶 ?sku= 落地：頂部確認語 + 目標卡持續高亮（非法參數安靜回退） */}
+        <PricingFocus locale="zh-Hant" />
+
         {/* 价格卡片 */}
         <div className="grid md:grid-cols-3 gap-6 items-start">
           {CARDS.map((card) => (
-            <div key={card.name} className={`hw-c-plan${card.highlight ? ' hw-c-planHot' : ''}`}>
+            <div key={card.name} id={card.buySku ? skuAnchorId(card.buySku) : undefined} className={`hw-c-plan${card.highlight ? ' hw-c-planHot' : ''}`}>
               {card.highlight && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-hw-water text-white text-xs font-semibold px-3 py-1 rounded-full">
                   {H('最受歡迎')}
@@ -230,12 +235,13 @@ export default function HantPricingPage() {
               {card.membership ? (
                 <div className="space-y-3">
                   {MEMBER_SKUS.map((s) => (
-                    <MembershipButton
+                    <div key={s.id} id={skuAnchorId(s.id)}>
+                      <MembershipButton
               className="w-full border border-ink/25 bg-white text-ink py-2.5 rounded-full font-semibold hover:bg-ink/5 transition disabled:opacity-60 disabled:cursor-not-allowed"
-                      key={s.id}
-                      plan={s.id === 'member_monthly' ? 'monthly' : 'yearly'}
-                      locale="zh-Hant"
-                    />
+                        plan={s.id === 'member_monthly' ? 'monthly' : 'yearly'}
+                        locale="zh-Hant"
+                      />
+                    </div>
                   ))}
                 </div>
               ) : card.buySku ? (
@@ -277,7 +283,7 @@ export default function HantPricingPage() {
           </p>
           <div className="grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
             {ONE_TIME_SKUS.filter((s) => s.id !== 'fatebook').map((s) => (
-              <div key={s.id} className="hw-c-box flex flex-col gap-4">
+              <div key={s.id} id={skuAnchorId(s.id)} className="hw-c-box flex flex-col gap-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h3 className="font-bold text-ink">{H(s.name)}</h3>
@@ -325,7 +331,7 @@ export default function HantPricingPage() {
           <p className="text-sm text-ink-light text-center mb-6">
             {H('購買任一報告或開通會員後，即可在命盤頁就你的命盤向 AI 命理師追問；每份報告贈')} {ASK_PER_REPORT} {H('次（終身有效）、每邀請 1 位好友註冊贈')} {ASK_PER_INVITE} {H('次、會員每月')} {MEMBER_ASK_PER_MONTH} {H('次，用完後可購買追問包續用。')}
           </p>
-          <div className="hw-c-box flex flex-col gap-4 max-w-3xl mx-auto">
+          <div id={skuAnchorId('ask_pack')} className="hw-c-box flex flex-col gap-4 max-w-3xl mx-auto">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="font-bold text-ink">{H(SKUS.ask_pack.name)}</h3>

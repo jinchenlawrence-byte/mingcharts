@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
 import { SKUS, formatPriceUSD, SUBSCRIPTION_GRANTS, MEMBER_ASK_PER_MONTH, ASK_PER_REPORT, ASK_PER_INVITE } from '@/lib/pricing'
 import { WAFFO_PORTAL_URL } from '@/lib/waffo-products'
+import { pricingFocusHref } from '@/lib/pricingFocus'
 
 type Section = { locked: boolean; data: any }
 
@@ -196,7 +197,7 @@ export default function EnMemberPage() {
         <SubscriptionCard sub={sub} onChanged={() => setReloadKey((k) => k + 1)} />
 
         <div className="hw-m-cta">
-          <Link href="/en/pricing" className="hw-m-btn">See membership benefits and subscribe →</Link>
+          <Link href={pricingFocusHref('en', 'member_monthly')} className="hw-m-btn">See membership benefits and subscribe →</Link>
           <p className="hw-c-meta">Member benefits keep updating for the subscription period; after expiry the content is locked again.</p>
         </div>
       </div>
@@ -233,7 +234,7 @@ function MemberStatusCard({ sub, mode, daysLeft, unlockedCount, ask }: {
           </div>
         </div>
         <div className="hw-m-heroAct">
-          <Link href="/en/pricing" className="hw-m-btn">See membership benefits and subscribe →</Link>
+          <Link href={pricingFocusHref('en', 'member_monthly')} className="hw-m-btn">See membership benefits and subscribe →</Link>
         </div>
       </section>
     )
@@ -300,7 +301,7 @@ function BenefitsGrid({ unlocked }: { unlocked: Record<string, boolean> }) {
                 </div>
               </div>
               {!on && (
-                <Link href="/en/pricing" className="hw-m-unlock">A member benefit · unlock with membership →</Link>
+                <Link href={pricingFocusHref('en', 'member_monthly')} className="hw-m-unlock">A member benefit · unlock with membership →</Link>
               )}
             </div>
           )
@@ -370,7 +371,7 @@ function MemberContent({ data }: { data: Summary }) {
           <p className="hw-c-meta">{s.body}</p>
           <p className="mt-3">
             {s.locked ? (
-              <Link href="/en/pricing" className="hw-m-btn hw-m-btnSm">Unlock with membership →</Link>
+              <Link href={pricingFocusHref('en', 'member_monthly')} className="hw-m-btn hw-m-btnSm">Unlock with membership →</Link>
             ) : (
               <Link href={s.href} className="hw-m-btn hw-m-btnSm">{s.cta}</Link>
             )}
@@ -426,7 +427,7 @@ function UsageRow({ multiChart, ask, isMember }: {
           To invite: use “Share with a friend” on a chart result or daily page; the friend counts once they sign up through your link. Each person can be invited once, and you cannot invite yourself.
         </p>
         <p className="mt-3">
-          <Link href="/en/pricing" className="hw-m-btn hw-m-btnSm hw-m-btnGhost">
+          <Link href={pricingFocusHref('en', 'ask_pack')} className="hw-m-btn hw-m-btnSm hw-m-btnGhost">
             Question pack / {formatPriceUSD(SKUS.ask_pack.priceUSD)} →
           </Link>
         </p>
@@ -444,7 +445,7 @@ function SubscriptionCard({ sub, onChanged }: { sub: SubStatus; onChanged: () =>
       <section className="hw-c-box hw-m-sec text-center" id="subscription">
         <h2 className="hw-c-secTitle">Membership subscription</h2>
         <p className="hw-c-meta">You are not a member. Subscribing unlocks all the member content above.</p>
-        <Link href="/en/pricing" className="hw-m-btn hw-m-btnSm">See membership benefits and subscribe →</Link>
+        <Link href={pricingFocusHref('en', 'member_monthly')} className="hw-m-btn hw-m-btnSm">See membership benefits and subscribe →</Link>
       </section>
     )
   }

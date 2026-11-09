@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
 import { ganZhiEn, STEM_ELEMENT, stemEn } from '@/lib/enTerms'
+import { pricingFocusHref } from '@/lib/pricingFocus'
 
 interface ChartRow {
   id: string
@@ -157,7 +158,7 @@ export default function EnChartsClient() {
             {rows.length >= limit && (
               <>
                 {' — limit reached, '}
-                <Link href="/en/pricing" className="text-hw-water hover:underline">
+                <Link href={pricingFocusHref('en', 'member_monthly')} className="text-hw-water hover:underline">
                   upgrade
                 </Link>
                 {' to save more'}

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
+import { pricingFocusHref } from '@/lib/pricingFocus'
 
 interface ChartRow {
   id: string
@@ -158,7 +159,7 @@ export default function MyCharts() {
             <p className="text-xs text-ink-light -mt-3 mb-4">
               已保存 {rows.length}/{limit} 个命盘
               {rows.length >= limit && (
-                <> —— 已达上限，<Link href="/pricing" className="text-hw-water hover:underline">开通会员</Link>可保存更多</>
+                <> —— 已达上限，<Link href={pricingFocusHref('zh-Hans', 'member_monthly')} className="text-hw-water hover:underline">开通会员</Link>可保存更多</>
               )}
             </p>
           )}

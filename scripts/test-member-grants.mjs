@@ -98,7 +98,7 @@ console.log(srcFail === 0
 console.log('—— ④ 会员页锁定态统一（提示语 + 链 /pricing）——')
 let lockFail = 0
 if (!memberSrc.includes('本项为会员权益')) { lockFail++; fail('member 页缺统一锁定提示语「本项为会员权益」') }
-if (!/href="\/pricing"|L\('\/pricing'\)/.test(memberSrc)) { lockFail++; fail('member 页锁定态未链到 /pricing') }
+if (!/href="\/pricing"|L\('\/pricing'\)|pricingFocusHref\(/.test(memberSrc)) { lockFail++; fail('member 页锁定态未链到 /pricing') }
 console.log(lockFail === 0
   ? '✓ 会员页锁定态：统一提示语 + 链 /pricing（与 api/daily 的 closed 范式一致）'
   : `✗ 会员页锁定态缺失 ${lockFail} 处`)

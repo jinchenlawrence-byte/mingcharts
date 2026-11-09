@@ -12,6 +12,7 @@ import AskPanel from '@/components/AskPanel'
 import { geoAskChart } from '@/lib/askChart'
 import { loadWorldData, searchCities } from '@/lib/worldCitiesClient'
 import { getAuthToken } from '@/lib/authToken'
+import { pricingFocusHref } from '@/lib/pricingFocus'
 
 const TITLES: Record<string, string> = {
   overview: 'Directional overview',
@@ -92,7 +93,7 @@ function AiSections({ data }: { data: GeoResultData }) {
     return (
       <div className="hw-c-box text-center">
         <p className="hw-c-body">{data.locked.preview}</p>
-        <Link href="/en/pricing" className="hw-c-btnBig inline-block mt-4">
+        <Link href={pricingFocusHref('en', 'geo')} className="hw-c-btnBig inline-block mt-4">
           Unlock the full English city report
         </Link>
       </div>

@@ -18,6 +18,7 @@ import { GRANT_LABELS } from '@/lib/grantLabels'
 import { getSupabase } from '@/lib/supabase'
 import { toHant } from '@/lib/hant'
 import { pathForLang, type SiteLang } from '@/lib/lang'
+import { pricingFocusHref, type FocusSku } from '@/lib/pricingFocus'
 import { SKUS, formatPriceUSD, SUBSCRIPTION_GRANTS, MEMBER_ASK_PER_MONTH, ASK_PER_REPORT, ASK_PER_INVITE } from '@/lib/pricing'
 // 客户付款门户（改卡 / 查账单）——公开链接、非密钥，客户端可安全引用
 import { WAFFO_PORTAL_URL } from '@/lib/waffo-products'
@@ -66,7 +67,7 @@ const GRANT_STAMPS: Record<string, string> = {
 
 export default function MemberCenter({ locale = 'zh-Hans' }: { locale?: SiteLang }) {
   const H = (s: string) => (locale === 'zh-Hant' ? toHant(s) : s)
-  const L = (p: string) => pathForLang(p, locale)
+  const L = (p: string, sku?: FocusSku) => (sku ? pricingFocusHref(locale, sku) : pathForLang(p, locale))
   const dateLocale = locale === 'zh-Hant' ? 'zh-TW' : 'zh-CN'
 
   const [data, setData] = useState<Summary | null>(null)
@@ -221,7 +222,7 @@ export default function MemberCenter({ locale = 'zh-Hans' }: { locale?: SiteLang
           <PushOptIn />
 
           <div className="hw-m-cta">
-            <Link href={L('/pricing')} className="hw-m-btn">{H('查看会员权益与开通 →')}</Link>
+            <Link href={L('/pricing', 'member_monthly')} className="hw-m-btn">{H('查看会员权益与开通 →')}</Link>
             <p className="hw-c-meta">{H('会员权益在订阅期内持续更新，到期后内容将重新锁定。')}</p>
           </div>
         </div>
@@ -232,7 +233,7 @@ export default function MemberCenter({ locale = 'zh-Hans' }: { locale?: SiteLang
 
 type Helpers = {
   H: (s: string) => string
-  L: (p: string) => string
+  L: (p: string, sku?: FocusSku) => string
 }
 
 /**
@@ -269,7 +270,7 @@ function MemberStatusCard({ sub, mode, daysLeft, unlockedCount, ask, H, L, dateL
           </div>
         </div>
         <div className="hw-m-heroAct">
-          <Link href={L('/pricing')} className="hw-m-btn">{H('查看会员权益与开通 →')}</Link>
+          <Link href={L('/pricing', 'member_monthly')} className="hw-m-btn">{H('查看会员权益与开通 →')}</Link>
         </div>
       </section>
     )
@@ -342,7 +343,7 @@ function BenefitsGrid({ unlocked, H, L }: Helpers & { unlocked: Record<string, b
                 </div>
               </div>
               {!on && (
-                <Link href={L('/pricing')} className="hw-m-unlock">{H('本项为会员权益 · 开通后解锁 →')}</Link>
+                <Link href={L('/pricing', 'member_monthly')} className="hw-m-unlock">{H('本项为会员权益 · 开通后解锁 →')}</Link>
               )}
             </div>
           )
@@ -398,7 +399,7 @@ function UsageRow({ multiChart, ask, isMember, H, L }: Helpers & {
           {H('邀请方式：在排盘结果页或日签页点「分享给朋友」，对方通过你的链接注册即计入 1 人；每人只能被邀请一次，邀请人不能邀请自己。')}
         </p>
         <p className="mt-3">
-          <Link href={L('/pricing')} className="hw-m-btn hw-m-btnSm hw-m-btnGhost">
+          <Link href={L('/pricing', 'ask_pack')} className="hw-m-btn hw-m-btnSm hw-m-btnGhost">
             {H(GRANT_LABELS.ask)} / {formatPriceUSD(SKUS.ask_pack.priceUSD)} →
           </Link>
         </p>
@@ -428,7 +429,7 @@ function SubscriptionCard({ sub, onChanged, H, L, dateLocale, locale }: Helpers 
       <section className="hw-c-box hw-m-sec text-center" id="subscription">
         <h2 className="hw-c-secTitle">{H('会员订阅')}</h2>
         <p className="hw-c-meta">{H('当前不是会员，开通后可查看上方全部专属内容。')}</p>
-        <Link href={L('/pricing')} className="hw-m-btn hw-m-btnSm">{H('查看会员权益与开通 →')}</Link>
+        <Link href={L('/pricing', 'member_monthly')} className="hw-m-btn hw-m-btnSm">{H('查看会员权益与开通 →')}</Link>
       </section>
     )
   }
@@ -520,7 +521,7 @@ function LockedCard({ title, id, H, L }: Helpers & { title: string; id?: string 
         <span className="hw-m-lockTag">{H('本项为会员权益')}</span>{H('，会员开通后即可查看。')}
       </p>
       <p className="mt-3">
-        <Link href={L('/pricing')} className="hw-m-btn hw-m-btnSm">{H('解锁查看 →')}</Link>
+        <Link href={L('/pricing', 'member_monthly')} className="hw-m-btn hw-m-btnSm">{H('解锁查看 →')}</Link>
       </p>
     </section>
   )

@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getSupabase } from '@/lib/supabase';
 import { toHant } from '@/lib/hant';
+import { pricingFocusHref } from '@/lib/pricingFocus';
 const H = (s: string) => toHant(s);
 interface ChartRow {
     id: string;
@@ -146,7 +147,7 @@ export default function MyCharts() {
             <button onClick={() => router.push('/tw')} className="bg-ink text-white px-4 py-2 rounded-full text-sm font-semibold hover:opacity-85 transition">{H("+ 新排盤")} </button>
           </div>
 
-          {limit !== null && (<p className="text-xs text-ink-light -mt-3 mb-4">{H("已保存")} {rows.length}/{limit} {H("個命盤")} {rows.length >= limit && (<> {H("—— 已達上限，")}<Link href="/tw/pricing" className="text-hw-water hover:underline">{H("開通會員")}</Link>{H("可保存更多")}</>)}
+          {limit !== null && (<p className="text-xs text-ink-light -mt-3 mb-4">{H("已保存")} {rows.length}/{limit} {H("個命盤")} {rows.length >= limit && (<> {H("—— 已達上限，")}<Link href={pricingFocusHref('zh-Hant', 'member_monthly')} className="text-hw-water hover:underline">{H("開通會員")}</Link>{H("可保存更多")}</>)}
             </p>)}
 
           {rows.length === 0 ? (<div className="hw-c-box text-center text-ink-light">{H("還沒有保存的命盤，去排一個吧")} </div>) : (<div className="space-y-3">

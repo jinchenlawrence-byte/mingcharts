@@ -19,6 +19,8 @@ import {
 import { waffoProductId } from '@/lib/waffo-products'
 import { GRANT_LABELS } from '@/lib/grantLabels'
 import { triAlternates } from '@/lib/lang'
+import { skuAnchorId } from '@/lib/pricingFocus'
+import PricingFocus from '@/components/PricingFocus'
 
 export const metadata = {
   title: `价格方案：免费排盘 · 命书报告 ${formatPriceUSD(SKUS.fatebook.priceUSD)} · 会员订阅`,
@@ -219,10 +221,13 @@ export default function PricingPage() {
           </p>
         </header>
 
+        {/* 从免费报告「解锁」带 ?sku= 落地：顶部确认语 + 目标卡持续高亮（非法参数安静回退） */}
+        <PricingFocus locale="zh-Hans" />
+
         {/* 价格卡片 */}
         <div className="grid md:grid-cols-3 gap-6 items-start">
           {CARDS.map((card) => (
-            <div key={card.name} className={`hw-c-plan${card.highlight ? ' hw-c-planHot' : ''}`}>
+            <div key={card.name} id={card.buySku ? skuAnchorId(card.buySku) : undefined} className={`hw-c-plan${card.highlight ? ' hw-c-planHot' : ''}`}>
               {card.highlight && (
                 <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-hw-water text-white text-xs font-semibold px-3 py-1 rounded-full">
                   最受欢迎
@@ -251,11 +256,12 @@ export default function PricingPage() {
                 //   月/年两个 SKU 均来自 MEMBER_SKUS（pricing.ts 单一事实源）。
                 <div className="space-y-3">
                   {MEMBER_SKUS.map((s) => (
-                    <MembershipButton
+                    <div key={s.id} id={skuAnchorId(s.id)}>
+                      <MembershipButton
               className="w-full border border-ink/25 bg-white text-ink py-2.5 rounded-full font-semibold hover:bg-ink/5 transition disabled:opacity-60 disabled:cursor-not-allowed"
-                      key={s.id}
-                      plan={s.id === 'member_monthly' ? 'monthly' : 'yearly'}
-                    />
+                        plan={s.id === 'member_monthly' ? 'monthly' : 'yearly'}
+                      />
+                    </div>
                   ))}
                 </div>
               ) : card.buySku ? (
@@ -294,7 +300,7 @@ export default function PricingPage() {
           </p>
           <div className="grid sm:grid-cols-2 gap-4 max-w-3xl mx-auto">
             {ONE_TIME_SKUS.filter((s) => s.id !== 'fatebook').map((s) => (
-              <div key={s.id} className="hw-c-box flex flex-col gap-4">
+              <div key={s.id} id={skuAnchorId(s.id)} className="hw-c-box flex flex-col gap-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h3 className="font-bold text-ink">{s.name}</h3>
@@ -340,7 +346,7 @@ export default function PricingPage() {
             每份报告赠 {ASK_PER_REPORT} 次（终身有效）、每邀请 1 位好友注册赠 {ASK_PER_INVITE} 次、
             会员每月 {MEMBER_ASK_PER_MONTH} 次，用完后可购买追问包续用。
           </p>
-          <div className="hw-c-box flex flex-col gap-4 max-w-3xl mx-auto">
+          <div id={skuAnchorId('ask_pack')} className="hw-c-box flex flex-col gap-4 max-w-3xl mx-auto">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h3 className="font-bold text-ink">{SKUS.ask_pack.name}</h3>

@@ -11,6 +11,7 @@ import type { PaipanResult } from '@/lib/paipan'
 import { EnHemunRules } from '@/components/en/EnRuleTables'
 import AskPanel from '@/components/AskPanel'
 import { getAuthToken } from '@/lib/authToken'
+import { pricingFocusHref } from '@/lib/pricingFocus'
 
 type HemunDataEn = HemunData & { male?: PaipanResult; female?: PaipanResult }
 
@@ -97,7 +98,7 @@ function AiSections({ data }: { data: HemunData }) {
     return (
       <div className="hw-c-box text-center">
         <p className="hw-c-body">{data.locked.preview}</p>
-        <Link href="/en/pricing" className="hw-c-btnBig inline-block mt-4">
+        <Link href={pricingFocusHref('en', 'hemun')} className="hw-c-btnBig inline-block mt-4">
           Unlock the full English synastry report
         </Link>
       </div>

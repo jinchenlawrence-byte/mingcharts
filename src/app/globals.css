@@ -1671,6 +1671,35 @@ h1, h2, h3, .font-serif-sc {
   border-color: var(--hw-water);
   box-shadow: 0 0 0 2px var(--hw-water);
 }
+/* ★ SKU 定向落地（2026-11-09）：免费报告「解锁」带 ?sku= 到定价页时，
+   顶部确认语 + 目标商品卡持续高亮。高亮不依赖滚动位置，可停留；不改变主推位层级。 */
+.hw-skuFocusBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+  margin: 0 0 24px;
+  padding: 12px 16px;
+  background: rgba(58, 102, 255, 0.06);
+  border: 1px solid var(--hw-line);
+  border-left: 4px solid var(--hw-water);
+  border-radius: var(--r-lg);
+  font-size: 14px;
+}
+.hw-skuFocusLabel {
+  color: var(--hw-mute);
+}
+.hw-skuFocusName {
+  color: var(--hw-ink);
+  font-weight: 700;
+}
+.hw-sku-focus,
+.hw-sku-focus-card {
+  scroll-margin-top: 96px;
+  border-color: var(--hw-water) !important;
+  border-radius: var(--r-lg);
+  box-shadow: 0 0 0 2px var(--hw-water), 0 10px 28px rgba(58, 102, 255, 0.18) !important;
+}
 .hw-c-pr {
   font-family: var(--font-title);
   font-weight: 900;

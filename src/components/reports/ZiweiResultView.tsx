@@ -20,6 +20,7 @@ import { ziweiAskContext, askBaziSourceFrom, fetchAskBaziChart } from '@/lib/ask
 import { localize } from '@/lib/hant'
 import { aiSourceLabel } from '@/lib/aiSourceLabel'
 import { pathForLang, type SiteLang } from '@/lib/lang'
+import { isFocusSku, pricingFocusHref } from '@/lib/pricingFocus'
 import type { ZiweiRuleEn } from '@/lib/enRule'
 import { ZIWEI_UI_EN, ZIWEI_AI_TITLES_EN, LEVEL_STYLE_EN, mutagenStyleEn } from '@/lib/ziweiUiEn'
 
@@ -108,6 +109,8 @@ export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh
   const [selected, setSelected] = useState<number | null>(chart.mingIndex)
   // ★ 报告级权益（与重新生成按钮同一判定）：免费试读 → 不显示重新生成，追问给购买引导
   const paid = isReportPaid('ziwei', data)
+  // ★ 英文树解锁跳定价页时必须带上本模块 sku：否则落地在 Fate Book，极易买错产品。
+  const lockedFocusSku = locked?.skus.find(isFocusSku)
   // ★ 旧报告没有 baziChart：用已存档的紫微盘补算同一张八字盘，入口不再消失
   const [askChart, setAskChart] = useState<AnalyzableChart | null>(data.baziChart ?? null)
   useEffect(() => {
@@ -494,11 +497,11 @@ export default function ZiweiResultView({ data, onRegen, regenBusy, locale = 'zh
         )
       })()}
 
-      {/* ★ 未解锁：锁定区末尾统一解锁按钮（英文树无 SKU 中文文案，走 /en/pricing） */}
+      {/* ★ 未解锁：锁定区末尾统一解锁按钮（英文树带 sku 定位到定价页对应商品；简繁一键直达收银台） */}
       {locked && (isEn ? (
         <div className="hw-lk-cta">
           {locked.preview && <p className="hw-lk-note">{locked.preview}</p>}
-          <Link href={pathForLang('/pricing', locale)} className="hw-c-btnBig inline-block">{EN.unlock}</Link>
+          <Link href={lockedFocusSku ? pricingFocusHref(locale, lockedFocusSku) : pathForLang('/pricing', locale)} className="hw-c-btnBig inline-block">{EN.unlock}</Link>
         </div>
       ) : (
         <UnlockCta skus={locked.skus} preview={locked.preview ? L(locked.preview) : undefined} locale={locale} returnTo={pathForLang('/reports', locale)} />
