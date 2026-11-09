@@ -138,7 +138,7 @@ export default function ZiweiPage() {
             </div>
             <p className="mt-4 text-center">
               <button type="submit" disabled={loading} className="hw-c-btnBig">
-                {loading ? '排盘分析中...' : '开始紫微分析'}
+                {loading ? '排盘分析中...（约 1–2 分钟）' : '开始紫微分析'}
               </button>
             </p>
             {error && <p className="hw-c-err text-center">{error}</p>}

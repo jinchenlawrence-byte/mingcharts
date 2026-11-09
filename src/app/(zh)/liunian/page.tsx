@@ -183,7 +183,7 @@ export default function LiunianPage() {
             </div>
             <p className="mt-4 text-center">
               <button type="submit" disabled={loading} className="hw-c-btnBig">
-                {loading ? '流年详批生成中（约30秒）...' : '生成年运报告'}
+                {loading ? '流年详批生成中...（通常 30 秒内）' : '生成年运报告'}
               </button>
             </p>
             {error && <p className="hw-c-err text-center">{error}</p>}

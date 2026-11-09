@@ -109,7 +109,7 @@ export default function EnZiweiClient() {
             </div>
             <p className="mt-4 text-center">
               <button type="submit" disabled={loading} className="hw-c-btnBig">
-                {loading ? 'Building the chart…' : 'Start the Zi Wei reading'}
+                {loading ? 'Building the chart… (about 1–2 minutes)' : 'Start the Zi Wei reading'}
               </button>
             </p>
             {error && <p className="hw-c-err text-center">{error}</p>}

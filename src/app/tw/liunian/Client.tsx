@@ -167,7 +167,7 @@ export default function HantLiunianClient() {
           </div>
           <p className="mt-4 text-center">
             <button type="submit" disabled={loading} className="hw-c-btnBig">
-              {loading ? H('流年詳批生成中（約30秒）...') : H('生成年運報告')}
+              {loading ? H('流年詳批生成中...（通常 30 秒內）') : H('生成年運報告')}
             </button>
           </p>
           {error && <p className="hw-c-err text-center">{error}</p>}

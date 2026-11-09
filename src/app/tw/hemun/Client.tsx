@@ -169,7 +169,7 @@ export default function HantHemunClient() {
           </div>
           <p className="text-center">
             <button type="submit" disabled={loading} className="hw-c-btnBig">
-              {loading ? H('合婚分析中...') : H('開始合婚配對')}
+              {loading ? H('合婚分析中...（通常 30 秒內）') : H('開始合婚配對')}
             </button>
           </p>
           {error && <p className="hw-c-err text-center">{error}</p>}

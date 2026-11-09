@@ -209,7 +209,7 @@ export default function EnGeoClient() {
             </div>
             <p className="mt-4 text-center">
               <button type="submit" disabled={loading} className="hw-c-btnBig">
-                {loading ? 'Analysing directions…' : 'Start the city reading'}
+                {loading ? 'Analysing directions… (usually under 30 seconds)' : 'Start the city reading'}
               </button>
             </p>
             {error && <p className="hw-c-err text-center">{error}</p>}

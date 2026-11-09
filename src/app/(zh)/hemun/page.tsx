@@ -177,7 +177,7 @@ export default function HehunPage() {
               disabled={loading}
               className="hw-c-btnBig"
             >
-              {loading ? '合婚分析中...' : '开始合婚配对'}
+              {loading ? '合婚分析中...（通常 30 秒内）' : '开始合婚配对'}
             </button>
           </p>
           {error && <p className="hw-c-err text-center">{error}</p>}

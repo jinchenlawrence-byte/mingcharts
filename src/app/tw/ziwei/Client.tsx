@@ -133,7 +133,7 @@ export default function HantZiweiClient() {
             </div>
             <p className="mt-4 text-center">
               <button type="submit" disabled={loading} className="hw-c-btnBig">
-                {loading ? H('排盤分析中...') : H('開始紫微分析')}
+                {loading ? H('排盤分析中...（約 1–2 分鐘）') : H('開始紫微分析')}
               </button>
             </p>
             {error && <p className="hw-c-err text-center">{error}</p>}

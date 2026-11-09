@@ -219,7 +219,7 @@ export default function GeoPage() {
             </div>
             <p className="mt-4 text-center">
               <button type="submit" disabled={loading} className="hw-c-btnBig">
-                {loading ? '方位解析中...' : '开始城市解析'}
+                {loading ? '方位解析中...（通常 30 秒内）' : '开始城市解析'}
               </button>
             </p>
             {error && <p className="hw-c-err text-center">{error}</p>}

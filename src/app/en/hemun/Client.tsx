@@ -177,7 +177,7 @@ export default function EnHemunClient() {
           </div>
           <p className="text-center">
             <button type="submit" disabled={loading} className="hw-c-btnBig">
-              {loading ? 'Analysing…' : 'Start the synastry reading'}
+              {loading ? 'Analysing… (usually under 30 seconds)' : 'Start the synastry reading'}
             </button>
           </p>
           {error && <p className="hw-c-err text-center">{error}</p>}

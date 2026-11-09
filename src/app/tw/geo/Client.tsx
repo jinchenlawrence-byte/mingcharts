@@ -209,7 +209,7 @@ export default function HantGeoClient() {
             </div>
             <p className="mt-4 text-center">
               <button type="submit" disabled={loading} className="hw-c-btnBig">
-                {loading ? H('方位解析中...') : H('開始城市解析')}
+                {loading ? H('方位解析中...（通常 30 秒內）') : H('開始城市解析')}
               </button>
             </p>
             {error && <p className="hw-c-err text-center">{error}</p>}

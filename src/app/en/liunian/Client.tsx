@@ -174,7 +174,7 @@ export default function EnLiunianClient() {
             </div>
             <p className="mt-4 text-center">
               <button type="submit" disabled={loading} className="hw-c-btnBig">
-                {loading ? 'Generating the report…' : 'Start the annual reading'}
+                {loading ? 'Generating the report… (usually under 30 seconds)' : 'Start the annual reading'}
               </button>
             </p>
             {error && <p className="hw-c-err text-center">{error}</p>}
