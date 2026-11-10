@@ -21,6 +21,19 @@ const GONE_HTML = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
 
+  // ★ 2026-11-10（GSC 404 清理）：繁体与英文树没有 /bazi 路由，
+  //   但 Google 仍在抓 /tw/bazi/1978/08、/en/bazi/1978/08/20 等深链（各返回 404）。
+  //   这些 URL 多来自历史内链/hreflang 残留：对搜索引擎是错误信号，对用户是死路。
+  //   301 到对应语言树的入口页（/tw、/en）—— 保留任何残留权重，404 清零。
+  //   注意：不能 301 到 /bazi（中文页）—— 那会把繁体/英文用户直接扔进简体内容。
+  const otherTreeBazi = pathname.match(/^\/(tw|en)\/bazi(?:\/.*)?$/)
+  if (otherTreeBazi) {
+    const url = request.nextUrl.clone()
+    url.pathname = `/${otherTreeBazi[1]}`
+    url.search = ''
+    return NextResponse.redirect(url, 301)
+  }
+
   // ★ 2026-11 收录整治：/bazi 的年/月/日 URL 统一补零。
   //   现状 /bazi/1990/3 与 /bazi/1990/03 都返回 200 且各指自身，属于重复内容。
   //   只做 308 永久归一，不改页面内容；日页虽 noindex，也一并归一避免抓取浪费。
@@ -97,6 +110,8 @@ export const config = {
     '/bazi/:year(\\d{1,4})/:month(\\d{2})/:day(\\d{2})',
     '/bazi/:year(\\d{4})/:month(\\d)',
     '/bazi/:year(\\d{4})/:month(\\d)/:day(\\d{1,2})',
+    '/tw/bazi/:path*',
+    '/en/bazi/:path*',
     '/bazi/:year(\\d{4})/:month(\\d{2})/:day(\\d)',
   ],
 }

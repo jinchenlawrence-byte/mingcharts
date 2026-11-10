@@ -30,6 +30,15 @@ export async function generateMetadata({ params }: { params: Promise<{ year: str
     title: `${year}年${month}月八字算命 · ${ganZhi}年属${zodiac.name}每日八字查询`,
     description: `${year}年${month}月每日八字查询：${ganZhi}年（属${zodiac.name}），按日查看生辰八字、干支十神、命理分析与生肖运势。`,
     alternates: { canonical: `/bazi/${year}/${month}` },
+    // ★ 2026-11-10（GSC 覆盖报告驱动）：1990 年之前的月页不再参与索引。
+    //   证据：GSC「已发现-尚未编入索引」528 条里 430 条是 /bazi，年份分布
+    //   1950s 71 / 1960s 84 / 1970s 78 / 1980s 90 / 1990s 87 / 2000-2010 仅 20 ——
+    //   Google 看过这些页（结构几乎一样），明确判定不值得收录。
+    //   而 /bazi 全段 28 天 1,318 次展示、0 次点击 ⇒ noindex 掉零流量损失。
+    //   页面仍可访问（人类在用），只是把抓取预算与整站质量信号让给 1990 后的页面。
+    robots: yearNum < 1990 || yearNum > 2010
+      ? { index: false, follow: true }
+      : undefined,
   }
 }
 
