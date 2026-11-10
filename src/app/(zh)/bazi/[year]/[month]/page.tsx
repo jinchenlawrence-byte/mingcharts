@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import MonthDays from '@/components/bazi/MonthDays'
-import { getYearGanZhi, getZodiac, getConstellation } from '@/lib/baziData'
+import { getYearGanZhi, getZodiac, getConstellation, getNaYin } from '@/lib/baziData'
 
 // ★ 2026-11-05（两次修正后的定稿）：月页只预渲染 1990–2010，其余年份按需生成。
 //   起因：Vercel Hobby 部署存储 10 GB 已超，先想全改成 SSR 省钱，但算错了账 ——
@@ -25,10 +25,23 @@ export async function generateMetadata({ params }: { params: Promise<{ year: str
   const { year, month } = await params
   const yearNum = parseInt(year, 10)
   const ganZhi = getYearGanZhi(yearNum)
+  const monthNum = parseInt(month, 10)
   const zodiac = getZodiac(ganZhi[1])
+  // 本月涉及的星座（描述里给出具体星座名，增加点击理由；此处在 metadata 内独立计算）
+  const monthConstellations: string[] = []
+  const daysInThisMonth = new Date(yearNum, monthNum, 0).getDate()
+  for (let d = 1; d <= daysInThisMonth; d++) {
+    const c = getConstellation(monthNum, d)
+    if (!monthConstellations.includes(c)) monthConstellations.push(c)
+  }
   return {
-    title: `${year}年${month}月八字算命 · ${ganZhi}年属${zodiac.name}每日八字查询`,
-    description: `${year}年${month}月每日八字查询：${ganZhi}年（属${zodiac.name}），按日查看生辰八字、干支十神、命理分析与生肖运势。`,
+    // ★ 2026-11-10（GSC 效果报告驱动）：月页 252 个、1,155 次展示、0 次点击、平均排名 8.85。
+    //   原来的标题是「……八字算命 · ……每日八字查询」—— 全是站内视角的词，
+    //   而用户实际搜的是「2005年1月出生属什么」「2005年1月纳音」。
+    //   改写原则：① 把查询词原样放前面 ② 给出可验证的具体答案（生肖/纳音）
+    //   ③ 标题控制在 SERP 不截断的长度。改一处模板，252 页同时受益。
+    title: `${year}年${monthNum}月出生属什么？${ganZhi}年（属${zodiac.name}）纳音${getNaYin(ganZhi)}`,
+    description: `${year}年${monthNum}月出生的人属${zodiac.name}，${ganZhi}年为纳音「${getNaYin(ganZhi)}」。本月含${monthConstellations.join('、')}，可查每一天的干支、十神、藏干与旺衰格局，也可直接免费排盘看完整命盘。`,
     alternates: { canonical: `/bazi/${year}/${month}` },
     // ★ 2026-11-10（GSC 覆盖报告驱动）：1990 年之前的月页不再参与索引。
     //   证据：GSC「已发现-尚未编入索引」528 条里 430 条是 /bazi，年份分布

@@ -55,6 +55,37 @@ console.log('—— ② tw/en 的 /bazi 深链必须 301 到本语言树 ——'
     'matcher 未覆盖 —— 请求不会进 proxy')
 }
 
+console.log('—— ③ 月页标题必须命中真实查询词（GSC 效果报告驱动）——')
+// 改写前：`2005年01月八字算命 · 乙酉年属鸡每日八字查询`
+//   → 252 页 / 1,155 展示 / 0 点击 / 平均排名 8.85：排名在第一页却无人点。
+//   原因是标题全是站内视角词，而用户搜的是「2005年1月出生属什么」「纳音」。
+// 改写后必须满足：查询词在前、给出可验证答案（生肖+纳音）、长度不被 SERP 截断。
+{
+  const src = readFileSync('src/app/(zh)/bazi/[year]/[month]/page.tsx', 'utf8')
+  assert(/月出生属什么/.test(src),
+    '标题命中「出生属什么」这一问句',
+    '标题没有命中「出生属什么」—— 仍与真实查询错位')
+  assert(/纳音\$\{getNaYin\(ganZhi\)\}/.test(src),
+    '标题给出纳音（可验证的具体答案）',
+    '标题未给出纳音 —— 缺少点击理由')
+  assert(/\$\{monthNum\}月/.test(src),
+    '月份用不补零的月号（1月，不是 01月）',
+    '月份仍补零（01月）—— 中文读起来别扭')
+  // 描述不得出现「水瓶座座」这类重复字（星座名自带「座」）
+  assert(!/monthConstellations\.join\('、'\)\}座/.test(src),
+    '星座名不重复拼接「座」',
+    '描述里拼了多余的「座」（水瓶座座）')
+  // 标题长度：站点后缀「| 明理」之外的正文控制在 32 字内，避免 SERP 截断
+  const m = src.match(/title: `([^`]+)`/)
+  assert(!!m, '能解析出标题模板')
+  // 量的是【渲染后】长度：把 ${...} 占位符按 1 个字符折算后再数，
+  // 否则量到的是模板源码（74 字符），会误报。
+  const rendered = m[1].replace(/\$\{[^}]*\}/g, 'X')
+  assert(rendered.length <= 34,
+    `标题渲染后约 ${rendered.length} 字（SERP 安全）`,
+    `标题渲染后约 ${rendered.length} 字 —— 过长会被截断，反而不利于点击`)
+}
+
 console.log('')
 if (allPass) console.log('GSC_COVERAGE_CONVERGE_PASS')
 else {
