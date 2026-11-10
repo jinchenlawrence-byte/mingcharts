@@ -39,7 +39,7 @@ export async function generateMetadata({ params }: { params: Promise<{ animal: s
       title = '2028属牛运势：丑土遇申金，平顺年怎么布局'
       description = '2028戊申年，属牛丑土与太岁申金无刑冲，属平顺之年。页内给四项运势判断、开运颜色与数字，另附三条常见问答。'
     } else if (sx.slug === 'gou') {
-      title = '2028属狗运势：戊申年无刑冲，平顺年的事业与感情判断'
+      title = '2028属狗运势：戊申年无刑冲，平顺年事业感情判断'
       description = '2028戊申年，属狗戌土与太岁申金无刑冲合害，属平顺之年。页内给事业、财运、感情、健康四项判断与开运建议，另附三条问答。'
     }
   }

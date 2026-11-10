@@ -2656,7 +2656,7 @@ export const articles: Article[] = [
   // ============ 流年运势（季节性高意图：年底至春节是「来年运势」搜索高峰） ============
   {
     slug: '2027-dingwei-nian-yunshi',
-    title: '2027丁未年运势：属羊本命年、牛冲兼刑、鼠害，火土偏燥',
+    title: '2027丁未年运势：属羊本命年、牛冲兼刑、鼠害',
     category: 'liunian',
     categoryName: '流年运势',
     keywords: ['2027年运势', '丁未年', '2027犯太岁', '2027年属羊', '丁未年五行'],
