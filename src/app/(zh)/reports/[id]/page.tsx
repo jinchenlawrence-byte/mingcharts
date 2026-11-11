@@ -59,6 +59,8 @@ export default function ReportDetailPage() {
   const [loading, setLoading] = useState(true)
   const [notLogged, setNotLogged] = useState(false)
   const [notFound, setNotFound] = useState(false)
+  // ★ 2026-11-11：分享令牌只读态（无需登录）。此前分享出去的链接对方只能看到「请先登录」。
+  const [shared, setShared] = useState(false)
   // ★ 规则版兜底时的「免费重新生成」在途状态（按钮禁用 + 文案切换）
   const [regenBusy, setRegenBusy] = useState(false)
 
@@ -68,6 +70,25 @@ export default function ReportDetailPage() {
       const supabase = getSupabase()
       const { data: { session } } = await supabase.auth.getSession()
       if (!session) {
+        // 未登录：若带分享令牌，走只读接口（试读层）；否则才是「请先登录」
+        const q = new URLSearchParams(window.location.search)
+        const s = q.get('s')
+        const e = q.get('e')
+        if (s && e) {
+          try {
+            const r = await fetch(`/api/reports/share?id=${encodeURIComponent(id)}&s=${encodeURIComponent(s)}&e=${encodeURIComponent(e)}`)
+            const j = await r.json()
+            if (j?.ok) {
+              setResult(j.result as Record<string, unknown>)
+              setRow({ id, kind: j.kind, title: j.title, result: j.result, created_at: '' })
+              setShared(true)
+              setLoading(false)
+              return
+            }
+          } catch {
+            // 落到下面统一的「请先登录」
+          }
+        }
         setNotLogged(true)
         setLoading(false)
         return
@@ -245,16 +266,27 @@ export default function ReportDetailPage() {
                   {REPORT_KIND_LABELS[row.kind] ?? row.kind}
                 </span>
                 <span className="text-xs text-ink-light">
-                  {new Date(row.created_at).toLocaleString('zh-CN')}
+                  {row.created_at ? new Date(row.created_at).toLocaleString('zh-CN') : '分享预览'}
                 </span>
               </div>
               <h1 className="text-xl font-bold text-ink truncate">{row.title}</h1>
             </div>
             <ReportActions
-              backHref="/reports"
-              labels={{ back: '← 我的报告', share: '分享', export: '导出 PDF', copied: '链接已复制', shareTitle: '我的命理报告' }}
+              backHref={shared ? '/' : '/reports'}
+              reportId={shared ? undefined : row.id}
+              labels={shared
+                ? { back: '← 回首页', share: '分享', export: '导出 PDF', copied: '链接已复制', shareTitle: '我的命理报告' }
+                : { back: '← 我的报告', share: '分享', export: '导出 PDF', copied: '链接已复制', shareTitle: '我的命理报告' }}
             />
           </div>
+
+          {shared && (
+            <div className="hw-c-box mb-4">
+              <p className="text-sm text-ink/70">
+                这是他人分享的只读预览，展示免费试读部分。想看自己的完整报告，请前往对应工具页排盘。
+              </p>
+            </div>
+          )}
 
           {needsRegen && (
             <div className="hw-c-box mb-4">
@@ -287,13 +319,13 @@ export default function ReportDetailPage() {
           )}
 
           {/* ★ 渲染的是按当前权益重算后的 result（不是 row.result）*/}
-          {row.kind === 'hemun' && <HemunResultView data={result as unknown as HemunData} reportId={row.id} />}
-          {row.kind === 'ziwei' && <ZiweiResultView data={result as unknown as ZiweiResultData} reportId={row.id} />}
-          {row.kind === 'geo' && <GeoResultView data={result as unknown as GeoResultData} reportId={row.id} />}
+          {row.kind === 'hemun' && <HemunResultView data={result as unknown as HemunData} reportId={shared ? null : row.id} />}
+          {row.kind === 'ziwei' && <ZiweiResultView data={result as unknown as ZiweiResultData} reportId={shared ? null : row.id} />}
+          {row.kind === 'geo' && <GeoResultView data={result as unknown as GeoResultData} reportId={shared ? null : row.id} />}
           {row.kind === 'annual' && (
             <LiunianResultView
               data={result as unknown as LiunianResultData}
-              reportId={row.id}
+              reportId={shared ? null : row.id}
               onRegen={canRegen ? regenReport : undefined}
               regenBusy={regenBusy}
             />
