@@ -62,7 +62,8 @@ export interface HemunChart {
     year: { gan: string; zhi: string; ganZhi: string }
     month: { gan: string; zhi: string; ganZhi: string }
     day: { gan: string; zhi: string; ganZhi: string }
-    hour: { gan: string; zhi: string; ganZhi: string }
+    /** ★ 三柱盘：时辰未填时必须是 null，禁止用 12:00 伪造时柱 */
+    hour: { gan: string; zhi: string; ganZhi: string } | null
   }
   daYun?: Array<{ ganZhi: string; startYear: number; endYear: number; startAge: number }>
   analysis?: { wangShuai: string; geJu: string }
@@ -71,29 +72,43 @@ export interface HemunChart {
 export type DimLevel = '吉' | '平' | '忌'
 // 依据分级：典籍（子平通说/经典所载）｜古法（唐宋古法，非子平主流）｜民俗（民间生肖俗论）｜产品设定（本产品自创，古典合婚无此判据）
 export type DimBasis = '典籍' | '古法' | '民俗' | '产品设定'
+/** 维度状态：calculated = 已算；skipped_missing_hour = 缺时柱，未算（无 level/delta） */
+export type DimStatus = 'calculated' | 'skipped_missing_hour'
+/** 该维度依赖的柱；空数组表示三柱即可 */
+export type DimRequires = 'hour'
 export interface HemunDimension {
   key: string
   name: string
-  delta: number          // 该维度净加减分（仅供内部排序/调试，不做主展示）
-  level: DimLevel
-  facts: string[]       // 算法确认的事实
-  tags: string[]        // 吉凶标签
-  basis: DimBasis       // 依据分级
-  verdict: string       // 一句话人话结论（非标签）
-  citations?: string[]  // 典籍出处（可选）
+  status: DimStatus
+  requires: DimRequires[]
+  basis: DimBasis
+  /** 仅在 status='calculated' 时存在；skipped 时必须是 undefined（不是 0、不是 '平'） */
+  delta?: number
+  level?: DimLevel
+  facts?: string[]
+  tags?: string[]
+  verdict?: string
+  /** skipped 时说明缺哪一柱、为什么 */
+  reason?: string
+  citations?: string[]
 }
 export interface HemunResult {
   male: ChartBrief
   female: ChartBrief
+  /** four-pillar = 四柱完整；three-pillar = 缺时柱，只给三项判断 */
+  mode: 'four-pillar' | 'three-pillar'
+  missingPillars: ('hour')[]
   dimensions: HemunDimension[]
-  overall: string        // 总观感（由维度分布决定，非分数）
-  totalScore: number     // 内部参考分，前端不得主展示
-  grade: string
-  gradeLabel: string
+  /** 三柱模式下为 null，前端不得渲染 */
+  overall: string | null
+  /** 三柱模式下为 null，不是 0 */
+  totalScore: number | null
+  grade: string | null
+  gradeLabel: string | null
   keyTags: string[]
   currentLuck: { male: string; female: string; note: string }
 }
-interface ChartBrief {
+export interface ChartBrief {
   ganZhi: { year: string; month: string; day: string; hour: string }
   dayMaster: string
   wangShuai: string
@@ -128,10 +143,10 @@ export function zhiRelation(a: string, b: string): string[] {
   return out
 }
 
-// 八字五行计数（4天干 + 4地支本气，共8字）
+// 八字五行计数（天干 + 地支本气；三柱盘只计三柱，绝不补时柱）
 export function wuxingCount(c: HemunChart): Record<string, number> {
   const cnt: Record<string, number> = { '木': 0,'火': 0,'土': 0,'金': 0,'水': 0 }
-  const ps = [c.pillars.year, c.pillars.month, c.pillars.day, c.pillars.hour]
+  const ps = [c.pillars.year, c.pillars.month, c.pillars.day, c.pillars.hour].filter(Boolean) as Array<{ gan: string; zhi: string; ganZhi: string }>
   for (const p of ps) { cnt[GAN_WX[p.gan]]++; cnt[ZHI_WX[p.zhi]]++ }
   return cnt
 }
@@ -162,22 +177,52 @@ export function currentDaYun(c: HemunChart, nowYear: number): { ganZhi: string; 
   return { ganZhi: dy.ganZhi, info }
 }
 
+// ───────── 维度依赖表（唯一事实源）─────────
+// 缺时柱时，只有 requires 为空的维度参与计算；其余维度先过滤、后计算，
+// 计算函数根本不会执行——绝不允许用 12:00 伪造时柱再算。
+export const DIM_REQUIRES: Record<string, DimRequires[]> = {
+  yearZodiac: [],
+  yearGanZhi: [],
+  nayin: [],
+  day: [],
+  spouseStem: [],     // 三柱可判：配偶星是否透于年/月/日干
+  spouse: ['hour'],   // 配偶星旺衰与落时
+  wuxing: ['hour'],   // 五行统计需四柱
+  palace: ['hour'],   // 婚姻宫需比时支
+  shishen: ['hour'],  // 完整十神互见需四柱（现实现仅取日主，不足以代表全盘）
+  dayun: ['hour'],    // 大运喜忌须以完整旺衰为前提
+}
+
 // ───────── 主函数 ─────────
-export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = new Date()): HemunResult {
+export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = new Date(), opts: { hourKnown?: boolean } = {}): HemunResult {
   const male: HemunChart = maleIn as unknown as HemunChart
   const female: HemunChart = femaleIn as unknown as HemunChart
   const dims: HemunDimension[] = []
   const keyTags: string[] = []
   let score = 60 // 基础分
 
-  const finish = (d: Omit<HemunDimension, 'level'> & { level?: DimLevel }) => {
-    const level: DimLevel = d.level ?? (d.delta > 0 ? '吉' : d.delta < 0 ? '忌' : '平')
-    dims.push({ ...d, level })
-    score += d.delta
+  // 三柱模式：任一方无时柱即降级；绝不以默认时辰补全
+  const hourKnown = opts.hourKnown ?? Boolean(male.pillars.hour && female.pillars.hour)
+  const mode: HemunResult['mode'] = hourKnown ? 'four-pillar' : 'three-pillar'
+  const missingPillars: DimRequires[] = hourKnown ? [] : ['hour']
+  const canCalc = (key: string) => hourKnown || (DIM_REQUIRES[key] ?? ['hour']).length === 0
+  const skipped: string[] = []
+
+  const finish = (d: Omit<HemunDimension, 'level' | 'status' | 'requires'> & { level?: DimLevel }) => {
+    const level: DimLevel = d.level ?? ((d.delta ?? 0) > 0 ? '吉' : (d.delta ?? 0) < 0 ? '忌' : '平')
+    dims.push({ ...d, requires: DIM_REQUIRES[d.key] ?? [], status: 'calculated', level })
+    score += d.delta ?? 0
   }
 
+  // 未计算：只留 key/name/basis/reason，无 delta、无 level、无 verdict
+  const skipDim = (key: string, name: string, basis: DimBasis, reason: string) => {
+    skipped.push(key)
+    dims.push({ key, name, basis, status: 'skipped_missing_hour', requires: ['hour'], reason })
+  }
+  const SKIP_REASON = '需完整四柱（含出生时辰），本次仅以年、月、日三柱论'
+
   // ════ 维度1a：生肖配对（民俗）════
-  {
+  if (canCalc('yearZodiac')) {
     const facts: string[] = [], tags: string[] = []
     let delta = 0
     const mz = male.pillars.year.zhi, fz = female.pillars.year.zhi
@@ -201,10 +246,10 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
       : '生肖无冲无合，民俗上属平常之配'
     finish({ key: 'yearZodiac', name: '生肖配对', basis: '民俗', delta, facts, tags, verdict,
       citations: ['生肖合冲为民间俗论，生肖不合 ≠ 不能结婚；合婚以日柱夫妻宫与全局五行为重，生肖仅一项参考、权重有限'] })
-  }
+  } else skipDim('yearZodiac', '生肖配对', '民俗', SKIP_REASON)
 
   // ════ 维度1b：年柱干支（典籍）════
-  {
+  if (canCalc('yearGanZhi')) {
     const facts: string[] = [], tags: string[] = []
     let delta = 0
     const mg = male.pillars.year.gan, fg = female.pillars.year.gan
@@ -220,10 +265,10 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
       : '年柱天干平和，家庭层面无显著吉凶'
     finish({ key: 'yearGanZhi', name: '年柱干支', basis: '典籍', delta, facts, tags, verdict,
       citations: ['干支五合、五行生克为子平基本关系，《渊海子平》等皆有载'] })
-  }
+  } else skipDim('yearGanZhi', '年柱干支', '典籍', SKIP_REASON)
 
   // ════ 维度1c：年柱纳音（古法）════
-  {
+  if (canCalc('nayin')) {
     const facts: string[] = [], tags: string[] = []
     let delta = 0
     const mNayin = NAYIN_MAP[male.pillars.year.ganZhi], fNayin = NAYIN_MAP[female.pillars.year.ganZhi]
@@ -236,10 +281,10 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
       : '纳音平和，古法上无显著吉凶'
     finish({ key: 'nayin', name: '年柱纳音', basis: '古法', delta, facts, tags, verdict,
       citations: ['纳音合婚属唐宋古法（《李虚中命书》一脉），非子平主流判据'] })
-  }
+  } else skipDim('nayin', '年柱纳音', '古法', SKIP_REASON)
 
   // ════ 维度2：日柱夫妻宫 ════
-  {
+  if (canCalc('day')) {
     const facts: string[] = [], tags: string[] = []
     let delta = 0
     const md = male.pillars.day, fd = female.pillars.day
@@ -281,15 +326,40 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
       : '夫妻宫平和，亲密关系无显著吉凶'
     finish({ key: 'day', name: '日柱夫妻宫', basis: '典籍', delta, facts, tags, verdict: verdictDay,
       citations: ['日支为夫妻宫，六合六冲论婚姻，《三命通会》《渊海子平》皆有载'] })
-  }
+  } else skipDim('day', '日柱夫妻宫', '典籍', SKIP_REASON)
+
+  // ════ 维度2b：配偶星透干（三柱可判）════
+  // 与维度3区分：这里只判「财/官是否透于年、月、日干」，不涉旺衰、不涉落时，
+  // 故三柱成立；旺衰与落时一律留给维度3（需四柱）。
+  if (canCalc('spouseStem')) {
+    const facts: string[] = [], tags: string[] = []
+    let delta = 0
+    const touCheck = (c: HemunChart, label: string) => {
+      const dm = c.dayMaster
+      const gans = [c.pillars.year.gan, c.pillars.month.gan, c.pillars.day.gan]
+      const starName = label === '男' ? '财星（妻星）' : '官星（夫星）'
+      const tou = gans.filter(g => {
+        const tg = crossTenGod(dm, g)
+        return label === '男' ? tg.includes('财') : tg.includes('官')
+      })
+      if (tou.length) { delta += 4; tags.push(`${label}命${starName}透干`); facts.push(`${label}命${starName}${tou.join('、')}透于年/月/日干`) }
+      else facts.push(`${label}命年、月、日干不见${starName}；时干是否透出需完整四柱，本次不判`)
+    }
+    touCheck(male, '男')
+    touCheck(female, '女')
+    const verdictTou = delta > 0 ? '一方或双方的配偶星在年、月、日干上明确透出，感情缘分有显性线索'
+      : '年、月、日干未见配偶星透出（不等于没有），须待完整四柱再论'
+    finish({ key: 'spouseStem', name: '配偶星透干', basis: '典籍', delta, facts, tags, verdict: verdictTou,
+      citations: ['男以财为妻、女以官为夫（《渊海子平·六亲总篇》）；此处只论透干，不论旺衰'] })
+  } else skipDim('spouseStem', '配偶星透干', '典籍', SKIP_REASON)
 
   // ════ 维度3：配偶星（男财星、女官星）════
-  {
+  if (canCalc('spouse')) {
     const facts: string[] = [], tags: string[] = []
     let delta = 0
     const starCheck = (c: HemunChart, label: string) => {
       const dm = c.dayMaster
-      const ps = [c.pillars.year, c.pillars.month, c.pillars.hour]
+      const ps = [c.pillars.year, c.pillars.month, c.pillars.hour].filter(Boolean) as Array<{ gan: string; zhi: string; ganZhi: string }>
       const dayCang = [c.pillars.day.zhi] // 夫妻宫
       const want = (g: string) => {
         const tg = crossTenGod(dm, g)
@@ -307,8 +377,8 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
           '辰':['戊','乙','癸'],'巳':['丙','庚','戊'],'午':['丁','己'],'未':['己','丁','乙'],
           '申':['庚','壬','戊'],'酉':['辛'],'戌':['戊','辛','丁'],'亥':['壬','甲']
         }
-        const hidden = [c.pillars.year, c.pillars.month, c.pillars.hour, c.pillars.day]
-          .some(p => (CANG[p.zhi] || []).some(want))
+        const hidden = [c.pillars.year, c.pillars.month, c.pillars.hour, c.pillars.day].filter(Boolean)
+          .some(p => (CANG[(p as { zhi: string }).zhi] || []).some(want))
         if (hidden) { delta += 2; facts.push(`${label}命${starName}藏而不透，配偶缘分偏内敛`) }
         else { delta -= 5; facts.push(`${label}命全局不见${starName}，配偶缘分偏淡，宜后天经营`) }
       }
@@ -328,10 +398,10 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
       : '配偶星偏弱或不明，感情缘分宜后天主动经营'
     finish({ key: 'spouse', name: '配偶星', basis: '典籍', delta, facts, tags, verdict: verdictSp,
       citations: ['男以财为妻、女以官为夫，子平通说'] })
-  }
+  } else skipDim('spouse', '配偶星（旺衰与落时）', '典籍', SKIP_REASON)
 
   // ════ 维度4：五行互补与喜用互助 ════
-  {
+  if (canCalc('wuxing')) {
     const facts: string[] = [], tags: string[] = []
     let delta = 0
     const mCnt = wuxingCount(male), fCnt = wuxingCount(female)
@@ -361,15 +431,15 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
       : '五行无明显互补，各有所长，宜在相处中取长补短'
     finish({ key: 'wuxing', name: '五行互补·喜用互助', basis: '典籍', delta, facts, tags, verdict: verdictWx,
       citations: ['据用神理论延伸——古典合婚专论未明言五行互补一法，本维度为子平喜用理论的引申应用'] })
-  }
+  } else skipDim('wuxing', '五行互补·喜用互助', '典籍', SKIP_REASON)
 
   // ════ 维度5：各自婚姻宫稳定度 ════
-  {
+  if (canCalc('palace')) {
     const facts: string[] = [], tags: string[] = []
     let delta = 0
     const gongCheck = (c: HemunChart, label: string) => {
       const dz = c.pillars.day.zhi
-      const others = [c.pillars.year.zhi, c.pillars.month.zhi, c.pillars.hour.zhi]
+      const others = [c.pillars.year.zhi, c.pillars.month.zhi, c.pillars.hour?.zhi ?? '']
       let bad = 0
       for (const z of others) {
         const rel = zhiRelation(dz, z)
@@ -387,10 +457,10 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
       : '一方或双方婚姻宫逢冲，感情路上易有波折，需用心守护'
     finish({ key: 'palace', name: '婚姻宫稳定度', basis: '典籍', delta, facts, tags, verdict: verdictPal,
       citations: ['夫妻宫逢冲不吉，子平通说'] })
-  }
+  } else skipDim('palace', '婚姻宫稳定度', '典籍', SKIP_REASON)
 
   // ════ 维度6：十神互见 ════
-  {
+  if (canCalc('shishen')) {
     const facts: string[] = [], tags: string[] = []
     let delta = 0
     const mSeesF = crossTenGod(male.dayMaster, female.dayMaster)   // 男日主看女日主
@@ -406,10 +476,10 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
       : '日主十神非正配关系，缘分深浅须看其他维度'
     finish({ key: 'shishen', name: '十神互见', basis: '典籍', delta, facts, tags, verdict: verdictSs,
       citations: ['男以财为妻、女以官为夫，子平通说'] })
-  }
+  } else skipDim('shishen', '十神互见', '典籍', SKIP_REASON)
 
   // ════ 维度7：大运同步 ════
-  {
+  if (canCalc('dayun')) {
     const facts: string[] = [], tags: string[] = []
     let delta = 0
     const year = now.getFullYear()
@@ -425,35 +495,41 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
       : '双方当前运势一先一后，节奏略有错位，宜互相体谅扶持'
     finish({ key: 'dayun', name: '大运同步', basis: '产品设定', delta, facts, tags, verdict: verdictDy,
       citations: ['古典合婚文献无「双方大运同步」判据，本维度为本产品自创的现代指标，仅供节奏参考'] })
+  } else skipDim('dayun', '大运同步', '产品设定', SKIP_REASON)
+
+  // ── 总分 / 总观感：三柱模式一律 null（不是 0、不是「平」）──
+  let totalScore: number | null = null
+  let grade: string | null = null
+  let gradeLabel: string | null = null
+  let overall: string | null = null
+  if (mode === 'four-pillar') {
+    totalScore = Math.max(0, Math.min(100, Math.round(score)))
+    grade = totalScore >= 85 ? '上等良缘'
+      : totalScore >= 75 ? '上等婚配'
+      : totalScore >= 65 ? '中上等婚配'
+      : totalScore >= 55 ? '中等婚配·宜多经营'
+      : '波折较多·需多包容'
+    gradeLabel = `合婚总分 ${totalScore} / 100　${grade}`
+
+    // 总观感：按维度分布比例（非分数求和；维度数不写死）
+    // dayun（大运同步）为产品自创节奏指标、非典籍判据，不参与 overall 分布
+    const dimsForOverall = dims.filter(d => d.key !== 'dayun' && d.status === 'calculated')
+    const ji = dimsForOverall.filter(d => d.level === '吉').length
+    const ji2 = dimsForOverall.filter(d => d.level === '忌').length
+    const n = dimsForOverall.length
+    const r = n ? ji / n : 0
+    overall =
+      r >= 0.7 && ji2 <= 1 ? '互补性强，契合度高' :
+      r >= 0.55 ? '整体协调，长处在多' :
+      ji2 / n >= 0.55 ? '差异较大，需用心经营' :
+      ji >= ji2 ? '吉多于忌，宜多沟通' :
+      '各有长短，重在磨合'
   }
-
-  // ── 总分（内部参考，非主展示）──
-  const totalScore = Math.max(0, Math.min(100, Math.round(score)))
-  const grade = totalScore >= 85 ? '上等良缘'
-    : totalScore >= 75 ? '上等婚配'
-    : totalScore >= 65 ? '中上等婚配'
-    : totalScore >= 55 ? '中等婚配·宜多经营'
-    : '波折较多·需多包容'
-  const gradeLabel = `合婚总分 ${totalScore} / 100　${grade}`
-
-  // ── 总观感：按维度分布比例（非分数求和；维度数不写死）──
-  // dayun（大运同步）为产品自创节奏指标、非典籍判据，不参与 overall 分布
-  const dimsForOverall = dims.filter(d => d.key !== 'dayun')
-  const ji = dimsForOverall.filter(d => d.level === '吉').length
-  const ji2 = dimsForOverall.filter(d => d.level === '忌').length
-  const n = dimsForOverall.length
-  const r = ji / n
-  const overall =
-    r >= 0.7 && ji2 <= 1 ? '互补性强，契合度高' :
-    r >= 0.55 ? '整体协调，长处在多' :
-    ji2 / n >= 0.55 ? '差异较大，需用心经营' :
-    ji >= ji2 ? '吉多于忌，宜多沟通' :
-    '各有长短，重在磨合'
 
   const brief = (c: HemunChart): ChartBrief => ({
     ganZhi: {
       year: c.pillars.year.ganZhi, month: c.pillars.month.ganZhi,
-      day: c.pillars.day.ganZhi, hour: c.pillars.hour.ganZhi
+      day: c.pillars.day.ganZhi, hour: c.pillars.hour?.ganZhi ?? ''
     },
     dayMaster: c.dayMaster,
     wangShuai: c.analysis?.wangShuai || '',
@@ -463,11 +539,14 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
   })
 
   const year2 = now.getFullYear()
-  const mDy = currentDaYun(male, year2), fDy = currentDaYun(female, year2)
+  const mDy = hourKnown ? currentDaYun(male, year2) : null
+  const fDy = hourKnown ? currentDaYun(female, year2) : null
 
   return {
     male: brief(male),
     female: brief(female),
+    mode,
+    missingPillars,
     dimensions: dims,
     overall,
     totalScore,
@@ -477,7 +556,7 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
     currentLuck: {
       male: mDy ? `${mDy.ganZhi}·${mDy.info}` : '—',
       female: fDy ? `${fDy.ganZhi}·${fDy.info}` : '—',
-      note: '大运助耗以各自旺衰喜用判定，仅作节奏参考',
+      note: hourKnown ? '大运助耗以各自旺衰喜用判定，仅作节奏参考' : '缺时柱，本次不判大运同步',
     },
   }
 }

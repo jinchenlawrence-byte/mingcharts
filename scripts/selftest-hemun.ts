@@ -40,8 +40,8 @@ if (hasOldYear) fail('旧 year 维度仍存在（应拆分为 yearZodiac/yearGan
 if (!hasSplit) fail('year 未完整拆分为 yearZodiac/yearGanZhi/nayin')
 if (!hasOldYear && hasSplit) console.log('OK year 已拆分为 yearZodiac/yearGanZhi/nayin')
 
-console.log(`\n维度总数: ${r.dimensions.length}（7 拆 9 后应为 9）`)
-if (r.dimensions.length !== 9) fail(`维度数应为 9，实际 ${r.dimensions.length}`)
+console.log(`\n维度总数: ${r.dimensions.length}（7 拆 9 + 配偶星透干 = 10）`)
+if (r.dimensions.length !== 10) fail(`维度数应为 10，实际 ${r.dimensions.length}`)
 
 console.log('\n=== 内部参考（应保留但降级）===')
 console.log(`totalScore=${r.totalScore} grade=${r.grade} gradeLabel=${r.gradeLabel}`)

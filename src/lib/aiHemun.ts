@@ -54,9 +54,9 @@ function buildUserPrompt(male: AnalyzableChart, female: AnalyzableChart, r: Hemu
   const p = (c: AnalyzableChart) => c.pillars
   const pm = p(male), pf = p(female)
   const dimFacts = r.dimensions
-    .map(d => `【${d.name}】（依据：${d.basis}；结论：${d.verdict}）\n${d.facts.map(f => '　· ' + f).join('\n')}`)
+    .map(d => `【${d.name}】（依据：${d.basis}；结论：${d.verdict ?? d.reason ?? ''}）\n${(d.facts ?? []).map(f => '　· ' + f).join('\n')}`)
     .join('\n')
-  const dimTags = r.dimensions.flatMap(d => d.tags).join('、') || '无显著吉凶标签'
+  const dimTags = r.dimensions.flatMap(d => d.tags ?? []).join('、') || '无显著吉凶标签'
   return `请为以下两人撰写合婚深度解读。
 
 【男方】

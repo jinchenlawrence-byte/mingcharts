@@ -171,7 +171,7 @@ function briefEn(c: HemunChart): HemunBriefEn {
       year: ganZhiEn(c.pillars.year.ganZhi),
       month: ganZhiEn(c.pillars.month.ganZhi),
       day: ganZhiEn(c.pillars.day.ganZhi),
-      hour: ganZhiEn(c.pillars.hour.ganZhi),
+      hour: c.pillars.hour ? ganZhiEn(c.pillars.hour.ganZhi) : '',
     },
     dayMaster: `${stemLabel(c.dayMaster)} (${STEM_ELEMENT[c.dayMaster] ?? ''})`.trim(),
     strength: strengthEn(c.analysis?.wangShuai || ''),
@@ -328,7 +328,7 @@ export function hehunEn(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date 
     let delta = 0
     const starCheck = (c: HemunChart, isMale: boolean) => {
       const dm = c.dayMaster
-      const ps = [c.pillars.year, c.pillars.month, c.pillars.hour]
+      const ps = [c.pillars.year, c.pillars.month, c.pillars.hour].filter(Boolean) as Array<{ gan: string; zhi: string; ganZhi: string }>
       const dayCang = [c.pillars.day.zhi]
       const want = (g: string) => {
         const tg = crossTenGod(dm, g)
@@ -346,8 +346,8 @@ export function hehunEn(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date 
           辰: ['戊', '乙', '癸'], 巳: ['丙', '庚', '戊'], 午: ['丁', '己'], 未: ['己', '丁', '乙'],
           申: ['庚', '壬', '戊'], 酉: ['辛'], 戌: ['戊', '辛', '丁'], 亥: ['壬', '甲'],
         }
-        const hidden = [c.pillars.year, c.pillars.month, c.pillars.hour, c.pillars.day]
-          .some((p) => (CANG[p.zhi] || []).some(want))
+        const hidden = [c.pillars.year, c.pillars.month, c.pillars.hour, c.pillars.day].filter(Boolean)
+          .some((p) => (CANG[(p as { zhi: string }).zhi] || []).some(want))
         if (hidden) { delta += 2; facts.push(`The ${owner.toLowerCase()} chart's ${starName} is hidden rather than exposed; the partner theme is more reserved`) }
         else { delta -= 5; facts.push(`The ${owner.toLowerCase()} chart has no ${starName} anywhere; the partner theme is faint and needs conscious effort`) }
       }
@@ -405,7 +405,7 @@ export function hehunEn(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date 
     let delta = 0
     const gongCheck = (c: HemunChart, isMale: boolean) => {
       const dz = c.pillars.day.zhi
-      const others = [c.pillars.year.zhi, c.pillars.month.zhi, c.pillars.hour.zhi]
+      const others = [c.pillars.year.zhi, c.pillars.month.zhi, c.pillars.hour?.zhi ?? '']
       const owner = isMale ? 'Male' : 'Female'
       let bad = 0
       for (const z of others) {

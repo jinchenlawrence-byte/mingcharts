@@ -148,7 +148,7 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
           </div>
           <div className="flex-1 text-center sm:text-left">
             <div className="text-xs text-ink-light mb-1">{L('合婚总观感')}</div>
-            <div className="hw-c-h1">{L(r.overall)}</div>
+            <div className="hw-c-h1">{L(r.overall ?? '')}</div>
             {r.keyTags.length > 0 && (
               <div className="flex flex-wrap gap-1.5 mt-3 justify-center sm:justify-start">
                 {r.keyTags.map(t => (
@@ -221,10 +221,10 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
                   </span>
                 </div>
               </div>
-              <p className="text-[15px] text-ink mb-2 leading-relaxed">{L(d.verdict)}</p>
-              {d.tags.length > 0 && (
+              <p className="text-[15px] text-ink mb-2 leading-relaxed">{L(d.verdict ?? '')}</p>
+              {(d.tags ?? []).length > 0 && (
                 <div className="flex flex-wrap gap-1 mb-2">
-                  {d.tags.map(t => (
+                  {(d.tags ?? []).map(t => (
                     <span key={t} className="text-xs bg-gold/5 text-ink rounded px-1.5 py-0.5">
                       {L(t)}
                     </span>
@@ -232,7 +232,7 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
                 </div>
               )}
               <ul className="text-xs text-ink-light space-y-0.5 list-disc list-inside">
-                {d.facts.map((f, i) => <li key={i}>{L(f)}</li>)}
+                {(d.facts ?? []).map((f, i) => <li key={i}>{L(f)}</li>)}
               </ul>
               {d.citations && d.citations.length > 0 && (
                 <details className="mt-2">
