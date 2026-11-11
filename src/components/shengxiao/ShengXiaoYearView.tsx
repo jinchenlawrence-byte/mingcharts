@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import PaipanCta from '@/components/PaipanCta'
+import BirthQuickForm from '@/components/BirthQuickForm'
 import { LIUNIAN_YEARS, getLiunian, LIUNIAN_2027_DETAIL } from '@/lib/shengxiaoData'
 import type { ShengXiao } from '@/lib/shengxiaoData'
 import { getShengXiaoEn } from '@/lib/shengxiaoEn'
@@ -102,6 +103,9 @@ export function ShengXiaoYearView({ locale, sx, year }: { locale: SiteLang; sx: 
             <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">{copy.fanWarning}</div>
           )}
         </div>
+
+        {/* 首屏排盘入口：生肖只是 1/12，先让用户拿到自己的盘（2026-11-11） */}
+        <BirthQuickForm locale={locale} chartPath={pathForLang('/chart', locale)} />
 
         {copy.sections.map(([title, body]) => (
           <FortuneSection key={title} title={title} body={body} />
@@ -331,7 +335,7 @@ function zhCopy(locale: 'zh-Hans' | 'zh-Hant', sx: ShengXiao, year: number): Yea
     ctaBody: hant
       ? '生肖運勢是十二分之一的共性參考；結合完整八字（四柱、大運、流年）分析的個人運勢才精準。'
       : '生肖运势是12分之一的共性参考，结合您完整八字（四柱、大运、流年）分析的个人运势才精准。',
-    ctaLabel: hant ? '輸入時辰，排我的八字 →' : '输入时辰，排我的八字 →',
+    ctaLabel: hant ? '補充出生時辰，看完整命盤 →' : '补充出生时辰，看完整命盘 →',
     ctaHref: pathForLang('/', locale),
     annualPrefix: hant ? '或' : '',
     annualLabel: hant
@@ -419,7 +423,7 @@ function enCopy(sx: ShengXiao, year: number): YearCopy {
     ctaTitle: `Want a sharper read on ${year}?`,
     ctaBody:
       'A sign reading is one twelfth of the picture. A full Bazi chart — year, month, day and hour pillars, plus the luck cycles — turns the general year note into something personal.',
-    ctaLabel: 'Cast my Bazi chart →',
+    ctaLabel: 'Add your birth hour for the full chart →',
     ctaHref: '/en',
     annualPrefix: 'Or ',
     annualLabel: `generate the ${year} annual report (${formatPriceUSD(SKUS.annual_report.priceUSD)}, covering this year, next year and the year after, with monthly rhythm) →`,
