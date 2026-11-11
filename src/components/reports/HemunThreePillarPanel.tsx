@@ -92,7 +92,7 @@ export default function HemunThreePillarPanel({ r, locale }: { r: HemunResult; l
       {/* 声明条：正常语气，不做免责声明】 */}
       <div className="rounded-xl border border-gold/20 bg-gold/5 px-4 py-3">
         <p className="text-sm text-ink leading-relaxed">
-          {L('本次只用了年、月、日三柱。出生时辰没有填，所以下面只给三柱能站住的判断——够用，但不到全貌。')}
+          {L('这次用的是年、月、日三柱，不是四柱的简化版。缺时柱，有几项判断在方法上就不成立，所以下面只列这一层能说的，没算的也一并标明。')}
         </p>
       </div>
 
@@ -163,7 +163,7 @@ export default function HemunThreePillarPanel({ r, locale }: { r: HemunResult; l
         {/* 子女宫：引擎无此维度，静态补一条，措辞与其余一致 */}
         <SkippedBar
           name="子女宫"
-          reason="子女宫以时柱为宫位。缺时柱时无法定位，本次不判。"
+          reason="子女宫以时柱为宫位，属四柱层面的判断；本次缺时柱，这一项不在可判范围内。"
           locale={locale}
         />
       </div>
@@ -193,9 +193,9 @@ export default function HemunThreePillarPanel({ r, locale }: { r: HemunResult; l
 
       {/* 补时辰入口 */}
       <div className="rounded-xl border border-gold/25 bg-white px-4 py-4 text-center">
-        <p className="text-sm text-ink mb-1">{L('补上出生时辰，可看完整九维')}</p>
+        <p className="text-sm text-ink mb-1">{L('补上出生时辰，可多看这五项')}</p>
         <p className="text-xs text-ink-light mb-3">
-          {L('时辰决定时柱，五行强弱、配偶星旺衰、婚姻宫与时支的关系都要用到它。')}
+          {L('五行互补、配偶星旺衰、婚姻宫稳定度、十神互见、大运同步——这五项都要用到时柱。')}
         </p>
         <div className="flex flex-wrap items-center justify-center gap-3">
           <a href="#hemun-form" className="hw-c-btnBig !py-2 !px-5 !text-sm">{L('去填时辰')}</a>

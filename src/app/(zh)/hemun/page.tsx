@@ -74,7 +74,7 @@ function PersonFields({
       <div className="grid grid-cols-3 gap-2">
         <div>
           <label className="hw-f">时（选填）</label>
-          <input type="number" min={0} max={23} placeholder="可留空" className={inputCls}
+          <input type="number" min={0} max={23} placeholder="16" className={inputCls}
             value={value.hour} onChange={e => set({ hour: e.target.value })} />
         </div>
         <div>
@@ -101,8 +101,7 @@ function PersonFields({
         />
       </div>
       <p className="text-xs text-ink-light mt-2">
-        不知道出生时辰？可以留空，先看三柱能判断的部分。
-        <Link href="/hemun/hour" className="underline underline-offset-4 ml-1">怎么找时辰 ›</Link>
+        <Link href="/hemun/hour" className="underline underline-offset-4">不知道出生时辰？怎么找 ›</Link>
       </p>
     </div>
   )
@@ -166,7 +165,7 @@ export default function HehunPage() {
         <header>
           <h1 className="hw-c-h1">八字合婚配对</h1>
           <p className="hw-lede">
-            输入双方出生信息，以「日柱夫妻宫」为核心，合参年柱生肖、配偶星、五行互补、十神互见与大运节奏。时辰可以不填，不填时只给三柱能成立的判断。
+            输入双方出生信息，以「日柱夫妻宫」为核心，合参年柱生肖、配偶星、五行互补、十神互见与大运节奏
           </p>
         </header>
 

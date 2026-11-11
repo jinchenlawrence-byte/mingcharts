@@ -22,7 +22,7 @@ import { toHant } from '@/lib/hant'
 
 /** 未解锁时的 preview（入库剥离、命中重算时共用，避免两处文案漂移） */
 // ★ 2026-11-09 免费分层文案：写清免费开放哪几项、付费后补哪几项，不用「解锁更多」。
-const HEMUN_LOCKED_PREVIEW = '免费试读开放 3 个维度：生肖配对、日柱夫妻宫、五行互补。付费后可看其余 6 个维度：年柱干支、年柱纳音、配偶星、婚姻宫稳定度、十神互见、大运同步，以及九维合婚 AI 深度解读与追问。'
+const HEMUN_LOCKED_PREVIEW = '免费试读开放 3 个维度：生肖配对、日柱夫妻宫、五行互补。付费后可看其余 6 个维度：年柱干支、年柱纳音、配偶星、婚姻宫稳定度、十神互见、大运同步，以及合婚 AI 深度解读与追问。'
 const HEMUN_LOCKED_PREVIEW_EN = 'The free preview covers three dimensions: zodiac pairing, the day-pillar spouse palace and Five Elements support. The paid report adds the other six — year pillars, Nayin, spouse star, marriage-palace stability, Ten Gods and Luck Pillar alignment — plus the full AI synastry reading and follow-up questions.'
 
 interface RawBirth {
@@ -34,7 +34,7 @@ interface RawBirth {
 
 // ★ 2026-11-11 三柱模式：时辰允许留空。留空时绝不按 12:00 伪造时柱参与判断，
 //   只在排盘时借用 12:00 取年/月/日，然后立刻把时柱置 null，并只算三柱可成立的维度。
-const HEMUN_LOCKED_PREVIEW_3P = '补上出生时辰后，可看完整九维：五行互补、配偶星旺衰、婚姻宫稳定度、十神互见、大运同步、子女宫，以及九维合婚 AI 深度解读与追问。现在这三条判断不以时辰为前提，所以免费给全。'
+const HEMUN_LOCKED_PREVIEW_3P = '补上出生时辰后，可看五行互补、配偶星旺衰、婚姻宫稳定度、十神互见、大运同步这五项，以及合婚 AI 深度解读与追问。现在这三条判断不以时辰为前提，所以免费给全。'
 
 async function parseBirth(raw: RawBirth, expectGender: 1 | 0): Promise<{ data?: PaipanInput; error?: string; hourKnown?: boolean }> {
   const toInt = (v: unknown): number => {
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
       const { data: { user } } = await admin.auth.getUser(token)
       if (user) { userId = user.id; ent = await getEntitlements(admin, user.id) }
     }
-    // ★ 三柱模式一律按试读处理：不接受付费解锁（九维需要时辰），也不调 AI
+    // ★ 三柱模式一律按试读处理：缺时柱时五项判断不成立，不接受付费解锁，也不调 AI
     const unlocked = hourKnown && reportUnlocked(ent, 'hemun')
 
     // ★ 接口层重新生成门槛（2026-11-09）：未购买却声明 regen → 402；付费规则版不限次数

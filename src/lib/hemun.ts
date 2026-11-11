@@ -398,7 +398,7 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
       : '配偶星偏弱或不明，感情缘分宜后天主动经营'
     finish({ key: 'spouse', name: '配偶星', basis: '典籍', delta, facts, tags, verdict: verdictSp,
       citations: ['男以财为妻、女以官为夫，子平通说'] })
-  } else skipDim('spouse', '配偶星（旺衰与落时）', '典籍', SKIP_REASON)
+  } else skipDim('spouse', '配偶星（旺衰与落时）', '典籍', '男看财、女看官。财官若落在时柱，旺衰与死墓绝会直接改判，缺时柱就无从判断。')
 
   // ════ 维度4：五行互补与喜用互助 ════
   if (canCalc('wuxing')) {
@@ -431,7 +431,7 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
       : '五行无明显互补，各有所长，宜在相处中取长补短'
     finish({ key: 'wuxing', name: '五行互补·喜用互助', basis: '典籍', delta, facts, tags, verdict: verdictWx,
       citations: ['据用神理论延伸——古典合婚专论未明言五行互补一法，本维度为子平喜用理论的引申应用'] })
-  } else skipDim('wuxing', '五行互补·喜用互助', '典籍', SKIP_REASON)
+  } else skipDim('wuxing', '五行互补·喜用互助', '典籍', '五行互补要数四柱的旺衰与喜用，少一柱就少一处力量来源，比例不作数。')
 
   // ════ 维度5：各自婚姻宫稳定度 ════
   if (canCalc('palace')) {
@@ -457,7 +457,7 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
       : '一方或双方婚姻宫逢冲，感情路上易有波折，需用心守护'
     finish({ key: 'palace', name: '婚姻宫稳定度', basis: '典籍', delta, facts, tags, verdict: verdictPal,
       citations: ['夫妻宫逢冲不吉，子平通说'] })
-  } else skipDim('palace', '婚姻宫稳定度', '典籍', SKIP_REASON)
+  } else skipDim('palace', '婚姻宫稳定度', '典籍', '婚姻宫要拿日支去比时支：时支与日支的冲、合、害、刑本身就是判断的一部分。')
 
   // ════ 维度6：十神互见 ════
   if (canCalc('shishen')) {
@@ -476,7 +476,7 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
       : '日主十神非正配关系，缘分深浅须看其他维度'
     finish({ key: 'shishen', name: '十神互见', basis: '典籍', delta, facts, tags, verdict: verdictSs,
       citations: ['男以财为妻、女以官为夫，子平通说'] })
-  } else skipDim('shishen', '十神互见', '典籍', SKIP_REASON)
+  } else skipDim('shishen', '十神互见', '典籍', '十神互见要四柱齐看；缺时柱，时上十神（如时上偏财、时上伤官）无从计入，互见就不全。')
 
   // ════ 维度7：大运同步 ════
   if (canCalc('dayun')) {
@@ -495,7 +495,7 @@ export function hehun(maleIn: PaipanResult, femaleIn: PaipanResult, now: Date = 
       : '双方当前运势一先一后，节奏略有错位，宜互相体谅扶持'
     finish({ key: 'dayun', name: '大运同步', basis: '产品设定', delta, facts, tags, verdict: verdictDy,
       citations: ['古典合婚文献无「双方大运同步」判据，本维度为本产品自创的现代指标，仅供节奏参考'] })
-  } else skipDim('dayun', '大运同步', '产品设定', SKIP_REASON)
+  } else skipDim('dayun', '大运同步', '产品设定', '起运岁数要按出生时刻到节气折算；缺时辰则起运不准，大运喜忌的前提不成立。')
 
   // ── 总分 / 总观感：三柱模式一律 null（不是 0、不是「平」）──
   let totalScore: number | null = null
