@@ -131,9 +131,25 @@ export function landingPath(): string {
   }
 }
 
+/**
+ * 本地/内网环境判定（2026-11-11）：本地开发也在写生产 events 表，已污染 4 个开发会话。
+ * 命中即不发请求——不改配置、不解密密钥，只在发送前拦一层。
+ * 覆盖 localhost、回环、常见私网段与 *.local；线上域名不受影响。
+ */
+function isLocalHost(hostname: string): boolean {
+  if (hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '0.0.0.0' || hostname === '::1') return true
+  if (hostname.endsWith('.local')) return true
+  if (/^10\.\d{1,3}\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true
+  if (/^192\.168\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true
+  if (/^172\.(1[6-9]|2\d|3[01])\.\d{1,3}\.\d{1,3}$/.test(hostname)) return true
+  return false
+}
+
 /** 上报一个事件（fire-and-forget，永不影响主流程） */
 export function track(name: TrackName, props?: TrackProps): void {
   if (typeof window === 'undefined') return
+  // 本地开发不写生产库：白名单拦截，静默返回
+  if (isLocalHost(window.location.hostname)) return
   try {
     const sid = sessionId()
     if (!sid) return
