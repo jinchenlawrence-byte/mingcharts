@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { track } from '@/lib/track'
 import type { SiteLang } from '@/lib/lang'
@@ -56,6 +56,14 @@ export default function BirthQuickForm({
   const [gender, setGender] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  // 首个字段改动即视为「首屏入口被使用」：用户可能直接填表而不点按钮，
+  // 只靠 paipan_submit 会漏掉填了没提交的人。useRef 保证一次会话只报一次。
+  const startedRef = useRef(false)
+  const markStart = () => {
+    if (startedRef.current) return
+    startedRef.current = true
+    track('paipan_cta_click', { slot: 'shengxiao_year_top_form', src: window.location.pathname.slice(0, 120) })
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -103,20 +111,20 @@ export default function BirthQuickForm({
         <div className="hw-row">
           <div>
             <label className="hw-f" htmlFor="quick-y">{t.year}</label>
-            <select id="quick-y" className="hw-sel" value={year} onChange={(e) => setYear(e.target.value)}>
+            <select id="quick-y" className="hw-sel" value={year} onChange={(e) => { markStart(); setYear(e.target.value) }}>
               {YEARS.map((y) => <option key={y} value={y}>{y}</option>)}
             </select>
           </div>
           <div>
             <label className="hw-f" htmlFor="quick-m">{t.month}</label>
-            <select id="quick-m" className="hw-sel" value={month} onChange={(e) => setMonth(e.target.value)}>
+            <select id="quick-m" className="hw-sel" value={month} onChange={(e) => { markStart(); setMonth(e.target.value) }}>
               <option value="">--</option>
               {OPTS(1, 12).map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           </div>
           <div>
             <label className="hw-f" htmlFor="quick-d">{t.day}</label>
-            <select id="quick-d" className="hw-sel" value={day} onChange={(e) => setDay(e.target.value)}>
+            <select id="quick-d" className="hw-sel" value={day} onChange={(e) => { markStart(); setDay(e.target.value) }}>
               <option value="">--</option>
               {OPTS(1, 31).map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
@@ -124,11 +132,11 @@ export default function BirthQuickForm({
         </div>
         <div className="hw-seg" role="radiogroup" aria-label={t.male + '/' + t.female}>
           <label className="hw-segLabel">
-            <input type="radio" name="quick-g" checked={gender === 1} onChange={() => setGender(1)} />
+            <input type="radio" name="quick-g" checked={gender === 1} onChange={() => { markStart(); setGender(1) }} />
             <span>{t.male}</span>
           </label>
           <label className="hw-segLabel">
-            <input type="radio" name="quick-g" checked={gender === 0} onChange={() => setGender(0)} />
+            <input type="radio" name="quick-g" checked={gender === 0} onChange={() => { markStart(); setGender(0) }} />
             <span>{t.female}</span>
           </label>
         </div>
