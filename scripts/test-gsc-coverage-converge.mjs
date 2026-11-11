@@ -37,22 +37,32 @@ console.log('—— ① 1990 前的月页必须 noindex ——')
     '边界写反了 —— 会把有效年份也排除')
 }
 
-console.log('—— ② tw/en 的 /bazi 深链必须 301 到本语言树 ——')
+console.log('—— ② tw/en 的 /bazi 深链必须 410；入口页保留 301 ——')
 {
   const src = readFileSync('src/proxy.ts', 'utf8')
   assert(/pathname\.match\(\/\^\\\/\(tw\|en\)\\\/bazi/.test(src),
     'proxy 匹配 /tw/bazi 与 /en/bazi',
     'proxy 没有处理 tw/en 的 /bazi 深链 —— 404 会一直在 GSC 里')
-  assert(/NextResponse\.redirect\(url, 301\)/.test(src),
-    '用 301 永久重定向',
-    '没看到 301 —— 404 不会被永久清理')
-  // 目标必须是本语言树入口，不能是 /bazi（否则繁体/英文用户被扔进简体内容）
-  assert(/url\.pathname = `\/\$\{otherTreeBazi\[1\]\}`/.test(src),
-    '重定向目标是同语言树入口',
-    '重定向目标不是同语言树 —— 会把繁体/英文用户送进简体内容')
   assert(/'\/tw\/bazi\/:path\*'/.test(src) && /'\/en\/bazi\/:path\*'/.test(src),
     'matcher 覆盖两棵树的 /bazi 深链',
     'matcher 未覆盖 —— 请求不会进 proxy')
+  // 入口页（无深链）仍回本语言首页，不能连带改掉
+  assert(/otherTreeBaziEntry = pathname\.match\(\/\^\\\/\(tw\|en\)\\\/bazi\\\/\?\$\/\)/.test(src),
+    '入口页单独匹配（/tw/bazi、/en/bazi）',
+    '入口页没有单独匹配 —— 会被一起 410')
+  assert(/NextResponse\.redirect\(url, 301\)/.test(src),
+    '入口页保留 301 回本语言树',
+    '入口页的 301 被误删 —— 用户会直接看到 410')
+  assert(/url\.pathname = `\/\$\{otherTreeBaziEntry\[1\]\}`/.test(src),
+    '301 目标是同语言树入口',
+    '301 目标不是同语言树 —— 会把繁体/英文用户送进简体内容')
+  // 深链改 410：既清掉软 404，也停止无效抓取
+  assert(/otherTreeBaziDeep = pathname\.match\(\/\^\\\/\(tw\|en\)\\\/bazi\\\/\.\+\$\/\)/.test(src),
+    '深链单独匹配（/tw/bazi/…）',
+    '深链没有被单独识别 —— 仍会 301 到无关首页')
+  assert(/status: 410/.test(src),
+    '深链返回 410 Gone',
+    '深链没有返回 410 —— soft 404 与抓取浪费仍在')
 }
 
 console.log('—— ③ 月页标题必须命中真实查询词（GSC 效果报告驱动）——')

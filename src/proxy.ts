@@ -18,20 +18,48 @@ import { decideRootLang, homeForLang, LANG_COOKIE, LANG_ASKED_COOKIE } from '@/l
 // 410 响应体：不引用站点样式（越界日页不该走渲染管线），只给一句人话 + 回程链接。
 const GONE_HTML = `<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><title>日期已超出可查询范围</title><meta name="robots" content="noindex"></head><body><h1>日期已超出可查询范围</h1><p>本页仅支持 1950-01-01 至 2010-12-31 的出生日期排盘，该日期已不再提供内容（410 Gone）。</p><p>This date is outside the supported range (1950-01-01 to 2010-12-31); the page has been permanently removed.</p><p><a href="/bazi">返回八字算命</a></p></body></html>`
 
+// 繁英树没有 /bazi 内容页，深链一律 410（2026-11-11）；入口页仍 301 回本语言首页。
+function GONE_OTHER_TREE_HTML(lang: string): string {
+  const home = `/${lang}`
+  const title = lang === 'tw' ? '此頁面已不存在' : 'This page no longer exists'
+  const body =
+    lang === 'tw'
+      ? `繁體站沒有對應的八字排盤內容，此連結已永久移除（410 Gone）。<p><a href="${home}">回到首頁</a></p>`
+      : `The English site has no matching Bazi reading page, so this link has been permanently removed (410 Gone).<p><a href="${home}">Back to home</a></p>`
+  return `<!doctype html><html lang="${lang === 'tw' ? 'zh-Hant' : 'en'}"><head><meta charset="utf-8"><title>${title}</title><meta name="robots" content="noindex"></head><body><h1>${title}</h1><p>${body}</p></body></html>`
+}
+
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
 
   // ★ 2026-11-10（GSC 404 清理）：繁体与英文树没有 /bazi 路由，
   //   但 Google 仍在抓 /tw/bazi/1978/08、/en/bazi/1978/08/20 等深链（各返回 404）。
   //   这些 URL 多来自历史内链/hreflang 残留：对搜索引擎是错误信号，对用户是死路。
-  //   301 到对应语言树的入口页（/tw、/en）—— 保留任何残留权重，404 清零。
-  //   注意：不能 301 到 /bazi（中文页）—— 那会把繁体/英文用户直接扔进简体内容。
-  const otherTreeBazi = pathname.match(/^\/(tw|en)\/bazi(?:\/.*)?$/)
-  if (otherTreeBazi) {
+  // ★ 2026-11-11（深链改 410）：原 301 到语言首页与 URL 主题无关（1978 年 8 月出生），
+  //   Google 按 soft 404 处理——既不传权重，又持续消耗抓取。外链核查（2026-11-11）：
+  //   GSC 效果导出 0 条命中、站内 21 天 events 0 次访问、仓库无外链记录，
+  //   当前也不再向 /tw/bazi 输出 hreflang、sitemap 不含该路径 → 未见实质外链。
+  //   故深链改 410（与越界日页口径一致）；仅入口页 /tw/bazi 保留 301 回本语言首页。
+  const otherTreeBaziEntry = pathname.match(/^\/(tw|en)\/bazi\/?$/)
+  if (otherTreeBaziEntry) {
     const url = request.nextUrl.clone()
-    url.pathname = `/${otherTreeBazi[1]}`
+    url.pathname = `/${otherTreeBaziEntry[1]}`
     url.search = ''
     return NextResponse.redirect(url, 301)
+  }
+
+  const otherTreeBaziDeep = pathname.match(/^\/(tw|en)\/bazi\/.+$/)
+  if (otherTreeBaziDeep) {
+    const lang = otherTreeBaziDeep[1]
+    return new NextResponse(GONE_OTHER_TREE_HTML(lang), {
+      status: 410,
+      headers: {
+        'content-type': 'text/html; charset=utf-8',
+        // 410 已是删除信号；再叠一层 noindex，防止抓到就不放的爬虫行为
+        'x-robots-tag': 'noindex',
+        'cache-control': 'public, s-maxage=86400, stale-while-revalidate=604800',
+      },
+    })
   }
 
   // ★ 2026-11 收录整治：/bazi 的年/月/日 URL 统一补零。
