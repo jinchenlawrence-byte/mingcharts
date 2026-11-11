@@ -81,7 +81,7 @@ export default function HemunHourGuide({ locale }: { locale: SiteLang }) {
           {L('合婚里，夫妻宫（日支）关系、双方日干五行、配偶星是否透干这三项只依赖年、月、日三柱，不需要时辰。')}
         </p>
         <p className="text-sm text-ink-light">
-          {L('只有五行强弱、配偶星旺衰、婚姻宫与时支的关系、十神互见、大运同步、子女宫这六项必须有时辰。缺时辰时我们不会拿默认时间去凑，而是明确告诉你哪几项没算。')}
+          {L('只有五行强弱、配偶星旺衰、婚姻宫与时支的关系、十神互见、大运同步这五项必须有时辰。缺时辰时我们不会拿默认时间去凑，而是明确告诉你哪几项没算。子女宫同样以时柱为宫位，但目前不在本工具的计算范围内。')}
         </p>
         <p className="pt-1">
           <Link href={pathForLang('/hemun', locale)} className="text-sm underline underline-offset-4">

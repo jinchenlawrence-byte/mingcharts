@@ -160,12 +160,6 @@ export default function HemunThreePillarPanel({ r, locale }: { r: HemunResult; l
         {skipped.map(d => (
           <SkippedBar key={d.key} name={SKIP_NAMES[d.key] ?? d.name} reason={d.reason ?? ''} locale={locale} />
         ))}
-        {/* 子女宫：引擎无此维度，静态补一条，措辞与其余一致 */}
-        <SkippedBar
-          name="子女宫"
-          reason="子女宫以时柱为宫位，属四柱层面的判断；本次缺时柱，这一项不在可判范围内。"
-          locale={locale}
-        />
       </div>
 
       {/* 古法折叠：默认收起，不带吉忌色 */}

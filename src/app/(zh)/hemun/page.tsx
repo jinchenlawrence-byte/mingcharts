@@ -101,7 +101,7 @@ function PersonFields({
         />
       </div>
       <p className="text-xs text-ink-light mt-2">
-        <Link href="/hemun/hour" className="underline underline-offset-4">不知道出生时辰？怎么找 ›</Link>
+        <Link href="/hemun/hour" className="underline underline-offset-4">时辰不确定？›</Link>
       </p>
     </div>
   )
