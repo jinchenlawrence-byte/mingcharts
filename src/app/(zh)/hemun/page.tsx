@@ -73,8 +73,8 @@ function PersonFields({
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div>
-          <label className="hw-f">时</label>
-          <input type="number" required min={0} max={23} placeholder="16" className={inputCls}
+          <label className="hw-f">时（选填）</label>
+          <input type="number" min={0} max={23} placeholder="可留空" className={inputCls}
             value={value.hour} onChange={e => set({ hour: e.target.value })} />
         </div>
         <div>
@@ -100,6 +100,10 @@ function PersonFields({
           accent={accent}
         />
       </div>
+      <p className="text-xs text-ink-light mt-2">
+        不知道出生时辰？可以留空，先看三柱能判断的部分。
+        <Link href="/hemun/hour" className="underline underline-offset-4 ml-1">怎么找时辰 ›</Link>
+      </p>
     </div>
   )
 }
@@ -162,11 +166,11 @@ export default function HehunPage() {
         <header>
           <h1 className="hw-c-h1">八字合婚配对</h1>
           <p className="hw-lede">
-            输入双方出生信息，以「日柱夫妻宫」为核心，合参年柱生肖、配偶星、五行互补、十神互见与大运节奏
+            输入双方出生信息，以「日柱夫妻宫」为核心，合参年柱生肖、配偶星、五行互补、十神互见与大运节奏。时辰可以不填，不填时只给三柱能成立的判断。
           </p>
         </header>
 
-        <form onSubmit={handleSubmit}>
+        <form id="hemun-form" onSubmit={handleSubmit}>
           <div className="hw-c-two mb-4">
             <PersonFields title="男方" value={male} onChange={setMale} accent="blue" />
             <PersonFields title="女方" value={female} onChange={setFemale} accent="rose" />

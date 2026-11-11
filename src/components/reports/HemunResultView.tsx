@@ -9,6 +9,7 @@ import { isRuleVersion } from '@/lib/reportGate'
 import { isReportPaid } from '@/lib/reportAccess'
 import { PREVIEW_FREE } from '@/lib/reportPreview'
 import { LockedCard, UnlockCta } from '@/components/reports/PreviewLock'
+import HemunThreePillarPanel from '@/components/reports/HemunThreePillarPanel'
 import AskPanel from '@/components/AskPanel'
 import type { AnalyzableChart } from '@/lib/analysis'
 import { localize } from '@/lib/hant'
@@ -116,6 +117,20 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
 }) {
   const L = (s: string) => localize(s, locale)
   const r = data.result
+
+  // ★ 三柱模式（2026-11-11）：只给三柱能成立的判断，不显示分数、不显示解锁墙
+  if (r.mode === 'three-pillar') {
+    return (
+      <div className="space-y-6">
+        <HemunThreePillarPanel r={r} locale={locale} />
+        <p className="text-xs text-ink-light text-center leading-relaxed border-t border-gold/15 pt-4">
+          {L('合婚分析为传统命理参考，仅供了解双方性格与相处模式之用。')}<br />
+          {L('婚姻成败在于双方经营，与任何单一命理指标无关。')}
+        </p>
+      </div>
+    )
+  }
+
   // ★ 付费用户拿到规则版兜底（AI 结果未过合规校验）时，标签旁必须给出口，否则只能要求退款
   const ruleVersion = isRuleVersion(data.aiSource)
   // ★ 报告级权益（与追问入口同一判定）：免费试读不显示重新生成

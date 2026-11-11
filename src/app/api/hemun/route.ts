@@ -32,16 +32,22 @@ interface RawBirth {
   birthLng?: unknown; birthZone?: unknown
 }
 
-async function parseBirth(raw: RawBirth, expectGender: 1 | 0): Promise<{ data?: PaipanInput; error?: string }> {
+// ★ 2026-11-11 三柱模式：时辰允许留空。留空时绝不按 12:00 伪造时柱参与判断，
+//   只在排盘时借用 12:00 取年/月/日，然后立刻把时柱置 null，并只算三柱可成立的维度。
+const HEMUN_LOCKED_PREVIEW_3P = '补上出生时辰后，可看完整九维：五行互补、配偶星旺衰、婚姻宫稳定度、十神互见、大运同步、子女宫，以及九维合婚 AI 深度解读与追问。现在这三条判断不以时辰为前提，所以免费给全。'
+
+async function parseBirth(raw: RawBirth, expectGender: 1 | 0): Promise<{ data?: PaipanInput; error?: string; hourKnown?: boolean }> {
   const toInt = (v: unknown): number => {
     if (v === undefined || v === null || v === '') return NaN
     return parseInt(String(v), 10)
   }
   const year = toInt(raw.year), month = toInt(raw.month), day = toInt(raw.day)
-  const hour = toInt(raw.hour)
+  const rawHour = toInt(raw.hour)
+  const hourKnown = !Number.isNaN(rawHour)
+  const hour = hourKnown ? rawHour : 12
   const minute = raw.minute === undefined || raw.minute === null || raw.minute === ''
     ? 0 : parseInt(String(raw.minute), 10)
-  if ([year, month, day, hour, minute].some(Number.isNaN)) {
+  if ([year, month, day, minute].some(Number.isNaN)) {
     return { error: '出生信息不完整' }
   }
   if (year < 1900 || year > 2100 || month < 1 || month > 12 || day < 1 || day > 31) {
@@ -64,7 +70,8 @@ async function parseBirth(raw: RawBirth, expectGender: 1 | 0): Promise<{ data?: 
       year, month, day, hour, minute, gender,
       birthLng: ref?.lng,
       birthZone: ref?.zone
-    }
+    },
+    hourKnown
   }
 }
 
@@ -75,6 +82,7 @@ export async function POST(request: NextRequest) {
     const lockedPreview = locale === 'en'
       ? HEMUN_LOCKED_PREVIEW_EN
       : locale === 'zh-Hant' ? toHant(HEMUN_LOCKED_PREVIEW) : HEMUN_LOCKED_PREVIEW
+    const lockedPreview3p = locale === 'zh-Hant' ? toHant(HEMUN_LOCKED_PREVIEW_3P) : HEMUN_LOCKED_PREVIEW_3P
     const [m, f] = await Promise.all([
       parseBirth(body.male || {}, 1),
       parseBirth(body.female || {}, 0)
@@ -82,8 +90,15 @@ export async function POST(request: NextRequest) {
     if (m.error) return NextResponse.json({ error: `男方信息：${m.error}` }, { status: 400 })
     if (f.error) return NextResponse.json({ error: `女方信息：${f.error}` }, { status: 400 })
 
+    // ★ 三柱模式：任一方缺时辰即降级；时柱在排盘后立刻置 null，
+    //   引擎据此只算三柱可成立的维度（DIM_REQUIRES 过滤，计算函数不执行）
+    const hourKnown = m.hourKnown !== false && f.hourKnown !== false
     const maleChart = paipan(m.data!)
     const femaleChart = paipan(f.data!)
+    if (!hourKnown) {
+      ;(maleChart.pillars as unknown as { hour: unknown }).hour = null
+      ;(femaleChart.pillars as unknown as { hour: unknown }).hour = null
+    }
 
     // 夏令时切换点提示（gap/重复时刻），各按本方时区与时刻
     const dstOf = (d: PaipanInput) =>
@@ -95,14 +110,18 @@ export async function POST(request: NextRequest) {
     const dstNotices = { male: dstOf(m.data!), female: dstOf(f.data!) }
 
     const male: AnalyzableChart = Object.assign(maleChart, {
-      analysis: { wangShuai: getWangShuai(maleChart), geJu: getGeJu(maleChart), isPaid: false }
+      analysis: hourKnown
+        ? { wangShuai: getWangShuai(maleChart), geJu: getGeJu(maleChart), isPaid: false }
+        : { wangShuai: '', geJu: '', isPaid: false }
     })
     const female: AnalyzableChart = Object.assign(femaleChart, {
-      analysis: { wangShuai: getWangShuai(femaleChart), geJu: getGeJu(femaleChart), isPaid: false }
+      analysis: hourKnown
+        ? { wangShuai: getWangShuai(femaleChart), geJu: getGeJu(femaleChart), isPaid: false }
+        : { wangShuai: '', geJu: '', isPaid: false }
     })
 
-    // 规则引擎：全部干支事实与评分
-    const result = hehun(male, female)
+    // 规则引擎：全部干支事实与评分（三柱模式由引擎自行过滤，不传 12:00 参与判断）
+    const result = hehun(male, female, new Date(), { hourKnown })
 
     // ★ 身份/门禁先解析（§8.5.1 单一判定）——先于 AI 调用，供下方成本护栏使用。
     // ★ 报告门禁按【是否持有 SKU】判定（reportUnlocked → grantsCover），不依赖 ENTITLEMENT_ENFORCE：
@@ -116,7 +135,8 @@ export async function POST(request: NextRequest) {
       const { data: { user } } = await admin.auth.getUser(token)
       if (user) { userId = user.id; ent = await getEntitlements(admin, user.id) }
     }
-    const unlocked = reportUnlocked(ent, 'hemun')
+    // ★ 三柱模式一律按试读处理：不接受付费解锁（九维需要时辰），也不调 AI
+    const unlocked = hourKnown && reportUnlocked(ent, 'hemun')
 
     // ★ 接口层重新生成门槛（2026-11-09）：未购买却声明 regen → 402；付费规则版不限次数
     const regen = isRegenRequest(body) || request.nextUrl?.searchParams?.get('regen') === '1'
@@ -130,6 +150,7 @@ export async function POST(request: NextRequest) {
     const reportInput = {
       year: m.data!.year, month: m.data!.month, day: m.data!.day, hour: m.data!.hour,
       minute: m.data!.minute, gender: m.data!.gender,
+      hourKnown,
       birthZone: m.data!.birthZone ?? null, birthLng: m.data!.birthLng ?? null,
       partnerYear: f.data!.year, partnerMonth: f.data!.month, partnerDay: f.data!.day,
       partnerHour: f.data!.hour, partnerMinute: f.data!.minute, partnerGender: f.data!.gender,
@@ -140,7 +161,7 @@ export async function POST(request: NextRequest) {
     if (userId && admin) {
       const hit = await readReportCache(admin, userId, 'hemun', cacheKey)
       const resolved = hit
-        ? resolveModuleCachedHit(hit, { unlocked, skus: ['hemun'], lockedPreview })
+        ? resolveModuleCachedHit(hit, { unlocked, skus: ['hemun'], lockedPreview: hourKnown ? lockedPreview : lockedPreview3p })
         : null
       if (resolved) {
         // ★ 缓存命中也要带同一试读标记，避免免费用户从存量全文缓存拿到完整渲染路径
@@ -195,7 +216,7 @@ export async function POST(request: NextRequest) {
       free: { male, female, result },
       locked: unlocked ? null : {
         skus: ['hemun'],
-        preview: lockedPreview
+        preview: hourKnown ? lockedPreview : lockedPreview3p
       },
       preview: previewPayload('hemun', unlocked)
     }

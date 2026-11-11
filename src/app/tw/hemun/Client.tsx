@@ -75,8 +75,8 @@ function PersonFields({
       </div>
       <div className="grid grid-cols-3 gap-2">
         <div>
-          <label className="hw-f">{H('時')}</label>
-          <input type="number" required min={0} max={23} placeholder="16" className={inputCls}
+          <label className="hw-f">{H('時（選填）')}</label>
+          <input type="number" min={0} max={23} placeholder={H('可留空')} className={inputCls}
             value={value.hour} onChange={e => set({ hour: e.target.value })} />
         </div>
         <div>
@@ -102,6 +102,10 @@ function PersonFields({
           locale="zh-Hant"
         />
       </div>
+      <p className="text-xs text-ink-light mt-2">
+        {H('不知道出生時辰？可以留空，先看三柱能判斷的部分。')}
+        <Link href="/tw/hemun/hour" className="underline underline-offset-4 ml-1">{H('怎麼找時辰 ›')}</Link>
+      </p>
     </div>
   )
 }
@@ -158,11 +162,11 @@ export default function HantHemunClient() {
         <header>
           <h1 className="hw-c-h1">{H('八字合婚配對')}</h1>
           <p className="hw-lede">
-            {H('輸入雙方出生資訊，以「日柱夫妻宮」為核心，合參年柱生肖、配偶星、五行互補、十神互見與大運節奏')}
+            {H('輸入雙方出生資訊，以「日柱夫妻宮」為核心，合參年柱生肖、配偶星、五行互補、十神互見與大運節奏。時辰可以不填，不填時只給三柱能成立的判斷。')}
           </p>
         </header>
 
-        <form onSubmit={handleSubmit}>
+        <form id="hemun-form" onSubmit={handleSubmit}>
           <div className="hw-c-two mb-4">
             <PersonFields title={H('男方')} value={male} onChange={setMale} accent="blue" />
             <PersonFields title={H('女方')} value={female} onChange={setFemale} accent="rose" />
