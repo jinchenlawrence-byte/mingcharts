@@ -5,7 +5,7 @@
 //   UTM 直接在 effect 里读 window.location.search 即可（客户端才执行）。
 import { useEffect } from 'react'
 import { usePathname } from 'next/navigation'
-import { firstTouch, rememberRef, track } from '@/lib/track'
+import { firstTouch, landingPath, rememberRef, track } from '@/lib/track'
 import { getSupabase } from '@/lib/supabase'
 
 const CLAIMED_KEY = 'ml_ref_claimed'
@@ -41,6 +41,8 @@ export default function TrackPageView() {
   useEffect(() => {
     rememberRef(window.location.search)
     firstTouch(window.location.search)
+    // 先记落地页，再报 page_view：保证首个事件之前 src 已确定
+    landingPath()
     track('page_view')
     void claimInvite()
   }, [pathname])

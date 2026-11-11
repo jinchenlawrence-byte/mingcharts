@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import PaipanCta from '@/components/PaipanCta'
 import { LIUNIAN_YEARS, getLiunian, LIUNIAN_2027_DETAIL } from '@/lib/shengxiaoData'
 import type { ShengXiao } from '@/lib/shengxiaoData'
 import { getShengXiaoEn } from '@/lib/shengxiaoEn'
@@ -172,7 +173,7 @@ export function ShengXiaoYearView({ locale, sx, year }: { locale: SiteLang; sx: 
         <div className="hw-c-cta">
           <h2 className="hw-c-secTitle">{copy.ctaTitle}</h2>
           <p className="hw-c-dx">{copy.ctaBody}</p>
-          <Link href={copy.ctaHref} className="hw-c-btnBig">{copy.ctaLabel}</Link>
+          <PaipanCta href={copy.ctaHref} slot="shengxiao_year_bottom" className="hw-c-btnBig">{copy.ctaLabel}</PaipanCta>
           <p className="mt-4 text-sm text-ink-light">
             {copy.annualPrefix}
             <Link href={copy.annualHref} className="hw-c-link">{copy.annualLabel}</Link>

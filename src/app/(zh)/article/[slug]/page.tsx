@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Nav from '@/components/Nav'
+import PaipanCta from '@/components/PaipanCta'
 import { notFound } from 'next/navigation'
 import { articles, ARTICLE_CATEGORIES } from '@/lib/articles'
 import { CATEGORY_INTRO } from '@/lib/articleCategoryIntro'
@@ -184,9 +185,9 @@ export default async function ArticleOrCategoryPage({ params }: { params: Promis
             <p className="hw-c-dx">
               {cta?.desc ?? '输入出生时辰，获取您的八字命盘、格局旺衰、大运流年完整分析'}
             </p>
-            <Link href={cta?.href ?? '/'} className="hw-c-btnBig">
+            <PaipanCta href={cta?.href ?? '/'} slot="article_bottom" className="hw-c-btnBig">
               {cta?.text ?? '免费排盘'} →
-            </Link>
+            </PaipanCta>
             {cta?.priceSku && (
               <p className="mt-3 text-xs text-ink-light">
                 {formatPriceUSD(SKUS[cta.priceSku].priceUSD)} · 一次性购买，解锁后永久回看

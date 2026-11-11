@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { localize } from '@/lib/hant'
 import type { SiteLang } from '@/lib/lang'
+import { track } from '@/lib/track'
 
 interface BirthFormProps {
   ctaText?: string
@@ -55,6 +56,8 @@ export default function BirthForm({ ctaText = '开始排盘', className = '', lo
       const data = await res.json()
       if (data.success) {
         localStorage.setItem('currentChart', JSON.stringify(data.data))
+        // 2026-11-11：此表单此前不记提交，导致 /mingshu 等页的排盘在数据里完全不可见
+        track('paipan_submit')
         router.push(chartPath)
       } else {
         setError(data.error || L('排盘失败，请检查输入'))

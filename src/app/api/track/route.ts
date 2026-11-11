@@ -6,7 +6,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase'
 
-const ALLOWED = new Set(['page_view', 'paipan_submit', 'preview_view', 'pay_click'])
+const ALLOWED = new Set(['page_view', 'paipan_cta_click', 'paipan_submit', 'preview_view', 'pay_click'])
 
 function clipString(value: unknown, max: number): string | undefined {
   return typeof value === 'string' ? value.slice(0, max) : undefined

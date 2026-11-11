@@ -5,7 +5,7 @@
 //   · 任何失败都静默——埋点绝不能影响排盘与支付主流程。
 // ★ 本文件禁止在模块顶层访问 window（site-audit 断言：客户端页顶层不得用 window）。
 
-export type TrackName = 'page_view' | 'paipan_submit' | 'preview_view' | 'pay_click'
+export type TrackName = 'page_view' | 'paipan_cta_click' | 'paipan_submit' | 'preview_view' | 'pay_click'
 
 export interface TrackProps {
   /** 模块/商品等短标识，值必须是短字符串（服务端会限制长度） */
@@ -15,6 +15,7 @@ export interface TrackProps {
 const SID_KEY = 'ml_sid'
 const TOUCH_KEY = 'ml_touch'
 const REF_KEY = 'ml_ref'
+const LANDING_KEY = 'ml_lp'
 
 function safeSession(): Storage | null {
   try {
@@ -109,6 +110,27 @@ export function rememberRef(search?: string): void {
   }
 }
 
+/**
+ * 本次会话的首次落地页（2026-11-11）：用于把「排盘提交」归因回真正带来这个人的页面。
+ * 现状问题：paipan_submit 只在首页表单触发，path 恒为 '/'，无法区分是 2028 生肖页还是文章页送来的。
+ * 口径：会话内第一次调用时写入，之后不再覆盖；只在 sessionStorage，不落库、不跨标签页。
+ */
+export function landingPath(): string {
+  const session = safeSession()
+  if (!session) return ''
+  try {
+    const cached = session.getItem(LANDING_KEY)
+    if (cached) return cached
+    if (typeof window === 'undefined') return ''
+    const lp = window.location.pathname.slice(0, 120)
+    session.setItem(LANDING_KEY, lp)
+    return lp
+  } catch {
+    // 隐私模式写入失败：本次返回空，不影响上报
+    return ''
+  }
+}
+
 /** 上报一个事件（fire-and-forget，永不影响主流程） */
 export function track(name: TrackName, props?: TrackProps): void {
   if (typeof window === 'undefined') return
@@ -116,13 +138,15 @@ export function track(name: TrackName, props?: TrackProps): void {
     const sid = sessionId()
     if (!sid) return
     const touch = firstTouch(window.location.search)
+    // 排盘提交自动带上首次落地页，避免每个调用点各传一遍（也保证历史调用点不改）
+    const finalProps: TrackProps = name === 'paipan_submit' ? { ...(props ?? {}), src: landingPath() } : (props ?? {})
     const payload = JSON.stringify({
       name,
       sid,
       path: window.location.pathname.slice(0, 200),
       utm: { source: touch.source, medium: touch.medium, campaign: touch.campaign },
       referrer: touch.referrer,
-      props: props ?? {},
+      props: finalProps,
     })
 
     if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
