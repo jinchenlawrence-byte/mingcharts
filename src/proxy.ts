@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 import { decideRootLang, homeForLang, LANG_COOKIE, LANG_ASKED_COOKIE } from '@/lib/lang'
+import { verifyShareTokenEdge, shareGoneHtml } from '@/lib/hemunShareEdge'
 
 // 根路径语言导向（仅 `/`，不动任何深链）
 //
@@ -29,8 +30,31 @@ function GONE_OTHER_TREE_HTML(lang: string): string {
   return `<!doctype html><html lang="${lang === 'tw' ? 'zh-Hant' : 'en'}"><head><meta charset="utf-8"><title>${title}</title><meta name="robots" content="noindex"></head><body><h1>${title}</h1><p>${body}</p></body></html>`
 }
 
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl
+
+  // ★ 2026-11-11：合婚分享卡用签名令牌承载，无效/过期必须是 410 而不是 200。
+  //   200 会被搜索引擎当成正常页面，攒成软 404，拉低站点质量信号；
+  //   410 仍返回完整 HTML，用户看到的是同一套提示，体验不变。
+  const sharePage = pathname.match(/^\/(?:(tw)\/)?hemun\/r\/?$/)
+  if (sharePage) {
+    const lang: 'zh' | 'tw' = sharePage[1] ? 'tw' : 'zh'
+    const d = request.nextUrl.searchParams.get('d') ?? ''
+    const e = Number(request.nextUrl.searchParams.get('e'))
+    const s = request.nextUrl.searchParams.get('s') ?? ''
+    const check = await verifyShareTokenEdge(d, e, s)
+    if (!check.ok) {
+      return new NextResponse(shareGoneHtml(lang, check.reason ?? 'invalid'), {
+        status: 410,
+        headers: {
+          'content-type': 'text/html; charset=utf-8',
+          'x-robots-tag': 'noindex',
+          'cache-control': 'no-store',
+        },
+      })
+    }
+    return NextResponse.next()
+  }
 
   // ★ 2026-11-10（GSC 404 清理）：繁体与英文树没有 /bazi 路由，
   //   但 Google 仍在抓 /tw/bazi/1978/08、/en/bazi/1978/08/20 等深链（各返回 404）。
@@ -141,5 +165,8 @@ export const config = {
     '/tw/bazi/:path*',
     '/en/bazi/:path*',
     '/bazi/:year(\\d{4})/:month(\\d{2})/:day(\\d)',
+    // ★ 2026-11-11：分享卡无效/过期需在边缘层返回 410（页面组件无法自行返回 410）
+    '/hemun/r',
+    '/tw/hemun/r',
   ],
 }

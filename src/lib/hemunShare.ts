@@ -20,7 +20,14 @@ export const SHARE_TTL_SEC = 30 * 24 * 3600
 const ZHI = '子丑寅卯辰巳午未申酉戌亥'.split('')
 const GAN = '甲乙丙丁戊己庚辛壬癸'.split('')
 
-const SECRET = process.env.REPORT_SHARE_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+const SECRET = process.env.REPORT_SHARE_SECRET || ''
+export const SHARE_SECRET_ENV = 'REPORT_SHARE_SECRET'
+
+// 不静默回退到 SUPABASE_SERVICE_ROLE_KEY：那是数据库最高权限凭证，
+// 当作 HMAC 密钥会导致轮换即全量失效，并扩大高权限密钥的使用面。
+if (!SECRET) {
+  console.error(`[hemun-share] 未配置 ${SHARE_SECRET_ENV}，合婚分享链接将无法签发与校验。请在环境变量中配置该变量（任意长随机串）。`)
+}
 
 export function shareSecretReady(): boolean {
   return Boolean(SECRET)
