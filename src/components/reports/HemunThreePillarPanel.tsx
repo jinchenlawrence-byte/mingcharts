@@ -3,6 +3,7 @@
 // 合婚三柱结果面板（2026-11-11）
 // 只渲染三柱能成立的判断；依赖时柱的维度一律灰底「未计算」，不显示吉凶色块、不显示分数。
 import Link from 'next/link'
+import { useState } from 'react'
 import type { HemunResult, HemunDimension } from '@/lib/hemun'
 import { localize } from '@/lib/hant'
 import { pathForLang, type SiteLang } from '@/lib/lang'
@@ -76,6 +77,8 @@ function SkippedBar({ name, reason, locale }: { name: string; reason: string; lo
 
 export default function HemunThreePillarPanel({ r, locale }: { r: HemunResult; locale: SiteLang }) {
   const L = (s: string) => localize(s, locale)
+  const [shareMsg, setShareMsg] = useState('')
+  const [sharing, setSharing] = useState(false)
   const day = r.dimensions.find(d => d.key === 'day')
   const spouse = r.dimensions.find(d => d.key === 'spouseStem')
   const skipped = r.dimensions.filter(d => d.status === 'skipped_missing_hour') as HemunDimension[]
@@ -194,9 +197,46 @@ export default function HemunThreePillarPanel({ r, locale }: { r: HemunResult; l
         <div className="flex flex-wrap items-center justify-center gap-3">
           <a href="#hemun-form" className="hw-c-btnBig !py-2 !px-5 !text-sm">{L('去填时辰')}</a>
           <Link href={pathForLang('/hemun/hour', locale)} className="text-sm text-ink underline underline-offset-4">
-            {L('不知道出生时辰怎么办？')}
+            {L('时辰不确定？›')}
           </Link>
         </div>
+      </div>
+
+      {/* 分享：payload 只含日支/日主/配偶星是否透干，不含生日 */}
+      <div className="rounded-xl border border-ink/10 bg-paper-dark/20 px-4 py-3 text-center">
+        <button
+          type="button"
+          disabled={sharing}
+          className="text-sm text-ink underline underline-offset-4 disabled:opacity-50"
+          onClick={async () => {
+            setSharing(true); setShareMsg('')
+            try {
+              const payload = {
+                m: '3' as const,
+                b: [r.male.ganZhi.day[1], r.female.ganZhi.day[1]] as [string, string],
+                d: [r.male.dayMaster, r.female.dayMaster] as [string, string],
+                s: ((spouse?.tags ?? []).length > 0 ? 1 : 0) as 0 | 1,
+              }
+              const res = await fetch('/api/hemun/share', {
+                method: 'POST', headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ payload }),
+              })
+              const j = await res.json()
+              if (!j?.ok) throw new Error(j?.error || 'fail')
+              const url = `${location.origin}${pathForLang('/hemun/r', locale)}?d=${encodeURIComponent(j.d)}&e=${j.exp}&s=${j.sig}`
+              await navigator.clipboard.writeText(url)
+              setShareMsg(L('链接已复制，30 天内有效。'))
+            } catch {
+              setShareMsg(L('生成失败，请稍后再试。'))
+            } finally { setSharing(false) }
+          }}
+        >
+          {L('复制分享卡链接')}
+        </button>
+        <p className="text-xs text-ink-light mt-1">
+          {L('只含日支与日主，不含出生信息。')}
+        </p>
+        {shareMsg && <p className="text-xs text-cinnabar mt-1">{shareMsg}</p>}
       </div>
     </div>
   )
