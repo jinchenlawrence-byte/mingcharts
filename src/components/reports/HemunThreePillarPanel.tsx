@@ -61,8 +61,8 @@ function JudgmentCard({ title, verdict, facts, level, locale }: {
   )
 }
 
-/** 未计算占位：灰底、无吉凶色块、无评级 */
-function SkippedBar({ name, reason, locale }: { name: string; reason: string; locale: SiteLang }) {
+/** 未计算占位：灰底、无吉凶色块、无评级（付费墙分支也复用它） */
+export function SkippedBar({ name, reason, locale }: { name: string; reason: string; locale: SiteLang }) {
   const L = (s: string) => localize(s, locale)
   return (
     <div className="rounded-lg border border-ink/10 bg-paper-dark/25 px-3.5 py-2.5">

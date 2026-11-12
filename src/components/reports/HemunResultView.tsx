@@ -9,7 +9,8 @@ import { isRuleVersion } from '@/lib/reportGate'
 import { isReportPaid } from '@/lib/reportAccess'
 import { PREVIEW_FREE } from '@/lib/reportPreview'
 import { LockedCard, UnlockCta } from '@/components/reports/PreviewLock'
-import HemunThreePillarPanel from '@/components/reports/HemunThreePillarPanel'
+import HemunThreePillarPanel, { SkippedBar } from '@/components/reports/HemunThreePillarPanel'
+import { isThreePillarReport, planHemunDims } from '@/lib/hemunView'
 import AskPanel from '@/components/AskPanel'
 import type { AnalyzableChart } from '@/lib/analysis'
 import { localize } from '@/lib/hant'
@@ -118,8 +119,10 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
   const L = (s: string) => localize(s, locale)
   const r = data.result
 
-  // ★ 三柱模式（2026-11-11）：只给三柱能成立的判断，不显示分数、不显示解锁墙
-  if (r.mode === 'three-pillar') {
+  // ★ 三柱模式（2026-11-11）：只给三柱能成立的判断，不显示分数、不显示解锁墙。
+  // ★ 2026-11-12：判定不能只看 mode——老报告/老缓存可能没有该字段，
+  //   会导致三柱报告落进四柱付费墙，把「缺时辰、未计算」的五项当成付费可见。
+  if (isThreePillarReport(r)) {
     return (
       <div className="space-y-6">
         <HemunThreePillarPanel r={r} locale={locale} />
@@ -137,12 +140,9 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
   const paid = isReportPaid('hemun', data)
   // ★ 试读模式：route 明确下发 preview.only；详情页（reportGate 重算）没有该字段时按 locked 推断
   const previewMode = data.preview?.only ?? !!data.locked
-  const freeDims = previewMode
-    ? r.dimensions.filter(d => PREVIEW_FREE.hemun.includes(d.key))
-    : r.dimensions
-  const lockedDims = previewMode
-    ? r.dimensions.filter(d => !PREVIEW_FREE.hemun.includes(d.key))
-    : []
+  // ★ 2026-11-12：门禁先看维度状态——缺时辰的维度既不游离在免费层，也不进付费层
+  const { free: freeDims, locked: lockedDims, skipped: skippedDims } =
+    planHemunDims(r.dimensions, previewMode, PREVIEW_FREE.hemun)
   return (
     <div className="space-y-6">
       {/* 总观感 + 分数环（分数仅作视觉参考，不替代文字结论） */}
@@ -200,11 +200,13 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
         {/* 3×3 概览格：点击锚点跳到对应维度卡片 */}
         <div className="hw-dim-grid">
           {r.dimensions.map(d => {
-            const isLocked = previewMode && !PREVIEW_FREE.hemun.includes(d.key)
+            // 缺时辰的维度既不是免费可见，也不是付费可见——单独标「未计算」
+            const isSkipped = d.status === 'skipped_missing_hour'
+            const isLocked = previewMode && !isSkipped && !PREVIEW_FREE.hemun.includes(d.key)
             return (
               <a key={d.key} href={`#dim-${d.key}`} className="hw-dim-cell">
                 <b>{L(d.name)}</b>
-                <span>{isLocked ? L('解锁后可见') : d.level}</span>
+                <span>{isSkipped ? L('未计算') : isLocked ? L('解锁后可见') : d.level}</span>
               </a>
             )
           })}
@@ -267,6 +269,19 @@ export default function HemunResultView({ data, onRegen, regenBusy, locale = 'zh
             <LockedCard title={L(d.name)} locale={locale} />
           </div>
         ))}
+
+        {/* ★ 缺时辰：与付费锁定分开，不给付费按钮、不写「解锁后可看」 */}
+        {skippedDims.length > 0 && (
+          <div className="space-y-2">
+            <h2 className="hw-c-h3">{L('本次没有计算的项目')}</h2>
+            <p className="text-xs text-ink-light">
+              {L('这些判断都以时柱为前提。缺时柱时我们不给结论，也不用默认时辰代替。')}
+            </p>
+            {skippedDims.map(d => (
+              <SkippedBar key={d.key} name={d.name} reason={d.reason ?? ''} locale={locale} />
+            ))}
+          </div>
+        )}
       </div>
 
       {data.ai && (
