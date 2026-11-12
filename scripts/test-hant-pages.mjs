@@ -137,6 +137,7 @@ console.log('—— ④ 共用元件 locale ——')
     'src/app/tw/hemun/Client.tsx',
     'src/app/tw/ziwei/Client.tsx',
     'src/app/tw/geo/Client.tsx',
+    'src/app/tw/liunian/Client.tsx',
     'src/app/tw/chart/Client.tsx',
     'src/app/tw/daily/page.tsx',
     'src/app/tw/mingshu/MingShuContent.tsx',
@@ -145,7 +146,7 @@ console.log('—— ④ 共用元件 locale ——')
   for (const f of twPages) {
     if (!read(f).includes('"zh-Hant"')) { cf++; fail(`${f} 未向共用元件下傳 zh-Hant`) }
   }
-  if (cf === 0) ok(`${components.length} 个共用元件接受 locale；7 个繁體页显式下传 zh-Hant`)
+  if (cf === 0) ok(`${components.length} 个共用元件接受 locale；${twPages.length} 个繁體页显式下传 zh-Hant`)
 }
 
 // ---------- ⑤ sitemap ----------

@@ -147,7 +147,7 @@ export default function HantLiunianClient() {
             </div>
           </div>
           <div className="mt-2">
-            <BirthPlacePicker value={birth} onChange={setBirth} accent="rose" />
+            <BirthPlacePicker value={birth} onChange={setBirth} accent="rose" locale="zh-Hant" />
           </div>
           <div className="mt-3">
             <label className="hw-f">{H('目標流年')}</label>

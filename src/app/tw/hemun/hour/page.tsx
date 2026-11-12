@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import Nav from '@/components/Nav'
 import HemunHourGuide from '@/components/HemunHourGuide'
 
 export const metadata: Metadata = {
@@ -15,7 +14,6 @@ export const metadata: Metadata = {
 export default function Page() {
   return (
     <div className="hw-page hw-report-theme">
-      <Nav />
       <main className="hw-wrap hw-c-pg">
         <Link href="/tw/hemun" className="hw-c-back">‹ 合婚配對</Link>
         <header className="mb-5">

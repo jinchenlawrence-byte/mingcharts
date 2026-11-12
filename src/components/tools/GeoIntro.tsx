@@ -131,7 +131,7 @@ export default function GeoIntro({ locale }: { locale: SiteLang }) {
       ))}
       <div className="hw-c-box mb-4">
         <p className="text-sm text-ink/70">
-          {isEn ? 'Continue reading: ' : locale === 'zh-Hant' ? '延伸阅读：' : '延伸阅读：'}
+          {isEn ? 'Continue reading: ' : locale === 'zh-Hant' ? '延伸閱讀：' : '延伸阅读：'}
           {t.links.map((l, i) => (
             <span key={l.href}>
               {i > 0 && <span className="mx-2 text-ink-light">·</span>}

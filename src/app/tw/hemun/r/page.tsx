@@ -1,6 +1,5 @@
 import type { Metadata } from 'next'
 import Link from 'next/link'
-import Nav from '@/components/Nav'
 import HemunShareCard from '@/components/reports/HemunShareCard'
 import { verifyPayload } from '@/lib/hemunShare'
 
@@ -32,7 +31,6 @@ export default async function Page({ searchParams }: Props) {
 
   return (
     <div className="hw-page hw-report-theme">
-      <Nav />
       <main className="hw-wrap hw-c-pg">
         <header className="mb-5">
           <h1 className="hw-c-h1">合婚分享卡</h1>
