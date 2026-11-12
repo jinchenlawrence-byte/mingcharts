@@ -101,7 +101,7 @@ function PersonFields({
         />
       </div>
       <p className="text-xs text-ink-light mt-2">
-        <Link href="/hemun/hour" className="underline underline-offset-4">时辰不确定？›</Link>
+        <Link href="/hemun/hour" className="underline underline-offset-4">不知道出生时辰？留空也能合——先看三柱能判断的三件事 ›</Link>
       </p>
     </div>
   )
@@ -163,9 +163,12 @@ export default function HehunPage() {
       <main className="hw-wrap hw-c-pg">
         <Link href="/" className="hw-c-back">‹ 首页</Link>
         <header>
-          <h1 className="hw-c-h1">八字合婚配对</h1>
+          <h1 className="hw-c-h1">八字合婚免费配对：只要双方生日，不知道时辰也能合</h1>
           <p className="hw-lede">
-            输入双方出生信息，以「日柱夫妻宫」为核心，合参年柱生肖、配偶星、五行互补、十神互见与大运节奏
+            两个人的生日填进去就能合，免费、即时出结果，不用注册。只用年、月、日三柱，已经够回答三件事：夫妻宫是相合还是相冲、相害、相刑；双方日干五行谁生谁克；男命财星／女命官星有没有透在年、月、日干上。
+          </p>
+          <p className="text-sm text-ink-light mt-2">
+            出生时辰不知道就留空——缺的项目会标「未计算」，不会替你猜一个。填了时辰才会多算五行强弱、配偶星旺衰等五项。
           </p>
         </header>
 

@@ -30,6 +30,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/jieri`, changeFrequency: 'yearly', priority: 0.6 },
     // 工具型入口页（表单即内容）：搜索「合婚/紫微/年运/方位」时可直接落地
     { url: `${BASE_URL}/hemun`, changeFrequency: 'monthly', priority: 0.8 },
+    // 「不知道出生時辰」引導頁（2026-11-12 A 階段）：合婚頁的解釋型入口，承接「不用時辰」需求
+    { url: `${BASE_URL}/hemun/hour`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/ziwei`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/liunian`, changeFrequency: 'monthly', priority: 0.7 },
     // 可引用资产页：12 生肖 × 8 年太岁对照表（第 33 轮新增，写得流年文的人会引这张表）
@@ -126,6 +128,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     // 繁體工具／內容頁（與簡體同名路由一一對應，hreflang 雙向）
     // ★ 帳戶／交易頁（/tw/auth、/tw/charts、/tw/reports、/tw/chart）不進 sitemap（noindex）
     { url: `${BASE_URL}/tw/hemun`, changeFrequency: 'monthly', priority: 0.8 },
+    // 「不知道出生時辰」引導頁（繁體，2026-11-12 A 階段）：與 /hemun/hour 一一對應
+    { url: `${BASE_URL}/tw/hemun/hour`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/tw/ziwei`, changeFrequency: 'monthly', priority: 0.8 },
     { url: `${BASE_URL}/tw/geo`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${BASE_URL}/tw/mingshu`, changeFrequency: 'monthly', priority: 0.8 },

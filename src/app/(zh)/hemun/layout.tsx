@@ -3,8 +3,11 @@ import { triAlternates } from '@/lib/lang'
 
 // page.tsx 为 'use client' 不能导出 metadata，由本服务端 layout 提供
 export const metadata: Metadata = {
-  title: '八字合婚配对：日柱夫妻宫与五行互补分析',
-  description: '双人八字合婚：日柱夫妻宫、年柱生肖（民俗）、纳音（古法）、五行互补与配偶星分析，附相处建议，基于子平六书传统合婚方法。',
+  // ★ 2026-11-12 A 阶段：标题从「术语罗列」改成用户能懂的因果——免费 + 只要生日 + 没时辰也能合。
+  //   带品牌后缀（ | 明理 ）合计 28 字，仍守「≤30 字」的旧规矩。
+  title: '八字合婚免费配对：只要双方生日，没时辰也能合',
+  description:
+    '免费即时出结果，双方生日就能合婚，不知道出生时辰也行。给出夫妻宫冲合害刑、双方日干五行、男财星／女官星是否透干三项判断，缺时辰的项目标注「未计算」。',
   alternates: { canonical: '/hemun', languages: triAlternates('/hemun') },
 }
 
