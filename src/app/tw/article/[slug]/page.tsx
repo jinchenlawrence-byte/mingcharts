@@ -63,6 +63,17 @@ export default async function HantArticlePage({ params }: { params: Promise<{ sl
               <p className="hw-c-body">{toHant(CATEGORY_INTRO[category.slug])}</p>
             </div>
           )}
+          {/* 合婚分類入口（2026-11-12 B 階段） */}
+          {category.slug === 'hemun' && (
+            <div className="hw-c-box mb-6">
+              <p className="hw-c-body mb-3">
+                不想先讀方法、只想看結果：用雙方生日合一次婚，不用對方的出生時辰，夫妻宮、雙方日干、配偶星三項當場就能看。
+              </p>
+              <Link href="/tw/hemun" className="hw-c-link text-sm">
+                開始合婚 →
+              </Link>
+            </div>
+          )}
           <div className="space-y-4">
             {list.map((a) => (
               <Link
@@ -145,6 +156,15 @@ export default async function HantArticlePage({ params }: { params: Promise<{ sl
           </div>
           <h1 className="text-2xl md:text-3xl font-bold text-ink mb-4 leading-tight">{toHant(article.title)}</h1>
           <p className="text-ink-light text-sm border-b border-amber-100 pb-4 mb-6">{toHant(article.description)}</p>
+
+          {/* 合婚文章首段入口（2026-11-12 B 階段） */}
+          {article.slug === 'bazi-hehun-zenme-kan' && (
+            <p className="text-[15px] text-ink/80 leading-relaxed bg-gold/5 border border-gold/15 rounded px-4 py-3 mb-6">
+              不想先讀方法、只想看結果：
+              <Link href="/tw/hemun" className="hw-c-link">用雙方生日合一次婚</Link>
+              ——不用對方的出生時辰，夫妻宮、雙方日干、配偶星三項當場就能看。
+            </p>
+          )}
 
           <div className="prose prose-amber max-w-none">
             {article.sections.map((section, i) => (

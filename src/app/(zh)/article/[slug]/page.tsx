@@ -66,6 +66,18 @@ export default async function ArticleOrCategoryPage({ params }: { params: Promis
               </div>
             )}
 
+            {/* 合婚分类入口（2026-11-12 B 阶段） */}
+            {category.slug === 'hemun' && (
+              <div className="hw-c-box mb-6">
+                <p className="hw-c-body mb-3">
+                  不想先读方法、只想看结果：用双方生日合一次婚，不用对方的出生时辰，夫妻宫、双方日干、配偶星三项当场就能看。
+                </p>
+                <Link href="/hemun" className="hw-c-link text-sm">
+                  开始合婚 →
+                </Link>
+              </div>
+            )}
+
             <div className="space-y-4">
               {list.map(a => (
                 <Link
@@ -162,6 +174,15 @@ export default async function ArticleOrCategoryPage({ params }: { params: Promis
             <p className="text-ink-light text-sm border-b border-amber-100 pb-4 mb-6">
               {article.description}
             </p>
+
+            {/* 合婚文章首段入口（2026-11-12 B 阶段）：给只想看结果的人一条直达路径 */}
+            {article.slug === 'bazi-hehun-zenme-kan' && (
+              <p className="text-[15px] text-ink/80 leading-relaxed bg-gold/5 border border-gold/15 rounded px-4 py-3 mb-6">
+                不想先读方法、只想看结果：
+                <Link href="/hemun" className="hw-c-link">用双方生日合一次婚</Link>
+                ——不用对方的出生时辰，夫妻宫、双方日干、配偶星三项当场就能看。
+              </p>
+            )}
 
             <div className="prose prose-amber max-w-none">
               {article.sections.map((section, i) => (

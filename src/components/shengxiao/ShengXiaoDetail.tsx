@@ -50,6 +50,24 @@ const TONE_EN_TX: Record<string, string> = {
   steady: 'text-ink-light',
 }
 
+// 合婚模块的「一句钩子」（2026-11-12 B 阶段）
+// 每个生肖写自己最常被问的那一句，不共用模板：把「生肖相冲」换成「日支才决定相处」。
+// 简繁共用此表，繁体走 toHant。
+const HEMUN_HOOK: Record<string, string> = {
+  shu: '属鼠的人最常被问「是不是跟属马的真的不合」。六冲说的是两个年支相冲，可两个人先起摩擦的，往往是日支的相处方式，不是生肖。',
+  niu: '属牛的人不太解释自己，对方容易把这份沉默读成冷淡。合婚里真正要看的是对方的日支能不能接住这种慢热，这一层生肖表看不出来。',
+  hu: '属虎的人做主惯了，配对表只会告诉你「虎猴相冲」。可两个强势的人未必过不好，关键是双方日干谁克谁、克得有没有出口。',
+  tu: '属兔的人对语气敏感，一句重话能记很久。生肖表只写「兔鸡相冲」，写不出你的夫妻宫是被对方日支相合，还是相害。',
+  long: '属龙的人在意体面，吵架时不肯先低头。要看的不该是「龙狗相冲」四个字，而是两人日支是冲是刑、冲在哪个位置。',
+  she: '属蛇的人先观察再交心，对方容易觉得你留了一手。这种节奏差，生肖配对照不出来，得看双方日干五行的生克。',
+  ma: '属马的人受不了被管，配对表一句「马鼠相冲」就把人劝退了。真正决定相处的是你的日支关系，和另一半的日主五行。',
+  yang: '属羊的人习惯先让，让久了会积怨。该看的是这份退让落在对方夫妻宫里是相合还是相冲，而不是生肖吉凶。',
+  hou: '属猴的人反应快、话也多，遇到慢半拍的另一半容易急。生肖只说明年支关系；急不急、谁先急，要看双方日干。',
+  ji: '属鸡的人对细节要求高，说出口就成了挑剔。配对表只会判「鸡兔相冲」，判不出这层要求是互补，还是互相消耗。',
+  gou: '属狗的人认死理，认定的人会一直护着。要看的不是「狗龙相冲」，而是两人的夫妻宫会不会把这份固执顶成僵局。',
+  zhu: '属猪的人随和，容易被当成没主见。生肖表看不出这一点，真正要看的是你的配偶星在对方命里是受生，还是受克。',
+}
+
 export function ShengXiaoDetail({ locale, sx }: { locale: SiteLang; sx: ShengXiao }) {
   if (locale === 'en') return <EnDetail sx={sx} />
   return <ZhDetail locale={locale} sx={sx} />
@@ -156,6 +174,20 @@ function ZhDetail({ locale, sx }: { locale: SiteLang; sx: ShengXiao }) {
           })}
         </div>
       </div>
+
+      {/* 合婚入口（2026-11-12 B 阶段）：放在配对表之后，不动首屏与正文顺序 */}
+      {HEMUN_HOOK[sx.slug] && (
+        <div className="hw-c-box mb-6" data-section="zodiac-hemun">
+          <h2 className="hw-c-secTitle">{t('属')}{name}{t('的合婚，生肖只是一层')}</h2>
+          <p className="hw-c-body">{t(HEMUN_HOOK[sx.slug])}</p>
+          <p className="text-sm text-ink-light mt-3">
+            {t('八字合婚只用生日：不用对方的出生时辰，也不用你的。夫妻宫、双方日干、配偶星三项都能直接看。')}
+          </p>
+          <Link href={pathForLang('/hemun', locale)} className="hw-c-link text-sm inline-block mt-3">
+            {t('用双方生日合一次婚 →')}
+          </Link>
+        </div>
+      )}
 
       <div className="hw-c-box mb-6" data-section="zodiac-liunian">
         <h2 className="hw-c-secTitle">{t('属')}{name}{t('流年运势（2024-2031）')}</h2>

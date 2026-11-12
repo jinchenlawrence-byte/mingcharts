@@ -34,6 +34,8 @@ interface IndexCopy {
   relationTitle: string
   relationBody: string
   ctaLabel: string
+  /** 合婚入口（2026-11-12 B 阶段）：只用双方生日就能合 */
+  hemunLabel: string
 }
 
 function copyFor(locale: SiteLang): IndexCopy {
@@ -64,6 +66,7 @@ function copyFor(locale: SiteLang): IndexCopy {
       relationBody:
         'Your sign is only the year branch — one of the eight characters in a Bazi chart. Personality and fortune are read from all four pillars together, so two people born under the same sign can lead very different lives. A sign reading is a useful broad reference; for a decision that matters, read the whole chart.',
       ctaLabel: 'Enter your birth time for a full chart →',
+      hemunLabel: 'Only want compatibility? Two birthdays are enough →',
     }
   }
 
@@ -93,6 +96,7 @@ function copyFor(locale: SiteLang): IndexCopy {
       relationBody:
         '生肖只是八字中「年支」一個字，看性格運勢以完整八字（年月日時四柱）更為準確。生肖運勢適合通俗參考，重大決策建議結合完整八字命盤綜合分析。',
       ctaLabel: '輸入時辰看完整八字 →',
+      hemunLabel: '只想看合婚？雙方生日就能合一次婚 →',
     }
   }
 
@@ -120,6 +124,7 @@ function copyFor(locale: SiteLang): IndexCopy {
     relationBody:
       '生肖只是八字中"年支"一个字，看性格运势以完整八字（年月日时四柱）更为准确。生肖运势适合作为通俗参考，而重大决策建议结合完整八字命盘综合分析。',
     ctaLabel: '输入时辰看完整八字 →',
+    hemunLabel: '只想看合婚？双方生日就能合一次婚 →',
   }
 }
 
@@ -192,6 +197,11 @@ export function ShengXiaoIndex({ locale }: { locale: SiteLang }) {
           <Link href={pathForLang('/', locale)} className="hw-c-btnBig">
             {c.ctaLabel}
           </Link>
+          <p className="mt-3">
+            <Link href={pathForLang('/hemun', locale)} className="hw-c-link text-sm">
+              {c.hemunLabel}
+            </Link>
+          </p>
         </div>
       </div>
     </div>
