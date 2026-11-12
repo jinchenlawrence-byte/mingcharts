@@ -66,11 +66,33 @@ const POST_FIXES: ReadonlyArray<readonly [string, string]> = [
   ['衝太歲', '沖太歲'],
 ]
 
+// ★ 「表」在表格语境里不是「手錶」的「錶」（2026-11-12 实测事故）
+//   opencc 在 cn→twp 下把「配对表」判成「配對錶」，导致 12 个繁体生肖页的标题、
+//   以及合婚模块正文里的「配对表」全部错成手表。
+//   ★ 只做【词组级】保护，绝不做「表→表」的逐字规则——逐字规则会把真正该写「錶」的
+//     地方（鐘錶/手錶/懷錶/電錶）一起改错，方向相反且更难发现。
+//   词组表同时收简繁两种输入，保证 toHant 对已是繁体的文本幂等。
+const TABLE_PHRASES: ReadonlyArray<readonly [string, string]> = [
+  ['配对表', '配對表'], ['配對表', '配對表'],
+  ['一览表', '一覽表'], ['一覽表', '一覽表'],
+  ['资料表', '資料表'], ['資料表', '資料表'],
+  ['时辰表', '時辰表'], ['時辰表', '時辰表'],
+  ['流年表', '流年表'],
+  ['表单', '表單'], ['表單', '表單'],
+  ['表格', '表格'],
+  ['报表', '報表'], ['報表', '報表'],
+]
+
+// 通用兜底：跟在「配對/一覽/資料/時辰/流年」后面的「表」一律是「表」。
+// 只保护这个「表」字，前缀照常参与转换（配对 → 配對、时辰 → 時辰）。
+const BIAO_AFTER_RE = /(配對|配对|一覽|一览|資料|资料|時辰|时辰|流年)表/g
+
 const PH_OPEN = '\uE000'
 const PH_CLOSE = '\uE001'
 const PH_RE = new RegExp(`${PH_OPEN}(\\d+)${PH_CLOSE}`, 'g')
 const GAN_TOKEN = `${PH_OPEN}GAN${PH_CLOSE}`
 const CHOU_TOKEN = `${PH_OPEN}CHOU${PH_CLOSE}`
+const BIAO_TOKEN = `${PH_OPEN}BIAO${PH_CLOSE}`
 
 /** 把干支对、术语「干」字、受保护判词替换成私有区占位符，绕开词典 */
 function mask(text: string): { masked: string; kept: string[] } {
@@ -101,6 +123,12 @@ function mask(text: string): { masked: string; kept: string[] } {
     if (!out.includes(term)) continue
     out = out.split(term).join(stash(term))
   }
+  // ⑥ 表格语境的「表」：整词先兜底，再用前缀规则兜住同族短语
+  for (const [term, fixed] of TABLE_PHRASES) {
+    if (!out.includes(term)) continue
+    out = out.split(term).join(stash(fixed))
+  }
+  out = out.replace(BIAO_AFTER_RE, (_all, pre: string) => `${pre}${BIAO_TOKEN}`)
   return { masked: out, kept }
 }
 
@@ -113,6 +141,7 @@ export function toHant(text: string): string {
   if (text.length > 1) converted = converted.replace(/衝/g, '沖')
   converted = converted.replace(PH_RE, (_all, i: string) => kept[Number(i)] ?? '')
   converted = converted.split(GAN_TOKEN).join('干').split(CHOU_TOKEN).join('丑')
+  converted = converted.split(BIAO_TOKEN).join('表')
   for (const [from, to] of POST_FIXES) {
     if (converted.includes(from)) converted = converted.split(from).join(to)
   }

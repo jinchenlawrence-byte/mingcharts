@@ -187,7 +187,6 @@ console.log('—— ⑥ 繁體文案純度與術語 ——')
     for (const ch of t) if (HANS_ONLY.has(ch)) hits.push(`简体字:${ch}`)
     return [...new Set(hits)]
   }
-
   // 转换层常量断言：术语校正必须真的生效
   const cases = [
     ['紫微斗數', '紫微斗數'], ['紫微斗数', '紫微斗數'], ['北斗', '北斗'], ['斗柄', '斗柄'],
@@ -195,6 +194,10 @@ console.log('—— ⑥ 繁體文案純度與術語 ——')
     ['冲太岁', '沖太歲'], ['冲动', '衝動'], ['冲突', '衝突'], ['冲击', '衝擊'],
     ['冲动用神', '沖動用神'], ['丑未冲', '丑未沖'], ['丑时', '丑時'],
     ['属龙', '屬龍'], ['属马', '屬馬'], ['属鸡', '屬雞'], ['属猪', '屬豬'],
+    // 表格语境的「表」 vs 手錶的「錶」（2026-11-12 实测「生肖配對錶」）
+    ['生肖配对表', '生肖配對表'], ['配对表', '配對表'], ['一览表', '一覽表'],
+    ['时辰表', '時辰表'], ['资料表', '資料表'], ['表单', '表單'],
+    ['手表', '手錶'], ['钟表', '鐘錶'], ['怀表', '懷錶'],
   ]
   let tf = 0
   for (const [input, expect] of cases) {
@@ -267,6 +270,36 @@ console.log('—— ⑥ 繁體文案純度與術語 ——')
     }
   } else {
     ok('未找到 /tw 构建产物，跳过 HTML 扫描（build 后复跑本脚本即可覆盖）')
+  }
+
+  // ⑦ 手錶的「錶」白名单（2026-11-12）
+  //   断的是「表 → 錶」这类词组级转换误伤：构建 HTML 里每出现一个「錶」，
+  //   左边两个字必须命中手錶类词，否则报红。反过来也不用逐字规则——那会把真手錶改错。
+  const WATCH_WORDS = ['鐘錶', '手錶', '懷錶', '電錶', '儀錶', '錶帶', '錶盤', '錶面']
+  const watchOk = (win) => WATCH_WORDS.some((w) => win.endsWith(w))
+  if (htmlFiles.length) {
+    let wf = 0
+    const seen = new Set()
+    for (const p of htmlFiles) {
+      const text = readFileSync(p, 'utf8')
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<!--[\s\S]*?-->/g, '')
+      let i = -1
+      while ((i = text.indexOf('錶', i + 1)) !== -1) {
+        const win = text.slice(Math.max(0, i - 2), i + 1).replace(/\s+/g, '')
+        const ctx = text.slice(Math.max(0, i - 8), i + 4).replace(/\s+/g, ' ').trim()
+        const key = `${p}|${ctx}`
+        if (seen.has(key)) continue
+        seen.add(key)
+        if (!watchOk(win)) {
+          wf++
+          fail(`${p.replace(root, '')} 的「錶」不在白名单：…${ctx}…`)
+        }
+      }
+    }
+    if (wf === 0) ok(`${htmlFiles.length} 个 /tw 构建 HTML 的「錶」全部落在手錶类白名单`)
+    if (watchOk('對錶') || !watchOk('鐘錶')) fail('牙口：「錶」白名单判据失效（配對錶 未拦住或 鐘錶 被误拦）')
   }
 
   // 牙口：人为注入必须翻红
