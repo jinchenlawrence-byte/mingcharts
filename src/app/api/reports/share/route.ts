@@ -17,9 +17,16 @@ import type { ReportKind } from '@/lib/reportSave'
 // 采用 B。分享页一律按【未付费】口径下发（gateReportForDetail 传空权益），
 // 只给试读层，不把付费全文送给任何持链接的人。
 //
-// 密钥复用现有服务端密钥，避免新增环境变量：REPORT_SHARE_SECRET 优先，否则用 service_role key。
-const SECRET = process.env.REPORT_SHARE_SECRET || process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+// ★ 2026-11-12：只读 REPORT_SHARE_SECRET，不再回退 service_role key。
+//   后者是数据库最高权限凭证，当签名密钥有两重问题：轮换会让历史分享链全失效；
+//   把高权限密钥的使用面又扩大一层。没配就显式失败，不静默降级。
+const SHARE_SECRET_ENV = 'REPORT_SHARE_SECRET'
+const SECRET = process.env.REPORT_SHARE_SECRET || ''
 const TTL_SEC = 30 * 24 * 3600
+
+if (!SECRET) {
+  console.error(`[reports-share] 未配置 ${SHARE_SECRET_ENV}，报告分享链接将无法签发与校验。请在环境变量中配置该变量（任意长随机串）。`)
+}
 
 function sign(id: string, exp: number): string {
   return createHmac('sha256', SECRET).update(`${id}.${exp}`).digest('hex')
@@ -35,7 +42,9 @@ function safeEqual(a: string, b: string): boolean {
 /** 本人换取分享链接（需登录 token） */
 export async function POST(request: NextRequest) {
   try {
-    if (!SECRET) return NextResponse.json({ error: '分享未配置' }, { status: 500 })
+    if (!SECRET) {
+      return NextResponse.json({ error: `未配置 ${SHARE_SECRET_ENV}，分享链接不可用` }, { status: 500 })
+    }
     const { token, id } = await request.json()
     if (!token || !id) return NextResponse.json({ error: '缺少参数' }, { status: 400 })
 
@@ -63,7 +72,9 @@ export async function POST(request: NextRequest) {
 /** 凭令牌读取（只读、试读层） */
 export async function GET(request: NextRequest) {
   try {
-    if (!SECRET) return NextResponse.json({ error: '分享未配置' }, { status: 500 })
+    if (!SECRET) {
+      return NextResponse.json({ error: `未配置 ${SHARE_SECRET_ENV}，分享链接不可用` }, { status: 500 })
+    }
     const p = request.nextUrl.searchParams
     const id = p.get('id') ?? ''
     const exp = Number(p.get('e') ?? 0)
