@@ -90,6 +90,13 @@ function ZhDetail({ locale, sx }: { locale: SiteLang; sx: ShengXiao }) {
             <p className="text-ink-light text-xs mt-1">
               {t('出生年份（以立春为界）：')}{sx.years.join(t('、'))}{t('年')}
             </p>
+            {locale === 'zh-Hant' && (
+              <p className="text-xs mt-1">
+                <Link href={`/tw/shengxiao/${sx.slug}/age`} className="hw-c-link">
+                  屬{name}今年幾歲？完整年齡對照 →
+                </Link>
+              </p>
+            )}
           </div>
         </div>
 
@@ -189,6 +196,11 @@ function ZhDetail({ locale, sx }: { locale: SiteLang; sx: ShengXiao }) {
         <div className="hw-c-box mb-6 mt-6">
           <h2 className="hw-c-secTitle">延伸閱讀</h2>
           <ul className="space-y-2 text-sm">
+            <li>
+              <Link href={`/tw/shengxiao/${sx.slug}/age`} className="hw-c-link">
+                • 屬{name}今年幾歲？出生年份、實歲與虛歲對照
+              </Link>
+            </li>
             <li>
               <Link href={pathForLang(`/shengxiao/${sx.slug}`, locale)} className="hw-c-link">
                 • 屬{name}的性格、事業、財運、婚姻與配對表
