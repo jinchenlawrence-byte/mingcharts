@@ -3,6 +3,7 @@ import { articles, ARTICLE_CATEGORIES } from '@/lib/articles'
 import { SHENGXIAO, LIUNIAN_YEARS } from '@/lib/shengxiaoData'
 import { JIEQI } from '@/lib/jieqiData'
 import { JIERI } from '@/lib/jieriData'
+import { rocRange } from '@/lib/ageData'
 
 // 与 robots.ts 同一口径：环境变量缺失或为 localhost 时回退正式域名，绝不把 localhost 交给爬虫。
 const RAW_URL = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_APP_URL || ''
@@ -170,6 +171,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
         priority: 0.7
       }))
     ),
+    // 年齡／民國年次查詢頁（2026-11-12）：12 生肖年齡 + 51 民國年次 + 1 hub
+    // ★ 這 64 頁是真實搜索需求頁，必須主動提交；將來的 1,095 條農民曆日頁仍不進 sitemap。
+    { url: `${BASE_URL}/tw/age`, changeFrequency: 'monthly', priority: 0.8 },
+    ...SHENGXIAO.map(s => ({
+      url: `${BASE_URL}/tw/shengxiao/${s.slug}/age`,
+      changeFrequency: 'monthly' as const,
+      priority: 0.8
+    })),
+    ...rocRange().map(roc => ({
+      url: `${BASE_URL}/tw/age/${roc}`,
+      changeFrequency: 'yearly' as const,
+      priority: 0.7
+    })),
     // 繁体文章库：索引 + 分类 + 全部文章（与简体 /article/* 一一对应）
     { url: `${BASE_URL}/tw/article`, changeFrequency: 'weekly', priority: 0.8 },
     ...ARTICLE_CATEGORIES.map(c => ({

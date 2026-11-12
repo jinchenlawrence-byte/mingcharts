@@ -100,7 +100,6 @@ const rocSrc = read('src/app/tw/age/[roc]/page.tsx')
 const hubSrc = read('src/app/tw/age/page.tsx')
 const tableSrc = read('src/components/age/AgeTable.tsx')
 const detailSrc = read('src/components/shengxiao/ShengXiaoDetail.tsx')
-const sitemapSrc = read('src/app/sitemap.ts')
 
 for (const [name, src] of [['生肖年龄页', zodiacSrc], ['年次页', rocSrc], ['年次 hub', hubSrc]]) {
   if (!src.includes('canonical')) fail(`${name} 缺少 canonical`)
@@ -119,14 +118,25 @@ if (!tableSrc.includes('/tw/shengxiao/')) fail('年龄表未把生肖链回生�
 if (!detailSrc.includes('/age')) fail('生肖详情页未加入年龄页入口（内链不成立）')
 ok('模板结构：FAQPage / canonical / 可索引 / 双向内链 / 无 410 链接')
 
-// ---------- 6. 不进 sitemap ----------
-if (sitemapSrc.includes('/tw/age')) {
-  fail('新页面被加入了 sitemap，违反本轮裁决')
+// ---------- 6. sitemap 收录 64 页，且日页不进 ----------
+{
+  const mod = await import('../src/app/sitemap.ts')
+  const raw = mod.default
+  const build = typeof raw === 'function' ? raw : raw?.default
+  if (typeof build !== 'function') fail('无法加载 sitemap 默认导出')
+  const paths = build().map((e) => e.url.replace(/^https?:\/\/[^/]+/, ''))
+  const expected = [
+    '/tw/age',
+    ...SHENGXIAO.map((s) => `/tw/shengxiao/${s.slug}/age`),
+    ...rocRange().map((r) => `/tw/age/${r}`),
+  ]
+  const missing = expected.filter((p) => !paths.includes(p))
+  if (missing.length) fail(`sitemap 缺少 ${missing.length} 条：${missing.slice(0, 5).join(', ')}`)
+  if (paths.some((p) => /^\/tw\/nongli/.test(p))) fail('sitemap 混入了農民曆页面（本轮不应出现）')
+  if (paths.some((p) => /^\/tw\/age\/\d+\/.+/.test(p))) fail('sitemap 混入了日期型日页')
+  if (paths.some((p) => /^\/bazi\/\d{4}\/\d{2}\/\d{2}$/.test(p))) fail('sitemap 混入了 /bazi 出生日页')
+  ok(`sitemap 收录 64 页（总数 ${paths.length}），且无日页`)
 }
-if (/\/tw\/shengxiao\/[^'"`]*\/age/.test(sitemapSrc)) {
-  fail('生肖年龄页被加入了 sitemap，违反本轮裁决')
-}
-ok('sitemap：未新增 /tw/age 与 /tw/shengxiao/*/age')
 
 // ---------- 7. 文件存在 ----------
 for (const p of [
