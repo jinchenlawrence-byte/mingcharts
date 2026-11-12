@@ -39,6 +39,17 @@ function safeEqual(a: string, b: string): boolean {
   return timingSafeEqual(ba, bb)
 }
 
+// ★ 2026-11-12：失效分享一律 410 Gone。
+//   403 是「你不许看」，搜索引擎会把这类 URL 当权限问题继续留在索引里反复尝试；
+//   410 是「资源已不存在」，才会被剔掉。分享链会过期、会被吊销，属于后者。
+//   401 仍留给「未登录/登录 token 无效」——那是身份问题，不是资源消失。
+function gone(error: string): NextResponse {
+  return NextResponse.json(
+    { error },
+    { status: 410, headers: { 'x-robots-tag': 'noindex' } }
+  )
+}
+
 /** 本人换取分享链接（需登录 token） */
 export async function POST(request: NextRequest) {
   try {
@@ -81,10 +92,10 @@ export async function GET(request: NextRequest) {
     const sig = p.get('s') ?? ''
     if (!id || !exp || !sig) return NextResponse.json({ error: '参数不完整' }, { status: 400 })
     if (!Number.isFinite(exp) || exp < Math.floor(Date.now() / 1000)) {
-      return NextResponse.json({ error: '链接已过期' }, { status: 410 })
+      return gone('链接已过期')
     }
     if (!safeEqual(sig, sign(id, exp))) {
-      return NextResponse.json({ error: '链接无效' }, { status: 403 })
+      return gone('链接无效')
     }
 
     const admin = createServerSupabase()
