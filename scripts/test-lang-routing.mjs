@@ -116,7 +116,12 @@ console.log('—— ⑤ proxy 只导向根路径 ——')
   if (src.includes("'/bazi/:path*'")) { f++; fail('proxy matcher 仍是全量通配 /bazi/:path*（未收窄）') }
   {
     const entries = (src.match(/matcher:\s*\[([^\]]*)\]/) || [])[1] || ''
-    if (entries.includes('/tw') || entries.includes('/en')) { f++; fail('proxy matcher 误含 /tw 或 /en（会重定向深链）') }
+    // 2026-11-14：/tw|/en 条目只允许「边缘 410」用途 —— 旧 /bazi 深链、分享卡 /tw/hemun/r。
+    //   语言树本身绝不能被 middleware 接管，否则深链会被 301 到语言根，形成重定向链。
+    const langEntries = [...entries.matchAll(/'(\/(?:tw|en)[^']*)'/g)].map((m) => m[1])
+    const allowed = (p) => /^\/(?:tw|en)\/bazi\//.test(p) || p === '/tw/hemun/r'
+    const illegal = langEntries.filter((p) => !allowed(p))
+    if (illegal.length) { f++; fail(`proxy matcher 出现非 410 用途的 /tw|/en 条目：${illegal.join(', ')}`) }
   }
   if (!src.includes("x-vercel-ip-country")) { f++; fail('proxy 未读取 x-vercel-ip-country') }
   if (!src.includes('isCrawler') && !src.includes('decideRootLang')) { f++; fail('proxy 未做爬虫豁免（isCrawler / decideRootLang 均未接）') }
@@ -124,7 +129,7 @@ console.log('—— ⑤ proxy 只导向根路径 ——')
   if (!src.includes('LANG_ASKED_COOKIE')) { f++; fail('proxy 未读取 mc_lang_asked cookie') }
   if (/cookies\.set/.test(src)) { f++; fail('proxy 自动跳转不应写语言 cookie（否则第二次访问不再按地区跳）') }
   if (!src.includes('NextResponse.next()')) { f++; fail('proxy 无放行分支') }
-  if (f === 0) ok('语言跳转仍只发生在 "/"（/bazi 仅做补零 308）；读 Vercel 国家头；爬虫豁免；读两种语言 cookie 且不写；无头时放行不报错')
+  if (f === 0) ok('语言跳转仍只发生在 "/"（/bazi 仅做补零 308）；/tw|/en 条目仅限 410 用途；读 Vercel 国家头；爬虫豁免；读两种语言 cookie 且不写；无头时放行不报错')
 }
 
 // ---------- ⑥ 英文路由与 sitemap ----------
