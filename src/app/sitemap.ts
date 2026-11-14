@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next'
 import { articles, ARTICLE_CATEGORIES } from '@/lib/articles'
+import { articlesEn, ARTICLE_CATEGORIES_EN } from '@/lib/articlesEn'
 import { SHENGXIAO, LIUNIAN_YEARS } from '@/lib/shengxiaoData'
 import { JIEQI } from '@/lib/jieqiData'
 import { JIERI } from '@/lib/jieriData'
@@ -247,6 +248,19 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${BASE_URL}/en/daily`, changeFrequency: 'daily', priority: 0.7 },
     { url: `${BASE_URL}/en/terms`, changeFrequency: 'yearly', priority: 0.4 },
     { url: `${BASE_URL}/en/privacy`, changeFrequency: 'yearly', priority: 0.4 },
+    // 英文文章库（2026-11-14 第一批）：索引 + 分类 + 已翻译文章
+    // ★ 只提交真实存在的页面：文章清单直接来自 articlesEn，第二批铺开时自动增长，无需手改。
+    { url: `${BASE_URL}/en/article`, changeFrequency: 'weekly', priority: 0.8 },
+    ...ARTICLE_CATEGORIES_EN.map(c => ({
+      url: `${BASE_URL}/en/article/${c.slug}`,
+      changeFrequency: 'weekly' as const,
+      priority: 0.7
+    })),
+    ...articlesEn.map(a => ({
+      url: `${BASE_URL}/en/article/${a.slug}`,
+      changeFrequency: 'monthly' as const,
+      priority: 0.7
+    })),
   ]
 
   // 伙伴招募（白标 v1）：独立于内容页，优先级低但它必须可被搜到

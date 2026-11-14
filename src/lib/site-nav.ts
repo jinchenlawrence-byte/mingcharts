@@ -55,7 +55,7 @@ export const NAV_ITEMS: NavEntry[] = [
   {
     path: '/article',
     label: { 'zh-Hans': '命理知识', 'zh-Hant': '命理知識', en: 'Articles' },
-    available: ['zh-Hans', 'zh-Hant'],
+    // 英文文章库 2026-11-14 上线（/en/article 索引 + 8 分类 + 已翻译文章），三语均可导航
   },
   { path: '/mingshu', label: { 'zh-Hans': '命书', 'zh-Hant': '命書', en: 'Fate Book' } },
   { path: '/pricing', label: { 'zh-Hans': '定价', 'zh-Hant': '定價', en: 'Pricing' } },
