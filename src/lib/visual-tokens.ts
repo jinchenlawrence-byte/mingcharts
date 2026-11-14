@@ -32,6 +32,14 @@ export const ELEMENT_PALETTE = {
 export const DAILY_INK = { dark: '#1b1838', light: '#ffffff' } as const
 
 /** 每日日签分享图（canvas 绘制，需具体色值） */
+/** 合婚分享失效页：边缘函数直接返回裸 HTML，没有 CSS 文件可挂变量，色值收口在此 */
+export const SHARE_GONE_PALETTE = {
+  bg: '#F7F3EA',
+  ink: '#2C2318',
+  mute: '#7A6E5D',
+} as const
+
+/** 合婚分享卡（OG 图）：与分享页同一套暖纸色系 */
 export const SHARE_PALETTE = {
   bgTop: '#fffaf0',
   bgBottom: '#fdf3e3',
