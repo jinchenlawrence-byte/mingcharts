@@ -32,11 +32,44 @@ console.log('—— ① localeFromRequest 不得再读 cookie ——')
 }
 
 console.log('—— ② 所有产出型请求必须带 locale ——')
-// 产出型 = 这些接口会生成命理内容，语言必须由调用方声明
+// 产出型 = 这些接口会生成命理内容（或决定收银台语言），语言必须由调用方声明。
+//
+// ★ 精确到路由，不认前缀（2026-11-14）：
+//   旧写法用 near.includes('/api/hemun')，会把 /api/hemun/share 也算成产出型 —— 但它只签发
+//   分享 token（HMAC），不产出任何语言相关正文，本来就不需要 locale；同理 /api/member
+//   前缀会把 /api/membership（订阅收银台，需要 locale）和 /api/member/summary（GET 只读）
+//   一起吞进来。现在改成「路径后必须是边界」：/api/hemun/share、/api/membership/cancel
+//   这类子路径不再命中，同时补上真正需要 locale 的 /api/membership。
 const CONTENT_APIS = [
   '/api/ask', '/api/geo', '/api/hemun', '/api/liunian', '/api/ziwei',
-  '/api/paipan', '/api/unlock', '/api/fatebook', '/api/member', '/api/checkout',
+  '/api/paipan', '/api/unlock', '/api/fatebook', '/api/checkout',
+  '/api/membership', // 订阅收银台：locale 决定收银台显示语言
 ]
+
+// 路径后必须是边界（引号 / 反引号 / ? / 空白 / 模板变量…），不能是 \w、/、-。
+const escRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const hitContentApi = (near) =>
+  CONTENT_APIS.find((a) => new RegExp(escRe(a) + String.raw`(?![\w/-])`).test(near))
+
+// 判据自检：防止以后又把「前缀命中」写回来
+assert(!hitContentApi(`fetch('/api/hemun/share'`),
+  '判据自检：/api/hemun/share 不算产出型',
+  '判据过宽：/api/hemun/share 被算成产出型请求')
+assert(!hitContentApi(`fetch('/api/geo/token'`),
+  '判据自检：/api/geo 的子路径不算产出型',
+  '判据过宽：/api/geo 子路径被算成产出型请求')
+assert(!hitContentApi(`fetch('/api/ziwei/share'`),
+  '判据自检：/api/ziwei 的子路径不算产出型',
+  '判据过宽：/api/ziwei 子路径被算成产出型请求')
+assert(!hitContentApi(`fetch('/api/membership/cancel'`),
+  '判据自检：/api/membership/cancel 不算产出型',
+  '判据过宽：/api/membership/cancel 被算成产出型请求')
+assert(!!hitContentApi(`fetch('/api/hemun'`),
+  '判据自检：/api/hemun 本身仍算产出型',
+  '判据过严：/api/hemun 没被识别成产出型请求')
+assert(!!hitContentApi(`fetch('/api/ziwei?regen=1'`),
+  '判据自检：带查询串仍算产出型',
+  '判据过严：/api/ziwei?regen=1 没被识别成产出型请求')
 
 const files = []
 ;(function walk(d) {
@@ -65,7 +98,7 @@ for (const f of files) {
     if (end < 0) break
     const body = src.slice(start, end + 1)
     const near = src.slice(Math.max(0, idx - 900), idx)
-    const api = CONTENT_APIS.find((a) => near.includes(a))
+    const api = hitContentApi(near)
     if (api && !/\blocale\b/.test(body)) {
       gaps.push(`${f}:${src.slice(0, idx).split('\n').length} → ${api}`)
     }
