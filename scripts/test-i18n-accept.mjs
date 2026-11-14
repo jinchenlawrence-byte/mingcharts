@@ -268,8 +268,13 @@ const twCount = urls.filter((u) => u.includes('/tw')).length
 // ★ 繁体补完轮 +9：/tw/hemun /tw/ziwei /tw/geo /tw/mingshu /tw/mingshu/demo
 //   /tw/daily /tw/pricing /tw/terms /tw/privacy（帳戶／交易頁不進 sitemap）
 // ★ 同一轮 +36：/tw/jieqi + 24 节气 + /tw/jieri + 10 节日 + 2 个索引
-const expectTw = 54 + SHENGXIAO.length + SHENGXIAO.length * LIUNIAN_YEARS.length
-  + 1 + ARTICLE_CATEGORIES.length + articles.length
+const expectTw = 54
+  + 1 // /tw/shengxiao 索引（历史漏计，本次一并补上）
+  + SHENGXIAO.length // 12 属相
+  + SHENGXIAO.length // 12 个 /tw/shengxiao/<属相>/age（age 页面那条线，2026-11-12）
+  + SHENGXIAO.length * LIUNIAN_YEARS.length // 12×8 流年
+  + 1 + ARTICLE_CATEGORIES.length + articles.length // 文章索引 + 分类 + 文章
+  + 52 // /tw/age hub + 51 个民國年次页（age 页面那条线，2026-11-12）
 if (twCount !== expectTw) {
   siteFail++
   fail(`/tw 条目应为 ${expectTw}（落地页+生肖索引+伙伴页+年运入口页+太岁表+2027/2028 落地页+神煞总目录+免费查神煞+${SHENGXIAO.length} 属相），实际 ${twCount}`)
