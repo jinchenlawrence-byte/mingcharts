@@ -40,7 +40,7 @@ const FAQS = [
   },
   {
     q: '支援什麼付款方式？',
-    a: '目前支援國際信用卡（Visa / Mastercard 等）安全收款，更多付款方式接入中。',
+    a: '目前支援國際信用卡，也支援 Apple Pay 與 Google Pay 安全收款。',
   },
 ]
 

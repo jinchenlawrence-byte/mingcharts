@@ -123,7 +123,7 @@ export default function PartnerLanding({ locale }: { locale: OutputLocale }) {
           </CheckoutButton>
         </div>
         <p className="text-xs text-ink-light mt-2">
-          {L('购买后额度直接进你的账号，去「伙伴工作台」就能自己出报告，不用等我们。付款需国际信用卡。')}
+          {L('购买后额度直接进你的账号，去「伙伴工作台」就能自己出报告，不用等我们。付款需国际信用卡或 Apple Pay / Google Pay。')}
         </p>
       </section>
 

@@ -50,7 +50,7 @@ const FAQ = [
     q: '支持什么支付方式？',
     a: (
       <>
-        目前支持<b>国际信用卡</b>（Visa / Mastercard 等）安全收款，更多支付方式接入中。
+        目前支持<b>国际信用卡</b>，也支持 Apple Pay 与 Google Pay 安全收款。
       </>
     ),
   },

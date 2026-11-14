@@ -12,8 +12,10 @@
 //   ④ 权益链路：PAY_ 真流水→授予 fatebook；MOCK_ 不授予；按业务单号能查回那一行。
 //   ⑤ reconcilePayment 兜底对账：快路径不调远端；越权/坏单号拒绝；
 //      远端 succeeded 补写（含业务单号）；pending 不补写。
-//   ⑥ checkout 参数纯函数：storeId/metadata/单号/includePaymentMethods/
+//   ⑥ checkout 参数纯函数：storeId/metadata/单号/不设支付方式白名单/
 //      绝对 https successUrl?ref=；非 https 拒绝；SKU 未登记 → null。
+//   ⑦ 支付方式（2026-11-14）：钱包开通（不传白/黑名单、不传 billingDetail）、
+//      payment_method 四值映射、缺失回退 card、三语文案含钱包。
 //
 // 牙口（文本不变、行为变坏；开发期手工注入，实测翻红后已复原）：
 //   A waffo-events.ts markEventProcessed(eventType, eventId) 改 eventId + '-x'
@@ -29,9 +31,12 @@ import {
   makeMerchantOrderId,
   parseMerchantOrderId,
   buildPaidPaymentRow,
+  buildSubscriptionPaymentRow,
   handleWaffoEvent,
   reconcilePayment,
   normalizeGraphqlPayment,
+  normalizePaymentMethod,
+  STORED_PAYMENT_METHODS,
 } from '../src/lib/waffo-events.ts'
 import { buildCheckoutParams, WAFFO_WEBHOOK_TOLERANCE_MS } from '../src/lib/waffo.ts'
 import { waffoProductId, WAFFO_PORTAL_URL } from '../src/lib/waffo-products.ts'
@@ -127,6 +132,7 @@ function paidEvent({
   externalId,
   metadata = { userId: UID_A, sku: 'fatebook' },
   paymentDate = '2026-10-10T08:00:00.000Z',
+  paymentMethod = 'card',
   eventType = 'order.completed',
 } = {}) {
   return {
@@ -146,7 +152,7 @@ function paidEvent({
       chargedAmount: amount,
       paymentId,
       paymentStatus: 'succeeded',
-      paymentMethod: 'card',
+      paymentMethod: paymentMethod,
       paymentLast4: '0110',
       paymentDate,
     },
@@ -268,8 +274,12 @@ const productsSrc = stripComments(read('../src/lib/waffo-products.ts'))
 
 const schema = read('../supabase/schema.sql')
 assert(
-  /payment_method IN \('card', 'wechat', 'alipay', 'stripe'\)/.test(schema),
-  "schema: payment_method CHECK 含 'card'",
+  /payment_method IN \('card', 'applepay', 'googlepay', 'wechat', 'alipay', 'stripe'\)/.test(schema),
+  "schema: payment_method CHECK 含 'card' + 钱包 'applepay'/'googlepay'",
+)
+assert(
+  (schema.match(/payment_method IN \('card', 'applepay', 'googlepay'/g) || []).length >= 2,
+  'schema: 建表段与旧库迁移段都补了钱包取值（单文件双份事实）',
 )
 assert(schema.includes('order_merchant_external_id TEXT'), 'schema: payments 新增 order_merchant_external_id 列')
 assert(
@@ -589,7 +599,10 @@ console.log('—— ⑥ 单号规则 / buildCheckoutParams / SKU 映射 ——')
   assert(params.productId === 'PROD_live' && params.currency === 'USD', 'productId + currency USD')
   assert(params.buyerEmail === 'buyer@example.com', 'buyerEmail trim + 小写归一')
   assert(params.language === 'zh-Hans', 'language zh-Hans')
-  assert(Array.isArray(params.includePaymentMethods) && params.includePaymentMethods.length === 1 && params.includePaymentMethods[0] === 'card', '仅开放 card（includePaymentMethods）')
+  assert(
+    params.includePaymentMethods === undefined && params.excludePaymentMethods === undefined,
+    '不设支付方式白/黑名单（交给平台按币种给全量：card + applepay + googlepay）',
+  )
   assert(params.orderMerchantExternalId === orderId, 'orderMerchantExternalId = MC- 单号')
   assert(params.metadata.userId === UID_A && params.metadata.sku === 'fatebook', 'metadata 带 userId/sku（字符串值）')
   // ★ successUrl 必须带 sku（2026-10-18 修复）：成功页据此轮询【正确商品】的权益，
@@ -731,6 +744,72 @@ console.log('—— ⑥b 英文商品：9 个 ID / 与中文不同 / 缺 ID 不�
   const memberBtn = stripComments(read('../src/components/MembershipButton.tsx'))
   assert(memberBtn.includes('waffoProductId(PLAN_SKU[plan], locale)'), '会员按钮按 locale 判断可用性')
   assert(memberBtn.includes("'Coming soon'"), '缺 ID 时英文按钮显示 Coming soon')
+}
+
+// ════════════════ ⑦ 支付方式（2026-11-14）：钱包开通 + 落库映射 ════════════════
+console.log('—— ⑦ 支付方式：不设白名单 / 四值映射 / 缺失回退 card / 三语文案 ——')
+{
+  // 1) 不得回退到白名单（这是钱包被挡住的根因）；同时不得传 billingDetail（会按国家收缩方式）
+  const waffoSrc = stripComments(read('../src/lib/waffo.ts'))
+  assert(!waffoSrc.includes('includePaymentMethods'), 'checkout 参数不出现 includePaymentMethods（白名单不得回退）')
+  assert(!waffoSrc.includes('excludePaymentMethods'), 'checkout 参数不出现 excludePaymentMethods（黑名单同样不设）')
+  assert(!waffoSrc.includes('billingDetail'), '不传 billingDetail（避免按账单国家收缩支付方式）')
+
+  // 2) 落库枚举与 SDK PaymentMethod 对齐，四种取值原样映射
+  assert(
+    STORED_PAYMENT_METHODS.join(',') === 'card,applepay,googlepay,wechat',
+    'payment_method 落库枚举 = card/applepay/googlepay/wechat',
+  )
+  for (const m of ['card', 'applepay', 'googlepay', 'wechat']) {
+    assert(normalizePaymentMethod(m) === m, `payment_method 映射：${m} → ${m}`)
+  }
+  // 渠道可能回传的写法差异（大小写 / 空格 / 下划线）
+  for (const raw of ['Apple Pay', 'apple_pay', 'APPLEPAY']) {
+    assert(normalizePaymentMethod(raw) === 'applepay', `写法容错：${JSON.stringify(raw)} → applepay`)
+  }
+  for (const raw of ['Google Pay', 'google_pay']) {
+    assert(normalizePaymentMethod(raw) === 'googlepay', `写法容错：${JSON.stringify(raw)} → googlepay`)
+  }
+
+  // 3) 缺失 / 未知 / 非字符串 → 回退 card（不写 null、不抛错）
+  for (const raw of [undefined, null, '', 'bogus', 42, {}]) {
+    let out
+    let threw = false
+    try { out = normalizePaymentMethod(raw) } catch { threw = true }
+    assert(!threw && out === 'card', `缺失/未知支付方式回退 card：${String(raw)}`)
+  }
+
+  // 4) 真事件链路：钱包事件必须落成自己的方式，而不是恒定的 card
+  for (const m of ['applepay', 'googlepay']) {
+    const row = buildPaidPaymentRow(paidEvent({ paymentId: 'PAY_W1', paymentMethod: m }).data)
+    assert(row && row.payment_method === m, `order.completed(${m}) 落库 payment_method=${m}`)
+  }
+  const noMethod = paidEvent({ paymentId: 'PAY_W2' })
+  delete noMethod.data.paymentMethod
+  const fallbackRow = buildPaidPaymentRow(noMethod.data)
+  assert(fallbackRow && fallbackRow.payment_method === 'card', '事件缺 paymentMethod → 落库回退 card')
+
+  // 5) 订阅扣款行走同一映射
+  const subWallet = buildSubscriptionPaymentRow(
+    paidEvent({ paymentId: 'PAY_W3', paymentMethod: 'googlepay' }).data,
+    'monthly',
+    '2026-10-10T08:00:00.000Z',
+  )
+  assert(subWallet && subWallet.payment_method === 'googlepay', '订阅扣款行同样记录真实支付方式')
+
+  // 6) 三语文案：不得再只说「国际信用卡」
+  const copyFiles = [
+    ['../src/app/(zh)/HomeClient.tsx', '简体首页'],
+    ['../src/app/(zh)/pricing/page.tsx', '简体定价页'],
+    ['../src/app/tw/page.tsx', '繁体首页'],
+    ['../src/app/tw/pricing/page.tsx', '繁体定价页'],
+    ['../src/app/en/pricing/page.tsx', '英文定价页'],
+    ['../src/components/partners/PartnerLanding.tsx', '伙伴落地页'],
+  ]
+  for (const [f, label] of copyFiles) {
+    const src = read(f)
+    assert(/Apple Pay/.test(src) && /Google Pay/.test(src), `支付方式文案已更新（${label}）`)
+  }
 }
 
 // ════════════════ 收尾 ════════════════

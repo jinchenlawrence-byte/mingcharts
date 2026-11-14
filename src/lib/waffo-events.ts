@@ -29,6 +29,29 @@ export function parseMerchantOrderId(ref: string): { userId: string; ts: number 
   return { userId: m[1], ts }
 }
 
+// ── 支付方式（2026-11-14）───────────────────────────────────
+// Waffo 的 PaymentMethod 枚举：card / applepay / googlepay / wechat。
+// 落库只认这四种；**缺失或未知一律回退 'card'** —— 卡支付是既有事实，
+// 不能因为渠道没回传新字段就把历史口径写坏，也不能写 null（会撞 CHECK 约束）。
+export const STORED_PAYMENT_METHODS = ['card', 'applepay', 'googlepay', 'wechat'] as const
+export type StoredPaymentMethod = (typeof STORED_PAYMENT_METHODS)[number]
+
+export function normalizePaymentMethod(raw: unknown): StoredPaymentMethod {
+  // 归一化：忽略大小写与分隔符，兼容 "Apple Pay" / "apple_pay" / "ApplePay" 等写法。
+  const key = typeof raw === 'string' ? raw.trim().toLowerCase().replace(/[^a-z]/g, '') : ''
+  switch (key) {
+    case 'applepay':
+      return 'applepay'
+    case 'googlepay':
+      return 'googlepay'
+    case 'wechat':
+    case 'wechatpay':
+      return 'wechat'
+    default:
+      return 'card'
+  }
+}
+
 // ── payments 写入行（列名与 supabase/schema.sql 的 payments 表一致）─────────
 export interface PaidPaymentRow {
   user_id: string
@@ -48,7 +71,8 @@ export interface PaidPaymentRow {
   // ★ 档 C（2026-10-18）：订阅扣款为 'monthly' | 'yearly'（会员），一次性订单仍为 'single'。
   //   与 schema.sql 的 CHECK (payment_type IN ('single','monthly','yearly','lifetime')) 对齐。
   payment_type: 'single' | 'monthly' | 'yearly'
-  payment_method: 'card'
+  // ★ 渠道回传的真实方式（2026-11-14）；缺失/未知由 normalizePaymentMethod 回退 'card'。
+  payment_method: StoredPaymentMethod
   status: 'paid'
   transaction_id: string // ★ Waffo 真实支付单号 PAY_xxx；绝不能是 MOCK_ 前缀
   order_merchant_external_id: string // ★ 兜底对账快路径 + 反查用户共同依赖
@@ -131,6 +155,10 @@ export interface RemotePaymentNode {
   // ★ 远端 orderMetadata 里的 chartId（HANDOFF-命书一份一付 §3.2）：
   //   同样【不可信】—— 补写前必须经 normalizeChartIdMeta 形态校验 ＋ 归属校验
   chartId?: string
+  // ★ 支付方式（2026-11-14）：GraphQL 反查链路暂未 select 该字段（字段名未在文档中确认，
+  //   贸然加进 query 有让对账接口整体报错的风险），因此通常为 undefined → 回退 'card'。
+  //   待联调确认 schema 后再在 verify-payment 的 query 里补上，这里无需改。
+  paymentMethod?: string
 }
 
 export interface RemotePaymentLookup {
@@ -208,7 +236,7 @@ export function buildPaidPaymentRow(
     amount,
     sku: typeof rawSku === 'string' ? rawSku.trim() : '',
     payment_type: 'single',
-    payment_method: 'card',
+    payment_method: normalizePaymentMethod(data.paymentMethod),
     status: 'paid',
     transaction_id: transactionId,
     order_merchant_external_id: externalId,
@@ -274,7 +302,7 @@ export function buildSubscriptionPaymentRow(
     amount,
     sku: plan === 'monthly' ? 'member_monthly' : 'member_yearly',
     payment_type: plan,
-    payment_method: 'card',
+    payment_method: normalizePaymentMethod(data.paymentMethod),
     status: 'paid',
     transaction_id: transactionId,
     order_merchant_external_id: externalId,
@@ -632,7 +660,7 @@ export async function reconcilePayment(deps: {
     amount: Number(node.chargedAmount),
     sku: node.sku, // ★ 补写行同样按真实 SKU 归集（node.sku 由远端 orderMetadata 映射而来）
     payment_type: 'single',
-    payment_method: 'card',
+    payment_method: normalizePaymentMethod(node.paymentMethod),
     status: 'paid',
     transaction_id: node.paymentId,
     order_merchant_external_id: ref,
@@ -676,6 +704,8 @@ export function normalizeGraphqlPayment(raw: unknown): RemotePaymentNode | null 
   const sku = String(meta.sku ?? 'fatebook')
   // ★ chartId 只做形态归一（RemotePaymentNode.chartId?: string）；归属校验在补写前统一做（§3.2）
   const chartIdRaw = normalizeChartIdMeta(meta.chartId)
+  // ★ 支付方式：query 未 select 时为 undefined，normalizePaymentMethod 会回退 'card'
+  const paymentMethodRaw = pick(node, 'paymentMethod', 'paymentMethodType')
   if (!paymentId || !chargedAmount || !orderMerchantExternalId) return null
 
   return {
@@ -687,5 +717,6 @@ export function normalizeGraphqlPayment(raw: unknown): RemotePaymentNode | null 
     userId,
     sku,
     ...(chartIdRaw ? { chartId: chartIdRaw } : {}),
+    ...(paymentMethodRaw ? { paymentMethod: String(paymentMethodRaw) } : {}),
   }
 }

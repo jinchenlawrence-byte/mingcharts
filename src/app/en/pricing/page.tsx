@@ -80,7 +80,7 @@ const FAQS = [
   },
   {
     q: 'How do I pay?',
-    a: 'International credit cards (Visa / Mastercard) through the Waffo hosted checkout. The report unlocks automatically after payment.',
+    a: 'International credit cards, Apple Pay and Google Pay through the Waffo hosted checkout. The report unlocks automatically after payment.',
   },
   {
     q: 'How do I cancel membership?',

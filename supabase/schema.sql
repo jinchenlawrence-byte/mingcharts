@@ -47,7 +47,8 @@ CREATE TABLE IF NOT EXISTS charts (
 
 -- 支付记录表
 -- ★ Waffo 集成（HANDOFF-Waffo支付集成 §5.8）：
---   · payment_method 枚举纳入 'card'（Waffo 本轮只接卡支付；旧库需跑文件末迁移段）
+--   · payment_method 枚举纳入 'card' + 钱包 'applepay'/'googlepay'（旧库需跑文件末迁移段）
+--     alipay/stripe 是历史值，保留以免旧流水被约束打回。
 --   · order_merchant_external_id：我们自己的业务单号 MC-<userId>-<ts>，
 --     兜底对账快路径与反查用户共同依赖它；与 transaction_id（Waffo PAY_xxx）是两个东西
 --   · transaction_id UNIQUE：幂等方案 (b) 主——并发重投靠数据库约束拒绝，严禁先查后写
@@ -64,7 +65,7 @@ CREATE TABLE IF NOT EXISTS payments (
   --   【已有数据库】需在 SQL Editor 补跑（新建库跑本文件即已就位）：
   --     ALTER TABLE payments ADD COLUMN IF NOT EXISTS sku TEXT;
   sku TEXT,
-  payment_method TEXT CHECK (payment_method IN ('card', 'wechat', 'alipay', 'stripe')),
+  payment_method TEXT CHECK (payment_method IN ('card', 'applepay', 'googlepay', 'wechat', 'alipay', 'stripe')),
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'failed', 'refunded')),
   transaction_id TEXT,
   order_merchant_external_id TEXT,
@@ -202,10 +203,12 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_reports_cache ON reports(user_id, kind, ca
 -- 新建库跑上方 CREATE TABLE 即已就位；【已有数据库】需在 SQL Editor 补跑本段。
 -- ─────────────────────────────────────────────────────────────
 
--- 1) payment_method 枚举纳入 'card'（不先改，order.completed 首次写入即被 CHECK 拒绝）
+-- 1) payment_method 枚举：'card' + 钱包 'applepay'/'googlepay'
+--    （不先改，order.completed 首次写入即被 CHECK 拒绝）
+--    ★ 可重复执行：DROP IF EXISTS + ADD，直接在 Supabase SQL Editor 跑本段即可。
 ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_payment_method_check;
 ALTER TABLE payments ADD CONSTRAINT payments_payment_method_check
-  CHECK (payment_method IN ('card', 'wechat', 'alipay', 'stripe'));
+  CHECK (payment_method IN ('card', 'applepay', 'googlepay', 'wechat', 'alipay', 'stripe'));
 
 -- 2) 业务单号列（MC-xxx；兜底对账快路径 + 反查用户）
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS order_merchant_external_id TEXT;

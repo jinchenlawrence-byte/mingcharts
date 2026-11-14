@@ -9,7 +9,6 @@
 import { WaffoPancake, verifyWebhook } from '@waffo/pancake-ts'
 import type {
   CreateCheckoutSessionParams,
-  PaymentMethod,
   WebhookEvent,
   WebhookEventData,
 } from '@waffo/pancake-ts'
@@ -172,14 +171,17 @@ export function buildCheckoutParams(input: CheckoutParamsInput): WaffoCheckoutPa
       ? '/tw/checkout/success'
       : '/checkout/success'
   const successUrl = `${base.origin}${successPath}?${successQuery}`
-  const cardOnly: PaymentMethod[] = ['card']
+  // ★ 支付方式（2026-11-14）：不再传 includePaymentMethods。
+  //   传白名单 ['card'] 会把 Apple Pay / Google Pay 挡在外面；显式列三种又在「渠道侧未开通」
+  //   时多一层 400/静默隐藏的不确定性。SDK 契约是「两者都不传 → 按币种给全量」，
+  //   USD 一次性/订阅的矩阵本身就是 card + applepay + googlepay，所以交给平台决定最稳。
+  //   ★ 不要传 billingDetail：它会按账单国家收缩可选方式，同样会把钱包挤掉。
   return {
     storeId: input.storeId,
     productId: input.productId,
     currency: 'USD',
     buyerEmail: input.buyerEmail.trim().toLowerCase(),
     language: checkoutLanguage(input.locale),
-    includePaymentMethods: cardOnly,
     orderMerchantExternalId: input.orderMerchantExternalId,
     metadata: {
       // metadata 值必须是字符串（SDK 类型 Record<string,string>）
