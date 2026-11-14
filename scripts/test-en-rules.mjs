@@ -32,19 +32,39 @@ const COUPLES = [
   [{ year: 1979, month: 12, day: 11, hour: 23, minute: 40, gender: 1 }, { year: 1983, month: 7, day: 2, hour: 5, minute: 15, gender: 0 }],
 ]
 
-console.log('\n① 合婚：英文条目数与中文一致')
+// ① 合婚：按【维度 key 集合】比对，不再假定中英是九维一一对应。
+//
+// 为什么允许数量不同（2026-11-14，三柱模式 ea593fb/a75c02e 之后）：
+//   · 三柱模式会按「时辰是否可信」动态丢弃依赖时辰的维度，中英各自按同一规则裁剪，
+//     但两条规则引擎的落地进度不同 —— 中文已新增「配偶星透干」（spouseStem，三柱可判），
+//     英文规则引擎尚未实现，于是中文 10 维、英文 9 维。
+//   · 这里只允许【已登记】的差异：英文不得凭空造维度；中文有、英文没有的，必须出现在
+//     EN_MISSING_OK 里并写明原因。未登记的缺失一律翻红，防止以后新增维度漏翻英文。
+const EN_MISSING_OK = {
+  spouseStem: '英文规则引擎尚未实现「配偶星透干」（三柱模式新增维度），待合婚英文线补齐',
+}
+
+console.log('\n① 合婚：英文维度集合与中文对齐（允许已登记差异）')
 for (const [m, f] of COUPLES) {
   const male = chartOf(m), female = chartOf(f)
   const zh = hehun(male, female)
   const en = hehunEn(male, female)
-  assert(zh.dimensions.length === en.dimensions.length, `维度数 ${zh.dimensions.length}=${en.dimensions.length}`)
-  zh.dimensions.forEach((d, i) => {
-    const e = en.dimensions[i]
-    assert(e.key === d.key, `第 ${i} 维 key 一致（${d.key}）`)
-    assert(e.facts.length === d.facts.length, `${d.key} facts ${d.facts.length}=${e.facts.length}`)
-    assert(e.tags.length === d.tags.length, `${d.key} tags ${d.tags.length}=${e.tags.length}`)
-    assert(e.citations.length === d.citations.length, `${d.key} citations ${d.citations.length}=${e.citations.length}`)
-  })
+  const zhByKey = new Map(zh.dimensions.map((d) => [d.key, d]))
+  const enByKey = new Map(en.dimensions.map((d) => [d.key, d]))
+
+  const onlyEn = [...enByKey.keys()].filter((k) => !zhByKey.has(k))
+  assert(onlyEn.length === 0, `英文不得出现中文没有的维度` + (onlyEn.length ? `（多出：${onlyEn.join(',')}）` : ''))
+  const missing = [...zhByKey.keys()].filter((k) => !enByKey.has(k))
+  const unexpected = missing.filter((k) => !(k in EN_MISSING_OK))
+  assert(unexpected.length === 0, `英文仅缺已登记维度` + (unexpected.length ? `（未登记：${unexpected.join(',')}）` : ''))
+
+  for (const [key, d] of zhByKey) {
+    const e = enByKey.get(key)
+    if (!e) continue
+    assert(e.facts.length === d.facts.length, `${key} facts ${d.facts.length}=${e.facts.length}`)
+    assert(e.tags.length === d.tags.length, `${key} tags ${d.tags.length}=${e.tags.length}`)
+    assert(e.citations.length === d.citations.length, `${key} citations ${d.citations.length}=${e.citations.length}`)
+  }
   assertNoCJK(en, `合婚 ${m.year}/${f.year}`)
 }
 
