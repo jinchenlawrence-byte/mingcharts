@@ -4,6 +4,7 @@
 //   ① 令牌真的定义在唯一位置（src/app/globals.css 的 :root + html[lang] 覆盖），
 //      字体栈按语言分开：英文/繁体的 UI 与标题栈里不得出现中文字体兜底（Noto Sans SC / PingFang SC / Microsoft YaHei）
 //   ② 页面与组件层不再出现一次性硬编码色值（hex / rgb / rgba / hsl），
+//     唯一目录级豁免：src/app/api/og/**（Satori 无 CSS 引擎，变量不生效）。
 //      非 CSS 场景（canvas、SVG 属性）统一收口到 src/lib/visual-tokens.ts
 //   ③ 三棵树同类页面的区块节奏与卡片规格来自同一套类（.hw-sec / .hw-c-tile / .hw-c-plan），
 //      简体、繁体、英文定价页取值必须相等
@@ -237,6 +238,12 @@ const ALLOW_COLOR_LITERALS = new Set([
   'src/lib/site-meta.ts',     // <meta name="theme-color">
 ])
 
+// ★ 2026-11-14：OG 分享卡的【目录级】窄豁免，且只允许这一个目录。
+//   原因：OG 图由 Satori 渲染，没有 CSS 引擎，自定义属性（CSS 变量）不生效，
+//   字面色值是必要实现，不属于「页面/组件层绕过令牌」。
+//   纪律：新增豁免必须同时改这一行与下面的自检，否则断言会翻红——防止顺手扩豁免。
+const ALLOW_COLOR_LITERAL_DIRS = ['src/app/api/og/']
+
 const COLOR_RE = /#[0-9a-fA-F]{3,8}\b|rgba?\(|hsla?\(/g
 
 function walk(dir) {
@@ -261,6 +268,7 @@ export function scanColorLiterals(files) {
     const rel = relative(join(root, 'src'), abs).replace(/\\/g, '/')
     const key = `src/${rel}`
     if (ALLOW_COLOR_LITERALS.has(key)) continue
+    if (ALLOW_COLOR_LITERAL_DIRS.some((dir) => key.startsWith(dir))) continue
     const lines = readFileSync(abs, 'utf8').split(/\r?\n/)
     lines.forEach((line, i) => {
       const m = line.match(COLOR_RE)
@@ -272,7 +280,15 @@ export function scanColorLiterals(files) {
 
 const srcFiles = walk(join(root, 'src'))
 const colorHits = scanColorLiterals(srcFiles)
-assert(colorHits.length === 0, `src 下 .ts/.tsx 硬编码色值 0 处（扫描 ${srcFiles.length} 个文件）`)
+assert(colorHits.length === 0,
+  `除 src/app/api/og/** 外，src 下 .ts/.tsx 硬编码色值 0 处（扫描 ${srcFiles.length} 个文件）`)
+
+// 牙口：豁免目录有且只有一个，且该目录真实存在 —— 防止以后顺手把别的路径塞进豁免列表
+// （多一个 / 少一个 / 指向不存在的路径，都会在这里翻红）
+assert(ALLOW_COLOR_LITERAL_DIRS.length === 1 && ALLOW_COLOR_LITERAL_DIRS[0] === 'src/app/api/og/',
+  '色值豁免目录有且只有一个：src/app/api/og/')
+assert(existsSync(join(root, 'src/app/api/og')),
+  '色值豁免目录真实存在（防豁免指向已删除/拼错路径而静默扩大范围）')
 if (colorHits.length) {
   for (const h of colorHits.slice(0, 12)) console.log(`      ${h.file}:${h.line}  ${h.text}`)
 }
