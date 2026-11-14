@@ -1,7 +1,12 @@
 import type { ArticleEn } from './types'
+import { shenshaPart2 } from './shensha-2'
+import { shenshaPart3 } from './shensha-3'
+import { shenshaPart4 } from './shensha-4'
+import { shenshaPart5 } from './shensha-5'
+import { shenshaPart6 } from './shensha-6'
 
 // Batch 1 (2026-11-14): English articles for the shensha category
-export const shenshaEn: ArticleEn[] = [
+const shenshaFirst: ArticleEn[] = [
   {
     slug: 'tianyi-guiren-chafa',
     title: 'Heavenly Noble Lookup: The Foremost Noble Star in Bazi',
@@ -111,4 +116,16 @@ export const shenshaEn: ArticleEn[] = [
       },
     ],
   },
+]
+
+// Batch 2 (2026-11-14): the remaining 50 shensha articles.
+// Split into part files so each batch can be translated and reviewed independently;
+// order follows the Chinese source order.
+export const shenshaEn: ArticleEn[] = [
+  ...shenshaFirst,
+  ...shenshaPart2,
+  ...shenshaPart3,
+  ...shenshaPart4,
+  ...shenshaPart5,
+  ...shenshaPart6,
 ]
