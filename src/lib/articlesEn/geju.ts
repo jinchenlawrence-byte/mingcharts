@@ -1,7 +1,8 @@
 import type { ArticleEn } from './types'
+import { gejuPart2 } from './geju-2'
 
 // Batch 1 (2026-11-14): English articles for the geju category
-export const gejuEn: ArticleEn[] = [
+const gejuFirst: ArticleEn[] = [
   {
     slug: 'bazi-geju-shi-shenme',
     title: 'What Is a Bazi Chart Pattern? How Zi Ping Zhen Quan Picks a Pattern',
@@ -114,3 +115,6 @@ export const gejuEn: ArticleEn[] = [
     ],
   },
 ]
+
+// Batch 2 (2026-11-14): the remaining geju articles.
+export const gejuEn: ArticleEn[] = [...gejuFirst, ...gejuPart2]

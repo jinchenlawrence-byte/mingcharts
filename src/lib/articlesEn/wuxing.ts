@@ -1,7 +1,8 @@
 import type { ArticleEn } from './types'
+import { wuxingPart2 } from './wuxing-2'
 
 // Batch 1 (2026-11-14): English articles for the wuxing category
-export const wuxingEn: ArticleEn[] = [
+const wuxingFirst: ArticleEn[] = [
   {
     slug: 'wuxing-xiangsheng-xiangke',
     title: 'The Five Elements Generating and Controlling Each Other, Explained',
@@ -114,3 +115,6 @@ export const wuxingEn: ArticleEn[] = [
     ],
   },
 ]
+
+// Batch 2 (2026-11-14): the remaining wuxing article.
+export const wuxingEn: ArticleEn[] = [...wuxingFirst, ...wuxingPart2]

@@ -1,7 +1,8 @@
 import type { ArticleEn } from './types'
+import { shishenPart2 } from './shishen-2'
 
 // Batch 1 (2026-11-14): shishen category English articles
-export const shishenEn: ArticleEn[] = [
+const shishenFirst: ArticleEn[] = [
   {
     slug: 'zhengguan-shishen',
     title: 'What Does the Direct Officer Mean in Bazi? A Complete Guide',
@@ -117,3 +118,6 @@ export const shishenEn: ArticleEn[] = [
     ],
   },
 ]
+
+// Batch 2 (2026-11-14): the remaining shishen articles.
+export const shishenEn: ArticleEn[] = [...shishenFirst, ...shishenPart2]

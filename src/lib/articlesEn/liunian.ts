@@ -1,7 +1,9 @@
 import type { ArticleEn } from './types'
+import { liunianPart2 } from './liunian-2'
+import { liunianPart3 } from './liunian-3'
 
 // Batch 1 (2026-11-14): English articles for the liunian category
-export const liunianEn: ArticleEn[] = [
+const liunianFirst: ArticleEn[] = [
   {
     slug: '2027-dingwei-nian-yunshi',
     title: '2027 Ding Wei Annual Fortune: Goat in Its Own Year, Ox Clash and Punishment, Rat Harm',
@@ -184,3 +186,6 @@ export const liunianEn: ArticleEn[] = [
     ],
   },
 ]
+
+// Batch 2 (2026-11-14): the remaining liunian articles.
+export const liunianEn: ArticleEn[] = [...liunianFirst, ...liunianPart2, ...liunianPart3]

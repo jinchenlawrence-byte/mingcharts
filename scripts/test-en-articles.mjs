@@ -103,11 +103,47 @@ console.log('\n⑥ sitemap 收录')
   assert(sm.includes('articlesEn.map'), 'sitemap 收录已翻译文章（只提交真实存在的页）')
 }
 
-console.log('\n⑦ 第一批覆盖率（每类至少 1 篇）')
-for (const c of ARTICLE_CATEGORIES_EN) {
-  const n = articlesEn.filter((a) => a.category === c.slug).length
-  const zhN = articles.filter((a) => a.category === c.slug).length
-  assert(n >= 1, `${c.slug}：${n}/${zhN} 篇`)
+console.log('\n⑦ 全量对账（94 篇收口）')
+// 一条总账断言同时覆盖：slug 唯一性、分类归属、逐分类篇数对齐、总数对齐。
+const countBy = (list, slug) => list.filter((a) => a.category === slug).length
+const ledger = ARTICLE_CATEGORIES.map((c) => {
+  const zhN = countBy(articles, c.slug)
+  const enN = countBy(articlesEn, c.slug)
+  return { slug: c.slug, zhN, enN, aligned: zhN === enN }
+})
+for (const row of ledger) {
+  console.log(`     ${row.slug}: ${row.enN}/${row.zhN}${row.aligned ? '' : '  ← 未对齐'}`)
+}
+const unaligned = ledger.filter((r) => !r.aligned).map((r) => `${r.slug} ${r.enN}/${r.zhN}`)
+const dupSlugs = articlesEn.length - enSlugs.size
+const missingSlugs = articles.filter((a) => !enSlugs.has(a.slug)).map((a) => a.slug)
+const badCategory = articlesEn.filter((a) => zhBySlug.get(a.slug)?.category !== a.category)
+assert(
+  unaligned.length === 0 && dupSlugs === 0 && missingSlugs.length === 0 && badCategory.length === 0,
+  `${articlesEn.length}/${articles.length}，分类分布与简体逐类一致` +
+    (unaligned.length ? `（未对齐：${unaligned.join('、')}）` : '') +
+    (dupSlugs ? `（重复 slug ${dupSlugs} 个）` : '') +
+    (missingSlugs.length ? `（缺 ${missingSlugs.length} 篇：${missingSlugs.slice(0, 5).join(', ')}…）` : '') +
+    (badCategory.length ? `（分类归属错：${badCategory.map((a) => a.slug).join(', ')}）` : ''),
+)
+
+// 反向自检（--self-test）：模拟「删掉一篇英文」，上面的总账判据必须翻红，
+// 防止判据退化成永远为真。用法：tsx scripts/test-en-articles.mjs --self-test
+if (process.argv.includes('--self-test')) {
+  const withoutOne = articlesEn.slice(0, -1)
+  const broken = ARTICLE_CATEGORIES.map((c) => ({
+    zhN: countBy(articles, c.slug),
+    enN: countBy(withoutOne, c.slug),
+  }))
+  const flips = broken.some((r) => r.zhN !== r.enN)
+  const totalFlips = withoutOne.length !== articles.length
+  if (flips && totalFlips) {
+    console.log('  ok  反向自检：删掉 1 篇后全量对齐判据如期翻红（分类与总数同时少 1）')
+    pass++
+  } else {
+    console.log('  FAIL 反向自检：删掉 1 篇后判据没有翻红，说明对齐判据失效')
+    fail++
+  }
 }
 
 // 页面数：8 个分类 + 已翻译文章（与 generateStaticParams 同口径）

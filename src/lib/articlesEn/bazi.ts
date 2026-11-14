@@ -1,7 +1,8 @@
 import type { ArticleEn } from './types'
+import { baziPart2 } from './bazi-2'
 
 // Batch 1 (2026-11-14): English articles in the bazi category
-export const baziEn: ArticleEn[] = [
+const baziFirst: ArticleEn[] = [
   {
     slug: 'shenme-shi-bazi',
     title: 'What Is Bazi? A Beginner Guide to the Four Pillars',
@@ -118,3 +119,6 @@ export const baziEn: ArticleEn[] = [
     ],
   },
 ]
+
+// Batch 2 (2026-11-14): the remaining bazi articles.
+export const baziEn: ArticleEn[] = [...baziFirst, ...baziPart2]
