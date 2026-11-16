@@ -8,6 +8,7 @@
 // 绝不做「先 SELECT 看在不在，再 INSERT」（并发下两个请求会同时穿过）。
 // ─────────────────────────────────────────────────────────────
 import type { SupabaseClient } from '@supabase/supabase-js'
+import { normalizePaymentMethodBrand, parseStoredPaymentMethod } from './waffo-events'
 import type { MembershipPatch, PaidPaymentRow, WaffoPaymentRepository } from './waffo-events'
 
 const PG_UNIQUE_VIOLATION = '23505'
@@ -42,6 +43,7 @@ export function createWaffoRepo(admin: SupabaseClient): WaffoPaymentRepository {
         sku: row.sku, // ★ 权益归集的唯一依据（2026-10-18）：绝不省略
         payment_type: row.payment_type,
         payment_method: row.payment_method,
+        payment_method_brand: row.payment_method_brand,
         status: row.status,
         transaction_id: row.transaction_id,
         order_merchant_external_id: row.order_merchant_external_id,
@@ -58,7 +60,7 @@ export function createWaffoRepo(admin: SupabaseClient): WaffoPaymentRepository {
       const { data, error } = await admin
         .from('payments')
         .select(
-          'user_id,chart_id,amount,sku,payment_type,payment_method,status,transaction_id,order_merchant_external_id,paid_at',
+          'user_id,chart_id,amount,sku,payment_type,payment_method,payment_method_brand,status,transaction_id,order_merchant_external_id,paid_at',
         )
         .eq('order_merchant_external_id', externalId)
         .order('created_at', { ascending: false })
@@ -78,7 +80,9 @@ export function createWaffoRepo(admin: SupabaseClient): WaffoPaymentRepository {
         //   并由 reconcilePayment 在能反查到远端 sku 时回填（见 updatePaymentSku）。
         sku: (data.sku as string | null) ?? '',
         payment_type: data.payment_type as PaidPaymentRow['payment_type'],
-        payment_method: data.payment_method as PaidPaymentRow['payment_method'],
+        // ★ 读回做运行时校验（2026-11-16）：不再用纯类型断言 —— 空 → null，未知 → 'unknown'
+        payment_method: parseStoredPaymentMethod(data.payment_method),
+        payment_method_brand: normalizePaymentMethodBrand(data.payment_method_brand),
         status: data.status as PaidPaymentRow['status'],
         transaction_id: data.transaction_id as string,
         order_merchant_external_id: data.order_merchant_external_id as string,

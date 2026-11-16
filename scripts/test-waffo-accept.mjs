@@ -14,8 +14,8 @@
 //      远端 succeeded 补写（含业务单号）；pending 不补写。
 //   ⑥ checkout 参数纯函数：storeId/metadata/单号/不设支付方式白名单/
 //      绝对 https successUrl?ref=；非 https 拒绝；SKU 未登记 → null。
-//   ⑦ 支付方式（2026-11-14）：钱包开通（不传白/黑名单、不传 billingDetail）、
-//      payment_method 四值映射、缺失回退 card、三语文案含钱包。
+//   ⑦ 支付方式（2026-11-16 修订）：钱包开通（不传白/黑名单、不传 billingDetail）、
+//      已知方式原样映射、空值留空、未知记 unknown、品牌字段落库、三语文案含钱包。
 //
 // 牙口（文本不变、行为变坏；开发期手工注入，实测翻红后已复原）：
 //   A waffo-events.ts markEventProcessed(eventType, eventId) 改 eventId + '-x'
@@ -274,12 +274,17 @@ const productsSrc = stripComments(read('../src/lib/waffo-products.ts'))
 
 const schema = read('../supabase/schema.sql')
 assert(
-  /payment_method IN \('card', 'applepay', 'googlepay', 'wechat', 'alipay', 'stripe'\)/.test(schema),
-  "schema: payment_method CHECK 含 'card' + 钱包 'applepay'/'googlepay'",
+  /payment_method IN \('card', 'applepay', 'googlepay', 'wechat', 'alipay', 'ewallet', 'stripe', 'unknown'\)/.test(schema),
+  "schema: payment_method CHECK 含已知方式 + 'ewallet' + 'unknown'（空值仍允许 NULL）",
 )
 assert(
   (schema.match(/payment_method IN \('card', 'applepay', 'googlepay'/g) || []).length >= 2,
-  'schema: 建表段与旧库迁移段都补了钱包取值（单文件双份事实）',
+  'schema: 建表段与旧库迁移段都使用同一份取值（单文件双份事实）',
+)
+assert(schema.includes('payment_method_brand TEXT'), 'schema: payments 新增 payment_method_brand 列')
+assert(
+  schema.includes('ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_method_brand TEXT'),
+  'schema: payment_method_brand 幂等加列（旧库可直接补跑）',
 )
 assert(schema.includes('order_merchant_external_id TEXT'), 'schema: payments 新增 order_merchant_external_id 列')
 assert(
@@ -747,7 +752,7 @@ console.log('—— ⑥b 英文商品：9 个 ID / 与中文不同 / 缺 ID 不�
 }
 
 // ════════════════ ⑦ 支付方式（2026-11-14）：钱包开通 + 落库映射 ════════════════
-console.log('—— ⑦ 支付方式：不设白名单 / 四值映射 / 缺失回退 card / 三语文案 ——')
+console.log('—— ⑦ 支付方式：不设白名单 / 空值留空 / 未知记 unknown / 品牌落库 / 三语文案 ——')
 {
   // 1) 不得回退到白名单（这是钱包被挡住的根因）；同时不得传 billingDetail（会按国家收缩方式）
   const waffoSrc = stripComments(read('../src/lib/waffo.ts'))
@@ -755,12 +760,12 @@ console.log('—— ⑦ 支付方式：不设白名单 / 四值映射 / 缺失�
   assert(!waffoSrc.includes('excludePaymentMethods'), 'checkout 参数不出现 excludePaymentMethods（黑名单同样不设）')
   assert(!waffoSrc.includes('billingDetail'), '不传 billingDetail（避免按账单国家收缩支付方式）')
 
-  // 2) 落库枚举与 SDK PaymentMethod 对齐，四种取值原样映射
+  // 2) 落库取值：开放字符串下的已知值原样映射（新增 alipay / ewallet）
   assert(
-    STORED_PAYMENT_METHODS.join(',') === 'card,applepay,googlepay,wechat',
-    'payment_method 落库枚举 = card/applepay/googlepay/wechat',
+    STORED_PAYMENT_METHODS.join(',') === 'card,applepay,googlepay,wechat,alipay,ewallet',
+    'payment_method 落库枚举 = card/applepay/googlepay/wechat/alipay/ewallet',
   )
-  for (const m of ['card', 'applepay', 'googlepay', 'wechat']) {
+  for (const m of ['card', 'applepay', 'googlepay', 'wechat', 'alipay', 'ewallet']) {
     assert(normalizePaymentMethod(m) === m, `payment_method 映射：${m} → ${m}`)
   }
   // 渠道可能回传的写法差异（大小写 / 空格 / 下划线）
@@ -770,32 +775,55 @@ console.log('—— ⑦ 支付方式：不设白名单 / 四值映射 / 缺失�
   for (const raw of ['Google Pay', 'google_pay']) {
     assert(normalizePaymentMethod(raw) === 'googlepay', `写法容错：${JSON.stringify(raw)} → googlepay`)
   }
+  assert(normalizePaymentMethod('WeChat Pay') === 'wechat', '写法容错："WeChat Pay" → wechat')
 
-  // 3) 缺失 / 未知 / 非字符串 → 回退 card（不写 null、不抛错）
-  for (const raw of [undefined, null, '', 'bogus', 42, {}]) {
+  // 3) 新口径（2026-11-16）：空值保持空，未知值记 unknown —— 绝不冒充 card
+  for (const raw of [undefined, null, '', '   ']) {
     let out
     let threw = false
     try { out = normalizePaymentMethod(raw) } catch { threw = true }
-    assert(!threw && out === 'card', `缺失/未知支付方式回退 card：${String(raw)}`)
+    assert(!threw && out === null, `空值支付方式保持空（不再回退 card）：${JSON.stringify(raw)}`)
+  }
+  for (const raw of ['bogus', 42, {}]) {
+    let out
+    let threw = false
+    try { out = normalizePaymentMethod(raw) } catch { threw = true }
+    assert(!threw && out === 'unknown', `未知支付方式记 unknown（不再回退 card）：${String(raw)}`)
   }
 
-  // 4) 真事件链路：钱包事件必须落成自己的方式，而不是恒定的 card
-  for (const m of ['applepay', 'googlepay']) {
+  // 4) 真事件链路：已知方式原样落库；空值落 NULL；未知记 unknown
+  for (const m of ['applepay', 'googlepay', 'ewallet']) {
     const row = buildPaidPaymentRow(paidEvent({ paymentId: 'PAY_W1', paymentMethod: m }).data)
     assert(row && row.payment_method === m, `order.completed(${m}) 落库 payment_method=${m}`)
   }
   const noMethod = paidEvent({ paymentId: 'PAY_W2' })
   delete noMethod.data.paymentMethod
-  const fallbackRow = buildPaidPaymentRow(noMethod.data)
-  assert(fallbackRow && fallbackRow.payment_method === 'card', '事件缺 paymentMethod → 落库回退 card')
+  const emptyMethodRow = buildPaidPaymentRow(noMethod.data)
+  assert(emptyMethodRow && emptyMethodRow.payment_method === null, '事件缺 paymentMethod → 落库 NULL（不再写 card）')
+  const unknownMethodRow = buildPaidPaymentRow(
+    paidEvent({ paymentId: 'PAY_W5', paymentMethod: 'wire_transfer' }).data,
+  )
+  assert(unknownMethodRow && unknownMethodRow.payment_method === 'unknown', '事件未知 paymentMethod → 落库 unknown')
+
+  // 4b) 品牌字段（Waffo 用 paymentMethodBrand 区分 wechatpay / alipay）
+  const wallet = paidEvent({ paymentId: 'PAY_W4', paymentMethod: 'ewallet' })
+  wallet.data.paymentMethodBrand = 'wechatpay'
+  const walletRow = buildPaidPaymentRow(wallet.data)
+  assert(
+    walletRow && walletRow.payment_method === 'ewallet' && walletRow.payment_method_brand === 'wechatpay',
+    'ewallet + paymentMethodBrand=wechatpay → 方式与品牌分别落库',
+  )
+  const noBrand = buildPaidPaymentRow(paidEvent({ paymentId: 'PAY_W6', paymentMethod: 'card' }).data)
+  assert(noBrand && noBrand.payment_method_brand === null, '事件缺 paymentMethodBrand → 落库 NULL（不臆断）')
 
   // 5) 订阅扣款行走同一映射
-  const subWallet = buildSubscriptionPaymentRow(
-    paidEvent({ paymentId: 'PAY_W3', paymentMethod: 'googlepay' }).data,
-    'monthly',
-    '2026-10-10T08:00:00.000Z',
+  const subWalletEvent = paidEvent({ paymentId: 'PAY_W3', paymentMethod: 'googlepay' })
+  subWalletEvent.data.paymentMethodBrand = 'googlepay'
+  const subWallet = buildSubscriptionPaymentRow(subWalletEvent.data, 'monthly', '2026-10-10T08:00:00.000Z')
+  assert(
+    subWallet && subWallet.payment_method === 'googlepay' && subWallet.payment_method_brand === 'googlepay',
+    '订阅扣款行同样记录真实支付方式与品牌',
   )
-  assert(subWallet && subWallet.payment_method === 'googlepay', '订阅扣款行同样记录真实支付方式')
 
   // 6) 三语文案：不得再只说「国际信用卡」
   const copyFiles = [

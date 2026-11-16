@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
 import { latestChartIdOf } from '@/lib/entitlement'
@@ -47,6 +47,7 @@ export default function CheckoutButton({
   children: React.ReactNode
 }) {
   const router = useRouter()
+  const pathname = usePathname() ?? ''
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [noChart, setNoChart] = useState(false)
@@ -54,6 +55,9 @@ export default function CheckoutButton({
   const hant = locale === 'zh-Hant'
   const L = (s: string) => (hant ? toHant(s) : s)
   const loginPath = authPath ?? (en ? '/en/auth' : hant ? '/tw/auth' : '/auth')
+  // ★ 条款入口按当前路径判语言（与页脚同一套规则），不额外新增 locale 参数：
+  //   付费墙（UnlockCta）里的 CheckoutButton 没传 locale，用路径判断才不会在 /tw、/en 掉回简体。
+  const termsPath = pathname.startsWith('/tw') ? '/tw/terms' : pathname.startsWith('/en') ? '/en/terms' : '/terms'
 
   if (!available) {
     return (
@@ -145,6 +149,12 @@ export default function CheckoutButton({
         {loading ? (en ? 'Redirecting to checkout…' : L('正在跳转支付…')) : children}
       </button>
       {error && <p className="text-xs text-red-600 mt-2 text-center">{error}</p>}
+      {/* ★ 条款/退款政策入口（沿用页脚措辞）：结账前可见，指向含 §7 退款政策的条款页 */}
+      <p className="mt-1.5 text-[11px] text-ink/60 text-center">
+        <Link href={termsPath} className="underline hover:text-ink/80">
+          Terms of Service
+        </Link>
+      </p>
       {noChart && (
         // ★ 无命盘：不弹 alert，页内给出可点的下一步（HANDOFF-命书一份一付 §2.3）
         <div className="hw-alert hw-alert--info mt-2 text-center">

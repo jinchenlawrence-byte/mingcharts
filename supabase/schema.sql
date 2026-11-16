@@ -47,8 +47,10 @@ CREATE TABLE IF NOT EXISTS charts (
 
 -- 支付记录表
 -- ★ Waffo 集成（HANDOFF-Waffo支付集成 §5.8）：
---   · payment_method 枚举纳入 'card' + 钱包 'applepay'/'googlepay'（旧库需跑文件末迁移段）
---     alipay/stripe 是历史值，保留以免旧流水被约束打回。
+--   · payment_method 是渠道给的【开放字符串】：card / applepay / googlepay / ewallet 等；
+--     空值保持 NULL、未知值统一记 'unknown'（2026-11-16 修订，不再一律冒充 'card'）。
+--     alipay/stripe 是历史值，保留以免旧流水被约束打回（旧库需跑文件末迁移段）。
+--   · payment_method_brand：钱包品牌（wechatpay / alipay 等），开放式字符串，仅 trim 后原样落库。
 --   · order_merchant_external_id：我们自己的业务单号 MC-<userId>-<ts>，
 --     兜底对账快路径与反查用户共同依赖它；与 transaction_id（Waffo PAY_xxx）是两个东西
 --   · transaction_id UNIQUE：幂等方案 (b) 主——并发重投靠数据库约束拒绝，严禁先查后写
@@ -65,7 +67,11 @@ CREATE TABLE IF NOT EXISTS payments (
   --   【已有数据库】需在 SQL Editor 补跑（新建库跑本文件即已就位）：
   --     ALTER TABLE payments ADD COLUMN IF NOT EXISTS sku TEXT;
   sku TEXT,
-  payment_method TEXT CHECK (payment_method IN ('card', 'applepay', 'googlepay', 'wechat', 'alipay', 'stripe')),
+  payment_method TEXT CHECK (payment_method IN ('card', 'applepay', 'googlepay', 'wechat', 'alipay', 'ewallet', 'stripe', 'unknown')),
+  -- ★ 钱包品牌（2026-11-16）：wechatpay / alipay 等；开放式字符串，渠道未回传时为 NULL。
+  --   【已有数据库】需在 SQL Editor 补跑（新建库跑本文件即已就位）：
+  --     ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_method_brand TEXT;
+  payment_method_brand TEXT,
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'paid', 'failed', 'refunded')),
   transaction_id TEXT,
   order_merchant_external_id TEXT,
@@ -203,12 +209,16 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_reports_cache ON reports(user_id, kind, ca
 -- 新建库跑上方 CREATE TABLE 即已就位；【已有数据库】需在 SQL Editor 补跑本段。
 -- ─────────────────────────────────────────────────────────────
 
--- 1) payment_method 枚举：'card' + 钱包 'applepay'/'googlepay'
---    （不先改，order.completed 首次写入即被 CHECK 拒绝）
+-- 1) payment_method 枚举（2026-11-16 修订：开放字符串，空留 NULL、未知记 'unknown'）
+--    · 新增 'ewallet'（渠道已出现）与 'unknown'（未知值兜底）；alipay/stripe 为历史值，保留。
+--    · 只在【改约束】时才需要跑；不先改，新取值首次写入即被 CHECK 拒绝。
 --    ★ 可重复执行：DROP IF EXISTS + ADD，直接在 Supabase SQL Editor 跑本段即可。
 ALTER TABLE payments DROP CONSTRAINT IF EXISTS payments_payment_method_check;
 ALTER TABLE payments ADD CONSTRAINT payments_payment_method_check
-  CHECK (payment_method IN ('card', 'applepay', 'googlepay', 'wechat', 'alipay', 'stripe'));
+  CHECK (payment_method IN ('card', 'applepay', 'googlepay', 'wechat', 'alipay', 'ewallet', 'stripe', 'unknown'));
+
+-- 1b) 钱包品牌列（2026-11-16）：幂等加列，不动现有行（历史行该列为 NULL）。
+ALTER TABLE payments ADD COLUMN IF NOT EXISTS payment_method_brand TEXT;
 
 -- 2) 业务单号列（MC-xxx；兜底对账快路径 + 反查用户）
 ALTER TABLE payments ADD COLUMN IF NOT EXISTS order_merchant_external_id TEXT;
