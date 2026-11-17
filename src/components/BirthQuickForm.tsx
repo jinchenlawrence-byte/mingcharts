@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { track } from '@/lib/track'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
+import { localize } from '@/lib/hant'
 import type { SiteLang } from '@/lib/lang'
 
 const YEARS = Array.from({ length: 101 }, (_, i) => 1920 + i)
@@ -12,16 +13,16 @@ const OPTS = (from: number, to: number) => Array.from({ length: to - from + 1 },
 
 const TEXT: Record<string, {
   title: string; body: string; year: string; month: string; day: string; hour: string; unknownHour: string; hourUnit: string
-  male: string; female: string; place: string; cta: string; hint: string; loading: string; fail: string; net: string
+  male: string; female: string; placeLabel: string; placePlaceholder: string; clearPlace: string; other: string; cta: string; hint: string; loading: string; fail: string; net: string
 }> = {
   'zh-Hans': {
     title: '先看属于你自己的命盘',
     body: '生肖只是 12 分之一的共性参考。填出生年月日，直接看你本人的四柱与大运；时辰与出生地可选填。',
     year: '年', month: '月', day: '日', hour: '出生时辰（可选）', unknownHour: '不确定（按午时 12:00）', hourUnit: '时',
     male: '男', female: '女',
-    place: '出生地（可选，用于真太阳时校正）',
+    placeLabel: '出生地', placePlaceholder: '选择出生地（可选）', clearPlace: '清除出生地', other: '其它',
     cta: '免费看我的命盘',
-    hint: '留空时本盘按午时（12:00）假设排定：午时与子时排出的日柱、时柱可能完全不同，补充时辰后才准确。出生地填了按真太阳时校正，不填按标准时间。',
+    hint: '留空按午时（12:00）假设排定，日柱与时柱可能不同，补时辰后才准确；填出生地会校正真太阳时。',
     loading: '排盘中...', fail: '排盘失败，请检查输入', net: '网络错误，请稍后重试',
   },
   'zh-Hant': {
@@ -29,9 +30,9 @@ const TEXT: Record<string, {
     body: '生肖只是 12 分之一的共性參考。填出生年月日，直接看你本人的四柱與大運；時辰與出生地可選填。',
     year: '年', month: '月', day: '日', hour: '出生時辰（可選）', unknownHour: '不確定（按午時 12:00）', hourUnit: '時',
     male: '男', female: '女',
-    place: '出生地（可選，用於真太陽時校正）',
+    placeLabel: '出生地', placePlaceholder: '選擇出生地（可選）', clearPlace: '清除出生地', other: '其它',
     cta: '免費看我的命盤',
-    hint: '留空時本盤按午時（12:00）假設排定：午時與子時排出的日柱、時柱可能完全不同，補充時辰後才準確。出生地填了按真太陽時校正，不填按標準時間。',
+    hint: '留空按午時（12:00）假設排定，日柱與時柱可能不同，補時辰後才準確；填出生地會校正真太陽時。',
     loading: '排盤中...', fail: '排盤失敗，請檢查輸入', net: '網路錯誤，請稍後重試',
   },
   en: {
@@ -39,9 +40,9 @@ const TEXT: Record<string, {
     body: 'A zodiac sign is one twelfth of the picture. Enter your birth date to read your own four pillars and luck cycles; birth hour and birthplace are optional.',
     year: 'Year', month: 'Month', day: 'Day', hour: 'Birth hour (optional)', unknownHour: 'Not sure (use 12:00 noon)', hourUnit: '',
     male: 'Male', female: 'Female',
-    place: 'Birthplace (optional, for true solar time)',
+    placeLabel: 'Birthplace', placePlaceholder: 'Choose a birthplace (optional)', clearPlace: 'Clear birthplace', other: 'Other',
     cta: 'See my chart free',
-    hint: 'Left blank, the chart assumes 12:00 noon: noon and midnight can produce entirely different day and hour pillars, so add the hour before trusting it. A birthplace applies true solar time correction; without one we use standard time.',
+    hint: 'Left blank, the chart assumes 12:00 noon: day and hour pillars may differ, so add the hour before trusting it. A birthplace applies true solar time correction.',
     loading: 'Casting...', fail: 'Failed to cast the chart. Please check your input.', net: 'Network error. Please try again.',
   },
 }
@@ -62,6 +63,7 @@ export default function BirthQuickForm({
   chartPath?: string
 }) {
   const t = TEXT[locale] ?? TEXT['zh-Hans']
+  const L = (s: string) => localize(s, locale)
   const router = useRouter()
   const now = new Date()
   const [year, setYear] = useState(String(now.getFullYear() - 30))
@@ -70,6 +72,8 @@ export default function BirthQuickForm({
   // 空字符串 = 不确定；提交时按午时 12:00 排（与旧行为一致，只是不再对外声称「结果页可补」）
   const [hour, setHour] = useState('')
   const [birth, setBirth] = useState<BirthPlaceValue>({ mode: 'none' })
+  // 出生地平时只是一行字段；点它才挂载 BirthPlacePicker（661KB 城市库不进首屏）
+  const [placeOpen, setPlaceOpen] = useState(false)
   const [gender, setGender] = useState(1)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
@@ -177,13 +181,36 @@ export default function BirthQuickForm({
             </label>
           </div>
         </div>
-        {/* 出生地默认折叠：不展开就不占首屏高度；展开后才加载全球城市库（懒加载 661KB） */}
-        <details className="mt-3">
-          <summary className="hw-f cursor-pointer select-none" style={{ marginBottom: 0 }}>{t.place}</summary>
-          <div className="mt-2">
-            <BirthPlacePicker value={birth} onChange={(v) => { markStart(); setBirth(v) }} locale={locale} />
-          </div>
-        </details>
+        {/* 出生地：与时辰同一套字段样式（2026-11-17 二次修正：折叠小字太隐蔽）。
+            不放独立标签——占位文案已说明用途，390px 下可省一行高度，保证 CTA 留在首屏。
+            未展开时就是一行占位按钮；点击后才挂载 BirthPlacePicker 并加载城市库。
+            选中后行内显示城市名（繁中转繁）并可一键清除。 */}
+        <div className="mt-2">
+          {!placeOpen && (birth.mode === 'none' ? (
+            <button type="button" className="hw-sel text-left" aria-label={t.placeLabel} onClick={() => { markStart(); setPlaceOpen(true) }}>
+              {t.placePlaceholder}
+            </button>
+          ) : (
+            <div className="hw-sel flex items-center justify-between gap-2">
+              <span className="truncate">
+                {birth.mode === 'city'
+                  ? L(birth.name || birth.cityId)
+                  : `${t.other} · ${birth.zone}`}
+              </span>
+              <button type="button" aria-label={t.clearPlace} title={t.clearPlace} className="shrink-0 px-1 text-base leading-none"
+                onClick={() => { markStart(); setBirth({ mode: 'none' }) }}>✕</button>
+            </div>
+          ))}
+          {placeOpen && (
+            <div className="mt-2">
+              <BirthPlacePicker
+                value={birth}
+                onChange={(v) => { markStart(); setBirth(v); setPlaceOpen(false) }}
+                locale={locale}
+              />
+            </div>
+          )}
+        </div>
         <button type="submit" disabled={loading}
           className="mt-4 w-full rounded-full bg-hw-water py-3 text-base font-bold text-white transition hover:brightness-110 disabled:opacity-60">
           {loading ? t.loading : t.cta}

@@ -72,7 +72,8 @@ const COMMON_ZONES = [
 
 export type BirthPlaceValue =
   | { mode: 'none' }
-  | { mode: 'city'; cityId: string }
+  // name 仅用于回显已选城市（快速表单那一行），不参与提交；旧调用方可忽略
+  | { mode: 'city'; cityId: string; name?: string }
   | { mode: 'zone'; zone: string; lng?: number }
 
 type Accent = 'amber' | 'purple' | 'sky' | 'blue' | 'rose'
@@ -155,7 +156,8 @@ export default function BirthPlacePicker({
   }, [expanded])
 
   const commitCity = (cityId: string) => {
-    onChange({ mode: 'city', cityId })
+    const c = world?.byId.get(cityId)
+    onChange({ mode: 'city', cityId, ...(c ? { name: cityLabel(c) } : {}) })
     setExpanded(false)
     setQ('')
   }
