@@ -14,6 +14,7 @@ import Nav from '@/components/Nav'
 import SaveChart from '@/components/SaveChart'
 import ShareLink from '@/components/ShareLink'
 import CheckoutButton from '@/components/CheckoutButton'
+import ChartPaywallBar, { PaywallViewTracker } from '@/components/ChartPaywallBar'
 import AskPanel from '@/components/AskPanel'
 import { getSupabase } from '@/lib/supabase'
 import { waffoProductId } from '@/lib/waffo-products'
@@ -360,6 +361,16 @@ export default function ChartPage() {
           ))}
         </div>
 
+        {/* ★ 首屏付费入口（2026-11-17）：四柱之后立刻给出「能买什么 / 多少钱 / 点哪里」，
+            页尾原解锁区保留不动；埋点区分「看见」与「点击」。 */}
+        {!chart.analysis.isPaid && (
+          <ChartPaywallBar
+            locale="zh-Hans"
+            chartId={screenChartId ?? undefined}
+            available={waffoProductId('fatebook') !== null}
+          />
+        )}
+
         {/* 命盘档案：纳音 / 星宿 / 彭祖百忌 / 方位 / 冲煞（农历 toFullString 全量信息，设计稿省略、此处以档案条还原） */}
         {(naYin || pengZu || fangWei || xiu) && (
           <div className="hw-c-box" style={{ marginTop: 14 }}>
@@ -617,18 +628,20 @@ export default function ChartPage() {
 
         {/* 付费解锁区（正式收费：Waffo 托管收银台按次购买，价格取自 SKUS 单一事实源） */}
         {!chart.analysis.isPaid && (
-          <div className="hw-c-cta">
-            {chart.locked?.preview && <p className="hw-c-dx">{chart.locked.preview}</p>}
-            {syncing && <p className="hw-c-syncing">命书同步中，请稍候…</p>}
-            <div style={{ maxWidth: 380, margin: '0 auto' }}>
-              <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} chartId={screenChartId ?? undefined}>
-                解锁完整命书 · {FATEBOOK_PRICE}
-              </CheckoutButton>
+          <PaywallViewTracker module="fatebook" locale="zh-Hans" sku="fatebook" slot="chart_bottom">
+            <div className="hw-c-cta">
+              {chart.locked?.preview && <p className="hw-c-dx">{chart.locked.preview}</p>}
+              {syncing && <p className="hw-c-syncing">命书同步中，请稍候…</p>}
+              <div style={{ maxWidth: 380, margin: '0 auto' }}>
+                <CheckoutButton sku="fatebook" available={waffoProductId('fatebook') !== null} chartId={screenChartId ?? undefined}>
+                  解锁完整命书 · {FATEBOOK_PRICE}
+                </CheckoutButton>
+              </div>
+              <p className="hw-note" style={{ marginTop: 14 }}>
+                按次购买，永久回看（会员不含报告）· <Link href="/mingshu" className="hw-c-link">查看命书详情</Link>
+              </p>
             </div>
-            <p className="hw-note" style={{ marginTop: 14 }}>
-              按次购买，永久回看（会员不含报告）· <Link href="/mingshu" className="hw-c-link">查看命书详情</Link>
-            </p>
-          </div>
+          </PaywallViewTracker>
         )}
 
         {/* 已解锁：完整命理分析（六书精要十章 + 岁运时间轴 + 古籍相似命例） */}

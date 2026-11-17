@@ -1,4 +1,4 @@
-﻿'use client'
+﻿﻿'use client'
 
 // 报告试读锁定卡（合婚/紫微/年运/方位共用）
 // ★ 只有标题与灰条占位：绝不把锁定板块的真实正文放进 DOM（防从 DOM 读到付费内容）。
@@ -6,6 +6,7 @@ import { useEffect } from 'react'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import CheckoutButton from '@/components/CheckoutButton'
 import { track } from '@/lib/track'
+import { paywallClick, paywallModuleOf, usePaywallView } from '@/components/paywallTrack'
 import { localize } from '@/lib/hant'
 import type { SiteLang } from '@/lib/lang'
 
@@ -36,14 +37,25 @@ export function UnlockCta({ skus, preview, locale = 'zh-Hans', returnTo = '/repo
     track('preview_view', { skus: skuKey })
   }, [skuKey])
 
+  // 付费墙口径（2026-11-17）：旧 preview_view 只说明「渲染」，这里另记「真的滚到并看见」
+  // 与「点了购买」，module 由 SKU 反推（紫微/年运/方位/合婚），供漏斗分模块对比。
+  const module = paywallModuleOf(skus[0] ?? 'fatebook')
+  const ref = usePaywallView<HTMLDivElement>(module, locale, skuKey, 'report_locked')
+
   return (
-    <div className="hw-lk-cta">
+    <div className="hw-lk-cta" ref={ref}>
       {preview && <p className="hw-lk-note">{preview}</p>}
       {skus.map((skuId) => {
         const sku = SKUS[skuId as keyof typeof SKUS]
         if (!sku) return null
         return (
-          <div key={skuId} className="max-w-xs mx-auto mb-2">
+          <div
+            key={skuId}
+            className="max-w-xs mx-auto mb-2"
+            onClickCapture={(e) => {
+              if ((e.target as HTMLElement).closest('button')) paywallClick(module, locale, skuId, 'report_locked')
+            }}
+          >
             <CheckoutButton sku={sku.id} available requireChart={false} returnTo={returnTo}>
               {localize('解锁', locale)} {localize(sku.name, locale)} {formatPriceUSD(sku.priceUSD)}
             </CheckoutButton>

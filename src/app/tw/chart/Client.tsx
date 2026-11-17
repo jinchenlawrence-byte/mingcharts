@@ -12,6 +12,7 @@ import Link from 'next/link';
 import SaveChart from '@/components/SaveChart';
 import ShareLink from '@/components/ShareLink';
 import CheckoutButton from '@/components/CheckoutButton';
+import ChartPaywallBar, { PaywallViewTracker } from '@/components/ChartPaywallBar';
 import AskPanel from '@/components/AskPanel';
 import { getSupabase } from '@/lib/supabase';
 import { waffoProductId } from '@/lib/waffo-products';
@@ -368,6 +369,16 @@ export default function ChartPage() {
           {WX_ORDER.map((k) => (<span key={k}><i style={{ background: WX_BG[k] }}/>{WX_CN[k]}</span>))}
         </div>
 
+        {/* ★ 首屏付費入口（2026-11-17）：四柱之後立刻給出「能買什麼 / 多少錢 / 點哪裡」，
+            頁尾原解鎖區保留不動；埋點區分「看見」與「點擊」。 */}
+        {!chart.analysis.isPaid && (<ChartPaywallBar
+            locale="zh-Hant"
+            chartId={screenChartId ?? undefined}
+            available={waffoProductId('fatebook') !== null}
+            authPath="/tw/auth"
+            returnTo="/tw/chart"
+          />)}
+
         {/* 命盘档案：纳音 / 星宿 / 彭祖百忌 / 方位 / 冲煞（农历 toFullString 全量信息，设计稿省略、此处以档案条还原） */}
         {(naYin || pengZu || fangWei || xiu) && (<div className="hw-c-box" style={{ marginTop: 14 }}>
             <div className="hw-c-kv" style={{ lineHeight: 1.9 }}>
@@ -559,7 +570,7 @@ export default function ChartPage() {
           </div>)}
 
         {/* 付费解锁区（正式收费：Waffo 托管收银台按次购买，价格取自 SKUS 单一事实源） */}
-        {!chart.analysis.isPaid && (<div className="hw-c-cta">
+        {!chart.analysis.isPaid && (<PaywallViewTracker module="fatebook" locale="zh-Hant" sku="fatebook" slot="chart_bottom"><div className="hw-c-cta">
             {chart.locked?.preview && <p className="hw-c-dx">{H(chart.locked.preview)}</p>}
             {syncing && <p className="hw-c-syncing">{H("命书同步中，请稍候…")}</p>}
             <div style={{ maxWidth: 380, margin: '0 auto' }}>
@@ -568,7 +579,7 @@ export default function ChartPage() {
             </div>
             <p className="hw-note" style={{ marginTop: 14 }}>{H("按次购买，永久回看（会员不含报告）·")} <Link href="/tw/mingshu" className="hw-c-link">{H("查看命書詳情")}</Link>
             </p>
-          </div>)}
+          </div></PaywallViewTracker>)}
 
         {/* 已解锁：完整命理分析（六书精要十章 + 岁运时间轴 + 古籍相似命例） */}
         {paidRows && paid && (<div className="space-y-4" style={{ marginTop: 20 }}>

@@ -5,7 +5,15 @@
 //   · 任何失败都静默——埋点绝不能影响排盘与支付主流程。
 // ★ 本文件禁止在模块顶层访问 window（site-audit 断言：客户端页顶层不得用 window）。
 
-export type TrackName = 'page_view' | 'paipan_cta_click' | 'paipan_submit' | 'preview_view' | 'pay_click'
+export type TrackName =
+  | 'page_view'
+  | 'paipan_cta_click'
+  | 'paipan_submit'
+  | 'preview_view'
+  | 'pay_click'
+  // 付费墙曝光 / 点击（2026-11-17）：拆开「看见了入口」与「点了购买」，props 带 module/locale/sku/slot
+  | 'chart_paywall_view'
+  | 'chart_paywall_click'
 
 export interface TrackProps {
   /** 模块/商品等短标识，值必须是短字符串（服务端会限制长度） */

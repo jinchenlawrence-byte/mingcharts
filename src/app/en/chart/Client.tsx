@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import SaveChart from '@/components/SaveChart'
 import ShareLink from '@/components/ShareLink'
 import CheckoutButton from '@/components/CheckoutButton'
+import ChartPaywallBar, { PaywallViewTracker } from '@/components/ChartPaywallBar'
 import AskPanel from '@/components/AskPanel'
 import { getSupabase } from '@/lib/supabase'
 import { waffoProductId } from '@/lib/waffo-products'
@@ -158,6 +159,18 @@ export default function EnChartClient() {
           ))}
         </div>
 
+        {/* First-screen paywall (2026-11-17): what you can buy, the price and where to click
+            right after the four pillars. The existing bottom unlock block is kept as is. */}
+        {!chart.analysis.isPaid && (
+          <ChartPaywallBar
+            locale="en"
+            chartId={chartId ?? undefined}
+            available={waffoProductId('fatebook', 'en') !== null}
+            authPath="/en/auth"
+            returnTo="/en/checkout/success"
+          />
+        )}
+
         <div className="hw-c-box hw-c-boxFlush mt-4">
           <div className="hw-c-tableWrap">
             <table className="hw-c-table">
@@ -297,15 +310,17 @@ export default function EnChartClient() {
         )}
 
         {!chart.analysis.isPaid && (
-          <div className="hw-c-cta">
-            {chart.locked?.preview && <p className="hw-c-dx">{chart.locked.preview}</p>}
-            <div style={{ maxWidth: 380, margin: '0 auto' }}>
-              <CheckoutButton sku="fatebook" available={waffoProductId('fatebook', 'en') !== null} chartId={chartId ?? undefined} authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
-                Unlock the full Fate Book · {FATEBOOK_PRICE}
-              </CheckoutButton>
+          <PaywallViewTracker module="fatebook" locale="en" sku="fatebook" slot="chart_bottom">
+            <div className="hw-c-cta">
+              {chart.locked?.preview && <p className="hw-c-dx">{chart.locked.preview}</p>}
+              <div style={{ maxWidth: 380, margin: '0 auto' }}>
+                <CheckoutButton sku="fatebook" available={waffoProductId('fatebook', 'en') !== null} chartId={chartId ?? undefined} authPath="/en/auth" locale="en" returnTo="/en/checkout/success">
+                  Unlock the full Fate Book · {FATEBOOK_PRICE}
+                </CheckoutButton>
+              </div>
+              <p className="hw-note mt-3">One-time purchase, lifetime access · <Link href="/en/mingshu" className="hw-c-link">Fate Book details</Link></p>
             </div>
-            <p className="hw-note mt-3">One-time purchase, lifetime access · <Link href="/en/mingshu" className="hw-c-link">Fate Book details</Link></p>
-          </div>
+          </PaywallViewTracker>
         )}
 
         {paid && (
