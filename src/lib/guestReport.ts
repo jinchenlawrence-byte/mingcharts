@@ -13,6 +13,7 @@ import { generateAIAnalysis } from '@/lib/aiAnalysis'
 import { searchSimilarCases } from '@/lib/caseSearch'
 import { checkAiBudget } from '@/lib/aiBudget'
 import { deriveReportTitle } from '@/lib/reportSave'
+import { sendClaimEmail } from '@/lib/guestClaimMail'
 import type { OutputLocale } from '@/lib/locale'
 
 type Admin = ReturnType<typeof createServerSupabase>
@@ -121,6 +122,14 @@ export async function generateGuestFatebookReport(
     if (saveErr) throw saveErr
 
     await audit(admin, guestOrderId, 'generation_succeeded', { attempt: attempts + 1, ai: Boolean(aiPaid) })
+
+    // 阶段 D：报告一就绪就发认领邮件。缺凭据时 sendClaimEmail 会写
+    // claim_email_failed（不抛），由 cron 在配置补齐后继续补发。
+    try {
+      await sendClaimEmail(admin, guestOrderId)
+    } catch (mailErr) {
+      console.warn('[guest-report] 认领邮件发送异常（不影响报告）:', mailErr)
+    }
     return 'ready'
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err)

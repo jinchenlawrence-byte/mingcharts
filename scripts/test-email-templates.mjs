@@ -91,8 +91,8 @@ console.log(tplFail === 0
 console.log('—— ② 与 auth/callback 页口径一致（type 枚举 + recovery 目的地）——')
 let syncFail = 0
 const cb = read('../src/app/(zh)/auth/callback/page.tsx')
-if (!cb.includes("type !== 'signup' && type !== 'recovery'")) {
-  syncFail++; fail('auth/callback 未把 type 限定为 signup/recovery（模板可用的 type 与页面接受的集合必须相同）')
+if (!cb.includes("type !== 'signup' && type !== 'recovery' && type !== 'magiclink'")) {
+  syncFail++; fail('auth/callback 未把 type 限定为 signup/recovery/magiclink（模板可用的 type 与页面接受的集合必须相同）')
 }
 if (!cb.includes("verifyOtp({ token_hash: tokenHash, type })")) {
   syncFail++; fail('auth/callback 未走 verifyOtp({ token_hash, type })（自有域名验证链路）')
@@ -100,11 +100,15 @@ if (!cb.includes("verifyOtp({ token_hash: tokenHash, type })")) {
 if (!cb.includes("type === 'recovery' ? '/reset-password' : '/'")) {
   syncFail++; fail('auth/callback 未把 recovery 分派到 /reset-password（重置邮件将落到首页）')
 }
+// ★ 阶段 D：magiclink 必须回 next（游客认领页），不能套用 signup 的首页目的地
+if (!cb.includes("if (type === 'magiclink')") || !cb.includes("safeNext(params.get('next')")) {
+  syncFail++; fail('auth/callback 的 magiclink 未经 safeNext 回到 next（认领邮件点进去会落到首页）')
+}
 if (!existsSync(new URL('../src/app/(zh)/reset-password/page.tsx', import.meta.url))) {
   syncFail++; fail('缺 /reset-password 页面（recovery 分派的目的地不存在）')
 }
 console.log(syncFail === 0
-  ? '✓ 口径一致：callback 接受的 type 恰为 signup/recovery；recovery → /reset-password 且该页存在；走 verifyOtp 自有域名链路'
+  ? '✓ 口径一致：callback 接受的 type 为 signup/recovery/magiclink；recovery → /reset-password 且该页存在；magiclink 经 safeNext 回认领页；走 verifyOtp 自有域名链路'
   : '✗ callback 口径断言失败')
 
 console.log('—— ③ 本测试已接入 npm run verify（防「写了没接」）——')

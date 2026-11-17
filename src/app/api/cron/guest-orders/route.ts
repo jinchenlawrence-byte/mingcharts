@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase'
 import { generateGuestFatebookReport, GUEST_GENERATION_MAX_ATTEMPTS } from '@/lib/guestReport'
+import { retryClaimEmails } from '@/lib/guestClaimMail'
 
 // GET /api/cron/guest-orders —— 游客命书生成补偿（先付款后注册 · 阶段 C）
 //
@@ -84,7 +85,16 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, scanned: targets.length, outcomes: counts })
+    // 阶段 D：补发认领邮件（报告 ready 但邮件没发出/发送失败的订单）。
+    // 缺凭据时整体跳过，不写失败事件——补配后下一轮自动继续发。
+    let claimMail: Awaited<ReturnType<typeof retryClaimEmails>> | null = null
+    try {
+      claimMail = await retryClaimEmails(admin, BATCH)
+    } catch (e) {
+      console.error('[cron-guest-orders] 认领邮件补发失败:', e)
+    }
+
+    return NextResponse.json({ success: true, scanned: targets.length, outcomes: counts, claimMail })
   } catch (error) {
     console.error('[cron-guest-orders] 失败:', error)
     return NextResponse.json({ error: 'cron failed' }, { status: 500 })

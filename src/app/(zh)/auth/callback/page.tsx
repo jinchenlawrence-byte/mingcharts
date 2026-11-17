@@ -41,13 +41,15 @@ function CallbackInner() {
       return
     }
 
-    // ② 邮件确认/重置：token_hash 显式验证
-    //    ★ type 只接受 signup / recovery —— 与两份邮件模板里可用的 type 【同集合】
+    // ② 邮件确认/重置/游客认领一键登录：token_hash 显式验证
+    //    ★ type 接受 signup / recovery / magiclink —— 与邮件模板可用的 type 【同集合】
     //      （test-email-templates ② 守护：模板可用集合必须等于页面接受集合，不容漂移）
+    //    ★ magiclink 是阶段 D 新增：游客认领邮件点进来 → 回 next（认领页）；
+    //      signup / recovery 两条既有路径的行为完全不变。
     const tokenHash = params.get('token_hash')
     const type = params.get('type')
     if (tokenHash) {
-      if (type !== 'signup' && type !== 'recovery') {
+      if (type !== 'signup' && type !== 'recovery' && type !== 'magiclink') {
         setError('链接无效或已过期：确认链接只能使用一次且有时效，请重新获取邮件')
         return
       }
@@ -55,6 +57,10 @@ function CallbackInner() {
         .verifyOtp({ token_hash: tokenHash, type })
         .then(({ error }) => {
           if (error) throw error
+          if (type === 'magiclink') {
+            router.replace(safeNext(params.get('next'), '/'))
+            return
+          }
           router.replace(type === 'recovery' ? '/reset-password' : '/')
         })
         .catch(() => setError('链接无效或已过期：确认链接只能使用一次且有时效，请重新获取邮件'))

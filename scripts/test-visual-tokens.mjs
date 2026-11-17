@@ -236,6 +236,9 @@ const ALLOW_COLOR_LITERALS = new Set([
   'src/lib/visual-tokens.ts', // canvas / SVG 非 CSS 场景的唯一收口处
   'src/app/manifest.ts',      // PWA theme_color（构建期写死，无法读 CSS 变量）
   'src/lib/site-meta.ts',     // <meta name="theme-color">
+  // ★ 2026-11-17：认领邮件的 HTML 必须内联字面色值——邮件客户端不加载外部 CSS、
+  //   也不支持 CSS 自定义属性；这是邮件正文，不是页面/组件层。
+  'src/lib/guestClaimCopy.ts',
 ])
 
 // ★ 2026-11-14：OG 分享卡的【目录级】窄豁免，且只允许这一个目录。
