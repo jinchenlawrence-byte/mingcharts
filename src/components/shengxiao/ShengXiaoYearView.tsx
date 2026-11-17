@@ -31,6 +31,27 @@ const TONE_BADGE_EN: Record<string, string> = {
   steady: 'bg-paper-dark/40 text-ink-light',
 }
 
+// 2026-11-17 GSC（有展示、沒點擊的三頁）：只覆蓋 H1 與標題下方首段，
+// 讓頁面開頭直接接住查詢（tiger 2031 / 2028屬鼠運勢 / 2028屬龍運勢）。
+// 其餘 93 頁仍走 zhCopy/enCopy 的通用文案，版式與樣式不動。
+const PAGE_INTENT_COPY: Record<string, { h1: string; intro: string }> = {
+  'en:hu:2031': {
+    h1: '2031 Tiger fortune: love, career, money and health',
+    intro:
+      'The Tiger meets 2031 (Xin Hai) in a He Tai Sui harmony year: the annual branch and the Tiger’s own branch combine, so introductions, partnerships and relationship progress come more easily than usual. The risk is agreeing to too much because the year makes everything sound possible.',
+  },
+  'zh-Hant:shu:2028': {
+    h1: '2028年屬鼠運勢：三合貴人年，事業、感情、財運詳解',
+    intro:
+      '2028戊申年，屬鼠子水與太歲申金成三合，屬「合太歲」的貴人年：貴人與合作機會增多，阻力減小，適合談合作、推進婚戀與事業布局。',
+  },
+  'zh-Hant:long:2028': {
+    h1: '2028年屬龍運勢：三合貴人年，事業、感情、財運詳解',
+    intro:
+      '2028戊申年，屬龍辰土與太歲申金成三合，屬「合太歲」的貴人年，非犯太歲：貴人與合作機會增多，適合把已有的關係與計劃往前推。',
+  },
+}
+
 interface RelatedItem {
   href: string
   label: string
@@ -76,7 +97,9 @@ interface YearCopy {
 }
 
 export function ShengXiaoYearView({ locale, sx, year }: { locale: SiteLang; sx: ShengXiao; year: number }) {
-  const copy = buildCopy(locale, sx, year)
+  const base = buildCopy(locale, sx, year)
+  const intent = PAGE_INTENT_COPY[`${locale}:${sx.slug}:${year}`]
+  const copy = intent ? { ...base, h1: intent.h1, relationText: intent.intro } : base
   const prevYear = LIUNIAN_YEARS[LIUNIAN_YEARS.indexOf(year) - 1]
   const nextYear = LIUNIAN_YEARS[LIUNIAN_YEARS.indexOf(year) + 1]
 
