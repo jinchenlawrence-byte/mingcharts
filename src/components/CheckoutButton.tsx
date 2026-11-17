@@ -150,7 +150,7 @@ export default function CheckoutButton({
       </button>
       {error && <p className="text-xs text-red-600 mt-2 text-center">{error}</p>}
       {/* ★ 条款/退款政策入口（沿用页脚措辞）：结账前可见，指向含 §7 退款政策的条款页 */}
-      <p className="mt-1.5 text-[11px] text-ink/60 text-center">
+      <p className="mt-1.5 text-[11px] text-ink/70 text-center">
         <Link href={termsPath} className="underline hover:text-ink/80">
           Terms of Service
         </Link>
