@@ -48,16 +48,16 @@ begin
 end
 $outer$;
 
--- 每 10 分钟 POST 一次；Bearer 从 Vault 读取，文件里没有明文密钥。
+-- 每 10 分钟 GET 一次（与 Vercel Cron 的调用方式一致；路由只导出 GET，
+-- 用 POST 会得到 405）。Bearer 从 Vault 读取，文件里没有明文密钥。
 -- 读不到密钥时头会退化成 "Bearer "，接口按 401 拒绝（fail-closed）。
 select cron.schedule(
   'guest-orders-every-10m',
   '*/10 * * * *',
   $job$
-  select net.http_post(
+  select net.http_get(
     url := 'https://www.mingcharts.com/api/cron/guest-orders',
     headers := jsonb_build_object(
-      'Content-Type', 'application/json',
       'Authorization', 'Bearer ' || coalesce(
         (
           select decrypted_secret
@@ -68,7 +68,6 @@ select cron.schedule(
         ''
       )
     ),
-    body := '{}'::jsonb,
     timeout_milliseconds := 30000
   );
   $job$
