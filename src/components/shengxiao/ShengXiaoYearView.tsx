@@ -104,7 +104,7 @@ export function ShengXiaoYearView({ locale, sx, year }: { locale: SiteLang; sx: 
   const nextYear = LIUNIAN_YEARS[LIUNIAN_YEARS.indexOf(year) + 1]
 
   return (
-    <div className="hw-wrap hw-c-pg">
+    <div className={`hw-wrap hw-c-pg${locale === 'en' ? ' hw-en-y' : ''}`}>
       <div className="hw-narrow">
         <nav className="hw-c-back">
           <Link href={pathForLang('/', locale)}>{copy.home}</Link>
@@ -116,19 +116,19 @@ export function ShengXiaoYearView({ locale, sx, year }: { locale: SiteLang; sx: 
           <span>{copy.yearCrumb}</span>
         </nav>
 
-        <div className="hw-c-box mb-6">
+        <div className="hw-c-box mb-6 hw-y-hero">
           <div className="flex items-center justify-between flex-wrap gap-3 mb-3">
             <h1 className="text-2xl md:text-3xl font-bold text-ink">{copy.h1}</h1>
             <span className={`text-sm px-3 py-1 rounded-full font-semibold ${copy.badgeClass}`}>{copy.badge}</span>
           </div>
-          <p className="text-ink-light leading-relaxed">{copy.relationText}</p>
+          <p className="text-ink-light leading-relaxed hw-y-lead">{copy.relationText}</p>
           {copy.fanWarning && (
-            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700">{copy.fanWarning}</div>
+            <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded text-sm text-red-700 hw-y-warn">{copy.fanWarning}</div>
           )}
         </div>
 
         {/* 首屏排盘入口：生肖只是 1/12，先让用户拿到自己的盘（2026-11-11） */}
-        <BirthQuickForm locale={locale} chartPath={pathForLang('/chart', locale)} />
+        <BirthQuickForm locale={locale} chartPath={pathForLang('/chart', locale)} className={locale === 'en' ? 'hw-y-form' : ''} />
 
         {copy.sections.map(([title, body]) => (
           <FortuneSection key={title} title={title} body={body} />

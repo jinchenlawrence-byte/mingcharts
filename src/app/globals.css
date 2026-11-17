@@ -2882,3 +2882,24 @@ h1, h2, h3, .font-serif-sc {
   text-underline-offset: 3px;
 }
 
+
+/* ═══════════════════════════════════════════════════════════
+   英文生肖流年页 · 移动端首屏收紧（2026-11-18）
+   背景：英文页在 390×844 下表单始于 727px，CTA 底部 1037px，需下滑才可见。
+   约束：只压移动端间距与字号，不改任何文案；仅 .hw-en-y 且 ≤430px 生效，
+        简中/繁体页与桌面（>430px）完全不受影响。
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 430px) {
+  .hw-en-y { padding-top: 8px; }
+  .hw-en-y .hw-y-hero { padding: 12px 14px; margin-bottom: 12px; }
+  .hw-en-y .hw-y-hero > div:first-child { margin-bottom: 8px; gap: 6px; }
+  .hw-en-y .hw-y-hero h1 { font-size: 19px; line-height: 1.25; }
+  .hw-en-y .hw-y-lead { font-size: 13px; line-height: 1.5; }
+  .hw-en-y .hw-y-warn { margin-top: 8px; padding: 8px 10px; font-size: 12px; line-height: 1.45; }
+  .hw-en-y .hw-y-form { padding: 12px 14px; margin-bottom: 12px; }
+  .hw-en-y .hw-y-form p.text-ink-light { font-size: 13px; line-height: 1.45; }
+  .hw-en-y .hw-y-form .hw-row { margin-bottom: 8px; }
+  .hw-en-y .hw-y-form .hw-f { margin-bottom: 2px; }
+  .hw-en-y .hw-y-form button.mt-4 { margin-top: 10px; padding-top: 9px; padding-bottom: 9px; }
+  .hw-en-y .hw-y-form p.mt-2.text-xs { margin-top: 6px; font-size: 11px; line-height: 1.45; }
+}

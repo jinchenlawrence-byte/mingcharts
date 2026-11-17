@@ -58,9 +58,12 @@ const TEXT: Record<string, {
 export default function BirthQuickForm({
   locale = 'zh-Hans',
   chartPath = '/chart',
+  className = '',
 }: {
   locale?: SiteLang
   chartPath?: string
+  /** 仅用于外部按语言/断点收窄样式（英文生肖页移动端），不影响默认外观 */
+  className?: string
 }) {
   const t = TEXT[locale] ?? TEXT['zh-Hans']
   const L = (s: string) => localize(s, locale)
@@ -133,7 +136,7 @@ export default function BirthQuickForm({
   }
 
   return (
-    <div className="hw-c-box mb-6">
+    <div className={`hw-c-box mb-6${className ? ` ${className}` : ''}`}>
       <h2 className="hw-c-secTitle">{t.title}</h2>
       <p className="hw-c-body mb-4">{t.body}</p>
       <form className="hw-form" onSubmit={handleSubmit} autoComplete="off">
