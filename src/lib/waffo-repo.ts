@@ -164,3 +164,63 @@ export function createWaffoRepo(admin: SupabaseClient): WaffoPaymentRepository {
     },
   }
 }
+
+/**
+ * 游客支付流水写入（先付款后注册 · 阶段 C，2026-11-17）。
+ * ★ 放在本文件是刻意的：payments 的唯一写入者保持在这里（架构守卫有断言），
+ *   游客分支不得在别的文件里直接 .from('payments').insert。
+ * user_id 必须为 null —— 游客没有账号，不得借用任何站内用户 id。
+ * 返回 true=已插入；false=transaction_id 唯一冲突（同一 PAY_ 已记过账）。
+ */
+export async function insertGuestPaidPayment(
+  admin: SupabaseClient,
+  row: {
+    guest_order_id: string
+    buyer_email: string | null
+    amount: number
+    sku: string
+    payment_method: string | null
+    payment_method_brand: string | null
+    transaction_id: string
+    order_merchant_external_id: string | null
+    paid_at: string
+  },
+): Promise<boolean> {
+  const { error } = await admin.from('payments').insert({
+    user_id: null,
+    guest_order_id: row.guest_order_id,
+    buyer_email: row.buyer_email,
+    amount: row.amount,
+    sku: row.sku,
+    payment_type: 'single',
+    payment_method: row.payment_method,
+    payment_method_brand: row.payment_method_brand,
+    status: 'paid',
+    transaction_id: row.transaction_id,
+    order_merchant_external_id: row.order_merchant_external_id,
+    paid_at: row.paid_at,
+  })
+  if (!error) return true
+  if (error.code === PG_UNIQUE_VIOLATION) return false
+  throw new Error(`游客 payments 写入失败: ${error.code} ${error.message}`)
+}
+
+/**
+ * 游客退款落账：把对应支付流水置 refunded，返回命中行数。
+ * 同样收在本文件，保证 payments 只有一个写入者。
+ */
+export async function markGuestPaymentRefunded(
+  admin: SupabaseClient,
+  args: { guestOrderId: string; paymentId: string | null; orderMerchantExternalId: string | null },
+): Promise<number> {
+  let query = admin
+    .from('payments')
+    .update({ status: 'refunded' })
+    .eq('guest_order_id', args.guestOrderId)
+  query = args.paymentId
+    ? query.eq('transaction_id', args.paymentId)
+    : query.eq('order_merchant_external_id', args.orderMerchantExternalId ?? '')
+  const { data, error } = await query.select('id')
+  if (error) throw new Error(`游客 payments 退款写入失败: ${error.code} ${error.message}`)
+  return data?.length ?? 0
+}

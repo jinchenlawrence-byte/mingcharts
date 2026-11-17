@@ -1,8 +1,10 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse, after } from 'next/server'
 import { createServerSupabase } from '@/lib/supabase'
 import { verifyWaffoEvent } from '@/lib/waffo'
 import { createWaffoRepo } from '@/lib/waffo-repo'
 import { handleWaffoEvent, buildPaidPaymentRow } from '@/lib/waffo-events'
+import { readGuestOrderEvent, handleGuestOrderEvent } from '@/lib/guestWaffo'
+import { generateGuestFatebookReport } from '@/lib/guestReport'
 import { ensureFatebookReportByAdmin } from '@/lib/reportSave'
 import { isPartnerPack } from '@/lib/pricing'
 import { creditPartnerPurchase, clawbackPartnerUnits } from '@/lib/partnerCredits'
@@ -23,6 +25,71 @@ export async function POST(request: NextRequest) {
   } catch (e) {
     console.warn('[waffo-webhook] 验签失败:', e instanceof Error ? e.message : String(e))
     return new NextResponse('Invalid signature', { status: 401 })
+  }
+
+  // ── 游客单分流（先付款后注册 · 阶段 C，2026-11-17）─────────────────────
+  // ★ 位置纪律：必须在 handleWaffoEvent 之前；游客事件在这里提前 return，
+  //   下面登录用户的整段逻辑（含全部 result.kind 分支）逐字不变。
+  // ★ 生成不在请求内做：Waffo 窗口只有 10s，先快速落账并在 after() 里生成，
+  //   失败/卡住由 /api/cron/guest-orders 补偿。
+  const guestRead = readGuestOrderEvent(event)
+  if (guestRead) {
+    const { eventType, eventId } = event
+    if (guestRead.kind === 'guest_invalid') {
+      console.error(
+        `[waffo-webhook] ★游客事件不合法（未落账，需人工核查） ${eventType}/${eventId}: ${guestRead.reason}`,
+      )
+      return NextResponse.json({ received: true })
+    }
+    try {
+      const admin = createServerSupabase()
+      const guestResult = await handleGuestOrderEvent(
+        event,
+        guestRead.order,
+        admin,
+        createWaffoRepo(admin),
+      )
+      switch (guestResult.kind) {
+        case 'guest_paid': {
+          console.info(
+            `[waffo-webhook] 游客支付已落账 ${eventType}/${eventId} guest=${guestResult.guestOrderId}` +
+              `${guestResult.amountMismatch ? ' ★金额不符' : ''}`,
+          )
+          // 报告生成与渠道回调解耦：响应先回 200，生成在后台跑
+          after(async () => {
+            try {
+              await generateGuestFatebookReport(admin, guestResult.guestOrderId)
+            } catch (err) {
+              console.error(
+                `[waffo-webhook] ★游客命书生成异常（cron 会补偿） guest=${guestResult.guestOrderId}:`,
+                err,
+              )
+            }
+          })
+          break
+        }
+        case 'guest_refunded':
+          console.info(
+            `[waffo-webhook] 游客退款已处理 ${eventType}/${eventId} guest=${guestResult.guestOrderId} affected=${guestResult.affected}`,
+          )
+          break
+        case 'guest_duplicate':
+          console.info(`[waffo-webhook] 游客重复事件已忽略 ${eventType}/${eventId}`)
+          break
+        case 'guest_ignored':
+          console.info(`[waffo-webhook] 游客单未处理的事件类型 ${eventType}/${eventId}`)
+          break
+        case 'guest_invalid':
+          console.error(
+            `[waffo-webhook] ★游客事件未落账（需人工核查） ${eventType}/${eventId} guest=${guestRead.order.guestOrderId}: ${guestResult.reason}`,
+          )
+          break
+      }
+      return NextResponse.json({ received: true })
+    } catch (e) {
+      console.error('[waffo-webhook] 游客事件处理失败（将依赖平台重试）:', e)
+      return NextResponse.json({ error: 'processing failed' }, { status: 500 })
+    }
   }
 
   // 直接 await 而非 after() 后台处理：落库只有两条快速 INSERT（远小于官方 10s 窗口），
