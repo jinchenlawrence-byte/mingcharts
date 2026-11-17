@@ -7,6 +7,7 @@
 //      价格取自 SKUS，不硬编码；配色沿用现有 gold/paper 令牌，不引入新色。
 import type { ReactNode } from 'react'
 import CheckoutButton from '@/components/CheckoutButton'
+import GuestCheckout from '@/components/guest/GuestCheckout'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import type { SiteLang } from '@/lib/lang'
 import { usePaywallView, paywallClick, type PaywallModule, type PaywallSlot } from '@/components/paywallTrack'
@@ -52,7 +53,10 @@ export default function ChartPaywallBar({
       ref={ref}
       onClickCapture={(e) => {
         // 只认按钮：条款链接在 CheckoutButton 内部，点它不算购买点击
-        if ((e.target as HTMLElement).closest('button')) paywallClick('fatebook', locale, 'fatebook', 'chart_top')
+        // ★ 游客入口有自己的埋点，别被父级再记一次（否则展开/支付各多一次 paywall 点击）
+        const el = e.target as HTMLElement
+        if (el.closest('[data-guest-checkout]')) return
+        if (el.closest('button')) paywallClick('fatebook', locale, 'fatebook', 'chart_top')
       }}
       className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border border-gold/25 bg-paper-dark/20 px-4 py-3"
     >
@@ -71,6 +75,11 @@ export default function ChartPaywallBar({
         >
           {copy.cta} · {price}
         </CheckoutButton>
+      </div>
+      {/* ★ 游客入口（2026-11-17）：只对未登录显示，登录用户 DOM 里不会出现；
+          默认由 NEXT_PUBLIC_GUEST_CHECKOUT_ENABLED 关闭，不影响现有登录用户链路。 */}
+      <div className="w-full text-center">
+        <GuestCheckout locale={locale} available={available} />
       </div>
     </div>
   )

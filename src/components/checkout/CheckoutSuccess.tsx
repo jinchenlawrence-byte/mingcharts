@@ -18,6 +18,11 @@ import { getSupabase } from '@/lib/supabase'
 import { SKUS, type SkuId } from '@/lib/pricing'
 import { toHant } from '@/lib/hant'
 import { pathForLang, type SiteLang } from '@/lib/lang'
+import { GUEST_SUCCESS_COPY as GUEST_COPY, type GuestPhase } from '@/lib/guestCheckoutCopy'
+
+// ★ 游客分支（2026-11-17）：没有账号的买家付款后落在这里，不要求登录、不查权益，
+//   只按业务单号轮询 guest_orders 的状态；报告内容永远不经过这个页面。
+//   三语文案统一在 lib/guestCheckoutCopy（验收脚本可直接断言不缺失）。
 
 type Phase = 'preparing' | 'polling' | 'verifying' | 'unlocked' | 'pending' | 'no_ref' | 'no_login'
 
@@ -49,6 +54,10 @@ function SuccessInner({ locale }: { locale: SiteLang }) {
   const [seconds, setSeconds] = useState(0)
   const [skuId, setSkuId] = useState<SkuId>('fatebook')
   const [returnTo, setReturnTo] = useState('')
+  const [guestMode, setGuestMode] = useState(false)
+  const [guestPhase, setGuestPhase] = useState<GuestPhase>('guest_checking')
+  const [guestEmail, setGuestEmail] = useState('')
+  const [guestRefresh, setGuestRefresh] = useState(0)
   const startedRef = useRef(false)
 
   useEffect(() => {
@@ -78,6 +87,12 @@ function SuccessInner({ locale }: { locale: SiteLang }) {
         rawReturnTo.startsWith('/') && !rawReturnTo.startsWith('//') ? rawReturnTo : ''
       setSkuId(resolvedSku)
       setReturnTo(safeReturnTo)
+
+      // ★ 游客单（MCG- 前缀）：买家没有账号，走独立状态机；绝不落到「请先登录」
+      if (orderRef.startsWith('MCG-')) {
+        setGuestMode(true)
+        return
+      }
 
       const supabase = getSupabase()
       const {
@@ -140,6 +155,106 @@ function SuccessInner({ locale }: { locale: SiteLang }) {
       setPhase(verify?.status === 'owned' ? 'unlocked' : 'pending')
     })()
   }, [searchParams, router])
+
+  // ★ 游客状态轮询：只打 /api/guest/order（只回状态与打码邮箱），不碰权益接口
+  useEffect(() => {
+    if (!guestMode || !ref) return
+    let cancelled = false
+    ;(async () => {
+      for (let i = 0; i < 10; i++) {
+        let data: { status?: string; emailMasked?: string | null } | null = null
+        try {
+          const res = await fetch(`/api/guest/order?ref=${encodeURIComponent(ref)}`, { cache: 'no-store' })
+          if (!res.ok) {
+            if (!cancelled) setGuestPhase('guest_notfound')
+            return
+          }
+          data = await res.json().catch(() => null)
+        } catch {
+          if (!cancelled) setGuestPhase('guest_pending')
+          return
+        }
+        if (cancelled) return
+        if (data?.emailMasked) setGuestEmail(data.emailMasked)
+        switch (data?.status) {
+          case 'created':
+            setGuestPhase('guest_pending')
+            break
+          case 'paid':
+          case 'generating':
+            setGuestPhase('guest_working')
+            break
+          case 'ready':
+            setGuestPhase('guest_ready')
+            return
+          case 'failed':
+            setGuestPhase('guest_failed')
+            return
+          case 'claimed':
+            setGuestPhase('guest_claimed')
+            return
+          case 'refunded':
+            setGuestPhase('guest_refunded')
+            return
+          case 'expired':
+            setGuestPhase('guest_expired')
+            return
+          default:
+            setGuestPhase('guest_pending')
+        }
+        await new Promise((r) => setTimeout(r, POLL_INTERVAL_MS))
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [guestMode, ref, guestRefresh])
+
+  // ★ 游客成功页：没有账号，不轮询权益、不要求登录；只按单号显示生成/领取进度
+  if (guestMode) {
+    const g = GUEST_COPY[locale]
+    const phaseCopy = g.phases[guestPhase]
+    const body = phaseCopy.body.replace('{email}', guestEmail || (locale === 'en' ? 'your email' : '你的邮箱'))
+    const icon =
+      guestPhase === 'guest_ready' || guestPhase === 'guest_claimed'
+        ? '✅'
+        : guestPhase === 'guest_failed' || guestPhase === 'guest_notfound'
+          ? '⚠️'
+          : guestPhase === 'guest_working'
+            ? '✍️'
+            : '⏳'
+    const showRefresh =
+      guestPhase === 'guest_pending' || guestPhase === 'guest_working' || guestPhase === 'guest_ready'
+    return (
+      <main className="hw-page">
+        <div className="min-h-screen flex items-center justify-center px-4 py-10">
+          <div className="hw-c-box w-full max-w-md text-center">
+            <div className="text-4xl mb-4">{icon}</div>
+            <h1 className="text-xl font-bold text-ink mb-2">{phaseCopy.title}</h1>
+            <p className="text-sm text-ink-light mb-4 leading-relaxed">{body}</p>
+            <p className="text-xs text-ink-light bg-gold/5 rounded p-2 mb-6 break-all">
+              {g.ref}{ref}
+            </p>
+            <div className="space-y-3">
+              {guestPhase === 'guest_claimed' && (
+                <Link href={L('/reports')} className="block hw-c-btnBig">{g.reports}</Link>
+              )}
+              {showRefresh && (
+                <button
+                  type="button"
+                  onClick={() => setGuestRefresh((n) => n + 1)}
+                  className="block w-full text-sm hw-c-blue"
+                >
+                  {g.refresh}
+                </button>
+              )}
+              <Link href={L('/')} className="block text-sm hw-c-blue">{g.home}</Link>
+            </div>
+          </div>
+        </div>
+      </main>
+    )
+  }
 
   const isMember = skuId === 'member_monthly' || skuId === 'member_yearly'
   const landing = DEFAULT_LANDING[skuId]

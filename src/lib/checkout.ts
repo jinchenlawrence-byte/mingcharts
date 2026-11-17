@@ -8,12 +8,16 @@ import { buildCheckoutParams, getAppUrl, getWaffo, getWaffoStoreId } from './waf
 
 export interface CheckoutSessionInput {
   productId: string
-  orderMerchantExternalId: string // MC-<userId>-<ts>
+  orderMerchantExternalId: string // MC-<userId>-<ts> / MCG-<guestOrderId>-<ts>
   buyerEmail: string
-  userId: string
+  /** ★ 游客结账（2026-11-17）：游客单不传 userId，改传 guestOrderId */
+  userId?: string
+  guestOrderId?: string
   sku: string
   chartId?: string
   returnTo?: string
+  /** ★ 游客单成功页落点（无 returnTo 时使用；只允许站点已知路径） */
+  successPath?: string
   /** 收银台语言：省略即 zh-Hans（与旧行为一致）；繁体入口传 zh-Hant */
   locale?: unknown
 }
@@ -30,9 +34,11 @@ export async function createCheckoutSession(input: CheckoutSessionInput): Promis
     orderMerchantExternalId: input.orderMerchantExternalId,
     buyerEmail: input.buyerEmail,
     userId: input.userId,
+    guestOrderId: input.guestOrderId,
     sku: input.sku,
     chartId: input.chartId || undefined, // 空串=未关联，metadata 里落空串
     returnTo: input.returnTo || undefined, // 空串=不回跳指定页（成功页走默认 /chart）
+    successPath: input.successPath || undefined, // 游客单显式落点；登录用户不传
     locale: input.locale,
     appUrl: getAppUrl(),
     storeId: getWaffoStoreId(),

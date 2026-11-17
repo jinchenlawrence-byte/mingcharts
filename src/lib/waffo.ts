@@ -116,7 +116,10 @@ export interface CheckoutParamsInput {
   productId: string
   orderMerchantExternalId: string // MC-<userId>-<ts>，≤128 字符（SDK 会校验）
   buyerEmail: string
-  userId: string
+  /** ★ 游客结账（2026-11-17）：游客单没有 userId，metadata 里改传 guestOrderId */
+  userId?: string
+  /** ★ 游客订单 id：非空即游客单，webhook 据此分流（阶段 C 接入） */
+  guestOrderId?: string
   sku: string
   // ★ 命盘关联（HANDOFF-命书一份一付 §3.1）：随 metadata 透传给 webhook 落账写 payments.chart_id。
   //   走 metadata 不改单号格式（MC-<userId>-<ts> 已实测 54 字符，塞 UUID 36 字符会逼近 128 上限）。
@@ -133,6 +136,12 @@ export interface CheckoutParamsInput {
    * ★ 缺省 = zh-Hans，与旧行为逐字一致；繁体入口（/tw）传 zh-Hant → 收银台 zh-Hant-TW。
    */
   locale?: unknown
+  /**
+   * ★ 游客结账（2026-11-17）：成功页落点。
+   *   登录用户的落点仍由 returnTo 推导（逐字不变）；游客没有 returnTo，由调用方显式指定。
+   *   只接受三个已知站点路径，其余忽略。
+   */
+  successPath?: string
   appUrl: string
   storeId: string
 }
@@ -165,11 +174,19 @@ export function buildCheckoutParams(input: CheckoutParamsInput): WaffoCheckoutPa
     (safeReturnTo ? `&returnTo=${encodeURIComponent(safeReturnTo)}` : '')
   // 语言层：英文树的购买回到 /en/checkout/success；简体/繁体仍回 /checkout/success。
   // 只改成功页落点，不改鉴权、权益判定或支付参数。
-  const successPath = safeReturnTo.startsWith('/en/')
-    ? '/en/checkout/success'
-    : safeReturnTo.startsWith('/tw/')
-      ? '/tw/checkout/success'
-      : '/checkout/success'
+  // ★ 游客单（2026-11-17）：没有 returnTo，由调用方显式传 successPath（仅允许下列三个路径）。
+  const GUEST_SUCCESS_PATHS = new Set(['/checkout/success', '/tw/checkout/success', '/en/checkout/success'])
+  const explicitSuccessPath =
+    typeof input.successPath === 'string' && GUEST_SUCCESS_PATHS.has(input.successPath)
+      ? input.successPath
+      : ''
+  const successPath = explicitSuccessPath
+    ? explicitSuccessPath
+    : safeReturnTo.startsWith('/en/')
+      ? '/en/checkout/success'
+      : safeReturnTo.startsWith('/tw/')
+        ? '/tw/checkout/success'
+        : '/checkout/success'
   const successUrl = `${base.origin}${successPath}?${successQuery}`
   // ★ 支付方式（2026-11-14）：不再传 includePaymentMethods。
   //   传白名单 ['card'] 会把 Apple Pay / Google Pay 挡在外面；显式列三种又在「渠道侧未开通」
@@ -185,10 +202,14 @@ export function buildCheckoutParams(input: CheckoutParamsInput): WaffoCheckoutPa
     orderMerchantExternalId: input.orderMerchantExternalId,
     metadata: {
       // metadata 值必须是字符串（SDK 类型 Record<string,string>）
-      userId: input.userId,
+      // ★ 登录用户照旧带 userId（缺省时不写该键，游客单不带空串 userId，
+      //   避免 webhook 把空串当成"有用户"而走到错误分支）
+      ...(input.userId ? { userId: input.userId } : {}),
       sku: input.sku,
       // ★ 命盘关联（HANDOFF-命书一份一付 §3.1）：空串=未关联（webhook 落账时写 NULL）
       chartId: input.chartId ?? '',
+      // ★ 游客单标识（2026-11-17）：webhook 见 mode=guest 走游客入账分支（阶段 C）
+      ...(input.guestOrderId ? { mode: 'guest', guestOrderId: input.guestOrderId } : {}),
     },
     successUrl,
   }
