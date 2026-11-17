@@ -48,6 +48,8 @@ const FORTUNE_BADGE: Record<FortuneTier, string> = {
 
 interface ChartData {
   input: { year: number; month: number; day: number; hour: number; minute: number; gender: number }
+  /** Set by the quick form when no birth hour was given (chart assumes 12:00); absent on older charts */
+  hourUnknown?: boolean
   lunarDate: string
   pillars: {
     year: Pillar; month: Pillar; day: Pillar; hour: Pillar
@@ -143,6 +145,15 @@ export default function EnChartClient() {
           {chart.input.year}-{chart.input.month}-{chart.input.day} {String(chart.input.hour).padStart(2, '0')}:{String(chart.input.minute).padStart(2, '0')}
           {' · '}{chart.input.gender === 1 ? 'Male' : 'Female'}{' · '}True Solar Time: {chart.trueSolar ? `${chart.trueSolar.offsetMin >= 0 ? '+' : ''}${chart.trueSolar.offsetMin} min (${chart.trueSolar.zone})` : 'not applied'}
         </p>
+        {/* Unknown-hour notice (2026-11-17): the quick form does not require a birth hour,
+            so the consequence must be spelled out, with a prefilled path back to the form.
+            Kept to one muted line so it does not compete with the first-screen paywall. */}
+        {chart.hourUnknown && (
+          <p className="mt-2 text-sm text-ink/70">
+            Birth hour not given: this chart assumes 12:00 noon, so the day and hour pillars may differ from your actual birth time.
+            <Link href={`/en?y=${chart.input.year}&m=${chart.input.month}&d=${chart.input.day}&g=${chart.input.gender}`} className="hw-c-link ml-1">Add the hour and recast →</Link>
+          </p>
+        )}
         {chart.trueSolar?.dstNotice && (
           <div className="hw-c-warn">
             ⚠ True Solar Time note: this birth time falls near a daylight-saving transition; the engine resolved it automatically.

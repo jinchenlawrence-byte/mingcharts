@@ -1,4 +1,4 @@
-﻿'use client'
+﻿﻿'use client'
 
 // 出生地选择器（★ 5 处表单共用的唯一组件：批命、紫微、合婚男、合婚女、地理）
 //
@@ -184,7 +184,7 @@ export default function BirthPlacePicker({
   // ───────── 已确认选择：chip + 更换 ─────────
   if (!expanded && value.mode !== 'none') {
     const text = value.mode === 'city'
-      ? committedCity ? cityLabel(committedCity) : L('加载城市信息中…')
+      ? committedCity ? L(cityLabel(committedCity)) : L('加载城市信息中…')
       : `${L('其它')} · ${value.zone}${value.lng !== undefined ? ` · ${L('经度')} ${value.lng}` : ''}`
     const sub = value.mode === 'city'
       ? committedCity?.zone
@@ -227,7 +227,7 @@ export default function BirthPlacePicker({
           <option value="">{L('国家')}</option>
           {allowNone && <option value="__none__">{L('不校正')}</option>}
           {countries.map(co => (
-            <option key={co.code} value={co.code}>{co.name}</option>
+            <option key={co.code} value={co.code}>{L(co.name)}</option>
           ))}
         </select>
         <select className={`${selectCls} ${FOCUS[accent]}`}
@@ -237,7 +237,7 @@ export default function BirthPlacePicker({
         >
           <option value="">{L('州/省')}</option>
           {admins.map(ad => (
-            <option key={ad.code} value={ad.code}>{ad.name}</option>
+            <option key={ad.code} value={ad.code}>{L(ad.name)}</option>
           ))}
         </select>
         <select className={`${selectCls} ${FOCUS[accent]}`}
@@ -247,7 +247,7 @@ export default function BirthPlacePicker({
         >
           <option value="">{L('城市')}</option>
           {cityList.map(c => (
-            <option key={c.id} value={c.id}>{c.name}</option>
+            <option key={c.id} value={c.id}>{L(c.name)}</option>
           ))}
         </select>
       </div>
@@ -273,9 +273,9 @@ export default function BirthPlacePicker({
                     className="block w-full px-3 py-2 text-left text-sm hover:bg-paper-dark/30"
                     onMouseDown={e => { e.preventDefault(); commitCity(h.city.id) }}
                   >
-                    <span className="font-medium text-gray-800">{h.city.name}</span>
+                    <span className="font-medium text-gray-800">{L(h.city.name)}</span>
                     <span className="ml-2 text-xs text-ink-light">
-                      {h.city.countryName} · {h.city.admin1Name}
+                      {L(h.city.countryName)} · {L(h.city.admin1Name)}
                     </span>
                   </button>
                 ))}

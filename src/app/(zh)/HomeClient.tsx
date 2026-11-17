@@ -70,6 +70,21 @@ export default function Home() {
     gender: 1 as 1 | 0,
   })
   const rootRef = useRef<HTMLDivElement>(null)
+  // /chart 的「补充时辰后重排」带回年月日与性别：挂载后再读 query，
+  // 避免静态页首屏（服务端 HTML）与客户端首帧不一致。
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search)
+    const y = parseInt(sp.get('y') ?? ''), m = parseInt(sp.get('m') ?? ''), d = parseInt(sp.get('d') ?? ''), g = parseInt(sp.get('g') ?? '')
+    if (y >= 1920 && y <= 2026 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      setFormData((p) => ({
+        ...p,
+        year: String(y),
+        month: String(m),
+        day: String(d),
+        ...(g === 0 || g === 1 ? { gender: g as 1 | 0 } : {}),
+      }))
+    }
+  }, [])
   // 滚动显现（尊重 prefers-reduced-motion：CSS 侧已整体关闭过渡）
   useEffect(() => {
     const els = rootRef.current?.querySelectorAll('[data-rv]')

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import BirthPlacePicker from '@/components/BirthPlacePicker'
 import type { BirthPlaceValue } from '@/components/BirthPlacePicker'
@@ -14,6 +14,22 @@ export default function EnHomeForm() {
   const [error, setError] = useState('')
   const [birth, setBirth] = useState<BirthPlaceValue>({ mode: 'none' })
   const [form, setForm] = useState({ year: '2000', month: '1', day: '1', hour: '0', minute: '0', gender: 1 as 1 | 0 })
+
+  // The chart page's "Add the hour and recast" link returns here with y/m/d/g:
+  // read them after mount so the prerendered HTML and the first client frame still match.
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search)
+    const y = parseInt(sp.get('y') ?? ''), m = parseInt(sp.get('m') ?? ''), d = parseInt(sp.get('d') ?? ''), g = parseInt(sp.get('g') ?? '')
+    if (y >= 1920 && y <= 2026 && m >= 1 && m <= 12 && d >= 1 && d <= 31) {
+      setForm((p) => ({
+        ...p,
+        year: String(y),
+        month: String(m),
+        day: String(d),
+        ...(g === 0 || g === 1 ? { gender: g as 1 | 0 } : {}),
+      }))
+    }
+  }, [])
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault()

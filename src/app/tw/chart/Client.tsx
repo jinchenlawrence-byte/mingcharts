@@ -58,6 +58,8 @@ interface ChartData {
         minute: number;
         gender: number;
     };
+    /** 快速表單未填時辰時由前端標記（按午時假設），舊命盤無此欄位 */
+    hourUnknown?: boolean;
     lunarDate: string;
     pillars: {
         year: {
@@ -353,6 +355,15 @@ export default function ChartPage() {
           {' · '}{chart.input.gender === 1 ? '乾造' : '坤造'} {H("· 農曆")}{H(lunarShort)}
         </p>
         <p className="hw-c-dx">{H("你的日主属")}{WX_CN[dayWx]}，{WX_DESC[dayWx]}</p>
+
+        {/* 時辰未知提示（2026-11-17）：不強制時辰，就必須寫清「按午時假設」的後果，
+            並給出帶年月日/性別預填的補充入口；不與四柱後的首屏付費條搶位置。 */}
+        {chart.hourUnknown && (
+          <p className="mt-2 text-sm text-ink/70">
+            {H("出生時辰未填：本盤按午時（12:00）假設排定，日柱與時柱可能與真實出生時辰不同。")}
+            <Link href={`/tw?y=${chart.input.year}&m=${chart.input.month}&d=${chart.input.day}&g=${chart.input.gender}`} className="hw-c-link ml-1">{H("補充時辰後重排 →")}</Link>
+          </p>
+        )}
 
         {/* 夏令时切换点提示：出生时刻本身在 gap/重复时刻上（旧命盘无此字段时不显示） */}
         {chart.trueSolar?.dstNotice && (<div className="hw-c-warn">⚠ {H(chart.trueSolar.dstNotice)}</div>)}
