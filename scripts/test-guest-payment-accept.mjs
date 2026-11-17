@@ -2,8 +2,8 @@
 //
 // A. 纯函数：事件分流、支付行构造（user_id 必须为 null）
 // B. 静态约束：游客分支必须在 handleWaffoEvent 之前；登录分支未被改写；
-//    生成物不写 reports；cron 与 vercel 配置就位；重试上限 3 次
-import { readFileSync } from 'node:fs'
+//    生成物不写 reports；补偿调度由 Supabase pg_cron 承接（vercel 只留每日任务）；重试上限 3 次
+import { readFileSync, existsSync } from 'node:fs'
 import { readGuestOrderEvent, buildGuestPaymentRow } from '../src/lib/guestWaffo.ts'
 
 let allPass = true
@@ -107,11 +107,32 @@ console.log('—— B. 代码约束 ——')
 
   if (!cron.includes('CRON_SECRET')) fail('cron 缺少鉴权')
   if (!cron.includes('GUEST_GENERATION_MAX_ATTEMPTS')) fail('cron 未过滤用尽重试的单')
-  if (!Array.isArray(vercel.crons) || !vercel.crons.some((c) => c.path === '/api/cron/guest-orders')) {
-    fail('vercel.json 未注册 guest-orders cron')
+
+  // ★ Vercel Hobby 只允许每天最多一次：guest-orders 的 10 分钟补偿不得留在 vercel.json
+  //   （*/10 会让构建直接失败），改由 Supabase pg_cron + pg_net 调度。
+  if (Array.isArray(vercel.crons) && vercel.crons.some((c) => c.path === '/api/cron/guest-orders')) {
+    fail('vercel.json 仍有 guest-orders 的 */10 cron（Hobby 套餐会构建失败）')
+  }
+  if (!Array.isArray(vercel.crons) || !vercel.crons.some((c) => c.path === '/api/cron/daily-push' && c.schedule === '0 0 * * *')) {
+    fail('daily-push 的每日 cron 不应被误删')
   }
 
-  ok('游客分支先于登录分支；不写 reports；3 次上限；cron 与 vercel 就位')
+  const sqlPath = '../supabase/guest-orders-cron.sql'
+  if (!existsSync(new URL(sqlPath, import.meta.url))) {
+    fail('缺少 supabase/guest-orders-cron.sql（pg_cron 调度文件）')
+  } else {
+    const sql = read(sqlPath)
+    if (!sql.includes("'guest-orders-every-10m'")) fail('SQL 未使用固定 jobname（无法幂等）')
+    if (!sql.includes('*/10 * * * *')) fail('SQL 未保持每 10 分钟调度')
+    if (!sql.includes('net.http_post')) fail('SQL 未用 pg_net 发起 HTTP')
+    if (!sql.includes('/api/cron/guest-orders')) fail('SQL 未指向补偿接口')
+    if (!sql.includes('vault.decrypted_secrets')) fail('SQL 未从 Vault 读取密钥')
+    if (!sql.includes('cron.unschedule')) fail('SQL 未先撤旧任务（非幂等）')
+    if (/Bearer\s+[A-Za-z0-9_-]{8,}/.test(sql)) fail('SQL 里出现疑似硬编码的 Bearer 密钥')
+    if (!sql.includes('from cron.job')) fail('SQL 末尾缺自查 SELECT')
+  }
+
+  ok('游客分支先于登录分支；不写 reports；3 次上限；补偿 cron 改由 pg_cron 承接（vercel 每日任务保留）')
 }
 
 console.log(allPass ? '\n全部通过' : '\n存在失败项')

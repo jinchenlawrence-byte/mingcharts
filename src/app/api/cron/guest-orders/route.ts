@@ -7,7 +7,9 @@ import { retryClaimEmails } from '@/lib/guestClaimMail'
 //
 // 为什么需要：webhook 的 after() 只跑一次，进程重启/超时/AI 超时都会漏；
 //   本任务把 stuck 的单捞回来重试，是「钱付了、报告没有、也没人知道」的兜底。
-// 鉴权：Authorization: Bearer ${CRON_SECRET}（Vercel Cron 自动带）。
+// 鉴权：Authorization: Bearer ${CRON_SECRET}。
+//   ★ 调用方是 Supabase pg_cron + pg_net（见 supabase/guest-orders-cron.sql）：
+//     Vercel Hobby 套餐只允许「每天最多一次」的 cron，10 分钟一次的表达式会让构建失败。
 // 口径：
 //   · 只捞 generation_attempts < 3 的单；
 //   · paid/failed 需付款满 60 秒（避免与 webhook 的 after() 抢同一单）；

@@ -9,10 +9,6 @@
     {
       "path": "/api/cron/daily-push",
       "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/guest-orders",
-      "schedule": "*/10 * * * *"
     }
   ],
   "ignoreCommand": "node scripts/should-build.mjs"
