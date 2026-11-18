@@ -11,6 +11,10 @@ import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { getSupabase } from '@/lib/supabase'
+import SiteHeader from '@/components/SiteHeader'
+
+// 站点头部：简体树 root layout 不含头部，按本树惯例由页面自己渲染（2026-11-18 补，
+// 此前该页一条导航都没有；繁/英树由各自 layout 提供，页面不再重复渲染）。
 
 export default function AccountPage() {
   const router = useRouter()
@@ -73,7 +77,9 @@ export default function AccountPage() {
   }
 
   return (
-    <main className="hw-page">
+    <>
+      <SiteHeader locale="zh-Hans" />
+      <main className="hw-page">
       <div className="hw-wrap hw-c-pg">
         <div className="hw-auth">
           <div className="hw-c-box">
@@ -163,5 +169,6 @@ export default function AccountPage() {
         </div>
       </div>
     </main>
+    </>
   )
 }
