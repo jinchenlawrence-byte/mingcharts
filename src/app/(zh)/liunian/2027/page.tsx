@@ -16,9 +16,10 @@ import { SHENGXIAO, getLiunian, getYearGanZhi } from '@/lib/shengxiaoData'
 const YEAR = 2027
 
 export const metadata: Metadata = {
-  title: `2027 ${getYearGanZhi(YEAR)}年运势总览：羊值、牛冲、鼠害、狗刑怎么看`,
+  // 2026-11-18 GSC：「2027年运势」「2027年犯太岁生肖」的承接页，标题把年份与问句提到最前
+  title: `2027年运势：${getYearGanZhi(YEAR)}年谁犯太岁，羊牛鼠狗四种关系`,
   description:
-    '2027 丁未年运势总览：一页看完 12 个生肖与太岁的关系（羊值太岁、牛冲太岁、鼠害太岁、狗刑太岁，兔马猪合太岁），并说明春节 2/6 与立春 2/4 两个时间边界的差别。',
+    '2027年为丁未年，太岁在未：属羊值太岁（本命年）、属牛冲兼刑、属狗刑、属鼠害，属马、猪、兔合太岁。一页看完 12 个生肖与太岁的关系，并说明春节 2/6 与立春 2/4 两个时间边界。',
   alternates: {
     canonical: `/liunian/${YEAR}`,
     languages: hantAlternates(`/liunian/${YEAR}`),
@@ -34,14 +35,34 @@ const FAN_TAISUI: Array<{ relation: '值' | '冲' | '害' | '刑'; note: string 
 
 const ARTICLES: Array<{ slug: string; title: string; desc: string }> = [
   {
-    slug: '2027-an-taisui-zenme-zuo',
-    title: '2027 安太岁怎么做：时间、流程、供品与常见误解',
-    desc: '谁需要安、什么时候做、登记流程与供品，一次说清。'
-  },
-  {
     slug: '2027-fan-taisui-shengxiao',
     title: '2027 犯太岁生肖一次看：羊值、牛冲、鼠害、狗刑',
     desc: '四种关系的差别，以及各自的民俗应对。'
+  },
+  {
+    slug: '2027-shuyang-benmingnian',
+    title: '2027 属羊本命年要注意什么：值太岁的取舍清单',
+    desc: '本命年不等于不顺，先分清哪些事该缓、哪些照常。'
+  },
+  {
+    slug: '2027-shuniu-chongtaisui',
+    title: '2027 属牛冲太岁怎么过：丑未冲的变动与应对',
+    desc: '冲太岁的变动集中在哪些方面，怎么把被动变主动。'
+  },
+  {
+    slug: '2027-shushu-haitaisui',
+    title: '2027 属鼠害太岁怎么防：子未害的三条红线',
+    desc: '害太岁的隐性消耗从哪来，三条具体做法。'
+  },
+  {
+    slug: '2027-shugou-xingtaisui',
+    title: '2027 属狗刑太岁：人际、合同与情绪的应对',
+    desc: '刑太岁的反复与摩擦，先处理哪一环。'
+  },
+  {
+    slug: '2027-an-taisui-zenme-zuo',
+    title: '2027 安太岁怎么做：时间、流程、供品与常见误解',
+    desc: '谁需要安、什么时候做、登记流程与供品，一次说清。'
   },
   {
     slug: 'an-taisui-yao-zhunbei-shenme',
@@ -63,7 +84,7 @@ export default function Liunian2027Page() {
         <Link href="/liunian" className="hw-c-back">‹ 年运报告</Link>
 
         <section className="hw-c-box mb-6 mt-2">
-          <h1 className="hw-c-h1">2027 {getYearGanZhi(YEAR)}年运势总览</h1>
+          <h1 className="hw-c-h1">2027年运势总览：{getYearGanZhi(YEAR)}年谁犯太岁</h1>
           <p className="hw-c-lede">
             这一年落在你身上是什么，看两件事：生肖与太岁的关系，决定「是否犯太岁」；
             完整八字里日主与流年干支的关系，决定「具体怎么应」。前者一页就能看完，后者需要排盘。
@@ -128,7 +149,7 @@ export default function Liunian2027Page() {
         </section>
 
         <section className="hw-c-box mb-6">
-          <h2 className="hw-c-secTitle">安太岁怎么做：三篇细读</h2>
+          <h2 className="hw-c-secTitle">犯太岁与安太岁：逐篇细读</h2>
           <ul className="space-y-3 text-sm">
             {ARTICLES.map((a) => (
               <li key={a.slug}>

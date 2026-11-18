@@ -14,6 +14,33 @@ export function generateStaticParams() {
   return params
 }
 
+// 2026-11-18 GSC（2027 窗口预备）：四页已有位置、零点击，摘要只写了「详解…全解」没有结论。
+// 只覆盖这四页的 title/description，其余 92 页仍走下面的模板（不建配置层）。
+// 展示 / 点击 / 均位（28 天，2026-10-20 ~ 11-14）：
+//   shu 29/0/6.14、yang 27/0/5.41、zhu 15/0/4.60、niu 1/0/4.00
+const INTENT_META_2027: Record<string, { title: string; description: string }> = {
+  shu: {
+    title: '2027属鼠运势：害太岁年，口舌与暗损怎么防',
+    description:
+      '2027丁未年，属鼠子水与太岁未土相害，属害太岁。害不主明面冲突，而是合作条件中途变、好意被误解这类隐性消耗。页内逐项说明事业、财运、感情、健康，并附开运颜色、幸运数字与本命佛。',
+  },
+  yang: {
+    title: '2027属羊运势：本命年值太岁，事业感情怎么守',
+    description:
+      '2027丁未年，属羊未土与太岁同支，值太岁，也就是本命年。值太岁是回到自己的本位：外部助力未必少，内心的紧迫感更强。页内逐项说明事业、财运、感情、健康，并附开运颜色、幸运数字与本命佛。',
+  },
+  zhu: {
+    title: '2027属猪运势：合太岁贵人年，合作感情怎么用',
+    description:
+      '2027丁未年，属猪亥水与太岁未土成三合，属合太岁，非犯太岁。合太岁主贵人与合作，适合把已有的关系与计划往前推。页内逐项说明事业、财运、感情、健康，并附开运颜色、幸运数字与本命佛。',
+  },
+  niu: {
+    title: '2027属牛运势：冲太岁兼刑，变动年怎么过',
+    description:
+      '2027丁未年，属牛丑土与太岁未土相冲兼相刑，是十二属相里关系最复杂的一组。冲主变动、刑主摩擦，变化中带着纠缠。页内逐项说明事业、财运、感情、健康，并附开运颜色、幸运数字与本命佛。',
+  },
+}
+
 export async function generateMetadata({ params }: { params: Promise<{ animal: string; year: string }> }) {
   const { animal, year } = await params
   const sx = getShengXiao(animal)
@@ -42,6 +69,12 @@ export async function generateMetadata({ params }: { params: Promise<{ animal: s
       title = '2028属狗运势：戊申年无刑冲，平顺年事业感情判断'
       description = '2028戊申年，属狗戌土与太岁申金无刑冲合害，属平顺之年。页内给事业、财运、感情、健康四项判断与开运建议，另附三条问答。'
     }
+  }
+
+  const intent2027 = year === '2027' ? INTENT_META_2027[sx.slug] : undefined
+  if (intent2027) {
+    title = intent2027.title
+    description = intent2027.description
   }
 
   return {

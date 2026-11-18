@@ -114,6 +114,16 @@ export default function LiunianPage({ children }: { children?: import('react').R
           </p>
         </header>
 
+        {/* ★ 2027 窗口期入口（2026-11-18）：与繁体 /tw/liunian 对齐。
+            此前简体入口页没有任何年份落地页链接，年度总览页只能靠文章跳过去 */}
+        <p className="text-sm mb-4">
+          <Link href="/liunian/2027" className="hw-c-link">2027 丁未年运势总览 →</Link>
+          <span className="text-ink-light mx-2">·</span>
+          <Link href="/liunian/2028" className="hw-c-link">2028 戊申年运势总览 →</Link>
+          <span className="text-ink-light mx-2">·</span>
+          <Link href="/liunian/taisui-biao" className="hw-c-link">十二生肖太岁对照表 →</Link>
+        </p>
+
         {/* 表单 */}
         <form onSubmit={handleSubmit} className="hw-narrow">
           <div className="hw-c-box">
