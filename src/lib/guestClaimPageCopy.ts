@@ -26,6 +26,8 @@ export interface ClaimPageCopy {
   claiming: string
   successTitle: string
   successBody: string
+  passwordHint: string
+  passwordCta: string
   openReport: string
   reports: string
   home: string
@@ -44,6 +46,9 @@ export const CLAIM_PAGE_COPY: Record<ClaimPageLocale, ClaimPageCopy> = {
     claiming: '正在把报告归入你的账号…',
     successTitle: '领取成功',
     successBody: '命书已经放进你的账号，可以随时打开阅读。',
+    passwordHint:
+      '账号已用此邮箱创建，目前为免密登录（邮件链接登录），不是没有账号。想设置密码方便下次直接登录：',
+    passwordCta: '设置密码',
     openReport: '打开命书',
     reports: '我的报告',
     home: '返回首页',
@@ -70,6 +75,9 @@ export const CLAIM_PAGE_COPY: Record<ClaimPageLocale, ClaimPageCopy> = {
     claiming: '正在把報告歸入你的帳號…',
     successTitle: '領取成功',
     successBody: '命書已經放進你的帳號，可以隨時打開閱讀。',
+    passwordHint:
+      '帳號已用此郵箱建立，目前為免密登入（郵件連結登入），不是沒有帳號。想設定密碼方便下次直接登入：',
+    passwordCta: '設定密碼',
     openReport: '打開命書',
     reports: '我的報告',
     home: '返回首頁',
@@ -97,6 +105,9 @@ export const CLAIM_PAGE_COPY: Record<ClaimPageLocale, ClaimPageCopy> = {
     claiming: 'Adding the report to your account…',
     successTitle: 'Claimed',
     successBody: 'Your Fate Book is now in your account and ready to read.',
+    passwordHint:
+      'Your account was created with this email and currently uses passwordless sign-in (email link) — the account exists. To set a password for faster sign-in next time:',
+    passwordCta: 'Set a password',
     openReport: 'Open the Fate Book',
     reports: 'My reports',
     home: 'Back to home',

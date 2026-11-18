@@ -11,6 +11,8 @@ export interface ClaimEmailInput {
   magicUrl: string
   /** 认领页本身的纯文本备用地址（需要先登录） */
   claimUrl: string
+  /** 设置密码入口（认领后已登录，直接进入设密表单） */
+  resetUrl: string
   /** 业务单号 MCG-… */
   ref: string
   /** 报告标题（生成时已定稿，可能含书名号） */
@@ -36,7 +38,17 @@ export const CLAIM_SUBJECTS: Record<ClaimLocale, (title: string) => string> = {
 
 export const CLAIM_BODY: Record<
   ClaimLocale,
-  { intro: string; cta: string; note: string; refLabel: string; fallback: string; ignore: string; sign: string }
+  {
+    intro: string
+    cta: string
+    note: string
+    refLabel: string
+    fallback: string
+    ignore: string
+    sign: string
+    passwordHint: string
+    passwordCta: string
+  }
 > = {
   'zh-Hans': {
     intro: '你购买的命书《{title}》已经生成。点击下面的按钮登录，报告会自动归入你的账号。',
@@ -46,6 +58,9 @@ export const CLAIM_BODY: Record<
     fallback: '按钮无法点击时，请复制这个地址到浏览器打开：',
     ignore: '如果这不是你本人的购买，请忽略本邮件。',
     sign: '—— MingCharts 命理',
+    passwordHint:
+      '账号已用此邮箱创建，目前为免密登录（邮件链接登录），不是没有账号。想设置密码方便下次直接登录：',
+    passwordCta: '设置密码',
   },
   'zh-Hant': {
     intro: '你購買的命書《{title}》已經生成。點擊下面的按鈕登入，報告會自動歸入你的帳號。',
@@ -55,6 +70,9 @@ export const CLAIM_BODY: Record<
     fallback: '按鈕無法點擊時，請複製這個地址到瀏覽器打開：',
     ignore: '如果這不是你本人的購買，請忽略本郵件。',
     sign: '—— MingCharts 命理',
+    passwordHint:
+      '帳號已用此郵箱建立，目前為免密登入（郵件連結登入），不是沒有帳號。想設定密碼方便下次直接登入：',
+    passwordCta: '設定密碼',
   },
   en: {
     intro: 'Your Fate Book “{title}” is ready. Tap the button below to sign in; the report will be added to your account automatically.',
@@ -64,11 +82,14 @@ export const CLAIM_BODY: Record<
     fallback: 'If the button does not work, copy this address into your browser:',
     ignore: 'If you did not make this purchase, please ignore this email.',
     sign: '— MingCharts',
+    passwordHint:
+      'Your account was created with this email and currently uses passwordless sign-in (email link) — the account exists. To set a password for faster sign-in next time:',
+    passwordCta: 'Set a password',
   },
 }
 
 export function buildClaimEmail(input: ClaimEmailInput): { subject: string; html: string; text: string } {
-  const { locale, magicUrl, claimUrl, ref, title } = input
+  const { locale, magicUrl, claimUrl, resetUrl, ref, title } = input
   const subject = CLAIM_SUBJECTS[locale](title)
   const body = CLAIM_BODY[locale]
   const intro = body.intro.replace('{title}', title)
@@ -83,6 +104,9 @@ export function buildClaimEmail(input: ClaimEmailInput): { subject: string; html
     '',
     body.fallback,
     claimUrl,
+    '',
+    body.passwordHint,
+    resetUrl,
     '',
     body.ignore,
     body.sign,
@@ -105,7 +129,11 @@ export function buildClaimEmail(input: ClaimEmailInput): { subject: string; html
       <p style="margin:0 0 6px 0;font-size:12px;line-height:1.6;color:#8a7a68;">${esc(body.fallback)}</p>
       <p style="margin:0 0 16px 0;font-size:12px;line-height:1.6;word-break:break-all;"><a href="${esc(claimUrl)}" style="color:#8a5a20;">${esc(claimUrl)}</a></p>
       <p style="margin:0 0 6px 0;font-size:12px;line-height:1.6;color:#8a7a68;">${esc(body.ignore)}</p>
-      <p style="margin:0;font-size:12px;line-height:1.6;color:#8a7a68;">${esc(body.sign)} · <a href="mailto:${SUPPORT}" style="color:#8a5a20;">${SUPPORT}</a></p>
+      <p style="margin:0;font-size:12px;line-height:1.6;color:#8a7a68;">
+        ${esc(body.passwordHint)}
+        <a href="${esc(resetUrl)}" style="color:#8a5a20;">${esc(body.passwordCta)}</a>
+      </p>
+      <p style="margin:8px 0 0 0;font-size:12px;line-height:1.6;color:#8a7a68;">${esc(body.sign)} · <a href="mailto:${SUPPORT}" style="color:#8a5a20;">${SUPPORT}</a></p>
     </td></tr>
   </table>
 </body>

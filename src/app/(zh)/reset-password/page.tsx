@@ -9,15 +9,28 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { getSupabase } from '@/lib/supabase'
+import { safeNext } from '@/lib/safeNext'
 
 type Phase = 'checking' | 'form' | 'no-session' | 'done'
 
 export default function ResetPasswordPage() {
   const [phase, setPhase] = useState<Phase>('checking')
+  const [nextHref, setNextHref] = useState('/')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+
+  useEffect(() => {
+    // 游客认领后从 /reset-password?next=… 进来：设完密码回各自语言的报告页。
+    // next 来自 URL，统一走 safeNext 白名单（防开放重定向）。
+    try {
+      const raw = new URLSearchParams(window.location.search).get('next')
+      setNextHref(safeNext(raw, '/'))
+    } catch {
+      setNextHref('/')
+    }
+  }, [])
 
   useEffect(() => {
     getSupabase().auth
@@ -118,8 +131,8 @@ export default function ResetPasswordPage() {
                   新密码已生效，下次登录请使用新密码。
                 </p>
                 <p className="text-center">
-                  <Link href="/" className="hw-c-btnBig">
-                    返回首页
+                  <Link href={nextHref} className="hw-c-btnBig">
+                    {nextHref === '/' ? '返回首页' : '继续'}
                   </Link>
                 </p>
               </>

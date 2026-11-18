@@ -33,6 +33,9 @@ export default function ClaimClient({ locale }: { locale: ClaimPageLocale }) {
   const loginHref = `${authPath}?next=${encodeURIComponent(claimPath)}`
   const reportsHref = `${prefix}/reports`
   const homeHref = prefix || '/'
+  // 免密账号提示：认领后会话已建立，/reset-password 直接显示设密表单；
+  // next 回各自语言的报告页（tw/en 共用同一条 /reset-password 路由）。
+  const resetHref = `/reset-password?next=${encodeURIComponent(redirect ?? reportsHref)}`
 
   useEffect(() => {
     if (started.current) return
@@ -133,6 +136,12 @@ export default function ClaimClient({ locale }: { locale: ClaimPageLocale }) {
                   {copy.reports}
                 </Link>
               </p>
+              <div className="mt-5 rounded-lg border border-gold/25 bg-paper/70 p-3 text-left">
+                <p className="hw-c-meta">{copy.passwordHint}</p>
+                <Link href={resetHref} className="hw-c-link mt-1 inline-block">
+                  {copy.passwordCta}
+                </Link>
+              </div>
             </>
           )}
 

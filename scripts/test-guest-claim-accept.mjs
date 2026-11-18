@@ -9,7 +9,8 @@ import { readFileSync, existsSync } from 'node:fs'
 import { buildClaimEmail, CLAIM_SUBJECTS } from '../src/lib/guestClaimCopy.ts'
 import { CLAIM_PAGE_COPY } from '../src/lib/guestClaimPageCopy.ts'
 import { mailConfigured, sendMail } from '../src/lib/resendMail.ts'
-import { claimPathForLocale } from '../src/lib/guestClaimMail.ts'
+import { buildClaimMagicUrl, claimPathForLocale, resolveSiteOrigin } from '../src/lib/guestClaimMail.ts'
+import { safeNext } from '../src/lib/safeNext.ts'
 
 let allPass = true
 const fail = (m) => { allPass = false; console.log('  ✗ ' + m) }
@@ -23,15 +24,17 @@ const REF = 'MCG-9f1d2c3b-4a5e-4f60-8b71-2c3d4e5f6a7b-1763300000000'
 console.log('—— A. 三语邮件正文 ——')
 {
   const cases = [
-    { locale: 'zh-Hans', title: '命书', must: ['命书', '领取', '邮箱'], mustNot: ['命書', '領取'] },
-    { locale: 'zh-Hant', title: '命書', must: ['命書', '領取', '郵箱'], mustNot: ['命书', '领取', '邮箱'] },
-    { locale: 'en', title: 'Fate Book', must: ['Fate Book', 'claim'], mustNot: [] },
+    { locale: 'zh-Hans', title: '命书', must: ['命书', '领取', '邮箱'], mustNot: ['命書', '領取'], pw: '免密登录' },
+    { locale: 'zh-Hant', title: '命書', must: ['命書', '領取', '郵箱'], mustNot: ['命书', '领取', '邮箱'], pw: '免密登入' },
+    { locale: 'en', title: 'Fate Book', must: ['Fate Book', 'claim'], mustNot: [], pw: 'passwordless' },
   ]
   const subjects = new Set()
   for (const c of cases) {
+    const reports = c.locale === 'en' ? '/en/reports' : c.locale === 'zh-Hant' ? '/tw/reports' : '/reports'
     const claimUrl = `${APP}${claimPathForLocale(c.locale, RAW)}`
     const magicUrl = `${APP}/auth/callback?token_hash=HASHED&type=magiclink&next=${encodeURIComponent(claimPathForLocale(c.locale, RAW))}`
-    const mail = buildClaimEmail({ locale: c.locale, magicUrl, claimUrl, ref: REF, title: c.title })
+    const resetUrl = `${APP}/reset-password?next=${encodeURIComponent(reports)}`
+    const mail = buildClaimEmail({ locale: c.locale, magicUrl, claimUrl, resetUrl, ref: REF, title: c.title })
     subjects.add(mail.subject)
 
     if (!mail.subject.includes(c.title)) fail(`${c.locale} 主题未包含报告标题`)
@@ -40,6 +43,9 @@ console.log('—— A. 三语邮件正文 ——')
     if (!mail.text.includes('type=magiclink')) fail(`${c.locale} 纯文本缺 magiclink 链接`)
     if (!mail.html.includes('type=magiclink')) fail(`${c.locale} HTML 缺 magiclink 按钮链接`)
     if (!mail.html.includes(claimUrl)) fail(`${c.locale} HTML 缺备用认领地址`)
+    if (!mail.text.includes(c.pw)) fail(`${c.locale} 正文缺「免密账号」说明`)
+    if (!mail.text.includes(resetUrl)) fail(`${c.locale} 正文缺设置密码链接`)
+    if (!mail.html.includes(resetUrl)) fail(`${c.locale} HTML 缺设置密码链接`)
     for (const s of c.must) {
       if (!mail.text.includes(s)) fail(`${c.locale} 正文缺关键词「${s}」`)
     }
@@ -58,10 +64,13 @@ console.log('—— A2. 认领页三语文案 ——')
   for (const locale of ['zh-Hans', 'zh-Hant', 'en']) {
     const c = CLAIM_PAGE_COPY[locale]
     if (!c || !c.loginCta || !c.successTitle || !c.loginBody) fail(`${locale} 认领页文案缺字段`)
+    if (!c.passwordHint || !c.passwordCta) fail(`${locale} 认领页缺「设置密码」提示`)
     for (const code of codes) if (!c.errors[code]) fail(`${locale} 缺少错误码「${code}」文案`)
   }
   if (!CLAIM_PAGE_COPY['zh-Hant'].title.includes('命書')) fail('繁体认领页标题不是繁体')
-  ok('认领页三语 × 9 个错误码齐全')
+  if (!CLAIM_PAGE_COPY['zh-Hant'].passwordHint.includes('免密登入')) fail('繁体设密提示不是繁体用词')
+  if (CLAIM_PAGE_COPY['zh-Hant'].passwordHint.includes('登录')) fail('繁体设密提示混入简体用词')
+  ok('认领页三语 × 9 个错误码齐全；三语设密提示齐全且繁体逐字写死')
 }
 
 console.log('—— B. 令牌轮换与 magic link 拼装 ——')
@@ -69,6 +78,60 @@ console.log('—— B. 令牌轮换与 magic link 拼装 ——')
   if (claimPathForLocale('zh-Hans', RAW) !== `/claim/${RAW}`) fail('简体认领路径错误')
   if (claimPathForLocale('zh-Hant', RAW) !== `/tw/claim/${RAW}`) fail('繁体认领路径错误')
   if (claimPathForLocale('en', RAW) !== `/en/claim/${RAW}`) fail('英文认领路径错误')
+
+  // ★ magic link 构造：token_hash 与 next 都必须完整编码；next 解码后等于原路径。
+  //   背景：QQ 邮箱安全跳转对未编码的嵌套路径/本机地址会判 Invalid url。
+  {
+    const path = claimPathForLocale('zh-Hant', RAW)
+    const HASHED = 'a+b/c='
+    const link = buildClaimMagicUrl(APP, HASHED, path)
+    if (!link.includes('next=%2Ftw%2Fclaim%2F')) fail('next 未做百分号编码（/ 未变成 %2F）')
+    if (link.split('?').length !== 2) fail('链接出现双层 query')
+    const u = new URL(link)
+    if (u.origin !== APP) fail('magic link 的 origin 不是站点根地址')
+    if (u.searchParams.get('token_hash') !== HASHED) fail('token_hash 解码后不等于原值')
+    if (u.searchParams.get('next') !== path) fail('next 解码后不等于认领路径')
+    if (u.searchParams.get('type') !== 'magiclink') fail('magic link 缺 type=magiclink')
+    if (u.searchParams.getAll('next').length !== 1) fail('next 参数重复')
+
+    // 解析侧（callback 的 safeNext）同时兼容已编码 / 未编码两种形式
+    if (safeNext(path) !== path) fail('safeNext 不兼容未编码的 next')
+    if (safeNext(encodeURIComponent(path)) !== path) fail('safeNext 不兼容已编码的 next')
+    if (safeNext(u.searchParams.get('next')) !== path) fail('safeNext 对 URL 解码后的 next 不生效')
+  }
+
+  // ★ 站点地址优先级：生产绝不允许回落 localhost（QQ/163 会判 Invalid url）
+  {
+    const prodExplicit = resolveSiteOrigin({ NODE_ENV: 'production', NEXT_PUBLIC_APP_URL: 'https://www.mingcharts.com' })
+    if (!prodExplicit.ok || prodExplicit.origin !== APP || prodExplicit.source !== 'NEXT_PUBLIC_APP_URL') {
+      fail('显式 https APP_URL 未被优先采用')
+    }
+
+    const prodLocalhost = resolveSiteOrigin({ NODE_ENV: 'production', NEXT_PUBLIC_APP_URL: 'http://localhost:3000' })
+    if (prodLocalhost.ok) fail('生产环境仍接受了 localhost（会发出死链）')
+    else if (prodLocalhost.reason !== 'app_url_invalid') fail('生产 localhost 的失败原因不是 app_url_invalid')
+
+    const prodFallback = resolveSiteOrigin({
+      NODE_ENV: 'production',
+      NEXT_PUBLIC_APP_URL: 'http://localhost:3000',
+      VERCEL_PROJECT_PRODUCTION_URL: 'www.mingcharts.com',
+    })
+    if (!prodFallback.ok || prodFallback.origin !== APP || prodFallback.source !== 'VERCEL_PROJECT_PRODUCTION_URL') {
+      fail('显式地址无效时未回落到 Vercel 生产域名')
+    }
+
+    const prodDeploy = resolveSiteOrigin({ NODE_ENV: 'production', VERCEL_URL: 'mingcharts-abc.vercel.app' })
+    if (!prodDeploy.ok || prodDeploy.origin !== 'https://mingcharts-abc.vercel.app') fail('VERCEL_URL 未被补成 https')
+
+    const prodMissing = resolveSiteOrigin({ NODE_ENV: 'production' })
+    if (prodMissing.ok || prodMissing.reason !== 'app_url_missing') fail('生产无任何地址时未 fail-closed')
+
+    const devLocal = resolveSiteOrigin({ NODE_ENV: 'development', NEXT_PUBLIC_APP_URL: 'http://localhost:3000' })
+    if (!devLocal.ok || devLocal.origin !== 'http://localhost:3000') fail('非生产环境应允许 localhost 联调')
+
+    const prodGarbage = resolveSiteOrigin({ NODE_ENV: 'production', NEXT_PUBLIC_APP_URL: 'not a url' })
+    if (prodGarbage.ok || prodGarbage.reason !== 'app_url_invalid') fail('非法 APP_URL 未返回 app_url_invalid')
+  }
 
   const src = read('../src/lib/guestClaimMail.ts')
   const cfgIdx = src.indexOf('const cfg = mailConfigured()')
@@ -83,7 +146,12 @@ console.log('—— B. 令牌轮换与 magic link 拼装 ——')
     'hashClaimToken(rawToken)',
     '/auth/callback?token_hash=',
     'type=magiclink',
-    "next=${encodeURIComponent(claimPath)}",
+    'encodeURIComponent(claimPath)',
+    'buildClaimMagicUrl(appUrl, link.hashedToken, claimPath)',
+    'app_url_invalid',
+    'VERCEL_PROJECT_PRODUCTION_URL',
+    'app_url_source',
+    "host === 'localhost'",
     "type: 'magiclink'",
     'createUser({ email, email_confirm: true })',
     "claim_email_sent",
@@ -164,6 +232,8 @@ console.log('—— D. 代码约束 ——')
   if (!client.includes("fetch('/api/guest/claim'")) fail('ClaimClient 未调用认领接口')
   if (!client.includes('accessToken: session.access_token')) fail('ClaimClient 未带会话令牌')
   if (!client.includes('signOut()')) fail('ClaimClient 缺“切换账号”路径')
+  if (!client.includes('copy.passwordHint')) fail('ClaimClient 未展示「免密账号」提示')
+  if (!client.includes('/reset-password?next=')) fail('ClaimClient 缺设置密码入口')
 
   // D4 触发与补发接线
   const report = read('../src/lib/guestReport.ts')
@@ -173,6 +243,7 @@ console.log('—— D. 代码约束 ——')
   const mail = read('../src/lib/guestClaimMail.ts')
   if (!mail.includes('CLAIM_EMAIL_MAX_ATTEMPTS = 5')) fail('邮件补发上限不是 5')
   if (!mail.includes('notConfigured: true')) fail('缺凭据时 cron 未整体跳过（会刷审计噪音）')
+  if (!mail.includes('/reset-password?next=')) fail('认领邮件未拼设置密码链接')
 
   // D5 verify 接线
   const pkg = read('../package.json')

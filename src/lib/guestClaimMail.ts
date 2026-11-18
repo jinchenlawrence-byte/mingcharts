@@ -38,15 +38,72 @@ export function claimPathForLocale(locale: string, rawToken: string): string {
   return `${prefix}/claim/${rawToken}`
 }
 
-/** 站点根地址：与 Waffo 用同一个变量，但不依赖支付密钥是否配好 */
-function resolveAppUrl(): string | null {
-  const raw = process.env.NEXT_PUBLIC_APP_URL?.trim()
+/** 「我的报告」路径：设置密码后回跳到这里 */
+function reportsPathForLocale(locale: string): string {
+  const prefix = locale === 'en' ? '/en' : locale === 'zh-Hant' ? '/tw' : ''
+  return `${prefix}/reports`
+}
+
+/** 站点根地址解析结果（source 用于审计，排障时能看出链接来自哪个变量） */
+type SiteOriginResult =
+  | { ok: true; origin: string; source: string }
+  | { ok: false; reason: 'app_url_missing' | 'app_url_invalid' }
+
+/** 逐项校验候选地址：必须可解析；非本机地址必须是 https。 */
+function normalizeOrigin(candidate: string | undefined, allowLocal = false): string | null {
+  const raw = candidate?.trim()
   if (!raw) return null
+  const withProto = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
   try {
-    return new URL(raw).origin
+    const u = new URL(withProto)
+    const host = u.hostname.toLowerCase().replace(/^\[|\]$/g, '')
+    const loopback =
+      host === 'localhost' ||
+      host === '127.0.0.1' ||
+      host === '0.0.0.0' ||
+      host === '::1' ||
+      host.endsWith('.localhost')
+    if (loopback) return allowLocal ? u.origin : null
+    if (u.protocol !== 'https:') return null
+    return u.origin
   } catch {
     return null
   }
+}
+
+/**
+ * 解析站点根地址（邮件链接的单一事实源）。
+ *
+ * 优先级：显式配置 → Vercel 生产域名 → 当前部署域名 →（仅非生产）localhost。
+ * ★ 生产环境【绝不】回落到 localhost：本机地址在 QQ/163 安全跳转里必被判 Invalid url
+ *   （2026-11-18 事故：本地 .env 的 http://localhost:3000 被写进了认领邮件）。
+ *   全部候选都不可用时返回失败，由调用方写 claim_email_failed，宁可不发也不发死链。
+ */
+export function resolveSiteOrigin(env: NodeJS.ProcessEnv = process.env): SiteOriginResult {
+  const isProduction = env.NODE_ENV === 'production' || env.VERCEL_ENV === 'production'
+  const candidates: Array<[string, string | undefined]> = [
+    ['NEXT_PUBLIC_APP_URL', env.NEXT_PUBLIC_APP_URL],
+    ['NEXT_PUBLIC_SITE_URL', env.NEXT_PUBLIC_SITE_URL],
+    ['VERCEL_PROJECT_PRODUCTION_URL', env.VERCEL_PROJECT_PRODUCTION_URL],
+    ['VERCEL_URL', env.VERCEL_URL],
+  ]
+  for (const [source, raw] of candidates) {
+    // 只有显式 APP_URL 在非生产环境允许 localhost（本地联调）；其余一律要求公网 https
+    const allowLocal = source === 'NEXT_PUBLIC_APP_URL' && !isProduction
+    const origin = normalizeOrigin(raw, allowLocal)
+    if (origin) return { ok: true, origin, source }
+  }
+  const hadExplicit = Boolean(env.NEXT_PUBLIC_APP_URL?.trim() || env.NEXT_PUBLIC_SITE_URL?.trim())
+  return { ok: false, reason: hadExplicit ? 'app_url_invalid' : 'app_url_missing' }
+}
+
+/**
+ * 构造 magic link（单一事实源）。
+ * token_hash 与 next 都做完整 encodeURIComponent：next=/tw/claim/<token> 里的
+ * 斜杠会变成 %2F，避免中转服务把嵌套路径误判；URLSearchParams 解码后仍是原路径。
+ */
+export function buildClaimMagicUrl(appUrl: string, hashedToken: string, claimPath: string): string {
+  return `${appUrl}/auth/callback?token_hash=${encodeURIComponent(hashedToken)}&type=magiclink&next=${encodeURIComponent(claimPath)}`
 }
 
 function asClaimLocale(locale: string): ClaimLocale {
@@ -97,15 +154,18 @@ export async function sendClaimEmail(admin: Admin, guestOrderId: string): Promis
     return 'failed'
   }
 
-  const appUrl = resolveAppUrl()
-  if (!appUrl) {
+  const site = resolveSiteOrigin()
+  if (!site.ok) {
     await audit(admin, guestOrderId, 'claim_email_failed', {
-      reason: 'app_url_missing',
+      reason: site.reason,
       missing: 'NEXT_PUBLIC_APP_URL',
     })
-    console.error(`[guest-claim-mail] ★认领邮件未发出：缺少 NEXT_PUBLIC_APP_URL guest=${guestOrderId}`)
+    console.error(
+      `[guest-claim-mail] ★认领邮件未发出：站点地址 ${site.reason === 'app_url_missing' ? '缺失' : '无效（生产不允许 localhost，须公网 https）'} guest=${guestOrderId}`,
+    )
     return 'failed'
   }
+  const appUrl = site.origin
 
   // ★ 发信这一刻才生成 raw token，并覆盖占位哈希（重发即轮换）
   const rawToken = generateClaimToken()
@@ -125,6 +185,9 @@ export async function sendClaimEmail(admin: Admin, guestOrderId: string): Promis
 
   const claimPath = claimPathForLocale(order.locale, rawToken)
   const claimUrl = `${appUrl}${claimPath}`
+  // 设置密码入口：游客账号是 admin.createUser 建的无密码账号，绝不生成默认密码；
+  // 认领后会话已建立，/reset-password 直接显示设密表单，next 回各自语言的「我的报告」。
+  const resetUrl = `${appUrl}/reset-password?next=${encodeURIComponent(reportsPathForLocale(order.locale))}`
 
   const link = await buildMagicLink(admin, order.buyer_email)
   if (!link.ok) {
@@ -135,11 +198,12 @@ export async function sendClaimEmail(admin: Admin, guestOrderId: string): Promis
     return 'failed'
   }
 
-  const magicUrl = `${appUrl}/auth/callback?token_hash=${encodeURIComponent(link.hashedToken)}&type=magiclink&next=${encodeURIComponent(claimPath)}`
+  const magicUrl = buildClaimMagicUrl(appUrl, link.hashedToken, claimPath)
   const mail = buildClaimEmail({
     locale: asClaimLocale(order.locale),
     magicUrl,
     claimUrl,
+    resetUrl,
     ref: order.order_merchant_external_id,
     title: order.report_title ?? 'Fate Book',
   })
@@ -167,6 +231,9 @@ export async function sendClaimEmail(admin: Admin, guestOrderId: string): Promis
   await audit(admin, guestOrderId, 'claim_email_sent', {
     email: order.buyer_email,
     resend_id: sent.id,
+    // 站点地址来自哪个变量：排查「邮件里是 localhost」时一眼定位
+    app_url_source: site.source,
+    app_url_origin: site.origin,
   })
   return 'sent'
 }

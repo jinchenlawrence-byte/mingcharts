@@ -1,4 +1,4 @@
-﻿// ★ 会员订阅（档 C）· 行为验收（2026-10-18）
+﻿﻿// ★ 会员订阅（档 C）· 行为验收（2026-10-18）
 //
 // 结构：
 //   ① 源码/配置断言：PROD_ 登记一致性、订阅商品创建脚本、checkout 共享件、
@@ -275,11 +275,17 @@ console.log('—— ② 纯函数：套餐判定 / 到期取 max / 扣款行 / �
 // ════════════════ ③ handleWaffoEvent 真调 ════════════════
 console.log('—— ③ 订阅事件落库行为（内存仓储镜像唯一约束与会员列契约）——')
 {
+  // ★ 日期必须相对当前时间生成：写死 2026-11-18 会在当天过后变成「已过期」，
+  //   导致 activeNow 断言无端翻红（2026-11-18 实测）。
+  const day = (offset) => new Date(Date.now() + offset * DAY_MS).toISOString().slice(0, 10)
+  const P1 = day(2)   // activated 周期末（未来，保证有效）
+  const P2 = day(32)  // renewed 新周期末
+  const P0 = day(-28) // 更早的周期末（不得把到期日往回拨）
   // activated → 授权益（到期=渠道 currentPeriodEnd）
   {
     const repo = createMemRepo()
     const r = await handleWaffoEvent(subEvent({
-      eventType: 'subscription.activated', eventId: 'EVT_A', periodEnd: '2026-11-18',
+      eventType: 'subscription.activated', eventId: 'EVT_A', periodEnd: P1,
     }), repo)
     const m = repo._members.get(UID_A)
     assert(r.kind === 'membership_updated' && r.action === 'activate', 'activated → membership_updated(activate)')
@@ -287,12 +293,12 @@ console.log('—— ③ 订阅事件落库行为（内存仓储镜像唯一约�
     assert(m.member_plan === 'monthly', 'activated 写入 member_plan=monthly')
     assert(m.member_order_id === 'ORD_1', 'activated 记录渠道订阅单号（供后续取消/恢复）')
     assert(m.member_auto_renew === true, 'activated 默认开启自动续费')
-    assert(m.member_expire_at === new Date('2026-11-18T00:00:00.000Z').toISOString(),
+    assert(m.member_expire_at === new Date(P1 + 'T00:00:00.000Z').toISOString(),
       'activated 到期时间取渠道 currentPeriodEnd（不做加法）')
 
     // 重复投递同 (eventType,eventId) → duplicate，不重复授予
     const dup = await handleWaffoEvent(subEvent({
-      eventType: 'subscription.activated', eventId: 'EVT_A', periodEnd: '2026-11-18',
+      eventType: 'subscription.activated', eventId: 'EVT_A', periodEnd: P1,
     }), repo)
     assert(dup.kind === 'duplicate', 'activated 同 eventId 重投 → duplicate（不重复授予）')
   }
@@ -310,23 +316,23 @@ console.log('—— ③ 订阅事件落库行为（内存仓储镜像唯一约�
   {
     const repo = createMemRepo()
     await handleWaffoEvent(subEvent({
-      eventType: 'subscription.activated', eventId: 'EVT_C', periodEnd: '2026-11-18',
+      eventType: 'subscription.activated', eventId: 'EVT_C', periodEnd: P1,
     }), repo)
     await handleWaffoEvent(subEvent({
-      eventType: 'subscription.renewed', eventId: 'EVT_D', periodEnd: '2026-12-18',
+      eventType: 'subscription.renewed', eventId: 'EVT_D', periodEnd: P2,
     }), repo)
     const afterFirst = repo._members.get(UID_A).member_expire_at
-    assert(afterFirst === new Date('2026-12-18T00:00:00.000Z').toISOString(),
+    assert(afterFirst === new Date(P2 + 'T00:00:00.000Z').toISOString(),
       'renewed 到期顺延到新周期末')
     // 同周期末的【另一次投递】（不同 eventId，模拟重复投递）→ 仍同值，绝不叠加
     await handleWaffoEvent(subEvent({
-      eventType: 'subscription.renewed', eventId: 'EVT_E', periodEnd: '2026-12-18',
+      eventType: 'subscription.renewed', eventId: 'EVT_E', periodEnd: P2,
     }), repo)
     assert(repo._members.get(UID_A).member_expire_at === afterFirst,
       '★ 重复投递的 renewed 取 max → 不二次叠加（用户不白赚一期）')
     // 异常：更早的周期末不得把到期日往回拨
     await handleWaffoEvent(subEvent({
-      eventType: 'subscription.renewed', eventId: 'EVT_F', periodEnd: '2026-10-18',
+      eventType: 'subscription.renewed', eventId: 'EVT_F', periodEnd: P0,
     }), repo)
     assert(repo._members.get(UID_A).member_expire_at === afterFirst, 'renewed 更早的周期末不倒退到期日')
     // renewed 不得清掉 auto_renew（本补丁未含该字段 → 省略=保持不变）
@@ -363,7 +369,7 @@ console.log('—— ③ 订阅事件落库行为（内存仓储镜像唯一约�
   {
     const repo = createMemRepo()
     await handleWaffoEvent(subEvent({
-      eventType: 'subscription.activated', eventId: 'EVT_J', periodEnd: '2026-11-18',
+      eventType: 'subscription.activated', eventId: 'EVT_J', periodEnd: P1,
     }), repo)
     const before = repo._members.get(UID_A).member_expire_at
     const r = await handleWaffoEvent(subEvent({
@@ -425,7 +431,7 @@ console.log('—— ③ 订阅事件落库行为（内存仓储镜像唯一约�
       if (boom) { boom = false; throw new Error('profiles 会员写入失败: 42703 column "member_plan" does not exist') }
       return realPatch(userId, patch)
     }
-    const evt = () => subEvent({ eventType: 'subscription.activated', eventId: 'EVT_R', periodEnd: '2026-11-18' })
+    const evt = () => subEvent({ eventType: 'subscription.activated', eventId: 'EVT_R', periodEnd: P1 })
     let threw = false
     try { await handleWaffoEvent(evt(), repo) } catch { threw = true }
     assert(threw, '工作抛错时向上抛出（路由层返 500，触发渠道重试）')
