@@ -9,10 +9,13 @@
 // 数据来自 /api/member/summary（内容）+ /api/membership（订阅状态）；
 // 追问额度额外读一次 /api/ask（失败置 null，只显示静态权益文案，不阻塞页面）。
 // 权益标题逐项取 GRANT_LABELS（单一事实源），宫格由 SUBSCRIPTION_GRANTS 派生，不硬编码权益表。
+//
+// ★ 站点 chrome 约定（2026-11-18）：本组件只渲染内容，不渲染站点头部/页脚。
+//   繁 / 英树的头部在 root layout，简体树的头部由页面自己渲染。
+//   共享组件一旦自带 SiteHeader，tw/en 就会出现「布局 + 组件」双导航（/tw/member 曾如此）。
 
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
-import SiteHeader from '@/components/SiteHeader'
 import PushOptIn from '@/components/PushOptIn'
 import { GRANT_LABELS } from '@/lib/grantLabels'
 import { getSupabase } from '@/lib/supabase'
@@ -131,7 +134,6 @@ export default function MemberCenter({ locale = 'zh-Hans' }: { locale?: SiteLang
   if (loading) {
     return (
       <main className="hw-page">
-        <SiteHeader locale={locale} />
         <div className="hw-wrap hw-c-pg"><p className="text-center text-ink-light">{H('加载中…')}</p></div>
       </main>
     )
@@ -142,7 +144,6 @@ export default function MemberCenter({ locale = 'zh-Hans' }: { locale?: SiteLang
     const guest = !data || data.authState === 'guest'
     return (
       <main className="hw-page">
-        <SiteHeader locale={locale} />
         <div className="hw-wrap hw-c-pg">
           <div className="hw-m-wrap">
             <Link href={L('/')} className="hw-c-back">‹ {H('首页')}</Link>
@@ -190,7 +191,6 @@ export default function MemberCenter({ locale = 'zh-Hans' }: { locale?: SiteLang
 
   return (
     <main className="hw-page">
-      <SiteHeader locale={locale} />
       <div className="hw-wrap hw-c-pg">
         <div className="hw-m-wrap">
           <Link href={L('/')} className="hw-c-back">‹ {H('首页')}</Link>
