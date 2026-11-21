@@ -1,8 +1,10 @@
 import Link from 'next/link'
 import Nav from '@/components/Nav'
 import PaipanCta from '@/components/PaipanCta'
+import VideoEmbed from '@/components/VideoEmbed'
 import { notFound } from 'next/navigation'
 import { articles, ARTICLE_CATEGORIES } from '@/lib/articles'
+import { VIDEO_IDS } from '@/lib/videos'
 import { CATEGORY_INTRO } from '@/lib/articleCategoryIntro'
 import { SKUS, formatPriceUSD } from '@/lib/pricing'
 import { hantAlternates } from '@/lib/hant-seo'
@@ -182,6 +184,17 @@ export default async function ArticleOrCategoryPage({ params }: { params: Promis
                 <Link href="/hemun" className="hw-c-link">用双方生日合一次婚</Link>
                 ——不用对方的出生时辰，夫妻宫、双方日干、配偶星三项当场就能看。
               </p>
+            )}
+
+            {/* 站内视频嵌入（2026-11-21）：只此一篇，位置固定在导言之后、第一个 H2 之前 */}
+            {article.slug === '2027-dingwei-nian-yunshi' && (
+              <VideoEmbed
+                videoId={VIDEO_IDS.dayun}
+                title="八字大運怎麼看？十年一步，你現在走到第幾格"
+                locale="zh-Hans"
+                slot="article_intro"
+                poster="/video/dayun-poster.webp"
+              />
             )}
 
             <div className="prose prose-amber max-w-none">

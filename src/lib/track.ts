@@ -14,6 +14,8 @@ export type TrackName =
   // 付费墙曝光 / 点击（2026-11-17）：拆开「看见了入口」与「点了购买」，props 带 module/locale/sku/slot
   | 'chart_paywall_view'
   | 'chart_paywall_click'
+  // 站内视频嵌入（2026-11-21）：poster 点击，props 带 page_path/video_id/locale/slot
+  | 'video_poster_click'
 
 export interface TrackProps {
   /** 模块/商品等短标识，值必须是短字符串（服务端会限制长度） */

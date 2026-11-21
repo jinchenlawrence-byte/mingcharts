@@ -15,6 +15,8 @@ const ALLOWED = new Set([
   // 付费墙曝光 / 点击（2026-11-17）
   'chart_paywall_view',
   'chart_paywall_click',
+  // 站内视频嵌入 poster 点击（2026-11-21）
+  'video_poster_click',
 ])
 
 function clipString(value: unknown, max: number): string | undefined {
